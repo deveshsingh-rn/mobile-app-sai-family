@@ -241,7 +241,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
 
     // auto-dismiss after 4 seconds
     if (onFinish) {
-      const t = setTimeout(onFinish, 450000);
+      const t = setTimeout(onFinish, 3500);
       return () => clearTimeout(t);
     }
   }, []);
@@ -318,7 +318,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
         <GlowRing />
         <View style={styles.imageHalo} />
         <Animated.Image
-          source={require("../assets/images/saibaba.png")}
+          source={require("../assets/images/saibaba1.png")}
           style={[
             styles.saiBabaImage,
             {

@@ -5,6 +5,8 @@ import { useState } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import AuthScreen from '@/screens/authscreen';
+import OnboardingScreen from '@/screens/onboarding';
 import SaiBabaSplashScreen from '@/screens/splashscreen';
 
 export const unstable_settings = {
@@ -14,9 +16,19 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [showSplash, setShowSplash] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showAuth, setShowAuth] = useState(true);
 
   if (showSplash) {
     return <SaiBabaSplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
+  if (showOnboarding) {
+    return <OnboardingScreen onDone={() => setShowOnboarding(false)} />;
+  }
+
+  if (showAuth) {
+    return <AuthScreen onContinue={() => setShowAuth(false)} />;
   }
 
   return (
