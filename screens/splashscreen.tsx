@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import {
   View,
-  Image,
   StyleSheet,
   Animated,
   Dimensions,
@@ -11,7 +10,7 @@ import {
 const { width, height } = Dimensions.get("window");
 
 // ── Flower Petal Component ──────────────────────────────────────────────────
-const FLOWER_EMOJIS = ["🌸", "🌺", "🌼", "🌻", "🪷", "💐"];
+const FLOWER_EMOJIS = ["✦", "🔅","✧", "✺","🔸","🔆"];
 
 type FallingFlowerProps = {
   delay: number;
@@ -250,12 +249,12 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
   // Generate flowers
   const flowers = useMemo(
     () =>
-      Array.from({ length: 22 }, (_, i) => ({
+      Array.from({ length: 10 }, (_, i) => ({
         id: i,
-        delay: i * 250 + Math.random() * 400,
+        delay: i * 420 + Math.random() * 500,
         startX: Math.random() * (width - 40),
         emoji: FLOWER_EMOJIS[i % FLOWER_EMOJIS.length],
-        size: 18 + Math.random() * 20,
+        size: 10 + Math.random() * 8,
       })),
     []
   );
@@ -263,11 +262,11 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
   // Generate sparkles
   const sparkles = useMemo(
     () =>
-      Array.from({ length: 14 }, (_, i) => ({
+      Array.from({ length: 8 }, (_, i) => ({
         id: i,
         x: 30 + Math.random() * (width - 60),
         y: height * 0.15 + Math.random() * height * 0.6,
-        delay: i * 300,
+        delay: i * 420,
       })),
     []
   );
@@ -295,7 +294,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
         />
       ))}
 
-      {/* ── Om symbol top ── */}
+      <Text style={styles.brand}>SAI FAMILY</Text>
       <Text style={styles.omTop}>ॐ</Text>
 
       {/* ── Title ── */}
@@ -311,12 +310,13 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
       <Animated.Text
         style={[styles.subtitle, { opacity: subtitleOpacity }]}
       >
-        Sabka Malik Ek
+        Om Sai Ram
       </Animated.Text>
 
       {/* ── Glow ring + Image ── */}
       <View style={styles.imageWrapper}>
         <GlowRing />
+        <View style={styles.imageHalo} />
         <Animated.Image
           source={require("../assets/images/saibaba.png")}
           style={[
@@ -330,14 +330,17 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
         />
       </View>
 
-      {/* ── Feet flower garland ── */}
-      <Text style={styles.garland}>🌸🌺🌼🪷🌸🌺🌼🪷🌸🌺🌼</Text>
+      <View style={styles.divider}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerOm}>ॐ</Text>
+        <View style={styles.dividerLine} />
+      </View>
 
       {/* ── Bottom blessing ── */}
       <Animated.Text
         style={[styles.blessing, { opacity: subtitleOpacity }]}
       >
-        ✦ Om Sai Ram ✦
+        Sabka Malik Ek
       </Animated.Text>
     </View>
   );
@@ -349,7 +352,7 @@ const IMG_SIZE = width * 0.62;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1a0a00",
+    backgroundColor: "#fffaf0",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -361,8 +364,8 @@ const styles = StyleSheet.create({
     width: width * 2,
     height: width * 2,
     borderRadius: width,
-    backgroundColor: "#3b1400",
-    top: height / 2 - width,
+    backgroundColor: "#f7dd89",
+    top: -width * 0.95,
     left: -width / 2,
   },
   bgMid: {
@@ -370,49 +373,53 @@ const styles = StyleSheet.create({
     width: width * 1.2,
     height: width * 1.2,
     borderRadius: width * 0.6,
-    backgroundColor: "#5c2200",
-    top: height / 2 - width * 0.6,
+    backgroundColor: "#facd51",
+    top: height * 0.66,
     left: -width * 0.1,
   },
   bgInner: {
     position: "absolute",
-    width: width * 0.7,
-    height: width * 0.7,
-    borderRadius: width * 0.35,
-    backgroundColor: "#f3cd3777",
-    top: height / 2 - width * 0.35,
-    left: width * 0.15,
+    width: width * 0.92,
+    height: width * 0.92,
+    borderRadius: width * 0.46,
+    backgroundColor: "#fff3cf",
+    top: height / 2 - width * 0.46,
+    left: width * 0.04,
+  },
+
+  brand: {
+    color: "#8a5a13",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 4,
+    marginBottom: 14,
+    textTransform: "uppercase",
   },
 
   // Om
   omTop: {
-    fontSize: 38,
-    color: "#ffd700",
+    fontSize: 34,
+    color: "#bd7a12",
     fontWeight: "bold",
-    marginBottom: 6,
-    textShadowColor: "#ff8c00",
-    textShadowRadius: 12,
-    letterSpacing: 2,
+    marginBottom: 8,
   },
 
   // Title
   title: {
-    fontSize: 36,
-    color: "#ffd700",
+    fontSize: 34,
+    color: "#5d3b0a",
     fontFamily: "serif",
-    fontWeight: "900",
-    letterSpacing: 4,
-    textShadowColor: "#ff6600",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 16,
-    marginBottom: 2,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 14,
-    color: "#ffb347",
-    letterSpacing: 6,
-    fontStyle: "italic",
-    marginBottom: 20,
+    fontSize: 13,
+    color: "#e39611",
+    fontWeight: "600",
+    letterSpacing: 3,
+    marginBottom: 24,
+    textTransform: "uppercase",
   },
 
   // Image
@@ -424,41 +431,56 @@ const styles = StyleSheet.create({
   },
   glowRing: {
     position: "absolute",
-    width: IMG_SIZE + 20,
-    height: IMG_SIZE + 20,
-    borderRadius: (IMG_SIZE + 20) / 2,
-    borderWidth: 2.5,
-    borderColor: "#ffd700",
-    shadowColor: "#ffd700",
+    width: IMG_SIZE + 28,
+    height: IMG_SIZE + 28,
+    borderRadius: (IMG_SIZE + 28) / 2,
+    borderWidth: 1,
+    borderColor: "#e3b34f",
+    shadowColor: "#d59a25",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 20,
-    elevation: 20,
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  imageHalo: {
+    position: "absolute",
+    width: IMG_SIZE + 8,
+    height: IMG_SIZE + 8,
+    borderRadius: (IMG_SIZE + 8) / 2,
+    backgroundColor: "#fffdf7",
   },
   saiBabaImage: {
     width: IMG_SIZE,
     height: IMG_SIZE,
     borderRadius: IMG_SIZE / 2,
-    borderWidth: 3,
-    borderColor: "#ffd700",
+    borderWidth: 2,
+    borderColor: "#d9a441",
   },
 
-  // Flower garland at feet
-  garland: {
-    fontSize: 22,
-    marginTop: 10,
-    letterSpacing: 2,
+  divider: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 18,
+  },
+  dividerLine: {
+    width: 44,
+    height: 1,
+    backgroundColor: "#d8ad55",
+  },
+  dividerOm: {
+    color: "#9a6a1a",
+    fontSize: 15,
+    fontWeight: "700",
   },
 
   // Bottom
   blessing: {
-    marginTop: 18,
-    fontSize: 16,
-    color: "#ffd700",
-    letterSpacing: 5,
-    fontStyle: "italic",
-    textShadowColor: "#ff8c00",
-    textShadowRadius: 8,
+    marginTop: 14,
+    fontSize: 13,
+    color: "#6f4a12",
+    fontWeight: "600",
+    letterSpacing: 2.5,
   },
 
   // Falling flowers
@@ -466,6 +488,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     zIndex: 10,
+    color: "#c9932e",
   },
 
   // Sparkle dot
@@ -474,10 +497,10 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: "#ffd700",
-    shadowColor: "#ffd700",
-    shadowRadius: 6,
-    shadowOpacity: 1,
-    elevation: 5,
+    backgroundColor: "#d7a23b",
+    shadowColor: "#f4d37d",
+    shadowRadius: 4,
+    shadowOpacity: 0.6,
+    elevation: 3,
   },
 });
