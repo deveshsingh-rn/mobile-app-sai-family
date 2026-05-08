@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,10 +15,16 @@ import {
 import * as ImagePicker from "expo-image-picker";
 
 import {
-  DevoteeAccount,
-  DevoteeAccountForm,
-  createDevoteeAccount,
-} from "@/services/devotee-account";
+  clearDevoteeAccountError,
+  createDevoteeAccountRequest,
+} from "@/store/devotee-account/actions";
+import {
+  selectDevoteeAccount,
+  selectDevoteeAccountError,
+  selectIsCreatingDevoteeAccount,
+} from "@/store/devotee-account/selectors";
+import { DevoteeAccount, DevoteeAccountForm } from "@/store/devotee-account/types";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 const INITIAL_FORM: DevoteeAccountForm = {
   name: "",
@@ -59,8 +65,12 @@ const FIELDS: FieldConfig[] = [
 ];
 
 export default function CreateDevoteeAccountScreen({ onBack, onCreated }: CreateDevoteeAccountScreenProps) {
+  const dispatch = useAppDispatch();
+  const account = useAppSelector(selectDevoteeAccount);
+  const error = useAppSelector(selectDevoteeAccountError);
+  const isSubmitting = useAppSelector(selectIsCreatingDevoteeAccount);
   const [form, setForm] = useState<DevoteeAccountForm>(INITIAL_FORM);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const canSubmit = useMemo(
     () =>
@@ -77,6 +87,19 @@ export default function CreateDevoteeAccountScreen({ onBack, onCreated }: Create
   const updateField = (key: keyof Omit<DevoteeAccountForm, "profileImage">, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
+
+  useEffect(() => {
+    if (hasSubmitted && account) {
+      onCreated(account);
+    }
+  }, [account, hasSubmitted, onCreated]);
+
+  useEffect(() => {
+    if (error) {
+      Alert.alert("Account creation failed", error);
+      dispatch(clearDevoteeAccountError());
+    }
+  }, [dispatch, error]);
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -114,15 +137,8 @@ export default function CreateDevoteeAccountScreen({ onBack, onCreated }: Create
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const account = await createDevoteeAccount(form);
-      onCreated(account);
-    } catch (error) {
-      Alert.alert("Account creation failed", error instanceof Error ? error.message : "Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    setHasSubmitted(true);
+    dispatch(createDevoteeAccountRequest(form));
   };
 
   return (

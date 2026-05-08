@@ -2,39 +2,49 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { Provider } from 'react-redux';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { DevoteeAccount, getSavedDevoteeAccount } from '@/services/devotee-account';
 import AuthScreen from '@/screens/authscreen';
 import CreateDevoteeAccountScreen from '@/screens/create-devotee-account-screen';
 import DevoteeProfileScreen from '@/screens/devotee-profile-screen';
 import OnboardingScreen from '@/screens/onboarding';
 import SaiBabaSplashScreen from '@/screens/splashscreen';
+import { loadSavedDevoteeAccountRequest } from '@/store/devotee-account/actions';
+import {
+  selectDevoteeAccount,
+  selectHasHydratedDevoteeAccount,
+} from '@/store/devotee-account/selectors';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { store } from '@/store';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-export default function RootLayout() {
+function AppLayoutContent() {
   const colorScheme = useColorScheme();
+  const dispatch = useAppDispatch();
+  const devoteeAccount = useAppSelector(selectDevoteeAccount);
+  const hasHydratedDevoteeAccount = useAppSelector(selectHasHydratedDevoteeAccount);
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [showAuth, setShowAuth] = useState(true);
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [showDevoteeProfile, setShowDevoteeProfile] = useState(false);
-  const [devoteeAccount, setDevoteeAccount] = useState<DevoteeAccount | null>(null);
 
   useEffect(() => {
-    getSavedDevoteeAccount().then((account) => {
-      if (account) {
-        setDevoteeAccount(account);
-        setShowOnboarding(false);
-        setShowAuth(false);
-        setShowDevoteeProfile(false);
-      }
-    });
-  }, []);
+    dispatch(loadSavedDevoteeAccountRequest());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (hasHydratedDevoteeAccount && devoteeAccount) {
+      setShowOnboarding(false);
+      setShowAuth(false);
+      setShowDevoteeProfile(false);
+    }
+  }, [devoteeAccount, hasHydratedDevoteeAccount]);
 
   if (showSplash) {
     return <SaiBabaSplashScreen onFinish={() => setShowSplash(false)} />;
@@ -53,7 +63,6 @@ export default function RootLayout() {
       <CreateDevoteeAccountScreen
         onBack={() => setShowCreateAccount(false)}
         onCreated={(account) => {
-          setDevoteeAccount(account);
           setShowCreateAccount(false);
           setShowAuth(false);
           setShowDevoteeProfile(true);
@@ -79,5 +88,13 @@ export default function RootLayout() {
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <Provider store={store}>
+      <AppLayoutContent />
+    </Provider>
   );
 }

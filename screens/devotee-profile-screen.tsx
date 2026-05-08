@@ -1,6 +1,6 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { DevoteeAccount } from "@/services/devotee-account";
+import { DevoteeAccount } from "@/store/devotee-account/types";
 
 type DevoteeProfileScreenProps = {
   account: DevoteeAccount;
