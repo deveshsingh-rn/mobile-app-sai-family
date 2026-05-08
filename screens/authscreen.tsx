@@ -2,9 +2,10 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type AuthScreenProps = {
   onContinue: () => void;
+  onCreateAccount: () => void;
 };
 
-export default function AuthScreen({ onContinue }: AuthScreenProps) {
+export default function AuthScreen({ onContinue, onCreateAccount }: AuthScreenProps) {
   return (
     <View style={styles.container}>
       <View style={styles.topGlow} />
@@ -17,7 +18,7 @@ export default function AuthScreen({ onContinue }: AuthScreenProps) {
           <Pressable style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]} onPress={onContinue}>
             <Text style={styles.primaryText}>Login</Text>
           </Pressable>
-          <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]} onPress={onContinue}>
+          <Pressable style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]} onPress={onCreateAccount}>
             <Text style={styles.secondaryText}>Create Account</Text>
           </Pressable>
         </View>
