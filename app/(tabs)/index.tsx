@@ -1,13 +1,9 @@
-import { useState } from 'react';
-import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Heart, MessageCircle, Repeat2, Share, UserCircle2, Sparkles } from 'lucide-react-native';
 
 import {
   CategoryChips,
-  ExperienceCard,
-  ExperienceEmptyState,
-  ExperienceTopTabKey,
   ExperienceTopTabs,
-  FeaturedExperience,
 } from '@/components/experiences';
 
 const CATEGORIES = [
@@ -20,112 +16,92 @@ const CATEGORIES = [
 ];
 
 export default function HomeScreen() {
-  const [activeTab, setActiveTab] = useState<ExperienceTopTabKey>('feed');
-
   return (
-    <ImageBackground
-      source={require('@/assets/images/sai-baba-background.jpeg')}
-      resizeMode="cover"
-      style={styles.container}>
-      <View style={styles.backgroundOverlay} />
+    <View style={styles.container}>
       <View style={styles.fixedTop}>
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>PILLAR 1</Text>
+          <UserCircle2 size={32} color="#8e5d10" strokeWidth={1.5} />
           <Text style={styles.title}>Leela Feed</Text>
-          <Text style={styles.description}>Share and discover Sai experiences from the family.</Text>
+          <Sparkles size={24} color="#8e5d10" strokeWidth={1.5} />
         </View>
-
-        <ExperienceTopTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <ExperienceTopTabs activeTab="feed" />
       </View>
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-        <ExperienceTabContent activeTab={activeTab} />
-      </ScrollView>
-    </ImageBackground>
-  );
-}
+        <View style={styles.categoriesWrapper}>
+          <CategoryChips activeValue="all" categories={CATEGORIES} />
+        </View>
+        <View style={styles.divider} />
 
-function ExperienceTabContent({ activeTab }: { activeTab: ExperienceTopTabKey }) {
-  switch (activeTab) {
-    case 'search':
-      return <SearchContent />;
-    case 'post':
-      return <PostContent />;
-    case 'category':
-      return <CategoryContent />;
-    case 'bookmarks':
-      return <BookmarksContent />;
-    case 'feed':
-    default:
-      return <FeedContent />;
-  }
-}
-
-function FeedContent() {
-  return (
-    <>
-      <CategoryChips activeValue="all" categories={CATEGORIES} />
-
-      <View style={styles.section}>
-        <FeaturedExperience />
-      </View>
-
-      <View style={styles.section}>
-        <ExperienceCard
+        <FeedPost 
           authorName="Sai Devotee"
-          category="Daily Blessings"
-          preview="Feed cards will connect to live experience data when we implement the API flow."
-          title="Your Sai experiences will appear here"
+          handle="@sai_devotee"
+          time="2h"
+          content="Today at the mandir, I felt an overwhelming sense of peace. Baba is always with us. Om Sai Ram. 🙏✨"
+          likes={108}
+          comments={12}
+          reposts={4}
         />
+        
+        <FeedPost 
+          authorName="Priya S."
+          handle="@priya_blr"
+          time="5h"
+          content="Just finished reading a chapter of the Sai Satcharitra. Every time I read it, I find a new meaning that applies exactly to my current life situation."
+          likes={45}
+          comments={3}
+          reposts={1}
+        />
+
+        <FeedPost 
+          authorName="Rahul V."
+          handle="@rahul_v"
+          time="1d"
+          content="Can anyone share the link to this week's Thursday Aarti livestream? Would love to join virtually."
+          likes={12}
+          comments={8}
+          reposts={0}
+        />
+      </ScrollView>
+    </View>
+  );
+}
+
+function FeedPost({ authorName, handle, time, content, likes, comments, reposts }: any) {
+  return (
+    <View style={styles.postContainer}>
+      <View style={styles.avatarPlaceholder}>
+        <UserCircle2 size={36} color="#cda869" strokeWidth={1.5} />
       </View>
-
-      <ExperienceEmptyState />
-    </>
-  );
-}
-
-function SearchContent() {
-  return (
-    <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Search Experiences</Text>
-      <TextInput
-        placeholder="Search miracles, prayers, dreams..."
-        placeholderTextColor="#a98b54"
-        style={styles.input}
-      />
-      <Text style={styles.panelDescription}>Search results will appear below this fixed top tab area.</Text>
-    </View>
-  );
-}
-
-function PostContent() {
-  return (
-    <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Post Experience</Text>
-      <Text style={styles.panelDescription}>Start the experience publishing form here.</Text>
-      <Pressable style={styles.primaryButton}>
-        <Text style={styles.primaryButtonText}>Create Draft</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-function CategoryContent() {
-  return (
-    <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Categories</Text>
-      <CategoryChips activeValue="miracles" categories={CATEGORIES} />
-      <Text style={styles.panelDescription}>Category feeds will load here when connected with the API.</Text>
-    </View>
-  );
-}
-
-function BookmarksContent() {
-  return (
-    <View style={styles.panel}>
-      <Text style={styles.panelTitle}>Bookmarks</Text>
-      <Text style={styles.panelDescription}>Saved Sai experiences will appear here.</Text>
-      <ExperienceEmptyState />
+      
+      <View style={styles.postContent}>
+        <View style={styles.postHeader}>
+          <Text style={styles.authorName} numberOfLines={1}>{authorName}</Text>
+          <Text style={styles.authorHandle}>{handle}</Text>
+          <Text style={styles.dot}>·</Text>
+          <Text style={styles.time}>{time}</Text>
+        </View>
+        
+        <Text style={styles.postText}>{content}</Text>
+        
+        <View style={styles.actionRow}>
+          <Pressable style={styles.actionButton}>
+            <MessageCircle size={18} color="#8e5d10" strokeWidth={1.5} />
+            {comments > 0 && <Text style={styles.actionText}>{comments}</Text>}
+          </Pressable>
+          <Pressable style={styles.actionButton}>
+            <Repeat2 size={18} color="#8e5d10" strokeWidth={1.5} />
+            {reposts > 0 && <Text style={styles.actionText}>{reposts}</Text>}
+          </Pressable>
+          <Pressable style={styles.actionButton}>
+            <Heart size={18} color="#8e5d10" strokeWidth={1.5} />
+            {likes > 0 && <Text style={styles.actionText}>{likes}</Text>}
+          </Pressable>
+          <Pressable style={styles.actionButton}>
+            <Share size={18} color="#8e5d10" strokeWidth={1.5} />
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
 }
@@ -133,86 +109,101 @@ function BookmarksContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  backgroundOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 250, 240, 0.52)',
+    backgroundColor: '#ffffff',
   },
   fixedTop: {
-    backgroundColor: 'rgba(255, 250, 240, 0.94)',
-    borderBottomColor: '#ecd9a6',
-    borderBottomWidth: 1,
-    paddingHorizontal: 22,
-    paddingTop: 58,
+    backgroundColor: 'rgba(249, 208, 105, 0.52)',
+    paddingTop: 54,
     zIndex: 10,
   },
   header: {
-    marginBottom: 18,
-  },
-  eyebrow: {
-    color: '#8e5d10',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 3,
-    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   title: {
     color: '#4e3309',
-    fontSize: 34,
+    fontSize: 20,
     fontWeight: '800',
-  },
-  description: {
-    color: '#79571b',
-    fontSize: 16,
-    fontWeight: '500',
-    lineHeight: 24,
-    marginTop: 8,
   },
   body: {
     flex: 1,
   },
   bodyContent: {
     paddingBottom: 120,
-    paddingHorizontal: 22,
-    paddingTop: 20,
+    paddingTop: 0,
   },
-  section: {
-    marginTop: 18,
+  categoriesWrapper: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  panel: {
-    gap: 16,
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: '#e5c878',
   },
-  panelTitle: {
-    color: '#4e3309',
-    fontSize: 24,
+  postContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#e5c878',
+  },
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#fff4d5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  postContent: {
+    flex: 1,
+  },
+  postHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  authorName: {
     fontWeight: '800',
-  },
-  panelDescription: {
-    color: '#79571b',
+    color: '#4e3309',
     fontSize: 15,
-    fontWeight: '500',
-    lineHeight: 23,
+    marginRight: 4,
   },
-  input: {
-    backgroundColor: '#fffdf8',
-    borderColor: '#dfc684',
-    borderRadius: 8,
-    borderWidth: 1,
+  authorHandle: {
+    color: '#8e5d10',
+    fontSize: 14,
+  },
+  dot: {
+    color: '#8e5d10',
+    fontSize: 14,
+    marginHorizontal: 4,
+  },
+  time: {
+    color: '#8e5d10',
+    fontSize: 14,
+  },
+  postText: {
     color: '#3f2b0c',
     fontSize: 15,
-    height: 52,
-    paddingHorizontal: 14,
+    lineHeight: 22,
+    marginBottom: 12,
   },
-  primaryButton: {
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingRight: 40,
+  },
+  actionButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#8e5d10',
-    borderRadius: 8,
-    height: 52,
-    justifyContent: 'center',
   },
-  primaryButtonText: {
-    color: '#fffaf0',
-    fontSize: 15,
-    fontWeight: '800',
+  actionText: {
+    color: '#8e5d10',
+    fontSize: 13,
+    marginLeft: 6,
+    fontWeight: '500',
   },
 });
