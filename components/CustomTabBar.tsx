@@ -20,15 +20,15 @@ import {
 } from 'lucide-react-native';
 
 const COLORS = {
-  bg: '#FDF8EF',
+  bg: '#ec3535',
 
-  navGlass: 'rgba(255,255,255,0.45)',
+  navGlass: 'rgba(255, 255, 255, 0.002)',
   navBorder: 'rgba(255,255,255,0.7)',
 
-  pill: 'rgba(255,244,220,0.85)',
+  pill: 'rgba(160, 160, 160, 0)',
 
   active: '#5A380A',
-  inactive: '#C7A97A',
+  inactive: '#322714',
 
   glow: 'rgba(230,162,60,0.18)',
 };
@@ -81,7 +81,7 @@ function TabItem({
 
   const scale = anim.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 1.08],
+    outputRange: [1, 1.4],
   });
 
   const opacity = anim.interpolate({
@@ -98,7 +98,7 @@ function TabItem({
       {focused && (
         <Animated.View
           style={[
-            styles.activePill,
+            // styles.activePill,
             {
               opacity,
               transform: [{ scale }],
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     backgroundColor: COLORS.glow,
 
-    shadowColor: '#D89A33',
+    shadowColor: '#3359d8',
     shadowOpacity: 0.35,
     shadowRadius: 24,
     shadowOffset: {
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.navBorder,
 
-    shadowColor: '#C88A22',
+    shadowColor: '#57c822',
     shadowOpacity: 0.12,
     shadowRadius: 18,
     shadowOffset: {
@@ -328,17 +328,21 @@ const styles = StyleSheet.create({
   },
 
   activePill: {
-    position: 'absolute',
-    width: 62,
-    height: 58,
-    borderRadius: 30,
+  position: 'absolute',
 
-    backgroundColor: COLORS.pill,
+  width: 52,
+  height: 52,
 
-    borderWidth: 1,
-    borderColor:
-      'rgba(255,255,255,0.6)',
-  },
+  borderRadius: 26,
+
+  justifyContent: 'center',
+  alignItems: 'center',
+
+  backgroundColor: COLORS.pill,
+
+  borderWidth: 2,
+  borderColor: 'rgba(255,255,255,0.6)',
+},
 
   label: {
     fontSize: 10,
