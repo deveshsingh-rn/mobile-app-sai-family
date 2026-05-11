@@ -1,8 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ExperienceTopTabs } from '@/components/experiences';
+
 export default function BookmarkedExperiencesScreen() {
   return (
     <View style={styles.container}>
+      <ExperienceTopTabs activeTab="bookmarks" />
       <Text style={styles.title}>Bookmarked Experiences</Text>
     </View>
   );

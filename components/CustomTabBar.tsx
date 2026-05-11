@@ -22,7 +22,7 @@ import {
 const COLORS = {
   bg: '#ec3535',
 
-  navGlass: 'rgba(255, 255, 255, 0.002)',
+  navGlass: 'rgba(255, 255, 255, 0.99)',
   navBorder: 'rgba(255,255,255,0.7)',
 
   pill: 'rgba(160, 160, 160, 0)',

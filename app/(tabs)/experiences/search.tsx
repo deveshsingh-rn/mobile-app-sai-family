@@ -1,8 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ExperienceTopTabs } from '@/components/experiences';
+
 export default function SearchExperiencesScreen() {
   return (
     <View style={styles.container}>
+      <ExperienceTopTabs activeTab="search" />
       <Text style={styles.title}>Search Experiences</Text>
     </View>
   );

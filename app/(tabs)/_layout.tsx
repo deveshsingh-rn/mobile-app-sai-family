@@ -14,6 +14,12 @@ export default function TabLayout() {
       <Tabs.Screen name="sangha" />
       <Tabs.Screen name="events" />
       <Tabs.Screen name="profile" />
+      <Tabs.Screen
+        name="experiences"
+        options={{
+          href: null,
+        }}
+      />
 
     </Tabs>
   );

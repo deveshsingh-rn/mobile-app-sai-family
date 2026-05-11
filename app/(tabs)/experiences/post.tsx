@@ -1,8 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ExperienceTopTabs } from '@/components/experiences';
+
 export default function PostExperienceScreen() {
   return (
     <View style={styles.container}>
+      <ExperienceTopTabs activeTab="post" />
       <Text style={styles.title}>Post Experience</Text>
     </View>
   );

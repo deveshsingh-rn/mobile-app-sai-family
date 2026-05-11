@@ -1,8 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ExperienceTopTabs } from '@/components/experiences';
+
 export default function ExperiencesFeedScreen() {
   return (
     <View style={styles.container}>
+      <ExperienceTopTabs activeTab="feed" />
       <Text style={styles.eyebrow}>PILLAR 1</Text>
       <Text style={styles.title}>Leela Feed</Text>
       <Text style={styles.description}>Experience feed structure is ready for implementation.</Text>

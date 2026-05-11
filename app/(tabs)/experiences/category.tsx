@@ -1,8 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { ExperienceTopTabs } from '@/components/experiences';
+
 export default function ExperienceCategoryScreen() {
   return (
     <View style={styles.container}>
+      <ExperienceTopTabs activeTab="category" />
       <Text style={styles.title}>Experience Category</Text>
     </View>
   );
