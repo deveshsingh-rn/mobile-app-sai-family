@@ -1,43 +1,37 @@
-import { EXPERIENCE_ACTIONS, ExperienceAction, ExperiencesState } from './types';
+import { 
+  ExperiencesState, 
+  FETCH_EXPERIENCES_REQUEST, 
+  FETCH_EXPERIENCES_SUCCESS, 
+  FETCH_EXPERIENCES_FAILURE,
+  TOGGLE_LIKE_SUCCESS
+} from './types';
 
-export const initialExperiencesState: ExperiencesState = {
-  activeCategory: 'all',
+const initialState: ExperiencesState = {
+  feed: [],
+  searchResults: [],
+  bookmarks: [],
+  loading: false,
   error: null,
-  hasMore: true,
-  isLoading: false,
-  items: [],
-  page: 1,
 };
 
-export function experiencesReducer(
-  state = initialExperiencesState,
-  action: ExperienceAction
-): ExperiencesState {
+export function experiencesReducer(state = initialState, action: any): ExperiencesState {
   switch (action.type) {
-    case EXPERIENCE_ACTIONS.FETCH_FEED_REQUEST:
+    case FETCH_EXPERIENCES_REQUEST:
+      return { ...state, loading: true, error: null };
+    case FETCH_EXPERIENCES_SUCCESS:
+      return { ...state, loading: false, feed: action.payload };
+    case FETCH_EXPERIENCES_FAILURE:
+      return { ...state, loading: false, error: action.payload };
+      
+    case TOGGLE_LIKE_SUCCESS:
       return {
         ...state,
-        error: null,
-        isLoading: true,
+        feed: state.feed.map(exp => 
+          exp.id === action.payload.experienceId 
+            ? { ...exp, likes: action.payload.likes } 
+            : exp
+        ),
       };
-
-    case EXPERIENCE_ACTIONS.FETCH_FEED_SUCCESS:
-      return {
-        ...state,
-        error: null,
-        hasMore: action.payload.hasMore,
-        isLoading: false,
-        items: action.payload.items,
-        page: action.payload.page,
-      };
-
-    case EXPERIENCE_ACTIONS.FETCH_FEED_FAILURE:
-      return {
-        ...state,
-        error: action.payload,
-        isLoading: false,
-      };
-
     default:
       return state;
   }

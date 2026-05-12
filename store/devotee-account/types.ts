@@ -77,6 +77,29 @@ export type ClearDevoteeAccountErrorAction = {
   type: typeof DEVOTEE_ACCOUNT_ACTIONS.CLEAR_ERROR;
 };
 
+export type LogoutRequestAction = {
+  type: 'devotee-account/LOGOUT_REQUEST';
+};
+
+export type LogoutSuccessAction = {
+  type: 'devotee-account/LOGOUT_SUCCESS';
+};
+
+export type UpdateSettingsRequestAction = {
+  type: 'devotee-account/UPDATE_SETTINGS_REQUEST';
+  payload: { accountId: string; settings: Partial<DevoteeAccount> };
+};
+
+export type UpdateSettingsSuccessAction = {
+  type: 'devotee-account/UPDATE_SETTINGS_SUCCESS';
+  payload: DevoteeAccount;
+};
+
+export type UpdateSettingsFailureAction = {
+  type: 'devotee-account/UPDATE_SETTINGS_FAILURE';
+  payload: string;
+};
+
 export type DevoteeAccountAction =
   | LoadSavedDevoteeAccountRequestAction
   | LoadSavedDevoteeAccountSuccessAction
@@ -84,4 +107,9 @@ export type DevoteeAccountAction =
   | CreateDevoteeAccountRequestAction
   | CreateDevoteeAccountSuccessAction
   | CreateDevoteeAccountFailureAction
-  | ClearDevoteeAccountErrorAction;
+  | ClearDevoteeAccountErrorAction
+  | LogoutRequestAction
+  | LogoutSuccessAction
+  | UpdateSettingsRequestAction
+  | UpdateSettingsSuccessAction
+  | UpdateSettingsFailureAction;

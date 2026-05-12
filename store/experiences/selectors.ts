@@ -1,13 +1,5 @@
-import { RootState } from '../types';
-
-export const selectExperiencesState = (state: RootState) => state.experiences;
-
-export const selectExperienceItems = (state: RootState) => selectExperiencesState(state).items;
-
-export const selectExperienceActiveCategory = (state: RootState) =>
-  selectExperiencesState(state).activeCategory;
-
-export const selectExperienceFeedLoading = (state: RootState) =>
-  selectExperiencesState(state).isLoading;
-
-export const selectExperienceFeedError = (state: RootState) => selectExperiencesState(state).error;
+export const selectExperiencesFeed = (state: any) => state.experiences?.feed || [];
+export const selectExperiencesSearchResults = (state: any) => state.experiences?.searchResults || [];
+export const selectExperiencesBookmarks = (state: any) => state.experiences?.bookmarks || [];
+export const selectExperiencesLoading = (state: any) => state.experiences?.loading || false;
+export const selectExperiencesError = (state: any) => state.experiences?.error || null;

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Bell, ChevronRight, Languages, Moon, Star, UserRound } from 'lucide-react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Bell, ChevronRight, Languages, LogOut, Moon, Star, UserRound } from 'lucide-react-native';
 
 import { selectDevoteeAccount } from '@/store/devotee-account/selectors';
-import { useAppSelector } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { logoutRequest } from '@/store/devotee-account/actions';
 
 type ProfileTab = 'details' | 'settings';
 
@@ -16,12 +17,33 @@ type SettingRowProps = {
   description: string;
   icon: React.ReactNode;
   title: string;
+  onPress?: () => void;
+  hideComingSoon?: boolean;
+  isDestructive?: boolean;
 };
 
 export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>('details');
+  const dispatch = useAppDispatch();
   const account = useAppSelector(selectDevoteeAccount);
   const profileImageUri = account?.profileImage?.uri || account?.profileImageUrl;
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out of your account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: () => {
+            dispatch(logoutRequest());
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -88,16 +110,27 @@ export default function ProfileScreen() {
             description="Manage prayer, event, and family update alerts."
             icon={<Bell size={22} color="#8e5d10" />}
             title="Notifications"
+            onPress={() => console.log('Open Notifications Setting')}
           />
           <SettingRow
             description="Choose light, dark, or system theme."
             icon={<Moon size={22} color="#8e5d10" />}
             title="Appearance"
+            onPress={() => console.log('Open Appearance Setting')}
           />
           <SettingRow
             description="Choose your preferred app language."
             icon={<Languages size={22} color="#8e5d10" />}
             title="Language"
+            onPress={() => console.log('Open Language Setting')}
+          />
+          <SettingRow
+            description="Log out of your devotee account."
+            icon={<LogOut size={22} color="#dc2626" />}
+            title="Log Out"
+            onPress={handleLogout}
+            hideComingSoon
+            isDestructive
           />
         </View>
       )}
@@ -130,18 +163,20 @@ function DetailRow({ label, value }: DetailRowProps) {
   );
 }
 
-function SettingRow({ description, icon, title }: SettingRowProps) {
+function SettingRow({ description, icon, title, onPress, hideComingSoon, isDestructive }: SettingRowProps) {
   return (
-    <Pressable style={({ pressed }) => [styles.settingRow, pressed && styles.rowPressed]}>
-      <View style={styles.settingIcon}>{icon}</View>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.settingRow, pressed && styles.rowPressed]}>
+      <View style={[styles.settingIcon, isDestructive && styles.settingIconDestructive]}>{icon}</View>
       <View style={styles.settingCopy}>
-        <Text style={styles.settingTitle}>{title}</Text>
+        <Text style={[styles.settingTitle, isDestructive && styles.settingTitleDestructive]}>{title}</Text>
         <Text style={styles.settingDescription}>{description}</Text>
       </View>
-      <View style={styles.comingSoon}>
-        <Text style={styles.comingSoonText}>Soon</Text>
-      </View>
-      <ChevronRight size={18} color="#a78a55" />
+      {!hideComingSoon && (
+        <View style={styles.comingSoon}>
+          <Text style={styles.comingSoonText}>Soon</Text>
+        </View>
+      )}
+      <ChevronRight size={18} color={isDestructive ? "#dc2626" : "#a78a55"} />
     </Pressable>
   );
 }
@@ -320,6 +355,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 44,
   },
+  settingIconDestructive: {
+    backgroundColor: '#fee2e2',
+  },
   settingCopy: {
     flex: 1,
   },
@@ -327,6 +365,9 @@ const styles = StyleSheet.create({
     color: '#4e3309',
     fontSize: 16,
     fontWeight: '800',
+  },
+  settingTitleDestructive: {
+    color: '#dc2626',
   },
   settingDescription: {
     color: '#79571b',

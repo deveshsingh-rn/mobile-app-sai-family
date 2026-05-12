@@ -1,4 +1,10 @@
 import { DEVOTEE_ACCOUNT_ACTIONS, DevoteeAccountAction, DevoteeAccountState } from "./types";
+import { 
+  LOGOUT_SUCCESS, 
+  UPDATE_SETTINGS_REQUEST, 
+  UPDATE_SETTINGS_SUCCESS, 
+  UPDATE_SETTINGS_FAILURE 
+} from "./actions";
 
 export const initialDevoteeAccountState: DevoteeAccountState = {
   account: null,
@@ -10,7 +16,7 @@ export const initialDevoteeAccountState: DevoteeAccountState = {
 
 export function devoteeAccountReducer(
   state = initialDevoteeAccountState,
-  action: DevoteeAccountAction
+  action: any
 ): DevoteeAccountState {
   switch (action.type) {
     case DEVOTEE_ACCOUNT_ACTIONS.LOAD_SAVED_REQUEST:
@@ -63,6 +69,31 @@ export function devoteeAccountReducer(
       return {
         ...state,
         error: null,
+      };
+
+    case LOGOUT_SUCCESS:
+      return {
+        ...state,
+        account: null,
+      };
+
+    case UPDATE_SETTINGS_REQUEST:
+      return {
+        ...state,
+        error: null,
+      };
+
+    case UPDATE_SETTINGS_SUCCESS:
+      return {
+        ...state,
+        account: action.payload,
+        error: null,
+      };
+
+    case UPDATE_SETTINGS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
       };
 
     default:

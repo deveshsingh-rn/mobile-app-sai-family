@@ -1,9 +1,8 @@
-import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
-import Constants from "expo-constants";
 
 import { DevoteeAccount, DevoteeAccountForm } from "@/store/devotee-account/types";
+import { apiClient } from "./api";
 
 export const DEVOTEE_ACCOUNT_STORAGE_KEY = "sai-family.devotee-account";
 
@@ -11,18 +10,6 @@ type CreateDevoteeAccountResponse = {
   account?: DevoteeAccount;
   message?: string;
 };
-
-const fallbackApiBaseUrl = Platform.select({
-  android: "http://10.0.2.2:4000",
-  default: "http://localhost:4000",
-}) || "http://localhost:4000";
-
-const API_BASE_URL = Constants.expoConfig?.extra?.apiBaseUrl || fallbackApiBaseUrl;
-
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 30000,
-});
 
 function getApiErrorMessage(error: unknown) {
   if (axios.isAxiosError<CreateDevoteeAccountResponse>(error)) {
@@ -98,4 +85,28 @@ export async function getSavedDevoteeAccount() {
   }
 
   return JSON.parse(value) as DevoteeAccount;
+}
+
+export async function clearSavedDevoteeAccount() {
+  const isSecureStoreAvailable = await SecureStore.isAvailableAsync();
+
+  if (!isSecureStoreAvailable) {
+    return;
+  }
+
+  await SecureStore.deleteItemAsync(DEVOTEE_ACCOUNT_STORAGE_KEY);
+}
+
+export async function updateDevoteeSettings(accountId: string, settings: Partial<DevoteeAccount>) {
+  try {
+    const response = await apiClient.patch<{ account: DevoteeAccount; message?: string }>(`/accounts/${accountId}/settings`, settings);
+
+    if (!response.data.account) {
+      throw new Error(response.data.message || "Unable to update settings.");
+    }
+
+    return response.data.account;
+  } catch (error) {
+    throw new Error(getApiErrorMessage(error));
+  }
 }
