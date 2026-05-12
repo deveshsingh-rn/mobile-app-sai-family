@@ -110,3 +110,16 @@ export async function updateDevoteeSettings(accountId: string, settings: Partial
     throw new Error(getApiErrorMessage(error));
   }
 }
+
+
+export async function removeDevoteeAccountStorage() {
+  const isSecureStoreAvailable = await SecureStore.isAvailableAsync();
+
+  if (!isSecureStoreAvailable) {
+    return;
+  }
+
+  await SecureStore.deleteItemAsync(
+    DEVOTEE_ACCOUNT_STORAGE_KEY
+  );
+}

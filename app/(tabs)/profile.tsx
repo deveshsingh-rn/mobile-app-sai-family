@@ -5,6 +5,7 @@ import { Bell, ChevronRight, Languages, LogOut, Moon, Star, UserRound } from 'lu
 import { selectDevoteeAccount } from '@/store/devotee-account/selectors';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logoutRequest } from '@/store/devotee-account/actions';
+import { removeDevoteeAccountStorage } from '@/services/devotee-account';
 
 type ProfileTab = 'details' | 'settings';
 
@@ -29,21 +30,22 @@ export default function ProfileScreen() {
   const profileImageUri = account?.profileImage?.uri || account?.profileImageUrl;
 
   const handleLogout = () => {
-    Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out of your account?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log Out',
-          style: 'destructive',
-          onPress: () => {
-            dispatch(logoutRequest());
-          },
+  Alert.alert(
+    'Log Out',
+    'Are you sure you want to log out of your account?',
+    [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log Out',
+        style: 'destructive',
+        onPress: async () => {
+          await removeDevoteeAccountStorage();
+          dispatch(logoutRequest());
         },
-      ]
-    );
-  };
+      },
+    ]
+  );
+};
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
