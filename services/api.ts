@@ -10,7 +10,8 @@ import * as SecureStore from 'expo-secure-store';
 // 3. Platform-specific fallback (simulator/emulator defaults)
 const fallbackApiBaseUrl = Platform.select({
   android: 'http://10.0.2.2:4000',
-  default: 'http://192.168.20.12:4000',
+  ios: 'http://localhost:4000',
+  default: 'http://localhost:4000',
 });
 
 const API_BASE_URL = 
@@ -44,7 +45,11 @@ apiClient.interceptors.request.use(
           const account = JSON.parse(accountData);
           if (account?.id) {
             // Injecting x-user-id header. Change to Authorization: `Bearer ${token}` if needed later.
-            config.headers['x-user-id'] = account.id;
+            if (typeof config.headers.set === 'function') {
+              config.headers.set('x-user-id', account.id);
+            } else {
+              config.headers['x-user-id'] = account.id;
+            }
           }
         }
       }

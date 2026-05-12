@@ -21,6 +21,7 @@ export async function apiCreateExperience(formData: FormData, userId: string) {
       'Content-Type': 'multipart/form-data',
       ...getAuthHeaders(userId),
     },
+    transformRequest: (data) => data,
   });
   console.log('API_RESPONSE: apiCreateExperience', data);
   return data;

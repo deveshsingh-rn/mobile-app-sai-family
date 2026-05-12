@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
+import { Platform } from "react-native";
 
 import { DevoteeAccount, DevoteeAccountForm } from "@/store/devotee-account/types";
 import { apiClient } from "./api";
@@ -19,45 +20,92 @@ function getApiErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Unable to create devotee account.";
 }
 
-export async function createDevoteeAccount(form: DevoteeAccountForm) {
+export async function createDevoteeAccount(
+  form: DevoteeAccountForm
+) {
   const body = new FormData();
 
   body.append("name", form.name.trim());
   body.append("email", form.email.trim());
-  body.append("mobileNumber", form.mobileNumber.trim());
-  body.append("completeAddress", form.completeAddress.trim());
+  body.append(
+    "mobileNumber",
+    form.mobileNumber.trim()
+  );
+  body.append(
+    "completeAddress",
+    form.completeAddress.trim()
+  );
   body.append("pincode", form.pincode.trim());
-  body.append("occupation", form.occupation.trim());
+  body.append(
+    "occupation",
+    form.occupation.trim()
+  );
   body.append("city", form.city.trim());
   body.append("state", form.state.trim());
   body.append("country", form.country.trim());
-  body.append("language", form.language.trim() || "en");
+  body.append(
+    "language",
+    form.language.trim() || "en"
+  );
 
-  if (form.profileImage) {
-    const fileName = form.profileImage.fileName || `profile-${Date.now()}.jpg`;
-    const type = form.profileImage.mimeType || "image/jpeg";
+  console.log(
+    "PROFILE IMAGE =>",
+    JSON.stringify(form.profileImage, null, 2)
+  );
 
+  if (
+    form.profileImage?.uri &&
+    form.profileImage.uri.length > 0
+  ) {
     body.append("profileImage", {
-      name: fileName,
-      type,
       uri: form.profileImage.uri,
-    } as unknown as Blob);
+      name:
+        form.profileImage.fileName ||
+        `profile-${Date.now()}.jpg`,
+      type:
+        form.profileImage.mimeType ||
+        "image/jpeg",
+    } as any);
+  }
+
+  for (const pair of body.entries()) {
+    console.log(
+      "FORM DATA =>",
+      pair[0],
+      pair[1]
+    );
   }
 
   try {
-    const response = await apiClient.post<CreateDevoteeAccountResponse>("/accounts", body, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response =
+      await apiClient.post<CreateDevoteeAccountResponse>(
+        "/accounts",
+        body
+      );
 
     if (!response.data.account) {
-      throw new Error(response.data.message || "Unable to create devotee account.");
+      throw new Error(
+        response.data.message ||
+          "Unable to create devotee account."
+      );
     }
 
     return response.data.account;
   } catch (error) {
-    throw new Error(getApiErrorMessage(error));
+    console.log(
+      "BACKEND ERROR =>",
+      JSON.stringify(
+        axios.isAxiosError(error)
+          ? error.response?.data
+          : error,
+        null,
+        2
+      )
+    );
+
+    throw new Error(
+      getApiErrorMessage(error)
+    );
   }
 }
 

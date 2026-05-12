@@ -97,13 +97,42 @@ export default function ProfileScreen() {
           <View style={styles.detailCard}>
             <DetailRow label="Mobile" value={account?.mobileNumber} />
             <DetailRow label="Email" value={account?.email} />
-            <DetailRow label="Occupation" value={account?.occupation} />
-            <DetailRow label="Address" value={account?.completeAddress} />
-            <DetailRow label="City" value={account?.city} />
-            <DetailRow label="State" value={account?.state} />
-            <DetailRow label="Country" value={account?.country} />
-            <DetailRow label="Pincode" value={account?.pincode} />
-            <DetailRow label="Language" value={account?.language?.toUpperCase()} />
+            <DetailRow
+  label="Occupation"
+  value={account?.profile?.occupation}
+/>
+
+<DetailRow
+  label="Address"
+  value={account?.profile?.completeAddress}
+/>
+
+<DetailRow
+  label="City"
+  value={account?.profile?.city}
+/>
+
+<DetailRow
+  label="State"
+  value={account?.profile?.state}
+/>
+
+<DetailRow
+  label="Country"
+  value={account?.profile?.country}
+/>
+
+<DetailRow
+  label="Pincode"
+  value={account?.profile?.pincode}
+/>
+
+<DetailRow
+  label="Language"
+  value={
+    account?.profile?.language?.toUpperCase()
+  }
+/>
           </View>
         </View>
       ) : (

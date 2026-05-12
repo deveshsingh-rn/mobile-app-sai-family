@@ -15,8 +15,8 @@ export const initialDevoteeAccountState: DevoteeAccountState = {
 };
 
 export function devoteeAccountReducer(
-  state = initialDevoteeAccountState,
-  action: any
+  state: DevoteeAccountState = initialDevoteeAccountState,
+  action: DevoteeAccountAction
 ): DevoteeAccountState {
   switch (action.type) {
     case DEVOTEE_ACCOUNT_ACTIONS.LOAD_SAVED_REQUEST:
