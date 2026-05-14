@@ -40,6 +40,8 @@ export default function HomeScreen() {
     }
   };
 
+  console.log("Rendering HomeScreen with feed:", feed);
+
   return (
     <View style={styles.container}>
       <View style={styles.fixedTop}>

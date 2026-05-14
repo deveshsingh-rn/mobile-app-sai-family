@@ -3,14 +3,14 @@ import { apiClient, getAuthHeaders } from './api';
 export async function apiFetchExperiences(params: { limit?: number; offset?: number; category?: string }) {
   console.log('API_REQUEST: apiFetchExperiences', params);
   const { data } = await apiClient.get('/api/experiences', { params });
-  console.log('API_RESPONSE: apiFetchExperiences', data);
+  console.log('API_RESPONSE: apiFetchExperiences', data.experiences);
   return data;
 }
 
 export async function apiSearchExperiences(params: { q: string; limit?: number; offset?: number }) {
   console.log('API_REQUEST: apiSearchExperiences', params);
   const { data } = await apiClient.get('/api/experiences/search', { params });
-  console.log('API_RESPONSE: apiSearchExperiences', data);
+  console.log('API_RESPONSE: apiSearchExperiences', data.experiences);
   return data;
 }
 
