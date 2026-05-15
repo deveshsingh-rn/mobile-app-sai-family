@@ -90,7 +90,21 @@ export async function createDevoteeAccount(
       );
     }
 
-    return response.data.account;
+    const accountData = response.data.account as any;
+
+    // Enrich the account object with convenient fields like authorId and location
+    const enrichedAccount = {
+      ...accountData,
+      authorId: accountData.id,
+      language: accountData.profile?.language || "en",
+      location: accountData.profile
+        ? [accountData.profile.city, accountData.profile.state, accountData.profile.country]
+            .filter(Boolean)
+            .join(", ")
+        : "",
+    };
+
+    return enrichedAccount as DevoteeAccount;
   } catch (error) {
     console.log(
       "BACKEND ERROR =>",
@@ -116,7 +130,24 @@ export async function saveDevoteeAccount(account: DevoteeAccount) {
     return;
   }
 
-  await SecureStore.setItemAsync(DEVOTEE_ACCOUNT_STORAGE_KEY, JSON.stringify(account));
+  const acc = account as any;
+
+  // Extract and store the important data explicitly
+  const importantDataToStore = {
+    ...acc, // Keep original data intact to satisfy the Redux type
+    authorId: acc.id, 
+    memberId: acc.memberId,
+    name: acc.name,
+    role: acc.role,
+    mobileNumber: acc.mobileNumber,
+    profileImageUrl: acc.profileImageUrl || acc.profile?.profileImageUrl,
+    language: acc.profile?.language || "en",
+    location: acc.profile
+      ? [acc.profile.city, acc.profile.state, acc.profile.country].filter(Boolean).join(", ")
+      : "",
+  };
+
+  await SecureStore.setItemAsync(DEVOTEE_ACCOUNT_STORAGE_KEY, JSON.stringify(importantDataToStore));
 }
 
 export async function getSavedDevoteeAccount() {

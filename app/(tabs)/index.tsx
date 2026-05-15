@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Heart, MessageCircle, Repeat2, Share, UserCircle2, Sparkles } from 'lucide-react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Heart, MapPin, MessageCircle, Repeat2, Share, UserCircle2, Sparkles } from 'lucide-react-native';
 
 import {
   CategoryChips,
@@ -41,6 +41,9 @@ export default function HomeScreen() {
   };
 
   console.log("Rendering HomeScreen with feed:", feed);
+  console.log("devesgggggggg",
+  JSON.stringify(feed, null, 2)
+);
 
   return (
     <View style={styles.container}>
@@ -53,56 +56,85 @@ export default function HomeScreen() {
         <ExperienceTopTabs activeTab="feed" />
       </View>
 
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-        <View style={styles.categoriesWrapper}>
-          <CategoryChips activeValue="all" categories={CATEGORIES} />
-        </View>
-        <View style={styles.divider} />
-
-        {loading && feed.length === 0 ? (
-          <ActivityIndicator size="large" color="#8e5d10" style={styles.loader} />
-        ) : (
-          feed.map((post: Experience) => (
-            <FeedPost 
-              key={post.id}
-              id={post.id}
-              authorName={post.authorName || 'Sai Devotee'}
-              handle={post.authorHandle || '@devotee'}
-              time={post.createdAt ? new Date(post.createdAt).toLocaleDateString() : 'Just now'}
-              content={post.content}
-              likes={post.likes || 0}
-              comments={post.comments || 0}
-              reposts={post.reposts || 0}
-              onLike={() => handleLike(post.id)}
-            />
-          ))
+      <FlatList
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        data={feed}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <>
+            <View style={styles.categoriesWrapper}>
+              <CategoryChips activeValue="all" categories={CATEGORIES} />
+            </View>
+            <View style={styles.divider} />
+          </>
+        }
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator size="large" color="#8e5d10" style={styles.loader} />
+          ) : (
+            <Text style={styles.emptyText}>No experiences found.</Text>
+          )
+        }
+        renderItem={({ item: post }) => (
+          <FeedPost
+            id={post.id}
+            authorName={post.author?.name || 'Sai Devotee'}
+            handle={post.author?.handle || '@devotee'}
+            authorProfileImageUrl={post.author?.profileImageUrl}
+            time={post.createdAt ? new Date(post.createdAt).toLocaleDateString() : 'Just now'}
+            content={post.content}
+            likes={post._count?.likes || 0}
+            comments={post._count?.comments || 0}
+            reposts={post._count?.reposts || 0}
+            location={post.location}
+            mediaAttachments={post.mediaAttachments}
+            onLike={() => handleLike(post.id)}
+          />
         )}
-        
-        {!loading && feed.length === 0 && (
-          <Text style={styles.emptyText}>No experiences found.</Text>
-        )}
-      </ScrollView>
+      />
     </View>
   );
 }
 
-interface FeedPostProps extends Pick<Experience, 'id' | 'content' | 'likes' | 'comments' | 'reposts'> {
+interface FeedPostProps {
+  id: string;
+  content: string;
+  likes: number;
+  comments: number;
+  reposts: number;
   authorName: string | null;
   handle: string | null;
+  authorProfileImageUrl?: string | null;
   time: string;
+  location?: string | null;
+  mediaAttachments?: any[];
   onLike: (id: string) => void;
 }
 
 function FeedPost(props: FeedPostProps) {
-  const { id, authorName, handle, time, content, likes, comments, reposts, onLike } = props;
+  const { id, authorName, handle, authorProfileImageUrl, time, content, likes, comments, reposts, location, mediaAttachments, onLike } = props;
   const handleLike = () => {
     onLike(id);
   };
+
+  // Safely extract the URL from the first object inside the mediaAttachments array
+ const firstImage =
+  mediaAttachments &&
+  Array.isArray(mediaAttachments) &&
+  mediaAttachments.length > 0
+    ? mediaAttachments[0].url
+    : null;
+
   return (
     <View style={styles.postContainer}>
-      <View style={styles.avatarPlaceholder}>
-        <UserCircle2 size={36} color="#cda869" strokeWidth={1.5} />
-      </View>
+      {authorProfileImageUrl ? (
+        <Image source={{ uri: authorProfileImageUrl }} style={styles.avatar} />
+      ) : (
+        <View style={styles.avatarPlaceholder}>
+          <UserCircle2 size={36} color="#cda869" strokeWidth={1.5} />
+        </View>
+      )}
       
       <View style={styles.postContent}>
         <View style={styles.postHeader}>
@@ -111,8 +143,23 @@ function FeedPost(props: FeedPostProps) {
           <Text style={styles.dot}>·</Text>
           <Text style={styles.time}>{time}</Text>
         </View>
+
+        {location && (
+          <View style={styles.locationContainer}>
+            <MapPin size={12} color="#8e5d10" strokeWidth={2} />
+            <Text style={styles.locationText}>{location}</Text>
+          </View>
+        )}
         
         <Text style={styles.postText}>{content}</Text>
+
+       {firstImage && (
+  <Image
+    source={{ uri: firstImage }}
+    style={styles.postImage}
+    resizeMode="cover"
+  />
+)}
         
         <View style={styles.actionRow}>
           <Pressable style={styles.actionButton}>
@@ -188,6 +235,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e5c878',
   },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+  },
   avatarPlaceholder: {
     width: 48,
     height: 48,
@@ -220,6 +273,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginHorizontal: 4,
   },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    marginTop: -2,
+    gap: 4,
+  },
+  locationText: {
+    color: '#8e5d10',
+    fontSize: 12,
+  },
   time: {
     color: '#8e5d10',
     fontSize: 14,
@@ -229,6 +293,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 12,
+  },
+  postImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 12,
+    backgroundColor: '#fff4d5',
+    borderColor: '#e5c878',
+    borderWidth: StyleSheet.hairlineWidth,
   },
   actionRow: {
     flexDirection: 'row',
