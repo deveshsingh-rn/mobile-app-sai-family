@@ -1,6 +1,10 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, {
+  useMemo,
+  useState,
+} from "react";
+
 import {
-  Animated,
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,27 +16,41 @@ import {
   View,
 } from "react-native";
 
+import { useDispatch, useSelector } from "react-redux";
+
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as Location from "expo-location";
 
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+
 import {
+  Globe2,
   Image as ImageIcon,
   MapPin,
   Mic,
+  Play,
   Sparkles,
+  UserCircle2,
   Video,
   X,
-  Globe2,
-  Play,
-  UserCircle2,
 } from "lucide-react-native";
 
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
 import { ExperienceTopTabs } from "@/components/experiences";
 
-type MediaType = "image" | "video" | "audio";
+import {
+  createExperienceRequest,
+} from "@/store/experiences/actions";
+
+import {
+  selectCreateExperienceLoading,
+} from "@/store/experiences/selectors";
+
+type MediaType =
+  | "image"
+  | "video"
+  | "audio";
 
 type SelectedMedia = {
   uri: string;
@@ -41,24 +59,36 @@ type SelectedMedia = {
 };
 
 export default function PremiumPostScreen() {
-  const [content, setContent] = useState("");
-  const [selectedMedia, setSelectedMedia] =
-    useState<SelectedMedia | null>(null);
+  const dispatch = useDispatch();
+
+  const creating = useSelector(
+    selectCreateExperienceLoading
+  );
+
+  const account = useSelector(
+    (state: any) =>
+      state.devoteeAccount?.account
+  );
+
+  const [content, setContent] =
+    useState("");
 
   const [location, setLocation] =
-    useState<string>("");
+    useState("");
 
-  const inputHeight = useRef(
-    new Animated.Value(160)
-  ).current;
+  const [selectedMedia, setSelectedMedia] =
+    useState<SelectedMedia | null>(
+      null
+    );
+
+  const category = "miracles";
 
   const isDisabled = useMemo(() => {
     return (
       !content.trim() &&
-      !selectedMedia &&
-      !location
+      !selectedMedia
     );
-  }, [content, selectedMedia, location]);
+  }, [content, selectedMedia]);
 
   // ───────────────── IMAGE ─────────────────
 
@@ -71,12 +101,16 @@ export default function PremiumPostScreen() {
     }
 
     const result =
-      await ImagePicker.launchImageLibraryAsync({
-        mediaTypes:
-          ImagePicker.MediaTypeOptions.Images,
-        quality: 1,
-        allowsEditing: true,
-      });
+      await ImagePicker.launchImageLibraryAsync(
+        {
+          mediaTypes:
+            ImagePicker
+              .MediaTypeOptions.Images,
+
+          quality: 1,
+          allowsEditing: true,
+        }
+      );
 
     if (!result.canceled) {
       const asset = result.assets[0];
@@ -100,10 +134,13 @@ export default function PremiumPostScreen() {
     }
 
     const result =
-      await ImagePicker.launchImageLibraryAsync({
-        mediaTypes:
-          ImagePicker.MediaTypeOptions.Videos,
-      });
+      await ImagePicker.launchImageLibraryAsync(
+        {
+          mediaTypes:
+            ImagePicker
+              .MediaTypeOptions.Videos,
+        }
+      );
 
     if (!result.canceled) {
       const asset = result.assets[0];
@@ -120,9 +157,11 @@ export default function PremiumPostScreen() {
 
   const pickAudio = async () => {
     const result =
-      await DocumentPicker.getDocumentAsync({
-        type: "audio/*",
-      });
+      await DocumentPicker.getDocumentAsync(
+        {
+          type: "audio/*",
+        }
+      );
 
     if (!result.canceled) {
       const asset = result.assets[0];
@@ -149,10 +188,15 @@ export default function PremiumPostScreen() {
       await Location.getCurrentPositionAsync();
 
     const reverse =
-      await Location.reverseGeocodeAsync({
-        latitude: current.coords.latitude,
-        longitude: current.coords.longitude,
-      });
+      await Location.reverseGeocodeAsync(
+        {
+          latitude:
+            current.coords.latitude,
+
+          longitude:
+            current.coords.longitude,
+        }
+      );
 
     const place = reverse[0];
 
@@ -170,33 +214,18 @@ export default function PremiumPostScreen() {
   // ───────────────── POST ─────────────────
 
   const handlePost = () => {
-    console.log({
-      content,
-      selectedMedia,
-      location,
-    });
+    dispatch(
+      createExperienceRequest({
+        content,
+        category,
+        location,
+        media: selectedMedia,
+      })
+    );
 
     setContent("");
-    setSelectedMedia(null);
     setLocation("");
-  };
-
-  // ───────────────── INPUT ANIMATION ─────────────────
-
-  const handleFocus = () => {
-    Animated.spring(inputHeight, {
-      toValue: 220,
-      useNativeDriver: false,
-    }).start();
-  };
-
-  const handleBlur = () => {
-    if (!content.trim()) {
-      Animated.spring(inputHeight, {
-        toValue: 160,
-        useNativeDriver: false,
-      }).start();
-    }
+    setSelectedMedia(null);
   };
 
   return (
@@ -212,49 +241,38 @@ export default function PremiumPostScreen() {
 
       <LinearGradient
         colors={[
-          "#fffdf8",
-          "#fff7e8",
-          "#fff3df",
+          "#fffef9",
+          "#fff7eb",
+          "#fff4e4",
         ]}
-        style={StyleSheet.absoluteFillObject}
+        style={
+          StyleSheet.absoluteFillObject
+        }
       />
 
       {/* ───────────────── HEADER ───────────────── */}
 
-      {/* <BlurView
-        intensity={65}
-        tint="light"
-        style={styles.header}
-      >
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.title}>
-              Create Experience
-            </Text>
-
-            <Text style={styles.subtitle}>
-              Share your divine moment
-            </Text>
-          </View>
-
-          <View style={styles.sparkleWrapper}>
-            <Sparkles
-              size={18}
-              color="#d18b1c"
-            />
-          </View>
-        </View>
-      </BlurView> */}
       <View style={styles.fixedTop}>
         <View style={styles.header}>
-          <UserCircle2 size={32} color="#8e5d10" strokeWidth={1.5} />
-          <Text style={styles.title}>Leela Feed</Text>
-          <Sparkles size={24} color="#8e5d10" strokeWidth={1.5} />
+          <UserCircle2
+            size={30}
+            color="#8c5d11"
+          />
+
+          <Text style={styles.headerTitle}>
+            Leela Feed
+          </Text>
+
+          <Sparkles
+            size={22}
+            color="#8c5d11"
+          />
         </View>
-       <ExperienceTopTabs activeTab="post" />
+
+        <ExperienceTopTabs activeTab="post" />
       </View>
 
-      {/* ───────────────── CONTENT ───────────────── */}
+      {/* ───────────────── BODY ───────────────── */}
 
       <ScrollView
         style={styles.body}
@@ -262,45 +280,56 @@ export default function PremiumPostScreen() {
           styles.bodyContent
         }
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={
+          false
+        }
       >
-        {/* ───────────────── CARD ───────────────── */}
-
         <BlurView
           intensity={45}
           tint="light"
-          style={styles.composer}
+          style={styles.card}
         >
           {/* ───────────────── USER ───────────────── */}
 
           <View style={styles.userRow}>
             <LinearGradient
               colors={[
-                "#f8deb0",
-                "#eab96b",
+                "#f6deb0",
+                "#ecb96b",
               ]}
               style={styles.avatar}
             >
-              <Text style={styles.avatarText}>
-                D
+              <Text
+                style={styles.avatarText}
+              >
+                {account?.name?.charAt(
+                  0
+                ) || "D"}
               </Text>
             </LinearGradient>
 
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>
-                Devotee
+            <View
+              style={styles.userInfo}
+            >
+              <Text
+                style={styles.userName}
+              >
+                {account?.name ||
+                  "Devotee"}
               </Text>
 
               <View
                 style={styles.publicRow}
               >
                 <Globe2
-                  size={13}
-                  color="#9c6a11"
+                  size={12}
+                  color="#9d6912"
                 />
 
                 <Text
-                  style={styles.publicText}
+                  style={
+                    styles.publicText
+                  }
                 >
                   Public Experience
                 </Text>
@@ -310,32 +339,32 @@ export default function PremiumPostScreen() {
 
           {/* ───────────────── INPUT ───────────────── */}
 
-          <Animated.View
-            style={{
-              minHeight: inputHeight,
-            }}
-          >
-            <TextInput
-              value={content}
-              onChangeText={setContent}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              multiline
-              placeholder="What divine experience would you like to share today?"
-              placeholderTextColor="#b38b58"
-              style={styles.input}
-              textAlignVertical="top"
-            />
-          </Animated.View>
+          <TextInput
+            value={content}
+            onChangeText={setContent}
+            multiline
+            textAlignVertical="top"
+            placeholder="Share your divine experience..."
+            placeholderTextColor="#b78c56"
+            style={styles.input}
+          />
 
           {/* ───────────────── MEDIA PREVIEW ───────────────── */}
 
           {selectedMedia && (
-            <View style={styles.mediaContainer}>
+            <View
+              style={
+                styles.mediaContainer
+              }
+            >
               <Pressable
-                style={styles.closeButton}
                 onPress={() =>
-                  setSelectedMedia(null)
+                  setSelectedMedia(
+                    null
+                  )
+                }
+                style={
+                  styles.closeButton
                 }
               >
                 <X
@@ -348,7 +377,8 @@ export default function PremiumPostScreen() {
                 "image" && (
                 <Image
                   source={{
-                    uri: selectedMedia.uri,
+                    uri:
+                      selectedMedia.uri,
                   }}
                   style={styles.media}
                 />
@@ -356,12 +386,11 @@ export default function PremiumPostScreen() {
 
               {selectedMedia.type ===
                 "video" && (
-                <View
-                  style={styles.videoWrapper}
-                >
+                <View>
                   <Image
                     source={{
-                      uri: selectedMedia.uri,
+                      uri:
+                        selectedMedia.uri,
                     }}
                     style={styles.media}
                   />
@@ -382,12 +411,10 @@ export default function PremiumPostScreen() {
 
               {selectedMedia.type ===
                 "audio" && (
-                <LinearGradient
-                  colors={[
-                    "#fff6e5",
-                    "#ffe7bf",
-                  ]}
-                  style={styles.audioCard}
+                <View
+                  style={
+                    styles.audioCard
+                  }
                 >
                   <Mic
                     size={24}
@@ -408,17 +435,17 @@ export default function PremiumPostScreen() {
                     </Text>
 
                     <Text
+                      numberOfLines={1}
                       style={
                         styles.audioName
                       }
-                      numberOfLines={1}
                     >
                       {
                         selectedMedia.name
                       }
                     </Text>
                   </View>
-                </LinearGradient>
+                </View>
               )}
             </View>
           )}
@@ -427,7 +454,9 @@ export default function PremiumPostScreen() {
 
           {!!location && (
             <View
-              style={styles.locationPill}
+              style={
+                styles.locationPill
+              }
             >
               <MapPin
                 size={14}
@@ -446,90 +475,97 @@ export default function PremiumPostScreen() {
         </BlurView>
       </ScrollView>
 
-      {/* ───────────────── BOTTOM BAR ───────────────── */}
+      {/* ───────────────── TOOLBAR ───────────────── */}
 
       <BlurView
-        intensity={85}
+        intensity={80}
         tint="light"
-        style={styles.bottomBar}
+        style={styles.toolbar}
       >
-        <View style={styles.bottomContent}>
-          <View style={styles.actionRow}>
-            <ActionButton
-              icon={
-                <ImageIcon
-                  size={20}
-                  color="#d18b1c"
-                />
-              }
-              onPress={pickImage}
-            />
+        <View style={styles.actions}>
+          <ActionButton
+            icon={
+              <ImageIcon
+                size={20}
+                color="#d18b1c"
+              />
+            }
+            onPress={pickImage}
+          />
 
-            <ActionButton
-              icon={
-                <Video
-                  size={20}
-                  color="#d18b1c"
-                />
-              }
-              onPress={pickVideo}
-            />
+          <ActionButton
+            icon={
+              <Video
+                size={20}
+                color="#d18b1c"
+              />
+            }
+            onPress={pickVideo}
+          />
 
-            <ActionButton
-              icon={
-                <Mic
-                  size={20}
-                  color="#d18b1c"
-                />
-              }
-              onPress={pickAudio}
-            />
+          <ActionButton
+            icon={
+              <Mic
+                size={20}
+                color="#d18b1c"
+              />
+            }
+            onPress={pickAudio}
+          />
 
-            <ActionButton
-              icon={
-                <MapPin
-                  size={20}
-                  color="#d18b1c"
-                />
-              }
-              onPress={pickLocation}
-            />
-          </View>
+          <ActionButton
+            icon={
+              <MapPin
+                size={20}
+                color="#d18b1c"
+              />
+            }
+            onPress={pickLocation}
+          />
+        </View>
 
-          <Pressable
-            disabled={isDisabled}
-            style={[
-              styles.postButton,
-              isDisabled &&
-                styles.disabledButton,
+        <Pressable
+          disabled={
+            isDisabled || creating
+          }
+          onPress={handlePost}
+          style={[
+            styles.postButton,
+            (isDisabled ||
+              creating) &&
+              styles.disabledButton,
+          ]}
+        >
+          <LinearGradient
+            colors={[
+              "#e0a03a",
+              "#ba7512",
             ]}
-            onPress={handlePost}
+            start={{
+              x: 0,
+              y: 0,
+            }}
+            end={{
+              x: 1,
+              y: 1,
+            }}
+            style={
+              styles.postGradient
+            }
           >
-            <LinearGradient
-              colors={[
-                "#e2a43c",
-                "#b97211",
-              ]}
-              start={{
-                x: 0,
-                y: 0,
-              }}
-              end={{
-                x: 1,
-                y: 1,
-              }}
-              style={
-                styles.postGradient
-              }
-            >
+            {creating ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
               <Text
-                style={styles.postText}
+                style={
+                  styles.postText
+                }
               >
                 Post
               </Text>
-            </LinearGradient>
-          </Pressable>
-        </View>
+            )}
+          </LinearGradient>
+        </Pressable>
       </BlurView>
     </KeyboardAvoidingView>
   );
@@ -542,6 +578,7 @@ function ActionButton({
   onPress,
 }: {
   icon: React.ReactNode;
+
   onPress: () => void;
 }) {
   return (
@@ -559,58 +596,28 @@ function ActionButton({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginBottom:100
-  },
+ marginBottom:100  },
+
   fixedTop: {
-    backgroundColor: 'rgba(249, 208, 105, 0.22)',
-    paddingTop: 54,
-    zIndex: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-
-  // header: {
-  //   paddingTop: 58,
-  //   paddingBottom: 16,
-  //   paddingHorizontal: 20,
-  //   borderBottomWidth: 1,
-  //   borderBottomColor:
-  //     "rgba(233, 208, 167, 0.45)",
-  // },
-
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  title: {
-    color: "#2f1b03",
-    fontSize: 30,
-    fontWeight: "800",
-    letterSpacing: -0.8,
-  },
-
-  subtitle: {
-    marginTop: 4,
-    color: "#8f6a39",
-    fontSize: 14,
-    fontWeight: "500",
-  },
-
-  sparkleWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    paddingTop: 55,
+    zIndex: 20,
     backgroundColor:
-      "rgba(255,255,255,0.72)",
+      "rgba(255,248,238,0.94)",
+  },
+
+  header: {
+    paddingHorizontal: 18,
+    paddingBottom: 14,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent:
+      "space-between",
+  },
+
+  headerTitle: {
+    color: "#432604",
+    fontSize: 22,
+    fontWeight: "800",
   },
 
   body: {
@@ -622,15 +629,18 @@ const styles = StyleSheet.create({
     paddingBottom: 160,
   },
 
-  composer: {
+  card: {
     borderRadius: 34,
     overflow: "hidden",
     padding: 20,
+
     backgroundColor:
-      "rgba(255,255,255,0.55)",
+      "rgba(255,255,255,0.58)",
+
     borderWidth: 1,
+
     borderColor:
-      "rgba(241, 214, 172, 0.6)",
+      "rgba(236,210,167,0.55)",
   },
 
   userRow: {
@@ -647,7 +657,7 @@ const styles = StyleSheet.create({
   },
 
   avatarText: {
-    color: "#6d4202",
+    color: "#6b4304",
     fontSize: 22,
     fontWeight: "800",
   },
@@ -657,27 +667,29 @@ const styles = StyleSheet.create({
   },
 
   userName: {
-    color: "#352003",
+    color: "#311c03",
     fontSize: 16,
     fontWeight: "700",
   },
 
   publicRow: {
-    marginTop: 4,
     flexDirection: "row",
     alignItems: "center",
+    marginTop: 4,
     gap: 5,
   },
 
   publicText: {
-    color: "#9c6a11",
+    color: "#9d6912",
     fontSize: 12,
     fontWeight: "600",
   },
 
   input: {
     marginTop: 22,
-    color: "#3b2403",
+    minHeight: 180,
+
+    color: "#3a2203",
     fontSize: 24,
     lineHeight: 38,
     fontWeight: "500",
@@ -685,8 +697,14 @@ const styles = StyleSheet.create({
 
   mediaContainer: {
     marginTop: 18,
-    borderRadius: 28,
+    borderRadius: 26,
     overflow: "hidden",
+  },
+
+  media: {
+    width: "100%",
+    height: 350,
+    borderRadius: 26,
   },
 
   closeButton: {
@@ -694,45 +712,47 @@ const styles = StyleSheet.create({
     top: 14,
     right: 14,
     zIndex: 10,
+
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor:
-      "rgba(0,0,0,0.55)",
+
     alignItems: "center",
     justifyContent: "center",
-  },
 
-  media: {
-    width: "100%",
-    height: 360,
-    borderRadius: 28,
-  },
-
-  videoWrapper: {
-    position: "relative",
+    backgroundColor:
+      "rgba(0,0,0,0.6)",
   },
 
   playButton: {
     position: "absolute",
     top: "50%",
     left: "50%",
-    marginLeft: -30,
-    marginTop: -30,
+
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor:
-      "rgba(0,0,0,0.5)",
+
+    marginLeft: -30,
+    marginTop: -30,
+
     alignItems: "center",
     justifyContent: "center",
+
+    backgroundColor:
+      "rgba(0,0,0,0.55)",
   },
 
   audioCard: {
-    borderRadius: 24,
-    padding: 18,
     flexDirection: "row",
     alignItems: "center",
+
+    borderRadius: 22,
+
+    padding: 18,
+
+    backgroundColor:
+      "rgba(255,239,210,0.9)",
   },
 
   audioInfo: {
@@ -741,57 +761,65 @@ const styles = StyleSheet.create({
   },
 
   audioTitle: {
-    color: "#5e3903",
+    color: "#5d3902",
     fontSize: 15,
     fontWeight: "700",
   },
 
   audioName: {
     marginTop: 4,
-    color: "#8b642c",
+    color: "#87622c",
     fontSize: 13,
   },
 
   locationPill: {
-    marginTop: 16,
+    marginTop: 18,
+
     alignSelf: "flex-start",
-    backgroundColor:
-      "rgba(248, 223, 184, 0.5)",
+
     borderRadius: 999,
+
     paddingHorizontal: 14,
     paddingVertical: 8,
+
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+
+    backgroundColor:
+      "rgba(249,228,188,0.7)",
   },
 
   locationText: {
-    color: "#8b5c10",
+    marginLeft: 6,
+
+    color: "#8b5b0f",
     fontSize: 13,
     fontWeight: "700",
   },
 
-  bottomBar: {
+  toolbar: {
     position: "absolute",
+
     left: 0,
     right: 0,
     bottom: 0,
-    paddingTop: 14,
-    paddingBottom:
-      Platform.OS === "ios" ? 34 : 16,
+
     paddingHorizontal: 18,
+
+    paddingTop: 14,
+
+    paddingBottom:
+      Platform.OS === "ios"
+        ? 34
+        : 16,
+
     borderTopWidth: 1,
+
     borderTopColor:
-      "rgba(234, 208, 170, 0.45)",
+      "rgba(236,209,168,0.5)",
   },
 
-  bottomContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  actionRow: {
+  actions: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
@@ -801,26 +829,37 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor:
-      "rgba(255,255,255,0.72)",
+
     alignItems: "center",
     justifyContent: "center",
+
+    backgroundColor:
+      "rgba(255,255,255,0.75)",
+
     borderWidth: 1,
+
     borderColor:
-      "rgba(236, 208, 165, 0.5)",
+      "rgba(236,209,168,0.5)",
   },
 
   postButton: {
-    borderRadius: 999,
+    position: "absolute",
+    right: 18,
+    bottom:
+      Platform.OS === "ios"
+        ? 34
+        : 16,
+
     overflow: "hidden",
+    borderRadius: 999,
   },
 
   disabledButton: {
-    opacity: 0.45,
+    opacity: 0.5,
   },
 
   postGradient: {
-    paddingHorizontal: 32,
+    paddingHorizontal: 34,
     paddingVertical: 14,
     borderRadius: 999,
   },

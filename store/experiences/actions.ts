@@ -1,31 +1,64 @@
-import { 
-  FETCH_EXPERIENCES_REQUEST, FETCH_EXPERIENCES_SUCCESS, FETCH_EXPERIENCES_FAILURE,
-  SEARCH_EXPERIENCES_REQUEST, SEARCH_EXPERIENCES_SUCCESS, SEARCH_EXPERIENCES_FAILURE,
-  CREATE_EXPERIENCE_REQUEST, CREATE_EXPERIENCE_SUCCESS, CREATE_EXPERIENCE_FAILURE,
-  TOGGLE_LIKE_REQUEST, TOGGLE_LIKE_SUCCESS, TOGGLE_LIKE_FAILURE
-} from './types';
+import {
+  CREATE_EXPERIENCE_FAILURE,
+  CREATE_EXPERIENCE_REQUEST,
+  CREATE_EXPERIENCE_SUCCESS,
+  FETCH_EXPERIENCES_FAILURE,
+  FETCH_EXPERIENCES_REQUEST,
+  FETCH_EXPERIENCES_SUCCESS,
+  TOGGLE_LIKE_SUCCESS,
+  CreateExperiencePayload,
+  Experience,
+} from "./types";
 
-export const fetchExperiencesRequest = (params: { limit?: number; offset?: number; category?: string } = {}) => ({
+export const fetchExperiencesRequest = (
+  params = {}
+) => ({
   type: FETCH_EXPERIENCES_REQUEST,
   payload: params,
-} as const);
+});
 
-export const fetchExperiencesSuccess = (experiences: any[]) => ({
+export const fetchExperiencesSuccess = (
+  payload: Experience[]
+) => ({
   type: FETCH_EXPERIENCES_SUCCESS,
-  payload: experiences,
-} as const);
+  payload,
+});
 
-export const fetchExperiencesFailure = (error: string) => ({
+export const fetchExperiencesFailure = (
+  payload: string
+) => ({
   type: FETCH_EXPERIENCES_FAILURE,
-  payload: error,
-} as const);
+  payload,
+});
 
-export const toggleLikeRequest = (experienceId: string, userId: string) => ({
-  type: TOGGLE_LIKE_REQUEST,
-  payload: { experienceId, userId },
-} as const);
+export const createExperienceRequest = (
+  payload: CreateExperiencePayload
+) => ({
+  type: CREATE_EXPERIENCE_REQUEST,
+  payload,
+});
 
-export const toggleLikeSuccess = (experienceId: string, likes: number) => ({
+export const createExperienceSuccess = (
+  payload: Experience
+) => ({
+  type: CREATE_EXPERIENCE_SUCCESS,
+  payload,
+});
+
+export const createExperienceFailure = (
+  payload: string
+) => ({
+  type: CREATE_EXPERIENCE_FAILURE,
+  payload,
+});
+
+export const toggleLikeSuccess = (
+  experienceId: string,
+  likes: number
+) => ({
   type: TOGGLE_LIKE_SUCCESS,
-  payload: { experienceId, likes },
-} as const);
+  payload: {
+    experienceId,
+    likes,
+  },
+});
