@@ -30,22 +30,22 @@ export default function ProfileScreen() {
   const profileImageUri = account?.profileImage?.uri || account?.profileImageUrl;
 
   const handleLogout = () => {
-  Alert.alert(
-    'Log Out',
-    'Are you sure you want to log out of your account?',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: async () => {
-          await removeDevoteeAccountStorage();
-          dispatch(logoutRequest());
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out of your account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            await removeDevoteeAccountStorage();
+            dispatch(logoutRequest());
+          },
         },
-      },
-    ]
-  );
-};
+      ]
+    );
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -98,41 +98,41 @@ export default function ProfileScreen() {
             <DetailRow label="Mobile" value={account?.mobileNumber} />
             <DetailRow label="Email" value={account?.email} />
             <DetailRow
-  label="Occupation"
-  value={account?.profile?.occupation}
-/>
+              label="Occupation"
+              value={account?.profile?.occupation}
+            />
 
-<DetailRow
-  label="Address"
-  value={account?.profile?.completeAddress}
-/>
+            <DetailRow
+              label="Address"
+              value={account?.profile?.completeAddress}
+            />
 
-<DetailRow
-  label="City"
-  value={account?.profile?.city}
-/>
+            <DetailRow
+              label="City"
+              value={account?.profile?.city}
+            />
 
-<DetailRow
-  label="State"
-  value={account?.profile?.state}
-/>
+            <DetailRow
+              label="State"
+              value={account?.profile?.state}
+            />
 
-<DetailRow
-  label="Country"
-  value={account?.profile?.country}
-/>
+            <DetailRow
+              label="Country"
+              value={account?.profile?.country}
+            />
 
-<DetailRow
-  label="Pincode"
-  value={account?.profile?.pincode}
-/>
+            <DetailRow
+              label="Pincode"
+              value={account?.profile?.pincode}
+            />
 
-<DetailRow
-  label="Language"
-  value={
-    account?.profile?.language?.toUpperCase()
-  }
-/>
+            <DetailRow
+              label="Language"
+              value={
+                account?.profile?.language?.toUpperCase()
+              }
+            />
           </View>
         </View>
       ) : (

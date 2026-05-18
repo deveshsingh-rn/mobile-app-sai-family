@@ -70,6 +70,26 @@ export const CREATE_EXPERIENCE_FAILURE =
 export const TOGGLE_LIKE_SUCCESS =
   "TOGGLE_LIKE_SUCCESS";
 
+
+
+  export const UPDATE_EXPERIENCE_REQUEST =
+  "UPDATE_EXPERIENCE_REQUEST";
+
+export const UPDATE_EXPERIENCE_SUCCESS =
+  "UPDATE_EXPERIENCE_SUCCESS";
+
+export const UPDATE_EXPERIENCE_FAILURE =
+  "UPDATE_EXPERIENCE_FAILURE";
+
+export const DELETE_EXPERIENCE_REQUEST =
+  "DELETE_EXPERIENCE_REQUEST";
+
+export const DELETE_EXPERIENCE_SUCCESS =
+  "DELETE_EXPERIENCE_SUCCESS";
+
+export const DELETE_EXPERIENCE_FAILURE =
+  "DELETE_EXPERIENCE_FAILURE";
+
 export interface FetchExperiencesRequestAction {
   type: typeof FETCH_EXPERIENCES_REQUEST;
 
@@ -119,6 +139,55 @@ export interface ToggleLikeSuccessAction {
   };
 }
 
+export interface UpdateExperienceRequestAction {
+  type: typeof UPDATE_EXPERIENCE_REQUEST;
+
+  payload: UpdateExperiencePayload;
+}
+
+export interface UpdateExperienceSuccessAction {
+  type: typeof UPDATE_EXPERIENCE_SUCCESS;
+
+  payload: Experience;
+}
+
+export interface UpdateExperienceFailureAction {
+  type: typeof UPDATE_EXPERIENCE_FAILURE;
+
+  payload: string;
+}
+
+export interface DeleteExperienceRequestAction {
+  type: typeof DELETE_EXPERIENCE_REQUEST;
+
+  payload: {
+    id: string;
+  };
+}
+
+export interface DeleteExperienceSuccessAction {
+  type: typeof DELETE_EXPERIENCE_SUCCESS;
+
+  payload: {
+    id: string;
+  };
+}
+
+export interface DeleteExperienceFailureAction {
+  type: typeof DELETE_EXPERIENCE_FAILURE;
+
+  payload: string;
+}
+
+
+
+export interface UpdateExperiencePayload {
+  id: string;
+  content: string;
+  category: string;
+  location?: string;
+}
+
 export type ExperiencesActionTypes =
   | FetchExperiencesRequestAction
   | FetchExperiencesSuccessAction
@@ -126,4 +195,10 @@ export type ExperiencesActionTypes =
   | CreateExperienceRequestAction
   | CreateExperienceSuccessAction
   | CreateExperienceFailureAction
-  | ToggleLikeSuccessAction;
+  | ToggleLikeSuccessAction 
+  | UpdateExperienceRequestAction
+| UpdateExperienceSuccessAction
+| UpdateExperienceFailureAction
+| DeleteExperienceRequestAction
+| DeleteExperienceSuccessAction
+| DeleteExperienceFailureAction;

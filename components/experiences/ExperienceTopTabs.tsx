@@ -1,5 +1,7 @@
 import { useRouter } from "expo-router";
+
 import React from "react";
+
 import {
   Pressable,
   ScrollView,
@@ -7,6 +9,10 @@ import {
   Text,
   View,
 } from "react-native";
+
+import { BlurView } from "expo-blur";
+
+import { LinearGradient } from "expo-linear-gradient";
 
 export type ExperienceTopTabKey =
   | "feed"
@@ -17,6 +23,7 @@ export type ExperienceTopTabKey =
 
 type ExperienceTopTabsProps = {
   activeTab: ExperienceTopTabKey;
+
   onTabChange?: (
     tab: ExperienceTopTabKey
   ) => void;
@@ -28,24 +35,34 @@ const EXPERIENCE_TABS = [
     key: "feed",
     label: "Feed",
   },
+
   {
     href: "/(tabs)/experiences/search",
     key: "search",
     label: "Search",
   },
+
   {
     href: "/(tabs)/experiences/post",
     key: "post",
     label: "Post",
   },
+
   {
-    href: "/(tabs)/experiences/category",
+    href:
+      "/(tabs)/experiences/category",
+
     key: "category",
+
     label: "Categories",
   },
+
   {
-    href: "/(tabs)/experiences/bookmarks",
+    href:
+      "/(tabs)/experiences/bookmarks",
+
     key: "bookmarks",
+
     label: "Bookmarks",
   },
 ] as const;
@@ -60,8 +77,12 @@ export function ExperienceTopTabs({
     <View style={styles.wrapper}>
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        showsHorizontalScrollIndicator={
+          false
+        }
+        contentContainerStyle={
+          styles.content
+        }
       >
         {EXPERIENCE_TABS.map((tab) => {
           const isActive =
@@ -70,43 +91,64 @@ export function ExperienceTopTabs({
           return (
             <Pressable
               key={tab.key}
-              android_ripple={{
-                color:
-                  "rgba(255,255,255,0.12)",
-              }}
               onPress={() => {
                 if (onTabChange) {
                   onTabChange(tab.key);
                   return;
                 }
 
-                router.push(tab.href);
+                router.push(
+                  tab.href as any
+                );
               }}
               style={({ pressed }) => [
-                styles.tab,
-                isActive &&
-                  styles.activeTab,
+                styles.pressable,
                 pressed &&
-                  styles.pressedTab,
+                  styles.pressed,
               ]}
             >
-              <Text
-                style={[
-                  styles.label,
-                  isActive &&
-                    styles.activeLabel,
-                ]}
-                numberOfLines={1}
-              >
-                {tab.label}
-              </Text>
-
-              {isActive && (
-                <View
+              {isActive ? (
+                <LinearGradient
+                  colors={[
+                    "#c88a24",
+                    "#8e5d10",
+                  ]}
+                  start={{
+                    x: 0,
+                    y: 0,
+                  }}
+                  end={{
+                    x: 1,
+                    y: 1,
+                  }}
                   style={
-                    styles.activeIndicator
+                    styles.activeTab
                   }
-                />
+                >
+                  <Text
+                    style={
+                      styles.activeText
+                    }
+                  >
+                    {tab.label}
+                  </Text>
+                </LinearGradient>
+              ) : (
+                <BlurView
+                  intensity={55}
+                  tint="light"
+                  style={
+                    styles.inactiveTab
+                  }
+                >
+                  <Text
+                    style={
+                      styles.inactiveText
+                    }
+                  >
+                    {tab.label}
+                  </Text>
+                </BlurView>
               )}
             </Pressable>
           );
@@ -118,8 +160,7 @@ export function ExperienceTopTabs({
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginTop: 10,
-    marginBottom: 12,
+    paddingBottom: 12,
   },
 
   content: {
@@ -127,79 +168,81 @@ const styles = StyleSheet.create({
     gap: 12,
   },
 
-  tab: {
-    minWidth: 96,
+  pressable: {
+    borderRadius: 18,
+  },
+
+  pressed: {
+    transform: [
+      {
+        scale: 0.97,
+      },
+    ],
+
+    opacity: 0.92,
+  },
+
+  activeTab: {
+    minWidth: 104,
     height: 46,
 
-    borderRadius: 18,
+    paddingHorizontal: 20,
 
-    paddingHorizontal: 18,
+    borderRadius: 18,
 
     alignItems: "center",
     justifyContent: "center",
 
-    backgroundColor:
-      "rgba(255,255,255,0.78)",
-
-    borderWidth: 1,
-    borderColor:
-      "rgba(222, 188, 122, 0.45)",
-
-    overflow: "hidden",
-
-    position: "relative",
-  },
-
-  activeTab: {
-    backgroundColor: "#8e5d10",
-
-    borderColor: "#8e5d10",
-
     shadowColor: "#8e5d10",
+
     shadowOffset: {
       width: 0,
       height: 10,
     },
+
     shadowOpacity: 0.24,
     shadowRadius: 18,
 
-    elevation: 8,
+    elevation: 10,
   },
 
-  pressedTab: {
-    opacity: 0.82,
-    transform: [
-      {
-        scale: 0.98,
-      },
-    ],
+  inactiveTab: {
+    minWidth: 104,
+    height: 46,
+
+    paddingHorizontal: 20,
+
+    borderRadius: 18,
+
+    overflow: "hidden",
+
+    alignItems: "center",
+    justifyContent: "center",
+
+    borderWidth: 1,
+
+    borderColor:
+      "rgba(226,195,145,0.45)",
+
+    backgroundColor:
+      "rgba(255,255,255,0.55)",
   },
 
-  label: {
+  activeText: {
+    color: "#fff",
+
     fontSize: 14,
     fontWeight: "800",
-
-    color: "#7b5a1c",
 
     letterSpacing: 0.2,
   },
 
-  activeLabel: {
-    color: "#fff",
-  },
+  inactiveText: {
+    color: "#7b5b22",
 
-  activeIndicator: {
-    position: "absolute",
+    fontSize: 14,
+    fontWeight: "700",
 
-    bottom: 0,
-
-    width: 26,
-    height: 4,
-
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-
-    backgroundColor:
-      "rgba(255,255,255,0.92)",
+    letterSpacing: 0.2,
   },
 });

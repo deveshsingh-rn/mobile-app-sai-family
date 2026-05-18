@@ -43,7 +43,6 @@ function AppLayoutContent() {
       if (devoteeAccount) {
         setShowOnboarding(false);
         setShowAuth(false);
-        setShowDevoteeProfile(false);
       } else {
         // User has logged out, so we need to force the Auth screen to show again
         setShowAuth(true);

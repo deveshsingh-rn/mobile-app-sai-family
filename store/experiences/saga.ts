@@ -6,19 +6,27 @@ import {
 
 import {
   apiCreateExperience,
+  apiDeleteExperience,
   apiFetchExperiences,
+  apiUpdateExperience,
 } from "@/services/experiences";
 
 import {
   createExperienceFailure,
   createExperienceSuccess,
+  deleteExperienceFailure,
+  deleteExperienceSuccess,
   fetchExperiencesFailure,
   fetchExperiencesSuccess,
+  updateExperienceFailure,
+  updateExperienceSuccess,
 } from "./actions";
 
 import {
   CREATE_EXPERIENCE_REQUEST,
+  DELETE_EXPERIENCE_REQUEST,
   FETCH_EXPERIENCES_REQUEST,
+  UPDATE_EXPERIENCE_REQUEST,
 } from "./types";
 
 function flattenExperience(exp: any) {
@@ -117,6 +125,72 @@ function* handleCreateExperience(
   }
 }
 
+
+
+function* handleUpdateExperience(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiUpdateExperience,
+      action.payload
+    );
+
+    const flattened =
+      flattenExperience(
+        response.experience
+      );
+
+    yield put(
+      updateExperienceSuccess(
+        flattened
+      )
+    );
+  } catch (error: any) {
+    const message =
+      error.response?.data?.error
+        ?.message ||
+      error.message ||
+      "Failed to update post.";
+
+    yield put(
+      updateExperienceFailure(
+        message
+      )
+    );
+  }
+}
+
+
+function* handleDeleteExperience(
+  action: any
+): Generator<any, void, any> {
+  try {
+    yield call(
+      apiDeleteExperience,
+      action.payload.id
+    );
+
+    yield put(
+      deleteExperienceSuccess(
+        action.payload.id
+      )
+    );
+  } catch (error: any) {
+    const message =
+      error.response?.data?.error
+        ?.message ||
+      error.message ||
+      "Failed to delete post.";
+
+    yield put(
+      deleteExperienceFailure(
+        message
+      )
+    );
+  }
+}
+
 export function* experiencesSaga() {
   yield takeLatest(
     FETCH_EXPERIENCES_REQUEST,
@@ -127,4 +201,13 @@ export function* experiencesSaga() {
     CREATE_EXPERIENCE_REQUEST,
     handleCreateExperience
   );
+  yield takeLatest(
+  UPDATE_EXPERIENCE_REQUEST,
+  handleUpdateExperience
+);
+
+yield takeLatest(
+  DELETE_EXPERIENCE_REQUEST,
+  handleDeleteExperience
+);
 }

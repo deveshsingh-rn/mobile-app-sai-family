@@ -16,6 +16,8 @@ import {
   View,
 } from "react-native";
 
+import { router } from "expo-router";
+
 import { useDispatch, useSelector } from "react-redux";
 
 import * as ImagePicker from "expo-image-picker";
@@ -226,6 +228,7 @@ export default function PremiumPostScreen() {
     setContent("");
     setLocation("");
     setSelectedMedia(null);
+    router.push("/experiences");
   };
 
   return (

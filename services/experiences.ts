@@ -91,3 +91,36 @@ export async function apiToggleLike(
 
   return data;
 }
+
+
+export async function apiUpdateExperience(
+  payload: {
+    id: string;
+    content: string;
+    category: string;
+    location?: string;
+  }
+) {
+  const response = await apiClient.patch(
+    `/api/experiences/${payload.id}`,
+    {
+      content: payload.content,
+      category: payload.category,
+      location: payload.location,
+    }
+  );
+
+  return response.data;
+}
+
+
+
+export async function apiDeleteExperience(
+  id: string
+) {
+  const response = await apiClient.delete(
+    `/api/experiences/${id}`
+  );
+
+  return response.data;
+}

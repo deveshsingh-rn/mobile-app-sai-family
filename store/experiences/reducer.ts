@@ -8,6 +8,8 @@ import {
   ExperiencesActionTypes,
   ExperiencesState,
   TOGGLE_LIKE_SUCCESS,
+  UPDATE_EXPERIENCE_SUCCESS,
+  DELETE_EXPERIENCE_SUCCESS,
 } from "./types";
 
 const initialState: ExperiencesState = {
@@ -82,6 +84,27 @@ export const experiencesReducer = (
             : exp
         ),
       };
+
+      case UPDATE_EXPERIENCE_SUCCESS:
+  return {
+    ...state,
+
+    feed: state.feed.map((exp) =>
+      exp.id === action.payload.id
+        ? action.payload
+        : exp
+    ),
+  };
+
+  case DELETE_EXPERIENCE_SUCCESS:
+  return {
+    ...state,
+
+    feed: state.feed.filter(
+      (exp) =>
+        exp.id !== action.payload.id
+    ),
+  };
 
     default:
       return state;
