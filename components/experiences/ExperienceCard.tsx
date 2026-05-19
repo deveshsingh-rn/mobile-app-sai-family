@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Linking,
 } from "react-native";
 
 import { useRouter } from "expo-router";
@@ -16,6 +17,7 @@ import {
   Heart,
   MessageCircle,
   Repeat2,
+  Play,
 } from "lucide-react-native";
 
 import { BlurView } from "expo-blur";
@@ -28,20 +30,34 @@ import {
   toggleLikeRequest,
 } from "@/store/experiences/actions";
 
-import ExperienceActions from "./ExperienceActions";
-
 type Props = {
   item: any;
+  disableNavigation?: boolean;
+  hideBorder?: boolean;
+  isActive?: boolean;
+  onBookmark?: () => void;
+  onLike?: () => void;
+  onRepost?: () => void;
 };
 
 export function ExperienceCard({
+  disableNavigation,
+  hideBorder,
   item,
+  onBookmark,
+  onLike,
+  onRepost,
 }: Props) {
   const router = useRouter();
 
   const dispatch = useDispatch();
 
   const handleLike = () => {
+    if (onLike) {
+      onLike();
+      return;
+    }
+
     dispatch(
       toggleLikeRequest(item.id)
     );
@@ -55,16 +71,18 @@ export function ExperienceCard({
 
   return (
     <Pressable
-      onPress={() =>
-        router.push(
-          `/experiences/${item.id}`
-        )
-      }
+      onPress={() => {
+        if (!disableNavigation) {
+          router.push(
+            `/experiences/${item.id}`
+          );
+        }
+      }}
     >
       <BlurView
         intensity={40}
         tint="light"
-        style={styles.card}
+        style={[styles.card, hideBorder && styles.cardNoBorder]}
       >
         {/* USER */}
 
@@ -110,18 +128,41 @@ export function ExperienceCard({
 
         {/* MEDIA */}
 
-        {!!item.mediaAttachments
-          ?.length && (
-          <Image
-            source={{
-              uri:
-                item
-                  .mediaAttachments[0]
-                  .url,
-            }}
-            style={styles.media}
-          />
-        )}
+        {!!item.mediaAttachments?.length && (() => {
+          const media = item.mediaAttachments[0];
+          const isVideo = media.type === "video";
+          const mediaUri = isVideo ? media.thumbnailUrl : media.url;
+
+          return (
+            <Pressable
+              style={styles.mediaContainer}
+              onPress={(e) => {
+                e.stopPropagation();
+                if (isVideo && media.url) {
+                  Linking.openURL(media.url);
+                } else {
+                  router.push(`/experiences/${item.id}`);
+                }
+              }}
+            >
+              {mediaUri ? (
+                <Image
+                  source={{ uri: mediaUri }}
+                  style={styles.media}
+                />
+              ) : (
+                <View style={[styles.media, { backgroundColor: 'rgba(0,0,0,0.1)' }]} />
+              )}
+              {isVideo && (
+                <View style={styles.playOverlay}>
+                  <View style={styles.playButtonBackground}>
+                    <Play size={32} color="#fff" fill="#fff" />
+                  </View>
+                </View>
+              )}
+            </Pressable>
+          );
+        })()}
 
         {/* ACTIONS */}
 
@@ -148,6 +189,7 @@ export function ExperienceCard({
 
           <Pressable
             style={styles.actionButton}
+            onPress={onRepost}
           >
             <MessageCircle
               size={20}
@@ -165,6 +207,7 @@ export function ExperienceCard({
 
           <Pressable
             style={styles.actionButton}
+            onPress={onBookmark}
           >
             <Repeat2
               size={20}
@@ -226,6 +269,9 @@ const styles = StyleSheet.create({
     borderColor:
       "rgba(231,208,170,0.45)",
   },
+  cardNoBorder: {
+    borderWidth: 0,
+  },
 
   header: {
     flexDirection: "row",
@@ -277,13 +323,36 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
 
-  media: {
+  mediaContainer: {
     width: "100%",
     height: 320,
-
     marginTop: 16,
-
     borderRadius: 22,
+    overflow: "hidden",
+    position: "relative",
+  },
+
+  media: {
+    width: "100%",
+    height: "100%",
+  },
+
+  playOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.2)",
+  },
+
+  playButtonBackground: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.8)",
   },
 
   actions: {

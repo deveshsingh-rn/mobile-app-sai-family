@@ -8,6 +8,9 @@ import {
   apiCreateExperience,
   apiDeleteExperience,
   apiFetchExperiences,
+  apiToggleBookmark,
+  apiToggleLike,
+  apiToggleRepost,
   apiUpdateExperience,
 } from "@/services/experiences";
 
@@ -18,6 +21,7 @@ import {
   deleteExperienceSuccess,
   fetchExperiencesFailure,
   fetchExperiencesSuccess,
+  toggleLikeSuccess,
   updateExperienceFailure,
   updateExperienceSuccess,
 } from "./actions";
@@ -26,6 +30,9 @@ import {
   CREATE_EXPERIENCE_REQUEST,
   DELETE_EXPERIENCE_REQUEST,
   FETCH_EXPERIENCES_REQUEST,
+  TOGGLE_BOOKMARK_REQUEST,
+  TOGGLE_LIKE_REQUEST,
+  TOGGLE_REPOST_REQUEST,
   UPDATE_EXPERIENCE_REQUEST,
 } from "./types";
 
@@ -191,6 +198,52 @@ function* handleDeleteExperience(
   }
 }
 
+function* handleToggleLike(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiToggleLike,
+      action.payload.experienceId
+    );
+
+    yield put(
+      toggleLikeSuccess(
+        action.payload.experienceId,
+        response.likes ?? response.experience?.likes ?? 0
+      )
+    );
+  } catch {
+    // Keep optimistic UI work for the next pass.
+  }
+}
+
+function* handleToggleBookmark(
+  action: any
+): Generator<any, void, any> {
+  try {
+    yield call(
+      apiToggleBookmark,
+      action.payload.experienceId
+    );
+  } catch {
+    // Keep optimistic UI work for the next pass.
+  }
+}
+
+function* handleToggleRepost(
+  action: any
+): Generator<any, void, any> {
+  try {
+    yield call(
+      apiToggleRepost,
+      action.payload.experienceId
+    );
+  } catch {
+    // Keep optimistic UI work for the next pass.
+  }
+}
+
 export function* experiencesSaga() {
   yield takeLatest(
     FETCH_EXPERIENCES_REQUEST,
@@ -200,6 +253,18 @@ export function* experiencesSaga() {
   yield takeLatest(
     CREATE_EXPERIENCE_REQUEST,
     handleCreateExperience
+  );
+  yield takeLatest(
+    TOGGLE_LIKE_REQUEST,
+    handleToggleLike
+  );
+  yield takeLatest(
+    TOGGLE_BOOKMARK_REQUEST,
+    handleToggleBookmark
+  );
+  yield takeLatest(
+    TOGGLE_REPOST_REQUEST,
+    handleToggleRepost
   );
   yield takeLatest(
   UPDATE_EXPERIENCE_REQUEST,

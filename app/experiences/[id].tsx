@@ -27,6 +27,10 @@ import { ExperienceCard } from "@/components/experiences";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CommentItem from "@/components/experiences/CommentItem";
 import CommentInput from "@/components/experiences/CommentInput";
+import {
+  addCommentRequest,
+  fetchExperienceDetailRequest,
+} from "@/store/experiences/actions";
 
 
 

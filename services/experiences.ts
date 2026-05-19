@@ -1,9 +1,11 @@
 import { apiClient } from "./api";
+import { ExperienceUploadStatus } from "@/store/experiences/types";
 
 export type CreateExperiencePayload = {
   content: string;
   category: string;
   location?: string;
+  userId?: string;
 
   media?: {
     uri: string;
@@ -52,19 +54,21 @@ export async function apiCreateExperience(
   }
 
   if (payload.media) {
-    const mimeType =
-      payload.media.type === "image"
-        ? "image/jpeg"
-        : payload.media.type === "video"
-        ? "video/mp4"
-        : "audio/mpeg";
+    let mimeType = "image/jpeg";
+    let ext = "jpg";
+
+    if (payload.media.type === "video") {
+      mimeType = "video/mp4";
+      ext = "mp4";
+    } else if (payload.media.type === "audio") {
+      mimeType = "audio/mpeg";
+      ext = "mp3";
+    }
 
     formData.append("mediaFiles", {
       uri: payload.media.uri,
       type: mimeType,
-      name:
-        payload.media.name ||
-        `media-${Date.now()}`,
+      name: payload.media.name || `media-${Date.now()}.${ext}`,
     } as any);
   }
 
@@ -73,13 +77,29 @@ export async function apiCreateExperience(
     formData,
     {
       headers: {
-        "Content-Type":
-          "multipart/form-data",
+        "Accept": "application/json",
+        "Content-Type": "multipart/form-data",
+        ...(payload.userId ? { "x-user-id": payload.userId } : {}),
       },
+      // Videos take longer to upload. Extend timeout to 2 minutes.
+      timeout: 120000, 
     }
   );
 
   return response.data;
+}
+
+export async function apiGetExperienceUploadStatus(
+  id: string
+) {
+  const { data } =
+    await apiClient.get<{
+      experience: ExperienceUploadStatus;
+    }>(
+      `/api/experiences/${id}/upload-status`
+    );
+
+  return data;
 }
 
 export async function apiToggleLike(
@@ -87,6 +107,26 @@ export async function apiToggleLike(
 ) {
   const { data } = await apiClient.post(
     `/api/experiences/${id}/like`
+  );
+
+  return data;
+}
+
+export async function apiToggleBookmark(
+  id: string
+) {
+  const { data } = await apiClient.post(
+    `/api/experiences/${id}/bookmark`
+  );
+
+  return data;
+}
+
+export async function apiToggleRepost(
+  id: string
+) {
+  const { data } = await apiClient.post(
+    `/api/experiences/${id}/repost`
   );
 
   return data;

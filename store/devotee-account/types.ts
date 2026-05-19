@@ -30,8 +30,22 @@ export type DevoteeAccountForm = {
 
 export type DevoteeAccount = DevoteeAccountForm & {
   id?: string;
+  authorId?: string;
+  handle?: string;
+  location?: string;
   memberId: string;
+  profile?: {
+    city?: string;
+    completeAddress?: string;
+    country?: string;
+    language?: string;
+    occupation?: string;
+    pincode?: string;
+    profileImageUrl?: string;
+    state?: string;
+  };
   profileImageUrl?: string;
+  role?: string;
   createdAt?: string;
   updatedAt?: string;
 };

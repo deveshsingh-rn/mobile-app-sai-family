@@ -124,6 +124,9 @@ import {
   FETCH_EXPERIENCES_REQUEST,
   FETCH_EXPERIENCES_SUCCESS,
   TOGGLE_LIKE_SUCCESS,
+  TOGGLE_LIKE_REQUEST,
+  TOGGLE_BOOKMARK_REQUEST,
+  TOGGLE_REPOST_REQUEST,
   CreateExperiencePayload,
   Experience,
   DELETE_EXPERIENCE_SUCCESS,
@@ -150,10 +153,7 @@ export const fetchExperiencesRequest = (
   } as const);
 
 export const fetchExperiencesSuccess = (
-  payload: {
-    data: Experience[];
-    offset: number;
-  }
+  payload: Experience[]
 ) =>
   ({
     type: FETCH_EXPERIENCES_SUCCESS,
@@ -208,6 +208,42 @@ export const toggleLikeSuccess = (
     },
   } as const);
 
+export const toggleLikeRequest = (
+  experienceId: string,
+  userId?: string
+) =>
+  ({
+    type: TOGGLE_LIKE_REQUEST,
+    payload: {
+      experienceId,
+      userId,
+    },
+  } as const);
+
+export const toggleBookmarkRequest = (
+  experienceId: string,
+  userId?: string
+) =>
+  ({
+    type: TOGGLE_BOOKMARK_REQUEST,
+    payload: {
+      experienceId,
+      userId,
+    },
+  } as const);
+
+export const toggleRepostRequest = (
+  experienceId: string,
+  userId?: string
+) =>
+  ({
+    type: TOGGLE_REPOST_REQUEST,
+    payload: {
+      experienceId,
+      userId,
+    },
+  } as const);
+
 // ───────────────── UPDATE EXPERIENCE ─────────────────
 
 export const updateExperienceRequest = (
@@ -258,4 +294,28 @@ export const deleteExperienceFailure = (
   ({
     type: DELETE_EXPERIENCE_FAILURE,
     payload,
+  } as const);
+
+export const fetchExperienceDetailRequest = (
+  id: string
+) =>
+  ({
+    type: "FETCH_EXPERIENCE_DETAIL_REQUEST",
+    payload: {
+      id,
+    },
+  } as const);
+
+export const addCommentRequest = (
+  experienceId: string,
+  content: string,
+  userId?: string
+) =>
+  ({
+    type: "ADD_EXPERIENCE_COMMENT_REQUEST",
+    payload: {
+      content,
+      experienceId,
+      userId,
+    },
   } as const);

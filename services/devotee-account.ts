@@ -1,6 +1,5 @@
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
-import { Platform } from "react-native";
 
 import { DevoteeAccount, DevoteeAccountForm } from "@/store/devotee-account/types";
 import { apiClient } from "./api";
@@ -68,14 +67,6 @@ export async function createDevoteeAccount(
     } as any);
   }
 
-  for (const pair of body.entries()) {
-    console.log(
-      "FORM DATA =>",
-      pair[0],
-      pair[1]
-    );
-  }
-
   try {
     const response =
       await apiClient.post<CreateDevoteeAccountResponse>(
@@ -135,7 +126,8 @@ export async function saveDevoteeAccount(account: DevoteeAccount) {
   // Extract and store the important data explicitly
   const importantDataToStore = {
     ...acc, // Keep original data intact to satisfy the Redux type
-    authorId: acc.id, 
+    id: acc.id || acc.authorId,
+    authorId: acc.id || acc.authorId, 
     memberId: acc.memberId,
     name: acc.name,
     role: acc.role,

@@ -120,7 +120,7 @@ export default function PremiumPostScreen() {
       setSelectedMedia({
         uri: asset.uri,
         type: "image",
-        name: asset.fileName,
+        name: asset.fileName || undefined,
       });
     }
   };
@@ -150,7 +150,7 @@ export default function PremiumPostScreen() {
       setSelectedMedia({
         uri: asset.uri,
         type: "video",
-        name: asset.fileName,
+        name: asset.fileName || undefined,
       });
     }
   };
@@ -216,12 +216,17 @@ export default function PremiumPostScreen() {
   // ───────────────── POST ─────────────────
 
   const handlePost = () => {
+    const userId =
+      account?.id ||
+      account?.authorId;
+
     dispatch(
       createExperienceRequest({
         content,
         category,
         location,
         media: selectedMedia,
+        userId,
       })
     );
 

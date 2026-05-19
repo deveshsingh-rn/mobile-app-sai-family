@@ -2,6 +2,7 @@ export interface ExperienceMedia {
   id: string;
   type: "image" | "video" | "audio";
   url: string;
+  thumbnailUrl?: string | null;
 }
 
 export interface Experience {
@@ -17,6 +18,8 @@ export interface Experience {
   authorName: string | null;
   authorHandle: string | null;
   authorProfileImageUrl: string | null;
+  uploadStatus?: "processing" | "published" | "failed";
+  uploadError?: string | null;
 
   likes: number;
   comments: number;
@@ -30,10 +33,19 @@ export interface Experience {
   mediaAttachments: ExperienceMedia[];
 }
 
+export type ExperienceUploadStatus = {
+  id: string;
+  mediaAttachments: ExperienceMedia[];
+  thumbnailUrl?: string | null;
+  uploadError?: string | null;
+  uploadStatus: "processing" | "published" | "failed";
+};
+
 export type CreateExperiencePayload = {
   content: string;
   category: string;
   location?: string;
+  userId?: string;
 
   media?: {
     uri: string;
@@ -69,6 +81,15 @@ export const CREATE_EXPERIENCE_FAILURE =
 
 export const TOGGLE_LIKE_SUCCESS =
   "TOGGLE_LIKE_SUCCESS";
+
+export const TOGGLE_LIKE_REQUEST =
+  "TOGGLE_LIKE_REQUEST";
+
+export const TOGGLE_BOOKMARK_REQUEST =
+  "TOGGLE_BOOKMARK_REQUEST";
+
+export const TOGGLE_REPOST_REQUEST =
+  "TOGGLE_REPOST_REQUEST";
 
 
 
@@ -139,6 +160,30 @@ export interface ToggleLikeSuccessAction {
   };
 }
 
+export interface ToggleLikeRequestAction {
+  type: typeof TOGGLE_LIKE_REQUEST;
+  payload: {
+    experienceId: string;
+    userId?: string;
+  };
+}
+
+export interface ToggleBookmarkRequestAction {
+  type: typeof TOGGLE_BOOKMARK_REQUEST;
+  payload: {
+    experienceId: string;
+    userId?: string;
+  };
+}
+
+export interface ToggleRepostRequestAction {
+  type: typeof TOGGLE_REPOST_REQUEST;
+  payload: {
+    experienceId: string;
+    userId?: string;
+  };
+}
+
 export interface UpdateExperienceRequestAction {
   type: typeof UPDATE_EXPERIENCE_REQUEST;
 
@@ -195,6 +240,9 @@ export type ExperiencesActionTypes =
   | CreateExperienceRequestAction
   | CreateExperienceSuccessAction
   | CreateExperienceFailureAction
+  | ToggleLikeRequestAction
+  | ToggleBookmarkRequestAction
+  | ToggleRepostRequestAction
   | ToggleLikeSuccessAction 
   | UpdateExperienceRequestAction
 | UpdateExperienceSuccessAction

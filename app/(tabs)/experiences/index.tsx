@@ -6,12 +6,14 @@ import React, {
 
 import {
   ActivityIndicator,
-  FlatList,
   RefreshControl,
   StyleSheet,
   Text,
   View,
+  ViewToken,
 } from "react-native";
+
+import { FlashList } from "@shopify/flash-list";
 
 import {
   Sparkles,
@@ -98,6 +100,8 @@ export default function HomeScreen() {
 
   const [loadingMore, setLoadingMore] =
     useState(false);
+
+  const [activeViewableId, setActiveViewableId] = useState<string | null>(null);
 
   // ───────────────── INITIAL FETCH ─────────────────
 
@@ -245,11 +249,31 @@ export default function HomeScreen() {
     );
   };
 
+  // ───────────────── VIEWABILITY (AUTO-PLAY/PAUSE) ─────────────────
+
+  const viewabilityConfig = React.useMemo(() => ({
+    itemVisiblePercentThreshold: 70,
+    minimumViewTime: 100, // Debounce rapid scrolling
+  }), []);
+
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length > 0) {
+        // Get the first item that meets the 70% visibility threshold
+        const activeItem = viewableItems[0];
+        setActiveViewableId(activeItem.item.id);
+      }
+    },
+    []
+  );
+
   // ───────────────── RENDER ITEM ─────────────────
 
-  const renderItem = ({
+  const renderItem = useCallback(({
     item,
-  }: any) => {
+  }: { item: any }) => {
+    const isActive = activeViewableId === item.id;
+
     return (
       <ExperienceCard
         item={item}
@@ -262,9 +286,10 @@ export default function HomeScreen() {
         onRepost={() =>
           handleRepost(item.id)
         }
+        isActive={isActive}
       />
     );
-  };
+  }, [activeViewableId, handleLike, handleBookmark, handleRepost]);
 
   // ───────────────── LOADER ─────────────────
 
@@ -352,8 +377,9 @@ export default function HomeScreen() {
 
       {/* FEED */}
 
-      <FlatList
+      <FlashList
         data={feed}
+        extraData={activeViewableId}
         renderItem={renderItem}
         keyExtractor={(item) =>
           item.id
@@ -363,13 +389,6 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={
           false
-        }
-        removeClippedSubviews
-        initialNumToRender={5}
-        maxToRenderPerBatch={8}
-        windowSize={10}
-        updateCellsBatchingPeriod={
-          50
         }
         onEndReached={
           handleLoadMore
@@ -390,6 +409,8 @@ export default function HomeScreen() {
             tintColor="#b97813"
           />
         }
+        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChanged}
       />
     </View>
   );

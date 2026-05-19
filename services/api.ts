@@ -43,12 +43,14 @@ apiClient.interceptors.request.use(
         const accountData = await SecureStore.getItemAsync('sai-family.devotee-account');
         if (accountData) {
           const account = JSON.parse(accountData);
-          if (account?.id) {
+          const userId = account?.id || account?.authorId;
+
+          if (userId) {
             // Injecting x-user-id header. Change to Authorization: `Bearer ${token}` if needed later.
             if (typeof config.headers.set === 'function') {
-              config.headers.set('x-user-id', account.id);
+              config.headers.set('x-user-id', userId);
             } else {
-              config.headers['x-user-id'] = account.id;
+              config.headers['x-user-id'] = userId;
             }
           }
         }
@@ -75,7 +77,10 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       console.log('[API] Unauthorized access - redirect to login / clear token');
-      if (injectedStore) {
+      
+      // Protect against logging out if backend returns 401 from YouTube API failure
+      const isVideoUploadError = error.config?.url === '/api/experiences' && error.config?.method === 'post';
+      if (injectedStore && !isVideoUploadError) {
         injectedStore.dispatch({ type: 'devotee-account/LOGOUT_REQUEST' });
       }
     }
@@ -88,6 +93,7 @@ apiClient.interceptors.response.use(
         baseURL: error.config?.baseURL,
         fullURL: `${error.config?.baseURL}${error.config?.url}`,
         status: error.response?.status,
+        backendErrorData: error.response?.data,
         isNetworkError: !error.response,
       };
 
