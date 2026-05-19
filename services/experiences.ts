@@ -1,5 +1,9 @@
 import { apiClient } from "./api";
-import { ExperienceUploadStatus } from "@/store/experiences/types";
+import {
+  DEFAULT_EXPERIENCE_CATEGORIES,
+  ExperienceCategory,
+  ExperienceUploadStatus,
+} from "@/store/experiences/types";
 
 export type CreateExperiencePayload = {
   content: string;
@@ -29,6 +33,55 @@ export async function apiFetchExperiences(
   );
 
   return data;
+}
+
+function normalizeCategories(data: any): ExperienceCategory[] {
+  const source =
+    data?.categories ||
+    data?.items ||
+    data?.data ||
+    data;
+
+  if (!Array.isArray(source)) {
+    return DEFAULT_EXPERIENCE_CATEGORIES;
+  }
+
+  return source
+    .map((item) => {
+      if (typeof item === "string") {
+        return {
+          category: item,
+          label: item,
+        };
+      }
+
+      return {
+        category:
+          item.category ||
+          item.value ||
+          item.slug ||
+          "",
+        label:
+          item.label ||
+          item.name ||
+          item.category ||
+          item.value ||
+          "",
+      };
+    })
+    .filter((item) => item.category && item.label);
+}
+
+export async function apiFetchExperienceCategories() {
+  try {
+    const { data } = await apiClient.get(
+      "/api/admin/categories"
+    );
+
+    return normalizeCategories(data);
+  } catch {
+    return DEFAULT_EXPERIENCE_CATEGORIES;
+  }
 }
 
 export async function apiCreateExperience(

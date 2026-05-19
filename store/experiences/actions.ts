@@ -123,12 +123,16 @@ import {
   FETCH_EXPERIENCES_FAILURE,
   FETCH_EXPERIENCES_REQUEST,
   FETCH_EXPERIENCES_SUCCESS,
+  FETCH_EXPERIENCE_CATEGORIES_FAILURE,
+  FETCH_EXPERIENCE_CATEGORIES_REQUEST,
+  FETCH_EXPERIENCE_CATEGORIES_SUCCESS,
   TOGGLE_LIKE_SUCCESS,
   TOGGLE_LIKE_REQUEST,
   TOGGLE_BOOKMARK_REQUEST,
   TOGGLE_REPOST_REQUEST,
   CreateExperiencePayload,
   Experience,
+  ExperienceCategory,
   DELETE_EXPERIENCE_SUCCESS,
   DELETE_EXPERIENCE_FAILURE,
   DELETE_EXPERIENCE_REQUEST,
@@ -165,6 +169,29 @@ export const fetchExperiencesFailure = (
 ) =>
   ({
     type: FETCH_EXPERIENCES_FAILURE,
+    payload,
+  } as const);
+
+// ───────────────── FETCH CATEGORIES ─────────────────
+
+export const fetchExperienceCategoriesRequest = () =>
+  ({
+    type: FETCH_EXPERIENCE_CATEGORIES_REQUEST,
+  } as const);
+
+export const fetchExperienceCategoriesSuccess = (
+  payload: ExperienceCategory[]
+) =>
+  ({
+    type: FETCH_EXPERIENCE_CATEGORIES_SUCCESS,
+    payload,
+  } as const);
+
+export const fetchExperienceCategoriesFailure = (
+  payload: string
+) =>
+  ({
+    type: FETCH_EXPERIENCE_CATEGORIES_FAILURE,
     payload,
   } as const);
 

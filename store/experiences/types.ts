@@ -5,6 +5,11 @@ export interface ExperienceMedia {
   thumbnailUrl?: string | null;
 }
 
+export interface ExperienceCategory {
+  category: string;
+  label: string;
+}
+
 export interface Experience {
   id: string;
   content: string;
@@ -55,11 +60,22 @@ export type CreateExperiencePayload = {
 };
 
 export interface ExperiencesState {
+  categories: ExperienceCategory[];
+  categoriesLoading: boolean;
   feed: Experience[];
   loading: boolean;
   creating: boolean;
   error: string | null;
 }
+
+export const DEFAULT_EXPERIENCE_CATEGORIES: ExperienceCategory[] = [
+  { category: "miracles", label: "Miracles" },
+  { category: "prayers", label: "Prayers" },
+  { category: "dreams", label: "Dreams" },
+  { category: "first", label: "First Experience" },
+  { category: "darshan", label: "Darshan" },
+  { category: "blessings", label: "Blessings" },
+];
 
 export const FETCH_EXPERIENCES_REQUEST =
   "FETCH_EXPERIENCES_REQUEST";
@@ -69,6 +85,15 @@ export const FETCH_EXPERIENCES_SUCCESS =
 
 export const FETCH_EXPERIENCES_FAILURE =
   "FETCH_EXPERIENCES_FAILURE";
+
+export const FETCH_EXPERIENCE_CATEGORIES_REQUEST =
+  "FETCH_EXPERIENCE_CATEGORIES_REQUEST";
+
+export const FETCH_EXPERIENCE_CATEGORIES_SUCCESS =
+  "FETCH_EXPERIENCE_CATEGORIES_SUCCESS";
+
+export const FETCH_EXPERIENCE_CATEGORIES_FAILURE =
+  "FETCH_EXPERIENCE_CATEGORIES_FAILURE";
 
 export const CREATE_EXPERIENCE_REQUEST =
   "CREATE_EXPERIENCE_REQUEST";
@@ -130,6 +155,20 @@ export interface FetchExperiencesSuccessAction {
 export interface FetchExperiencesFailureAction {
   type: typeof FETCH_EXPERIENCES_FAILURE;
 
+  payload: string;
+}
+
+export interface FetchExperienceCategoriesRequestAction {
+  type: typeof FETCH_EXPERIENCE_CATEGORIES_REQUEST;
+}
+
+export interface FetchExperienceCategoriesSuccessAction {
+  type: typeof FETCH_EXPERIENCE_CATEGORIES_SUCCESS;
+  payload: ExperienceCategory[];
+}
+
+export interface FetchExperienceCategoriesFailureAction {
+  type: typeof FETCH_EXPERIENCE_CATEGORIES_FAILURE;
   payload: string;
 }
 
@@ -237,6 +276,9 @@ export type ExperiencesActionTypes =
   | FetchExperiencesRequestAction
   | FetchExperiencesSuccessAction
   | FetchExperiencesFailureAction
+  | FetchExperienceCategoriesRequestAction
+  | FetchExperienceCategoriesSuccessAction
+  | FetchExperienceCategoriesFailureAction
   | CreateExperienceRequestAction
   | CreateExperienceSuccessAction
   | CreateExperienceFailureAction

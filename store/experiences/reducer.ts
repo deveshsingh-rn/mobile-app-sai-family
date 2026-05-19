@@ -2,6 +2,10 @@ import {
   CREATE_EXPERIENCE_FAILURE,
   CREATE_EXPERIENCE_REQUEST,
   CREATE_EXPERIENCE_SUCCESS,
+  DEFAULT_EXPERIENCE_CATEGORIES,
+  FETCH_EXPERIENCE_CATEGORIES_FAILURE,
+  FETCH_EXPERIENCE_CATEGORIES_REQUEST,
+  FETCH_EXPERIENCE_CATEGORIES_SUCCESS,
   FETCH_EXPERIENCES_FAILURE,
   FETCH_EXPERIENCES_REQUEST,
   FETCH_EXPERIENCES_SUCCESS,
@@ -13,6 +17,8 @@ import {
 } from "./types";
 
 const initialState: ExperiencesState = {
+  categories: DEFAULT_EXPERIENCE_CATEGORIES,
+  categoriesLoading: false,
   feed: [],
   loading: false,
   creating: false,
@@ -43,6 +49,28 @@ export const experiencesReducer = (
         ...state,
         loading: false,
         error: action.payload,
+      };
+
+    case FETCH_EXPERIENCE_CATEGORIES_REQUEST:
+      return {
+        ...state,
+        categoriesLoading: true,
+      };
+
+    case FETCH_EXPERIENCE_CATEGORIES_SUCCESS:
+      return {
+        ...state,
+        categories:
+          action.payload.length > 0
+            ? action.payload
+            : state.categories,
+        categoriesLoading: false,
+      };
+
+    case FETCH_EXPERIENCE_CATEGORIES_FAILURE:
+      return {
+        ...state,
+        categoriesLoading: false,
       };
 
     case CREATE_EXPERIENCE_REQUEST:

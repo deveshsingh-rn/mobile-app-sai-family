@@ -1,4 +1,5 @@
 import React, {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -43,10 +44,12 @@ import { ExperienceTopTabs } from "@/components/experiences";
 
 import {
   createExperienceRequest,
+  fetchExperienceCategoriesRequest,
 } from "@/store/experiences/actions";
 
 import {
   selectCreateExperienceLoading,
+  selectExperienceCategories,
 } from "@/store/experiences/selectors";
 
 type MediaType =
@@ -67,6 +70,10 @@ export default function PremiumPostScreen() {
     selectCreateExperienceLoading
   );
 
+  const categories = useSelector(
+    selectExperienceCategories
+  );
+
   const account = useSelector(
     (state: any) =>
       state.devoteeAccount?.account
@@ -83,14 +90,22 @@ export default function PremiumPostScreen() {
       null
     );
 
-  const category = "miracles";
+  const [selectedCategory, setSelectedCategory] =
+    useState("miracles");
 
   const isDisabled = useMemo(() => {
     return (
-      !content.trim() &&
-      !selectedMedia
+      (!content.trim() &&
+        !selectedMedia) ||
+      !selectedCategory
     );
-  }, [content, selectedMedia]);
+  }, [content, selectedMedia, selectedCategory]);
+
+  useEffect(() => {
+    dispatch(
+      fetchExperienceCategoriesRequest()
+    );
+  }, [dispatch]);
 
   // ───────────────── IMAGE ─────────────────
 
@@ -223,7 +238,7 @@ export default function PremiumPostScreen() {
     dispatch(
       createExperienceRequest({
         content,
-        category,
+        category: selectedCategory,
         location,
         media: selectedMedia,
         userId,
@@ -346,6 +361,57 @@ export default function PremiumPostScreen() {
           </View>
 
           {/* ───────────────── INPUT ───────────────── */}
+
+          <Text style={styles.sectionLabel}>
+            Choose Category
+          </Text>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={
+              false
+            }
+            contentContainerStyle={
+              styles.categoryRow
+            }
+          >
+            {categories.map(
+              (item: {
+                category: string;
+                label: string;
+              }) => {
+                const isActive =
+                  selectedCategory ===
+                  item.category;
+
+                return (
+                  <Pressable
+                    key={item.category}
+                    onPress={() =>
+                      setSelectedCategory(
+                        item.category
+                      )
+                    }
+                    style={[
+                      styles.categoryChip,
+                      isActive &&
+                        styles.categoryChipActive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryText,
+                        isActive &&
+                          styles.categoryTextActive,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              }
+            )}
+          </ScrollView>
 
           <TextInput
             value={content}
@@ -694,13 +760,54 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    marginTop: 22,
+    marginTop: 18,
     minHeight: 180,
 
     color: "#3a2203",
     fontSize: 24,
     lineHeight: 38,
     fontWeight: "500",
+  },
+
+  sectionLabel: {
+    marginTop: 24,
+    color: "#5d3902",
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+
+  categoryRow: {
+    gap: 10,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+
+  categoryChip: {
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor:
+      "rgba(255,255,255,0.72)",
+    borderWidth: 1,
+    borderColor:
+      "rgba(236,209,168,0.7)",
+  },
+
+  categoryChipActive: {
+    backgroundColor: "#8e5d10",
+    borderColor: "#8e5d10",
+  },
+
+  categoryText: {
+    color: "#8b5b0f",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  categoryTextActive: {
+    color: "#fffaf0",
   },
 
   mediaContainer: {

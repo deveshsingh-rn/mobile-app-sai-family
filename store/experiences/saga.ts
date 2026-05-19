@@ -7,6 +7,7 @@ import {
 import {
   apiCreateExperience,
   apiDeleteExperience,
+  apiFetchExperienceCategories,
   apiFetchExperiences,
   apiToggleBookmark,
   apiToggleLike,
@@ -21,6 +22,8 @@ import {
   deleteExperienceSuccess,
   fetchExperiencesFailure,
   fetchExperiencesSuccess,
+  fetchExperienceCategoriesFailure,
+  fetchExperienceCategoriesSuccess,
   toggleLikeSuccess,
   updateExperienceFailure,
   updateExperienceSuccess,
@@ -29,6 +32,7 @@ import {
 import {
   CREATE_EXPERIENCE_REQUEST,
   DELETE_EXPERIENCE_REQUEST,
+  FETCH_EXPERIENCE_CATEGORIES_REQUEST,
   FETCH_EXPERIENCES_REQUEST,
   TOGGLE_BOOKMARK_REQUEST,
   TOGGLE_LIKE_REQUEST,
@@ -92,6 +96,32 @@ function* handleFetchExperiences(
 
     yield put(
       fetchExperiencesFailure(
+        message
+      )
+    );
+  }
+}
+
+function* handleFetchExperienceCategories(): Generator<any, void, any> {
+  try {
+    const categories = yield call(
+      apiFetchExperienceCategories
+    );
+
+    yield put(
+      fetchExperienceCategoriesSuccess(
+        categories
+      )
+    );
+  } catch (error: any) {
+    const message =
+      error.response?.data?.error
+        ?.message ||
+      error.message ||
+      "Failed to fetch categories.";
+
+    yield put(
+      fetchExperienceCategoriesFailure(
         message
       )
     );
@@ -248,6 +278,10 @@ export function* experiencesSaga() {
   yield takeLatest(
     FETCH_EXPERIENCES_REQUEST,
     handleFetchExperiences
+  );
+  yield takeLatest(
+    FETCH_EXPERIENCE_CATEGORIES_REQUEST,
+    handleFetchExperienceCategories
   );
 
   yield takeLatest(
