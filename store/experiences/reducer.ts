@@ -5,6 +5,7 @@ import {
   ADD_EXPERIENCE_COMMENT_FAILURE,
   ADD_EXPERIENCE_COMMENT_REQUEST,
   ADD_EXPERIENCE_COMMENT_SUCCESS,
+  CLEAR_EXPERIENCE_SEARCH,
   DEFAULT_EXPERIENCE_CATEGORIES,
   FETCH_EXPERIENCE_CATEGORIES_FAILURE,
   FETCH_EXPERIENCE_CATEGORIES_REQUEST,
@@ -15,6 +16,9 @@ import {
   FETCH_EXPERIENCES_FAILURE,
   FETCH_EXPERIENCES_REQUEST,
   FETCH_EXPERIENCES_SUCCESS,
+  SEARCH_EXPERIENCES_FAILURE,
+  SEARCH_EXPERIENCES_REQUEST,
+  SEARCH_EXPERIENCES_SUCCESS,
   ExperiencesActionTypes,
   ExperiencesState,
   TOGGLE_LIKE_SUCCESS,
@@ -28,6 +32,10 @@ const initialState: ExperiencesState = {
   comments: [],
   detail: null,
   feed: [],
+  searchError: null,
+  searchHasMore: false,
+  searchLoading: false,
+  searchResults: [],
   loading: false,
   creating: false,
   error: null,
@@ -105,6 +113,54 @@ export const experiencesReducer = (
         error: action.payload,
       };
 
+    case SEARCH_EXPERIENCES_REQUEST:
+      return {
+        ...state,
+        searchError: null,
+        searchLoading: true,
+        searchHasMore:
+          action.payload.offset &&
+          action.payload.offset > 0
+            ? state.searchHasMore
+            : false,
+        searchResults:
+          action.payload.offset &&
+          action.payload.offset > 0
+            ? state.searchResults
+            : [],
+      };
+
+    case SEARCH_EXPERIENCES_SUCCESS:
+      return {
+        ...state,
+        searchHasMore:
+          action.payload.hasMore,
+        searchLoading: false,
+        searchResults:
+          action.payload.offset > 0
+            ? [
+                ...state.searchResults,
+                ...action.payload.results,
+              ]
+            : action.payload.results,
+      };
+
+    case SEARCH_EXPERIENCES_FAILURE:
+      return {
+        ...state,
+        searchError: action.payload,
+        searchLoading: false,
+      };
+
+    case CLEAR_EXPERIENCE_SEARCH:
+      return {
+        ...state,
+        searchError: null,
+        searchHasMore: false,
+        searchLoading: false,
+        searchResults: [],
+      };
+
     case ADD_EXPERIENCE_COMMENT_REQUEST:
       return {
         ...state,
@@ -162,6 +218,18 @@ export const experiencesReducer = (
         ...state,
 
         feed: state.feed.map((exp) =>
+          exp.id ===
+          action.payload.experienceId
+            ? {
+                ...exp,
+                likes:
+                  action.payload.likes,
+                likedByMe:
+                  action.payload.likedByMe,
+              }
+            : exp
+        ),
+        searchResults: state.searchResults.map((exp) =>
           exp.id ===
           action.payload.experienceId
             ? {

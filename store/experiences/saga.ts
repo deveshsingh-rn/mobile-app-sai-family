@@ -11,6 +11,7 @@ import {
   apiFetchExperienceCategories,
   apiFetchExperienceDetail,
   apiFetchExperiences,
+  apiSearchExperiences,
   apiToggleBookmark,
   apiToggleLike,
   apiToggleRepost,
@@ -30,6 +31,8 @@ import {
   fetchExperienceCategoriesSuccess,
   fetchExperienceDetailFailure,
   fetchExperienceDetailSuccess,
+  searchExperiencesFailure,
+  searchExperiencesSuccess,
   toggleLikeSuccess,
   updateExperienceFailure,
   updateExperienceSuccess,
@@ -42,6 +45,7 @@ import {
   FETCH_EXPERIENCE_CATEGORIES_REQUEST,
   FETCH_EXPERIENCE_DETAIL_REQUEST,
   FETCH_EXPERIENCES_REQUEST,
+  SEARCH_EXPERIENCES_REQUEST,
   TOGGLE_BOOKMARK_REQUEST,
   TOGGLE_LIKE_REQUEST,
   TOGGLE_REPOST_REQUEST,
@@ -170,6 +174,49 @@ function* handleFetchExperienceDetail(
 
     yield put(
       fetchExperienceDetailFailure(
+        message
+      )
+    );
+  }
+}
+
+function* handleSearchExperiences(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiSearchExperiences,
+      action.payload
+    );
+
+    const source =
+      response.experiences ||
+      response.results ||
+      response.items ||
+      [];
+
+    yield put(
+      searchExperiencesSuccess({
+        hasMore:
+          source.length >=
+          (action.payload.limit || 0),
+        offset:
+          action.payload.offset || 0,
+        results:
+          source.map(
+            flattenExperience
+          ),
+      })
+    );
+  } catch (error: any) {
+    const message =
+      error.response?.data?.error
+        ?.message ||
+      error.message ||
+      "Failed to search experiences.";
+
+    yield put(
+      searchExperiencesFailure(
         message
       )
     );
@@ -370,6 +417,10 @@ export function* experiencesSaga() {
   yield takeLatest(
     FETCH_EXPERIENCE_DETAIL_REQUEST,
     handleFetchExperienceDetail
+  );
+  yield takeLatest(
+    SEARCH_EXPERIENCES_REQUEST,
+    handleSearchExperiences
   );
 
   yield takeLatest(

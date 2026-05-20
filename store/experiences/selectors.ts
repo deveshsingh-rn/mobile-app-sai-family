@@ -21,3 +21,19 @@ export const selectExperienceCategoriesLoading =
 export const selectExperiencesError = (
   state: any
 ) => state.experiences.error;
+
+export const selectExperienceSearchResults = (
+  state: any
+) => state.experiences.searchResults;
+
+export const selectExperienceSearchLoading = (
+  state: any
+) => state.experiences.searchLoading;
+
+export const selectExperienceSearchHasMore = (
+  state: any
+) => state.experiences.searchHasMore;
+
+export const selectExperienceSearchError = (
+  state: any
+) => state.experiences.searchError;

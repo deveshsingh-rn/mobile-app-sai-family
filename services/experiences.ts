@@ -35,6 +35,23 @@ export async function apiFetchExperiences(
   return data;
 }
 
+export async function apiSearchExperiences(
+  params: {
+    limit?: number;
+    offset?: number;
+    q: string;
+  }
+) {
+  const { data } = await apiClient.get(
+    "/api/experiences/search",
+    {
+      params,
+    }
+  );
+
+  return data;
+}
+
 function normalizeCategories(data: any): ExperienceCategory[] {
   const source =
     data?.categories ||
@@ -75,7 +92,7 @@ function normalizeCategories(data: any): ExperienceCategory[] {
 export async function apiFetchExperienceCategories() {
   try {
     const { data } = await apiClient.get(
-      "/api/admin/categories"
+      "/api/experiences/categories"
     );
 
     return normalizeCategories(data);

@@ -50,15 +50,6 @@ const EXPERIENCE_TABS = [
 
   {
     href:
-      "/(tabs)/experiences/category",
-
-    key: "category",
-
-    label: "Categories",
-  },
-
-  {
-    href:
       "/(tabs)/experiences/bookmarks",
 
     key: "bookmarks",

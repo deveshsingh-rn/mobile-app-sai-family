@@ -132,6 +132,10 @@ import {
   FETCH_EXPERIENCE_DETAIL_FAILURE,
   FETCH_EXPERIENCE_DETAIL_REQUEST,
   FETCH_EXPERIENCE_DETAIL_SUCCESS,
+  SEARCH_EXPERIENCES_FAILURE,
+  SEARCH_EXPERIENCES_REQUEST,
+  SEARCH_EXPERIENCES_SUCCESS,
+  CLEAR_EXPERIENCE_SEARCH,
   TOGGLE_LIKE_SUCCESS,
   TOGGLE_LIKE_REQUEST,
   TOGGLE_BOOKMARK_REQUEST,
@@ -359,6 +363,45 @@ export const fetchExperienceDetailFailure = (
   ({
     type: FETCH_EXPERIENCE_DETAIL_FAILURE,
     payload,
+  } as const);
+
+// ───────────────── SEARCH EXPERIENCES ─────────────────
+
+export const searchExperiencesRequest = (
+  payload: {
+    limit?: number;
+    offset?: number;
+    q: string;
+  }
+) =>
+  ({
+    type: SEARCH_EXPERIENCES_REQUEST,
+    payload,
+  } as const);
+
+export const searchExperiencesSuccess = (
+  payload: {
+    hasMore: boolean;
+    offset: number;
+    results: Experience[];
+  }
+) =>
+  ({
+    type: SEARCH_EXPERIENCES_SUCCESS,
+    payload,
+  } as const);
+
+export const searchExperiencesFailure = (
+  payload: string
+) =>
+  ({
+    type: SEARCH_EXPERIENCES_FAILURE,
+    payload,
+  } as const);
+
+export const clearExperienceSearch = () =>
+  ({
+    type: CLEAR_EXPERIENCE_SEARCH,
   } as const);
 
 export const addCommentRequest = (

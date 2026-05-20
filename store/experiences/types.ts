@@ -76,6 +76,10 @@ export interface ExperiencesState {
   comments: ExperienceComment[];
   detail: Experience | null;
   feed: Experience[];
+  searchError: string | null;
+  searchHasMore: boolean;
+  searchLoading: boolean;
+  searchResults: Experience[];
   loading: boolean;
   creating: boolean;
   error: string | null;
@@ -116,6 +120,18 @@ export const FETCH_EXPERIENCE_DETAIL_SUCCESS =
 
 export const FETCH_EXPERIENCE_DETAIL_FAILURE =
   "FETCH_EXPERIENCE_DETAIL_FAILURE";
+
+export const SEARCH_EXPERIENCES_REQUEST =
+  "SEARCH_EXPERIENCES_REQUEST";
+
+export const SEARCH_EXPERIENCES_SUCCESS =
+  "SEARCH_EXPERIENCES_SUCCESS";
+
+export const SEARCH_EXPERIENCES_FAILURE =
+  "SEARCH_EXPERIENCES_FAILURE";
+
+export const CLEAR_EXPERIENCE_SEARCH =
+  "CLEAR_EXPERIENCE_SEARCH";
 
 export const ADD_EXPERIENCE_COMMENT_REQUEST =
   "ADD_EXPERIENCE_COMMENT_REQUEST";
@@ -221,6 +237,33 @@ export interface FetchExperienceDetailSuccessAction {
 export interface FetchExperienceDetailFailureAction {
   type: typeof FETCH_EXPERIENCE_DETAIL_FAILURE;
   payload: string;
+}
+
+export interface SearchExperiencesRequestAction {
+  type: typeof SEARCH_EXPERIENCES_REQUEST;
+  payload: {
+    limit?: number;
+    offset?: number;
+    q: string;
+  };
+}
+
+export interface SearchExperiencesSuccessAction {
+  type: typeof SEARCH_EXPERIENCES_SUCCESS;
+  payload: {
+    hasMore: boolean;
+    offset: number;
+    results: Experience[];
+  };
+}
+
+export interface SearchExperiencesFailureAction {
+  type: typeof SEARCH_EXPERIENCES_FAILURE;
+  payload: string;
+}
+
+export interface ClearExperienceSearchAction {
+  type: typeof CLEAR_EXPERIENCE_SEARCH;
 }
 
 export interface AddExperienceCommentRequestAction {
@@ -353,6 +396,10 @@ export type ExperiencesActionTypes =
   | FetchExperienceDetailRequestAction
   | FetchExperienceDetailSuccessAction
   | FetchExperienceDetailFailureAction
+  | SearchExperiencesRequestAction
+  | SearchExperiencesSuccessAction
+  | SearchExperiencesFailureAction
+  | ClearExperienceSearchAction
   | AddExperienceCommentRequestAction
   | AddExperienceCommentSuccessAction
   | AddExperienceCommentFailureAction

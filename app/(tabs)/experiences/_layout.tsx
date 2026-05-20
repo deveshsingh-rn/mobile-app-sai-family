@@ -7,7 +7,7 @@ export default function ExperiencesLayout() {
       <Stack.Screen name="[id]" />
       <Stack.Screen name="post" />
       <Stack.Screen name="search" />
-      <Stack.Screen name="category" />
+      {/* <Stack.Screen name="category" /> */}
       <Stack.Screen name="bookmarks" />
     </Stack>
   );
