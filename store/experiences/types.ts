@@ -38,6 +38,17 @@ export interface Experience {
   mediaAttachments: ExperienceMedia[];
 }
 
+export interface ExperienceComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  author?: {
+    id: string;
+    name: string;
+    profileImageUrl?: string | null;
+  };
+}
+
 export type ExperienceUploadStatus = {
   id: string;
   mediaAttachments: ExperienceMedia[];
@@ -62,6 +73,8 @@ export type CreateExperiencePayload = {
 export interface ExperiencesState {
   categories: ExperienceCategory[];
   categoriesLoading: boolean;
+  comments: ExperienceComment[];
+  detail: Experience | null;
   feed: Experience[];
   loading: boolean;
   creating: boolean;
@@ -94,6 +107,24 @@ export const FETCH_EXPERIENCE_CATEGORIES_SUCCESS =
 
 export const FETCH_EXPERIENCE_CATEGORIES_FAILURE =
   "FETCH_EXPERIENCE_CATEGORIES_FAILURE";
+
+export const FETCH_EXPERIENCE_DETAIL_REQUEST =
+  "FETCH_EXPERIENCE_DETAIL_REQUEST";
+
+export const FETCH_EXPERIENCE_DETAIL_SUCCESS =
+  "FETCH_EXPERIENCE_DETAIL_SUCCESS";
+
+export const FETCH_EXPERIENCE_DETAIL_FAILURE =
+  "FETCH_EXPERIENCE_DETAIL_FAILURE";
+
+export const ADD_EXPERIENCE_COMMENT_REQUEST =
+  "ADD_EXPERIENCE_COMMENT_REQUEST";
+
+export const ADD_EXPERIENCE_COMMENT_SUCCESS =
+  "ADD_EXPERIENCE_COMMENT_SUCCESS";
+
+export const ADD_EXPERIENCE_COMMENT_FAILURE =
+  "ADD_EXPERIENCE_COMMENT_FAILURE";
 
 export const CREATE_EXPERIENCE_REQUEST =
   "CREATE_EXPERIENCE_REQUEST";
@@ -172,6 +203,45 @@ export interface FetchExperienceCategoriesFailureAction {
   payload: string;
 }
 
+export interface FetchExperienceDetailRequestAction {
+  type: typeof FETCH_EXPERIENCE_DETAIL_REQUEST;
+  payload: {
+    id: string;
+  };
+}
+
+export interface FetchExperienceDetailSuccessAction {
+  type: typeof FETCH_EXPERIENCE_DETAIL_SUCCESS;
+  payload: {
+    comments: ExperienceComment[];
+    experience: Experience;
+  };
+}
+
+export interface FetchExperienceDetailFailureAction {
+  type: typeof FETCH_EXPERIENCE_DETAIL_FAILURE;
+  payload: string;
+}
+
+export interface AddExperienceCommentRequestAction {
+  type: typeof ADD_EXPERIENCE_COMMENT_REQUEST;
+  payload: {
+    content: string;
+    experienceId: string;
+    userId?: string;
+  };
+}
+
+export interface AddExperienceCommentSuccessAction {
+  type: typeof ADD_EXPERIENCE_COMMENT_SUCCESS;
+  payload: ExperienceComment;
+}
+
+export interface AddExperienceCommentFailureAction {
+  type: typeof ADD_EXPERIENCE_COMMENT_FAILURE;
+  payload: string;
+}
+
 export interface CreateExperienceRequestAction {
   type: typeof CREATE_EXPERIENCE_REQUEST;
 
@@ -195,6 +265,7 @@ export interface ToggleLikeSuccessAction {
 
   payload: {
     experienceId: string;
+    likedByMe: boolean;
     likes: number;
   };
 }
@@ -279,6 +350,12 @@ export type ExperiencesActionTypes =
   | FetchExperienceCategoriesRequestAction
   | FetchExperienceCategoriesSuccessAction
   | FetchExperienceCategoriesFailureAction
+  | FetchExperienceDetailRequestAction
+  | FetchExperienceDetailSuccessAction
+  | FetchExperienceDetailFailureAction
+  | AddExperienceCommentRequestAction
+  | AddExperienceCommentSuccessAction
+  | AddExperienceCommentFailureAction
   | CreateExperienceRequestAction
   | CreateExperienceSuccessAction
   | CreateExperienceFailureAction

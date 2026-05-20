@@ -84,6 +84,22 @@ export async function apiFetchExperienceCategories() {
   }
 }
 
+export async function apiFetchExperienceDetail(
+  id: string
+) {
+  const { data } = await apiClient.get(
+    `/api/experiences/${id}`,
+    {
+      params: {
+        commentLimit: 20,
+        commentOffset: 0,
+      },
+    }
+  );
+
+  return data;
+}
+
 export async function apiCreateExperience(
   payload: CreateExperiencePayload
 ) {
@@ -160,6 +176,30 @@ export async function apiToggleLike(
 ) {
   const { data } = await apiClient.post(
     `/api/experiences/${id}/like`
+  );
+
+  return data;
+}
+
+export async function apiAddExperienceComment({
+  content,
+  experienceId,
+  userId,
+}: {
+  content: string;
+  experienceId: string;
+  userId?: string;
+}) {
+  const { data } = await apiClient.post(
+    `/api/experiences/${experienceId}/comments`,
+    {
+      content,
+    },
+    {
+      headers: {
+        ...(userId ? { "x-user-id": userId } : {}),
+      },
+    }
   );
 
   return data;

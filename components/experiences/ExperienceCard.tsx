@@ -2,6 +2,7 @@ import React from "react";
 
 import {
   Image,
+  GestureResponderEvent,
   Pressable,
   Share,
   StyleSheet,
@@ -63,6 +64,14 @@ export function ExperienceCard({
     );
   };
 
+  const handleActionPress = (
+    event: GestureResponderEvent,
+    action?: () => void | Promise<void>
+  ) => {
+    event.stopPropagation();
+    action?.();
+  };
+
   const handleShare = async () => {
     await Share.share({
       message: item.content,
@@ -122,9 +131,23 @@ export function ExperienceCard({
 
         {/* CONTENT */}
 
-        <Text style={styles.content}>
+        <Text
+          numberOfLines={
+            disableNavigation
+              ? undefined
+              : 2
+          }
+          style={styles.content}
+        >
           {item.content}
         </Text>
+
+        {!disableNavigation &&
+          item.content?.length > 90 && (
+            <Text style={styles.readMore}>
+              Read more
+            </Text>
+          )}
 
         {/* MEDIA */}
 
@@ -171,11 +194,25 @@ export function ExperienceCard({
 
           <Pressable
             style={styles.actionButton}
-            onPress={handleLike}
+            onPress={(event) =>
+              handleActionPress(
+                event,
+                handleLike
+              )
+            }
           >
             <Heart
               size={20}
-              color="#e45b5b"
+              color={
+                item.likedByMe
+                  ? "#dc2626"
+                  : "#e45b5b"
+              }
+              fill={
+                item.likedByMe
+                  ? "#dc2626"
+                  : "transparent"
+              }
             />
 
             <Text
@@ -189,7 +226,11 @@ export function ExperienceCard({
 
           <Pressable
             style={styles.actionButton}
-            onPress={onRepost}
+            onPress={(event) =>
+              handleActionPress(
+                event
+              )
+            }
           >
             <MessageCircle
               size={20}
@@ -207,7 +248,12 @@ export function ExperienceCard({
 
           <Pressable
             style={styles.actionButton}
-            onPress={onBookmark}
+            onPress={(event) =>
+              handleActionPress(
+                event,
+                onRepost
+              )
+            }
           >
             <Repeat2
               size={20}
@@ -225,10 +271,21 @@ export function ExperienceCard({
 
           <Pressable
             style={styles.actionButton}
+            onPress={(event) =>
+              handleActionPress(
+                event,
+                onBookmark
+              )
+            }
           >
             <Bookmark
               size={20}
               color="#b0851d"
+              fill={
+                item.bookmarkedByMe
+                  ? "#b0851d"
+                  : "transparent"
+              }
             />
           </Pressable>
 
@@ -236,7 +293,12 @@ export function ExperienceCard({
 
           <Pressable
             style={styles.actionButton}
-            onPress={handleShare}
+            onPress={(event) =>
+              handleActionPress(
+                event,
+                handleShare
+              )
+            }
           >
             <Text
               style={styles.share}
@@ -321,6 +383,13 @@ const styles = StyleSheet.create({
 
     fontSize: 16,
     lineHeight: 28,
+  },
+
+  readMore: {
+    color: "#9d6912",
+    fontSize: 14,
+    fontWeight: "800",
+    marginTop: 6,
   },
 
   mediaContainer: {

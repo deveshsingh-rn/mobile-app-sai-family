@@ -2,10 +2,16 @@ import {
   CREATE_EXPERIENCE_FAILURE,
   CREATE_EXPERIENCE_REQUEST,
   CREATE_EXPERIENCE_SUCCESS,
+  ADD_EXPERIENCE_COMMENT_FAILURE,
+  ADD_EXPERIENCE_COMMENT_REQUEST,
+  ADD_EXPERIENCE_COMMENT_SUCCESS,
   DEFAULT_EXPERIENCE_CATEGORIES,
   FETCH_EXPERIENCE_CATEGORIES_FAILURE,
   FETCH_EXPERIENCE_CATEGORIES_REQUEST,
   FETCH_EXPERIENCE_CATEGORIES_SUCCESS,
+  FETCH_EXPERIENCE_DETAIL_FAILURE,
+  FETCH_EXPERIENCE_DETAIL_REQUEST,
+  FETCH_EXPERIENCE_DETAIL_SUCCESS,
   FETCH_EXPERIENCES_FAILURE,
   FETCH_EXPERIENCES_REQUEST,
   FETCH_EXPERIENCES_SUCCESS,
@@ -19,6 +25,8 @@ import {
 const initialState: ExperiencesState = {
   categories: DEFAULT_EXPERIENCE_CATEGORIES,
   categoriesLoading: false,
+  comments: [],
+  detail: null,
   feed: [],
   loading: false,
   creating: false,
@@ -73,6 +81,58 @@ export const experiencesReducer = (
         categoriesLoading: false,
       };
 
+    case FETCH_EXPERIENCE_DETAIL_REQUEST:
+      return {
+        ...state,
+        detail: null,
+        comments: [],
+        loading: true,
+        error: null,
+      };
+
+    case FETCH_EXPERIENCE_DETAIL_SUCCESS:
+      return {
+        ...state,
+        detail: action.payload.experience,
+        comments: action.payload.comments,
+        loading: false,
+      };
+
+    case FETCH_EXPERIENCE_DETAIL_FAILURE:
+      return {
+        ...state,
+        loading: false,
+        error: action.payload,
+      };
+
+    case ADD_EXPERIENCE_COMMENT_REQUEST:
+      return {
+        ...state,
+        error: null,
+      };
+
+    case ADD_EXPERIENCE_COMMENT_SUCCESS:
+      return {
+        ...state,
+        comments: [
+          action.payload,
+          ...state.comments,
+        ],
+        detail: state.detail
+          ? {
+              ...state.detail,
+              comments:
+                state.detail.comments + 1,
+            }
+          : state.detail,
+      };
+
+    case ADD_EXPERIENCE_COMMENT_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+      };
+
     case CREATE_EXPERIENCE_REQUEST:
       return {
         ...state,
@@ -108,9 +168,21 @@ export const experiencesReducer = (
                 ...exp,
                 likes:
                   action.payload.likes,
+                likedByMe:
+                  action.payload.likedByMe,
               }
             : exp
         ),
+        detail:
+          state.detail?.id ===
+          action.payload.experienceId
+            ? {
+                ...state.detail,
+                likes: action.payload.likes,
+                likedByMe:
+                  action.payload.likedByMe,
+              }
+            : state.detail,
       };
 
       case UPDATE_EXPERIENCE_SUCCESS:

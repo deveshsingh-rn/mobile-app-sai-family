@@ -117,6 +117,9 @@
 
 
 import {
+  ADD_EXPERIENCE_COMMENT_FAILURE,
+  ADD_EXPERIENCE_COMMENT_REQUEST,
+  ADD_EXPERIENCE_COMMENT_SUCCESS,
   CREATE_EXPERIENCE_FAILURE,
   CREATE_EXPERIENCE_REQUEST,
   CREATE_EXPERIENCE_SUCCESS,
@@ -126,6 +129,9 @@ import {
   FETCH_EXPERIENCE_CATEGORIES_FAILURE,
   FETCH_EXPERIENCE_CATEGORIES_REQUEST,
   FETCH_EXPERIENCE_CATEGORIES_SUCCESS,
+  FETCH_EXPERIENCE_DETAIL_FAILURE,
+  FETCH_EXPERIENCE_DETAIL_REQUEST,
+  FETCH_EXPERIENCE_DETAIL_SUCCESS,
   TOGGLE_LIKE_SUCCESS,
   TOGGLE_LIKE_REQUEST,
   TOGGLE_BOOKMARK_REQUEST,
@@ -133,6 +139,7 @@ import {
   CreateExperiencePayload,
   Experience,
   ExperienceCategory,
+  ExperienceComment,
   DELETE_EXPERIENCE_SUCCESS,
   DELETE_EXPERIENCE_FAILURE,
   DELETE_EXPERIENCE_REQUEST,
@@ -225,12 +232,14 @@ export const createExperienceFailure = (
 
 export const toggleLikeSuccess = (
   experienceId: string,
-  likes: number
+  likes: number,
+  likedByMe: boolean
 ) =>
   ({
     type: TOGGLE_LIKE_SUCCESS,
     payload: {
       experienceId,
+      likedByMe,
       likes,
     },
   } as const);
@@ -327,10 +336,29 @@ export const fetchExperienceDetailRequest = (
   id: string
 ) =>
   ({
-    type: "FETCH_EXPERIENCE_DETAIL_REQUEST",
+    type: FETCH_EXPERIENCE_DETAIL_REQUEST,
     payload: {
       id,
     },
+  } as const);
+
+export const fetchExperienceDetailSuccess = (
+  payload: {
+    comments: ExperienceComment[];
+    experience: Experience;
+  }
+) =>
+  ({
+    type: FETCH_EXPERIENCE_DETAIL_SUCCESS,
+    payload,
+  } as const);
+
+export const fetchExperienceDetailFailure = (
+  payload: string
+) =>
+  ({
+    type: FETCH_EXPERIENCE_DETAIL_FAILURE,
+    payload,
   } as const);
 
 export const addCommentRequest = (
@@ -339,10 +367,26 @@ export const addCommentRequest = (
   userId?: string
 ) =>
   ({
-    type: "ADD_EXPERIENCE_COMMENT_REQUEST",
+    type: ADD_EXPERIENCE_COMMENT_REQUEST,
     payload: {
       content,
       experienceId,
       userId,
     },
+  } as const);
+
+export const addCommentSuccess = (
+  payload: ExperienceComment
+) =>
+  ({
+    type: ADD_EXPERIENCE_COMMENT_SUCCESS,
+    payload,
+  } as const);
+
+export const addCommentFailure = (
+  payload: string
+) =>
+  ({
+    type: ADD_EXPERIENCE_COMMENT_FAILURE,
+    payload,
   } as const);

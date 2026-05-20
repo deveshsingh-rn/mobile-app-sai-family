@@ -6,8 +6,10 @@ import {
 
 import {
   apiCreateExperience,
+  apiAddExperienceComment,
   apiDeleteExperience,
   apiFetchExperienceCategories,
+  apiFetchExperienceDetail,
   apiFetchExperiences,
   apiToggleBookmark,
   apiToggleLike,
@@ -18,21 +20,27 @@ import {
 import {
   createExperienceFailure,
   createExperienceSuccess,
+  addCommentFailure,
+  addCommentSuccess,
   deleteExperienceFailure,
   deleteExperienceSuccess,
   fetchExperiencesFailure,
   fetchExperiencesSuccess,
   fetchExperienceCategoriesFailure,
   fetchExperienceCategoriesSuccess,
+  fetchExperienceDetailFailure,
+  fetchExperienceDetailSuccess,
   toggleLikeSuccess,
   updateExperienceFailure,
   updateExperienceSuccess,
 } from "./actions";
 
 import {
+  ADD_EXPERIENCE_COMMENT_REQUEST,
   CREATE_EXPERIENCE_REQUEST,
   DELETE_EXPERIENCE_REQUEST,
   FETCH_EXPERIENCE_CATEGORIES_REQUEST,
+  FETCH_EXPERIENCE_DETAIL_REQUEST,
   FETCH_EXPERIENCES_REQUEST,
   TOGGLE_BOOKMARK_REQUEST,
   TOGGLE_LIKE_REQUEST,
@@ -65,6 +73,12 @@ function flattenExperience(exp: any) {
 
     bookmarks:
       exp._count?.bookmarks || 0,
+  };
+}
+
+function normalizeComment(comment: any) {
+  return {
+    ...comment,
   };
 }
 
@@ -122,6 +136,40 @@ function* handleFetchExperienceCategories(): Generator<any, void, any> {
 
     yield put(
       fetchExperienceCategoriesFailure(
+        message
+      )
+    );
+  }
+}
+
+function* handleFetchExperienceDetail(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchExperienceDetail,
+      action.payload.id
+    );
+
+    yield put(
+      fetchExperienceDetailSuccess({
+        comments: (
+          response.experience?.comments || []
+        ).map(normalizeComment),
+        experience: flattenExperience(
+          response.experience
+        ),
+      })
+    );
+  } catch (error: any) {
+    const message =
+      error.response?.data?.error
+        ?.message ||
+      error.message ||
+      "Failed to fetch experience detail.";
+
+    yield put(
+      fetchExperienceDetailFailure(
         message
       )
     );
@@ -240,11 +288,47 @@ function* handleToggleLike(
     yield put(
       toggleLikeSuccess(
         action.payload.experienceId,
-        response.likes ?? response.experience?.likes ?? 0
+        response.likes ??
+          response.experience?.likes ??
+          response._count?.likes ??
+          0,
+        response.likedByMe ??
+          response.liked ??
+          response.experience?.likedByMe ??
+          true
       )
     );
   } catch {
     // Keep optimistic UI work for the next pass.
+  }
+}
+
+function* handleAddComment(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiAddExperienceComment,
+      action.payload
+    );
+
+    yield put(
+      addCommentSuccess(
+        normalizeComment(
+          response.comment
+        )
+      )
+    );
+  } catch (error: any) {
+    const message =
+      error.response?.data?.error
+        ?.message ||
+      error.message ||
+      "Failed to add comment.";
+
+    yield put(
+      addCommentFailure(message)
+    );
   }
 }
 
@@ -283,6 +367,10 @@ export function* experiencesSaga() {
     FETCH_EXPERIENCE_CATEGORIES_REQUEST,
     handleFetchExperienceCategories
   );
+  yield takeLatest(
+    FETCH_EXPERIENCE_DETAIL_REQUEST,
+    handleFetchExperienceDetail
+  );
 
   yield takeLatest(
     CREATE_EXPERIENCE_REQUEST,
@@ -299,6 +387,10 @@ export function* experiencesSaga() {
   yield takeLatest(
     TOGGLE_REPOST_REQUEST,
     handleToggleRepost
+  );
+  yield takeLatest(
+    ADD_EXPERIENCE_COMMENT_REQUEST,
+    handleAddComment
   );
   yield takeLatest(
   UPDATE_EXPERIENCE_REQUEST,
