@@ -40,7 +40,14 @@
         }
       ],
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Sai Family to use the microphone for voice search.",
+          "speechRecognitionPermission": "Allow Sai Family to recognize your speech for search."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -18,6 +18,7 @@ import {
 import { FlashList } from "@shopify/flash-list";
 
 import {
+  Mic,
   Search,
   Sparkles,
   UserCircle2,
@@ -87,6 +88,12 @@ export default function SearchExperiencesScreen() {
   const [loadingMore, setLoadingMore] =
     useState(false);
 
+  const [listening, setListening] =
+    useState(false);
+
+  const [voiceError, setVoiceError] =
+    useState<string | null>(null);
+
   const debounceRef =
     useRef<ReturnType<
       typeof setTimeout
@@ -141,10 +148,19 @@ export default function SearchExperiencesScreen() {
   const handleClear = useCallback(() => {
     setQuery("");
     setOffset(0);
+    setVoiceError(null);
     dispatch(
       clearExperienceSearch()
     );
   }, [dispatch]);
+
+  const handleVoiceSearch =
+    useCallback(() => {
+      setListening(false);
+      setVoiceError(
+        "Voice search needs a custom development build. Please use text search for now."
+      );
+    }, []);
 
   const handleLoadMore =
     useCallback(() => {
@@ -367,11 +383,41 @@ export default function SearchExperiencesScreen() {
                 />
               </Pressable>
             )}
+
+            <Pressable
+              accessibilityLabel={
+                listening
+                  ? "Stop voice search"
+                  : "Start voice search"
+              }
+              hitSlop={10}
+              onPress={handleVoiceSearch}
+              style={[
+                styles.micButton,
+                listening &&
+                  styles.micButtonActive,
+              ]}
+            >
+              <Mic
+                size={18}
+                color={
+                  listening
+                    ? "#fffaf0"
+                    : "#7a5311"
+                }
+              />
+            </Pressable>
           </View>
 
-          {!!error && (
+          {!!(error || voiceError) && (
             <Text style={styles.errorText}>
-              {error}
+              {voiceError || error}
+            </Text>
+          )}
+
+          {listening && (
+            <Text style={styles.listeningText}>
+              Listening...
             </Text>
           )}
         </View>
@@ -470,10 +516,32 @@ const styles = StyleSheet.create({
     width: 34,
   },
 
+  micButton: {
+    alignItems: "center",
+    backgroundColor:
+      "rgba(180,126,28,0.12)",
+    borderRadius: 17,
+    height: 34,
+    justifyContent: "center",
+    marginLeft: 6,
+    width: 34,
+  },
+
+  micButtonActive: {
+    backgroundColor: "#b97813",
+  },
+
   errorText: {
     color: "#b42318",
     fontSize: 13,
     fontWeight: "700",
+    marginTop: 8,
+  },
+
+  listeningText: {
+    color: "#8e5d10",
+    fontSize: 13,
+    fontWeight: "800",
     marginTop: 8,
   },
 
