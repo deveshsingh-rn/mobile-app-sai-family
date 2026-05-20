@@ -17,6 +17,8 @@ import {
   selectHasHydratedDevoteeAccount,
 } from '@/store/devotee-account/selectors';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { registerPushTokenRequest } from '@/store/notifications/actions';
+import { selectPushToken } from '@/store/notifications/selectors';
 import { store } from '@/store';
 
 export const unstable_settings = {
@@ -28,6 +30,7 @@ function AppLayoutContent() {
   const dispatch = useAppDispatch();
   const devoteeAccount = useAppSelector(selectDevoteeAccount);
   const hasHydratedDevoteeAccount = useAppSelector(selectHasHydratedDevoteeAccount);
+  const pushToken = useAppSelector(selectPushToken);
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [showAuth, setShowAuth] = useState(true);
@@ -49,6 +52,24 @@ function AppLayoutContent() {
       }
     }
   }, [devoteeAccount, hasHydratedDevoteeAccount]);
+
+  useEffect(() => {
+    const userId = devoteeAccount?.id || devoteeAccount?.authorId;
+
+    if (
+      hasHydratedDevoteeAccount &&
+      userId &&
+      !pushToken
+    ) {
+      dispatch(registerPushTokenRequest(userId));
+    }
+  }, [
+    devoteeAccount?.authorId,
+    devoteeAccount?.id,
+    dispatch,
+    hasHydratedDevoteeAccount,
+    pushToken,
+  ]);
 
   if (showSplash) {
     return <SaiBabaSplashScreen onFinish={() => setShowSplash(false)} />;

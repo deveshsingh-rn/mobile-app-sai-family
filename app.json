@@ -19,6 +19,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
+      "permissions": [
+        "POST_NOTIFICATIONS"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -41,6 +44,13 @@
       ],
       "expo-secure-store",
       "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#b97813",
+          "defaultChannel": "default"
+        }
+      ],
       [
         "expo-speech-recognition",
         {
