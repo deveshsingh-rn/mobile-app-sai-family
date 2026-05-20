@@ -71,6 +71,7 @@ export type CreateExperiencePayload = {
 };
 
 export interface ExperiencesState {
+  addingComment: boolean;
   categories: ExperienceCategory[];
   categoriesLoading: boolean;
   comments: ExperienceComment[];

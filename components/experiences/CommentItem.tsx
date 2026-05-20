@@ -14,21 +14,36 @@ type Props = {
 export default function CommentItem({
   item,
 }: Props) {
+  const authorName =
+    item.author?.name ||
+    item.authorName ||
+    "Devotee";
+
+  const profileImageUrl =
+    item.author?.profileImageUrl ||
+    item.authorProfileImageUrl;
+
   return (
     <View style={styles.container}>
-      <Image
-        source={{
-          uri:
-            item.author
-              ?.profileImageUrl,
-        }}
-        style={styles.avatar}
-      />
+      {profileImageUrl ? (
+        <Image
+          source={{
+            uri: profileImageUrl,
+          }}
+          style={styles.avatar}
+        />
+      ) : (
+        <View style={styles.avatarFallback}>
+          <Text style={styles.avatarText}>
+            {authorName.charAt(0)}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.right}>
         <View style={styles.bubble}>
           <Text style={styles.name}>
-            {item.author?.name}
+            {authorName}
           </Text>
 
           <Text style={styles.comment}>
@@ -61,6 +76,22 @@ const styles = StyleSheet.create({
     borderRadius: 21,
 
     backgroundColor: "#f1ddba",
+  },
+
+  avatarFallback: {
+    alignItems: "center",
+    backgroundColor: "#f1ddba",
+    borderRadius: 21,
+    height: 42,
+    justifyContent: "center",
+    width: 42,
+  },
+
+  avatarText: {
+    color: "#8e5d10",
+    fontSize: 16,
+    fontWeight: "900",
+    textTransform: "uppercase",
   },
 
   right: {

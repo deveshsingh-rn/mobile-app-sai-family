@@ -64,6 +64,14 @@ export function ExperienceCard({
     );
   };
 
+  const handleOpenDetail = () => {
+    if (!disableNavigation) {
+      router.push(
+        `/experiences/${item.id}`
+      );
+    }
+  };
+
   const handleActionPress = (
     event: GestureResponderEvent,
     action?: () => void | Promise<void>
@@ -80,13 +88,7 @@ export function ExperienceCard({
 
   return (
     <Pressable
-      onPress={() => {
-        if (!disableNavigation) {
-          router.push(
-            `/experiences/${item.id}`
-          );
-        }
-      }}
+      onPress={handleOpenDetail}
     >
       <BlurView
         intensity={40}
@@ -228,7 +230,8 @@ export function ExperienceCard({
             style={styles.actionButton}
             onPress={(event) =>
               handleActionPress(
-                event
+                event,
+                handleOpenDetail
               )
             }
           >

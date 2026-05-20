@@ -27,6 +27,7 @@ import {
 } from "./types";
 
 const initialState: ExperiencesState = {
+  addingComment: false,
   categories: DEFAULT_EXPERIENCE_CATEGORIES,
   categoriesLoading: false,
   comments: [],
@@ -164,12 +165,14 @@ export const experiencesReducer = (
     case ADD_EXPERIENCE_COMMENT_REQUEST:
       return {
         ...state,
+        addingComment: true,
         error: null,
       };
 
     case ADD_EXPERIENCE_COMMENT_SUCCESS:
       return {
         ...state,
+        addingComment: false,
         comments: [
           action.payload,
           ...state.comments,
@@ -186,6 +189,7 @@ export const experiencesReducer = (
     case ADD_EXPERIENCE_COMMENT_FAILURE:
       return {
         ...state,
+        addingComment: false,
         error: action.payload,
       };
 

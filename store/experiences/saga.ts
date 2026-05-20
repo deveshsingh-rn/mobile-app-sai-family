@@ -67,16 +67,26 @@ function flattenExperience(exp: any) {
       null,
 
     likes:
-      exp._count?.likes || 0,
+      exp._count?.likes ??
+      exp.likes ??
+      0,
 
     comments:
-      exp._count?.comments || 0,
+      exp._count?.comments ??
+      (Array.isArray(exp.comments)
+        ? exp.comments.length
+        : exp.comments) ??
+      0,
 
     reposts:
-      exp._count?.reposts || 0,
+      exp._count?.reposts ??
+      exp.reposts ??
+      0,
 
     bookmarks:
-      exp._count?.bookmarks || 0,
+      exp._count?.bookmarks ??
+      exp.bookmarks ??
+      0,
   };
 }
 
@@ -155,14 +165,26 @@ function* handleFetchExperienceDetail(
       action.payload.id
     );
 
+    const experience =
+      response.experience ||
+      response.data?.experience ||
+      response;
+
+    const comments =
+      response.comments ||
+      response.data?.comments ||
+      response.experience?.comments ||
+      [];
+
     yield put(
       fetchExperienceDetailSuccess({
-        comments: (
-          response.experience?.comments || []
-        ).map(normalizeComment),
-        experience: flattenExperience(
-          response.experience
+        comments: comments.map(
+          normalizeComment
         ),
+        experience:
+          flattenExperience(
+            experience
+          ),
       })
     );
   } catch (error: any) {
@@ -359,11 +381,14 @@ function* handleAddComment(
       action.payload
     );
 
+    const comment =
+      response.comment ||
+      response.data?.comment ||
+      response;
+
     yield put(
       addCommentSuccess(
-        normalizeComment(
-          response.comment
-        )
+        normalizeComment(comment)
       )
     );
   } catch (error: any) {

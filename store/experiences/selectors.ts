@@ -37,3 +37,23 @@ export const selectExperienceSearchHasMore = (
 export const selectExperienceSearchError = (
   state: any
 ) => state.experiences.searchError;
+
+export const selectExperienceDetail = (
+  state: any
+) => state.experiences.detail;
+
+export const selectExperienceComments = (
+  state: any
+) => state.experiences.comments || [];
+
+export const selectExperienceDetailLoading = (
+  state: any
+) => state.experiences.loading;
+
+export const selectIsAddingExperienceComment =
+  (state: any) =>
+    state.experiences.addingComment;
+
+export const selectExperienceDetailError = (
+  state: any
+) => state.experiences.error;
