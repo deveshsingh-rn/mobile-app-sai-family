@@ -8,6 +8,7 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -18,6 +19,8 @@ import {
   View,
 } from "react-native";
 
+import * as ImagePicker from "expo-image-picker";
+
 import {
   router,
   useLocalSearchParams,
@@ -25,18 +28,23 @@ import {
 
 import {
   ArrowLeft,
+  ImagePlus,
   Save,
+  X,
 } from "lucide-react-native";
 
 import {
   createEventRequest,
   fetchEventDetailRequest,
   updateEventRequest,
+  uploadEventMediaRequest,
 } from "@/store/events/actions";
 import {
   selectEventDetail,
   selectEventsError,
   selectIsCreatingEvent,
+  selectIsUploadingEventMedia,
+  selectUploadedEventMedia,
 } from "@/store/events/selectors";
 import {
   CreateEventPayload,
@@ -45,6 +53,7 @@ import {
 import {
   EVENT_TYPES,
   getFirstValidationError,
+  validateEventMediaFiles,
   validateCreateEventPayload,
   validateUpdateEventPayload,
 } from "@/store/events/validation";
@@ -131,10 +140,24 @@ export default function EventFormScreen({
   const error = useAppSelector(
     selectEventsError
   );
+  const uploadingMedia = useAppSelector(
+    selectIsUploadingEventMedia
+  );
+  const uploadedMedia = useAppSelector(
+    selectUploadedEventMedia
+  );
   const [form, setForm] =
     useState<EventFormState>(
       initialForm
     );
+  const [
+    localBannerUri,
+    setLocalBannerUri,
+  ] = useState<string | null>(null);
+  const [
+    waitingForBannerUpload,
+    setWaitingForBannerUpload,
+  ] = useState(false);
   const [submitted, setSubmitted] =
     useState(false);
   const wasSaving = useRef(false);
@@ -142,6 +165,19 @@ export default function EventFormScreen({
   const eventId = Array.isArray(id)
     ? id[0]
     : id;
+
+  const setField = useCallback(
+    (
+      key: keyof EventFormState,
+      value: string
+    ) => {
+      setForm((current) => ({
+        ...current,
+        [key]: value,
+      }));
+    },
+    []
+  );
 
   useEffect(() => {
     if (mode === "edit" && eventId) {
@@ -183,6 +219,23 @@ export default function EventFormScreen({
 
   useEffect(() => {
     if (
+      waitingForBannerUpload &&
+      uploadedMedia?.url
+    ) {
+      setField(
+        "bannerUrl",
+        uploadedMedia.url
+      );
+      setWaitingForBannerUpload(false);
+    }
+  }, [
+    setField,
+    uploadedMedia?.url,
+    waitingForBannerUpload,
+  ]);
+
+  useEffect(() => {
+    if (
       submitted &&
       wasSaving.current &&
       !saving &&
@@ -196,18 +249,83 @@ export default function EventFormScreen({
     wasSaving.current = saving;
   }, [error, saving, submitted]);
 
-  const setField = useCallback(
-    (
-      key: keyof EventFormState,
-      value: string
-    ) => {
-      setForm((current) => ({
-        ...current,
-        [key]: value,
-      }));
-    },
-    []
-  );
+  const handlePickBanner =
+    useCallback(async () => {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert(
+          "Permission needed",
+          "Please allow photo access to upload an event banner."
+        );
+        return;
+      }
+
+      const result =
+        await ImagePicker.launchImageLibraryAsync(
+          {
+            allowsEditing: true,
+            aspect: [16, 9],
+            mediaTypes: ["images"],
+            quality: 0.86,
+          }
+        );
+
+      if (result.canceled) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      const file = {
+        fileSize: asset.fileSize,
+        mimeType:
+          asset.mimeType || "image/jpeg",
+        name:
+          asset.fileName ||
+          `event-banner-${Date.now()}.jpg`,
+        uri: asset.uri,
+      };
+
+      const validation =
+        validateEventMediaFiles([
+          file,
+        ]);
+
+      if (!validation.isValid) {
+        Alert.alert(
+          "Banner",
+          getFirstValidationError(
+            validation
+          )
+        );
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", {
+        name: file.name,
+        type: file.mimeType,
+        uri: file.uri,
+      } as any);
+
+      setLocalBannerUri(asset.uri);
+      setWaitingForBannerUpload(true);
+
+      dispatch(
+        uploadEventMediaRequest({
+          files: [file],
+          formData,
+        })
+      );
+    }, [dispatch]);
+
+  const handleClearBanner =
+    useCallback(() => {
+      setLocalBannerUri(null);
+      setWaitingForBannerUpload(false);
+      setField("bannerUrl", "");
+    }, [setField]);
 
   const handleSubmit = useCallback(() => {
     const payload = toPayload(form);
@@ -505,6 +623,74 @@ export default function EventFormScreen({
           value={form.timezone}
         />
 
+        <View style={styles.bannerPicker}>
+          {localBannerUri ||
+          form.bannerUrl ? (
+            <Image
+              source={{
+                uri:
+                  localBannerUri ||
+                  form.bannerUrl,
+              }}
+              style={styles.bannerPreview}
+            />
+          ) : (
+            <View style={styles.bannerEmpty}>
+              <ImagePlus
+                color="#9a762e"
+                size={28}
+              />
+              <Text style={styles.bannerEmptyText}>
+                Event banner
+              </Text>
+            </View>
+          )}
+
+          {uploadingMedia && (
+            <View style={styles.uploadOverlay}>
+              <ActivityIndicator
+                color="#fffaf0"
+              />
+              <Text style={styles.uploadText}>
+                Uploading banner...
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.bannerActions}>
+          <Pressable
+            disabled={uploadingMedia}
+            onPress={handlePickBanner}
+            style={[
+              styles.bannerButton,
+              uploadingMedia &&
+                styles.disabled,
+            ]}
+          >
+            <ImagePlus
+              color="#7a5311"
+              size={17}
+            />
+            <Text style={styles.bannerButtonText}>
+              Upload banner
+            </Text>
+          </Pressable>
+
+          {!!(localBannerUri || form.bannerUrl) && (
+            <Pressable
+              disabled={uploadingMedia}
+              onPress={handleClearBanner}
+              style={styles.bannerClearButton}
+            >
+              <X
+                color="#b42318"
+                size={17}
+              />
+            </Pressable>
+          )}
+        </View>
+
         <TextInput
           {...inputProps}
           autoCapitalize="none"
@@ -517,11 +703,12 @@ export default function EventFormScreen({
         />
 
         <Pressable
-          disabled={saving}
+          disabled={saving || uploadingMedia}
           onPress={handleSubmit}
           style={[
             styles.submitButton,
-            saving && styles.disabled,
+            (saving || uploadingMedia) &&
+              styles.disabled,
           ]}
         >
           {saving ? (
@@ -649,6 +836,78 @@ const styles = StyleSheet.create({
   },
   rowInput: {
     flex: 1,
+  },
+  bannerPicker: {
+    alignItems: "center",
+    backgroundColor: "#fffdf8",
+    borderColor: "#dfc684",
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 170,
+    justifyContent: "center",
+    marginBottom: 10,
+    overflow: "hidden",
+  },
+  bannerPreview: {
+    height: "100%",
+    width: "100%",
+  },
+  bannerEmpty: {
+    alignItems: "center",
+    gap: 8,
+  },
+  bannerEmptyText: {
+    color: "#79571b",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  uploadOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    backgroundColor:
+      "rgba(63,37,2,0.58)",
+    gap: 8,
+    justifyContent: "center",
+  },
+  uploadText: {
+    color: "#fffaf0",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  bannerActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+  },
+  bannerButton: {
+    alignItems: "center",
+    backgroundColor:
+      "rgba(185,120,19,0.12)",
+    borderColor:
+      "rgba(185,120,19,0.28)",
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    minHeight: 46,
+  },
+  bannerButtonText: {
+    color: "#7a5311",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  bannerClearButton: {
+    alignItems: "center",
+    backgroundColor:
+      "rgba(180,35,24,0.1)",
+    borderColor:
+      "rgba(180,35,24,0.22)",
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: "center",
+    width: 48,
   },
   submitButton: {
     alignItems: "center",

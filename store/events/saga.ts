@@ -123,6 +123,17 @@ function getEventFromResponse(response: any) {
 }
 
 function getEventsFromResponse(response: any) {
+  if (Array.isArray(response?.days)) {
+    return response.days.flatMap(
+      (day: any) =>
+        Array.isArray(day.events)
+          ? day.events.map((event: any) =>
+              normalizeEvent(event)
+            )
+          : []
+    );
+  }
+
   const source =
     response?.events ||
     response?.rsvps ||
@@ -186,18 +197,29 @@ function getRsvpCount(response: any, fallback = 0) {
 }
 
 function getUploadResult(response: any) {
+  const mediaUrls =
+    response?.media
+      ?.map((file: any) => file.url)
+      .filter(Boolean) ||
+    response?.data?.media
+      ?.map((file: any) => file.url)
+      .filter(Boolean);
+
   const urls =
     response?.urls ||
     response?.files?.map(
       (file: any) => file.url
     ) ||
-    response?.data?.urls;
+    response?.data?.urls ||
+    mediaUrls;
 
   return {
     url:
       response?.url ||
       response?.file?.url ||
+      response?.media?.[0]?.url ||
       response?.data?.url ||
+      response?.data?.media?.[0]?.url ||
       urls?.[0],
     urls,
   };

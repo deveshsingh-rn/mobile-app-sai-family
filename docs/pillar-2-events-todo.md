@@ -4,7 +4,7 @@
 
 - Current pillar: Events
 - Parent UI entry: `app/(tabs)/events.tsx`
-- Current next step: Todo 7, media upload
+- Current next step: Todo 8 completed, ready for Pillar 2 manual polish
 
 ## Todo List
 
@@ -96,27 +96,27 @@ Status: Completed
 
 ### 7. Media Upload
 
-Status: Next
+Status: Completed
 
-- [ ] Add event banner picker
-- [ ] Upload banner through `POST /api/media/upload`
-- [ ] Use returned URL as `bannerUrl`
-- [ ] Add upload progress/loading state
+- [x] Add event banner picker
+- [x] Upload banner through `POST /api/media/upload`
+- [x] Use returned URL as `bannerUrl`
+- [x] Add upload progress/loading state
 
 ### 8. Backend Testing
 
-Status: Pending
+Status: Completed
 
-- [ ] Test event discovery
-- [ ] Test event create
-- [ ] Test event update
-- [ ] Test event delete
-- [ ] Test RSVP and cancel RSVP
-- [ ] Test my RSVPs
-- [ ] Test my events
-- [ ] Test calendar endpoint
-- [ ] Test comments
-- [ ] Test media upload
+- [x] Test event discovery
+- [x] Test event create
+- [x] Test event update
+- [x] Test event delete
+- [x] Test RSVP and cancel RSVP
+- [x] Test my RSVPs
+- [x] Test my events
+- [x] Test calendar endpoint
+- [x] Test comments
+- [x] Test media upload
 
 ## Backend Validation Notes
 
