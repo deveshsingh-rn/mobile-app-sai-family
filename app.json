@@ -57,7 +57,14 @@
           "microphonePermission": "Allow Sai Family to use the microphone for voice search.",
           "speechRecognitionPermission": "Allow Sai Family to recognize your speech for search."
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Sai Family to use your location to fill event coordinates."
+        }
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
