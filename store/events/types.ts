@@ -20,6 +20,8 @@ export type SaiEvent = {
   latitude: number;
   longitude: number;
   ownerId?: string;
+  ownerName?: string | null;
+  ownerProfileImageUrl?: string | null;
   rsvpedByMe?: boolean;
   rsvps?: number;
   startAt: string;
@@ -40,6 +42,15 @@ export type EventComment = {
   content: string;
   createdAt: string;
   id: string;
+};
+
+export type UploadEventMediaPayload = {
+  formData: FormData;
+};
+
+export type UploadEventMediaResult = {
+  url?: string;
+  urls?: string[];
 };
 
 export type CreateEventPayload = {
@@ -65,6 +76,7 @@ export type UpdateEventPayload =
   };
 
 export type EventsState = {
+  addingComment: boolean;
   calendar: SaiEvent[];
   comments: EventComment[];
   creating: boolean;
@@ -74,6 +86,8 @@ export type EventsState = {
   loading: boolean;
   myEvents: SaiEvent[];
   myRsvps: SaiEvent[];
+  uploadedMedia: UploadEventMediaResult | null;
+  uploadingMedia: boolean;
 };
 
 export const EVENTS_ACTIONS = {

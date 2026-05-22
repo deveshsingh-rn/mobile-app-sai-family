@@ -12,6 +12,22 @@ export const selectEventsLoading = (
   state: RootState
 ) => selectEventsState(state).loading;
 
+export const selectIsCreatingEvent = (
+  state: RootState
+) => selectEventsState(state).creating;
+
+export const selectIsAddingEventComment = (
+  state: RootState
+) => selectEventsState(state).addingComment;
+
+export const selectIsUploadingEventMedia = (
+  state: RootState
+) => selectEventsState(state).uploadingMedia;
+
+export const selectUploadedEventMedia = (
+  state: RootState
+) => selectEventsState(state).uploadedMedia;
+
 export const selectEventsError = (
   state: RootState
 ) => selectEventsState(state).error;

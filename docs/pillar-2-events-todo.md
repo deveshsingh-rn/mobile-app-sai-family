@@ -4,7 +4,7 @@
 
 - Current pillar: Events
 - Parent UI entry: `app/(tabs)/events.tsx`
-- Current next step: Todo 2, implement Events API service and saga workers
+- Current next step: Todo 3, frontend validation
 
 ## Todo List
 
@@ -29,26 +29,26 @@ Status: Completed
 
 ### 2. Implement Events API Service And Saga
 
-Status: Next
+Status: Completed
 
-- [ ] Normalize event API response shapes
-- [ ] Implement `GET /api/events`
-- [ ] Implement `GET /api/events/:id`
-- [ ] Implement `POST /api/events`
-- [ ] Implement `PATCH /api/events/:id`
-- [ ] Implement `DELETE /api/events/:id`
-- [ ] Implement `POST /api/events/:id/rsvp`
-- [ ] Implement `DELETE /api/events/:id/rsvp`
-- [ ] Implement `GET /api/users/me/rsvps`
-- [ ] Implement `GET /api/users/me/events`
-- [ ] Implement `GET /api/events/calendar?month=YYYY-MM`
-- [ ] Implement `GET /api/events/:id/comments`
-- [ ] Implement `POST /api/events/:id/comments`
-- [ ] Implement `POST /api/media/upload`
+- [x] Normalize event API response shapes
+- [x] Implement `GET /api/events`
+- [x] Implement `GET /api/events/:id`
+- [x] Implement `POST /api/events`
+- [x] Implement `PATCH /api/events/:id`
+- [x] Implement `DELETE /api/events/:id`
+- [x] Implement `POST /api/events/:id/rsvp`
+- [x] Implement `DELETE /api/events/:id/rsvp`
+- [x] Implement `GET /api/users/me/rsvps`
+- [x] Implement `GET /api/users/me/events`
+- [x] Implement `GET /api/events/calendar?month=YYYY-MM`
+- [x] Implement `GET /api/events/:id/comments`
+- [x] Implement `POST /api/events/:id/comments`
+- [x] Implement `POST /api/media/upload`
 
 ### 3. Frontend Validation
 
-Status: Pending
+Status: Next
 
 - [ ] Validate title min 3 characters
 - [ ] Validate description min 10 characters

@@ -4,6 +4,8 @@ import {
   EventComment,
   SaiEvent,
   UpdateEventPayload,
+  UploadEventMediaPayload,
+  UploadEventMediaResult,
 } from "./types";
 
 export const fetchEventsRequest = (
@@ -93,6 +95,22 @@ export const updateEventRequest = (
     type: EVENTS_ACTIONS.UPDATE_REQUEST,
   } as const);
 
+export const updateEventSuccess = (
+  payload: SaiEvent
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.UPDATE_SUCCESS,
+  } as const);
+
+export const updateEventFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.UPDATE_FAILURE,
+  } as const);
+
 export const deleteEventRequest = (
   id: string
 ) =>
@@ -101,10 +119,43 @@ export const deleteEventRequest = (
     type: EVENTS_ACTIONS.DELETE_REQUEST,
   } as const);
 
+export const deleteEventSuccess = (
+  id: string
+) =>
+  ({
+    payload: { id },
+    type: EVENTS_ACTIONS.DELETE_SUCCESS,
+  } as const);
+
+export const deleteEventFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.DELETE_FAILURE,
+  } as const);
+
 export const rsvpEventRequest = (id: string) =>
   ({
     payload: { id },
     type: EVENTS_ACTIONS.RSVP_REQUEST,
+  } as const);
+
+export const rsvpEventSuccess = (
+  id: string,
+  rsvps: number
+) =>
+  ({
+    payload: { id, rsvps },
+    type: EVENTS_ACTIONS.RSVP_SUCCESS,
+  } as const);
+
+export const rsvpEventFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.RSVP_FAILURE,
   } as const);
 
 export const cancelEventRsvpRequest = (
@@ -113,6 +164,23 @@ export const cancelEventRsvpRequest = (
   ({
     payload: { id },
     type: EVENTS_ACTIONS.CANCEL_RSVP_REQUEST,
+  } as const);
+
+export const cancelEventRsvpSuccess = (
+  id: string,
+  rsvps: number
+) =>
+  ({
+    payload: { id, rsvps },
+    type: EVENTS_ACTIONS.CANCEL_RSVP_SUCCESS,
+  } as const);
+
+export const cancelEventRsvpFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.CANCEL_RSVP_FAILURE,
   } as const);
 
 export const fetchMyRsvpsRequest = (
@@ -126,6 +194,22 @@ export const fetchMyRsvpsRequest = (
     type: EVENTS_ACTIONS.FETCH_MY_RSVPS_REQUEST,
   } as const);
 
+export const fetchMyRsvpsSuccess = (
+  payload: SaiEvent[]
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_MY_RSVPS_SUCCESS,
+  } as const);
+
+export const fetchMyRsvpsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_MY_RSVPS_FAILURE,
+  } as const);
+
 export const fetchMyEventsRequest = (
   payload: {
     limit?: number;
@@ -137,12 +221,44 @@ export const fetchMyEventsRequest = (
     type: EVENTS_ACTIONS.FETCH_MY_EVENTS_REQUEST,
   } as const);
 
+export const fetchMyEventsSuccess = (
+  payload: SaiEvent[]
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_MY_EVENTS_SUCCESS,
+  } as const);
+
+export const fetchMyEventsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_MY_EVENTS_FAILURE,
+  } as const);
+
 export const fetchEventCalendarRequest = (
   month: string
 ) =>
   ({
     payload: { month },
     type: EVENTS_ACTIONS.FETCH_CALENDAR_REQUEST,
+  } as const);
+
+export const fetchEventCalendarSuccess = (
+  payload: SaiEvent[]
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_CALENDAR_SUCCESS,
+  } as const);
+
+export const fetchEventCalendarFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_CALENDAR_FAILURE,
   } as const);
 
 export const fetchEventCommentsRequest = (
@@ -165,6 +281,14 @@ export const fetchEventCommentsSuccess = (
     type: EVENTS_ACTIONS.FETCH_COMMENTS_SUCCESS,
   } as const);
 
+export const fetchEventCommentsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_COMMENTS_FAILURE,
+  } as const);
+
 export const addEventCommentRequest = (
   id: string,
   content: string
@@ -172,4 +296,44 @@ export const addEventCommentRequest = (
   ({
     payload: { content, id },
     type: EVENTS_ACTIONS.ADD_COMMENT_REQUEST,
+  } as const);
+
+export const addEventCommentSuccess = (
+  payload: EventComment
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.ADD_COMMENT_SUCCESS,
+  } as const);
+
+export const addEventCommentFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.ADD_COMMENT_FAILURE,
+  } as const);
+
+export const uploadEventMediaRequest = (
+  payload: UploadEventMediaPayload
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.UPLOAD_MEDIA_REQUEST,
+  } as const);
+
+export const uploadEventMediaSuccess = (
+  payload: UploadEventMediaResult
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.UPLOAD_MEDIA_SUCCESS,
+  } as const);
+
+export const uploadEventMediaFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.UPLOAD_MEDIA_FAILURE,
   } as const);

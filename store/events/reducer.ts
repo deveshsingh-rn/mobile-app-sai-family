@@ -5,6 +5,7 @@ import {
 } from "./types";
 
 export const initialEventsState: EventsState = {
+  addingComment: false,
   calendar: [],
   comments: [],
   creating: false,
@@ -14,6 +15,8 @@ export const initialEventsState: EventsState = {
   loading: false,
   myEvents: [],
   myRsvps: [],
+  uploadedMedia: null,
+  uploadingMedia: false,
 };
 
 export function eventsReducer(
@@ -34,10 +37,34 @@ export function eventsReducer(
       };
 
     case EVENTS_ACTIONS.CREATE_REQUEST:
+    case EVENTS_ACTIONS.UPDATE_REQUEST:
       return {
         ...state,
         creating: true,
         error: null,
+      };
+
+    case EVENTS_ACTIONS.DELETE_REQUEST:
+    case EVENTS_ACTIONS.RSVP_REQUEST:
+    case EVENTS_ACTIONS.CANCEL_RSVP_REQUEST:
+      return {
+        ...state,
+        error: null,
+      };
+
+    case EVENTS_ACTIONS.ADD_COMMENT_REQUEST:
+      return {
+        ...state,
+        addingComment: true,
+        error: null,
+      };
+
+    case EVENTS_ACTIONS.UPLOAD_MEDIA_REQUEST:
+      return {
+        ...state,
+        error: null,
+        uploadedMedia: null,
+        uploadingMedia: true,
       };
 
     case EVENTS_ACTIONS.FETCH_FEED_SUCCESS:
@@ -61,6 +88,27 @@ export function eventsReducer(
         loading: false,
       };
 
+    case EVENTS_ACTIONS.FETCH_MY_RSVPS_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        myRsvps: action.payload || [],
+      };
+
+    case EVENTS_ACTIONS.FETCH_MY_EVENTS_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        myEvents: action.payload || [],
+      };
+
+    case EVENTS_ACTIONS.FETCH_CALENDAR_SUCCESS:
+      return {
+        ...state,
+        calendar: action.payload || [],
+        loading: false,
+      };
+
     case EVENTS_ACTIONS.CREATE_SUCCESS:
       return {
         ...state,
@@ -68,6 +116,104 @@ export function eventsReducer(
         feed: action.payload
           ? [action.payload, ...state.feed]
           : state.feed,
+      };
+
+    case EVENTS_ACTIONS.UPDATE_SUCCESS:
+      return {
+        ...state,
+        creating: false,
+        detail:
+          state.detail?.id === action.payload?.id
+            ? action.payload
+            : state.detail,
+        feed: state.feed.map((event) =>
+          event.id === action.payload?.id
+            ? action.payload
+            : event
+        ),
+        myEvents: state.myEvents.map((event) =>
+          event.id === action.payload?.id
+            ? action.payload
+            : event
+        ),
+      };
+
+    case EVENTS_ACTIONS.DELETE_SUCCESS:
+      return {
+        ...state,
+        detail:
+          state.detail?.id === action.payload?.id
+            ? null
+            : state.detail,
+        feed: state.feed.filter(
+          (event) =>
+            event.id !== action.payload?.id
+        ),
+        myEvents: state.myEvents.filter(
+          (event) =>
+            event.id !== action.payload?.id
+        ),
+        myRsvps: state.myRsvps.filter(
+          (event) =>
+            event.id !== action.payload?.id
+        ),
+      };
+
+    case EVENTS_ACTIONS.RSVP_SUCCESS:
+    case EVENTS_ACTIONS.CANCEL_RSVP_SUCCESS: {
+      const rsvpedByMe =
+        action.type ===
+        EVENTS_ACTIONS.RSVP_SUCCESS;
+
+      const updateEvent = (event: any) =>
+        event.id === action.payload?.id
+          ? {
+              ...event,
+              rsvpedByMe,
+              rsvps:
+                action.payload?.rsvps ??
+                event.rsvps,
+            }
+          : event;
+
+      return {
+        ...state,
+        detail:
+          state.detail?.id === action.payload?.id
+            ? updateEvent(state.detail)
+            : state.detail,
+        feed: state.feed.map(updateEvent),
+        myRsvps: rsvpedByMe
+          ? state.myRsvps.map(updateEvent)
+          : state.myRsvps.filter(
+              (event) =>
+                event.id !== action.payload?.id
+            ),
+      };
+    }
+
+    case EVENTS_ACTIONS.ADD_COMMENT_SUCCESS:
+      return {
+        ...state,
+        addingComment: false,
+        comments: [
+          action.payload,
+          ...state.comments,
+        ],
+        detail: state.detail
+          ? {
+              ...state.detail,
+              comments:
+                (state.detail.comments || 0) + 1,
+            }
+          : state.detail,
+      };
+
+    case EVENTS_ACTIONS.UPLOAD_MEDIA_SUCCESS:
+      return {
+        ...state,
+        uploadedMedia: action.payload || null,
+        uploadingMedia: false,
       };
 
     case EVENTS_ACTIONS.FETCH_FEED_FAILURE:
@@ -83,10 +229,33 @@ export function eventsReducer(
       };
 
     case EVENTS_ACTIONS.CREATE_FAILURE:
+    case EVENTS_ACTIONS.UPDATE_FAILURE:
       return {
         ...state,
         creating: false,
         error: action.payload,
+      };
+
+    case EVENTS_ACTIONS.DELETE_FAILURE:
+    case EVENTS_ACTIONS.RSVP_FAILURE:
+    case EVENTS_ACTIONS.CANCEL_RSVP_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+      };
+
+    case EVENTS_ACTIONS.ADD_COMMENT_FAILURE:
+      return {
+        ...state,
+        addingComment: false,
+        error: action.payload,
+      };
+
+    case EVENTS_ACTIONS.UPLOAD_MEDIA_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        uploadingMedia: false,
       };
 
     default:
