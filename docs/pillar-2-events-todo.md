@@ -4,7 +4,7 @@
 
 - Current pillar: Events
 - Parent UI entry: `app/(tabs)/events.tsx`
-- Current next step: Todo 5, event screens
+- Current next step: Todo 6, RSVP and comments refinement
 
 ## Todo List
 
@@ -73,19 +73,19 @@ Status: Completed
 
 ### 5. Event Screens
 
-Status: Next
+Status: Completed
 
-- [ ] Build event detail screen
-- [ ] Build create event screen
-- [ ] Build edit event flow
-- [ ] Build my RSVPs screen
-- [ ] Build my events screen
-- [ ] Build calendar screen
-- [ ] Build event comments section
+- [x] Build event detail screen
+- [x] Build create event screen
+- [x] Build edit event flow
+- [x] Build my RSVPs screen
+- [x] Build my events screen
+- [x] Build calendar screen
+- [x] Build event comments section
 
 ### 6. RSVP And Comments
 
-Status: Pending
+Status: Next
 
 - [ ] Add RSVP button states
 - [ ] Add cancel RSVP behavior
