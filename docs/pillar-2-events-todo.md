@@ -4,7 +4,7 @@
 
 - Current pillar: Events
 - Parent UI entry: `app/(tabs)/events.tsx`
-- Current next step: Todo 3, frontend validation
+- Current next step: Todo 4, parent Events UI
 
 ## Todo List
 
@@ -48,22 +48,22 @@ Status: Completed
 
 ### 3. Frontend Validation
 
-Status: Next
+Status: Completed
 
-- [ ] Validate title min 3 characters
-- [ ] Validate description min 10 characters
-- [ ] Validate start and end date/time
-- [ ] Validate `endAt >= startAt`
-- [ ] Validate address min 5 characters
-- [ ] Validate latitude range `-90..90`
-- [ ] Validate longitude range `-180..180`
-- [ ] Validate event type enum
-- [ ] Validate comment content 1-1000 characters
-- [ ] Validate banner upload MIME type
+- [x] Validate title min 3 characters
+- [x] Validate description min 10 characters
+- [x] Validate start and end date/time
+- [x] Validate `endAt >= startAt`
+- [x] Validate address min 5 characters
+- [x] Validate latitude range `-90..90`
+- [x] Validate longitude range `-180..180`
+- [x] Validate event type enum
+- [x] Validate comment content 1-1000 characters
+- [x] Validate banner upload MIME type
 
 ### 4. Parent Events UI
 
-Status: Pending
+Status: Next
 
 - [ ] Upgrade `app/(tabs)/events.tsx` from placeholder to Events hub
 - [ ] Add discovery feed section

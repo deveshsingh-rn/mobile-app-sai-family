@@ -45,6 +45,14 @@ export type EventComment = {
 };
 
 export type UploadEventMediaPayload = {
+  files?: {
+    fileSize?: number | null;
+    mimeType?: string | null;
+    name?: string | null;
+    size?: number | null;
+    type?: string | null;
+    uri?: string;
+  }[];
   formData: FormData;
 };
 

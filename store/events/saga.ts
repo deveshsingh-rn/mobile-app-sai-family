@@ -54,6 +54,13 @@ import {
   EventsAction,
   SaiEvent,
 } from "./types";
+import {
+  getFirstValidationError,
+  validateCreateEventPayload,
+  validateEventCommentContent,
+  validateEventMediaFiles,
+  validateUpdateEventPayload,
+} from "./validation";
 
 function getErrorMessage(error: any) {
   return (
@@ -246,6 +253,22 @@ function* createEventWorker(
   action: EventsAction
 ): Generator<any, void, any> {
   try {
+    const validation =
+      validateCreateEventPayload(
+        action.payload
+      );
+
+    if (!validation.isValid) {
+      yield put(
+        createEventFailure(
+          getFirstValidationError(
+            validation
+          )
+        )
+      );
+      return;
+    }
+
     const response = yield call(
       apiCreateEvent,
       action.payload
@@ -269,6 +292,22 @@ function* updateEventWorker(
   action: EventsAction
 ): Generator<any, void, any> {
   try {
+    const validation =
+      validateUpdateEventPayload(
+        action.payload
+      );
+
+    if (!validation.isValid) {
+      yield put(
+        updateEventFailure(
+          getFirstValidationError(
+            validation
+          )
+        )
+      );
+      return;
+    }
+
     const { id, ...payload } =
       action.payload;
 
@@ -460,6 +499,22 @@ function* addEventCommentWorker(
   action: EventsAction
 ): Generator<any, void, any> {
   try {
+    const validation =
+      validateEventCommentContent(
+        action.payload.content
+      );
+
+    if (!validation.isValid) {
+      yield put(
+        addEventCommentFailure(
+          getFirstValidationError(
+            validation
+          )
+        )
+      );
+      return;
+    }
+
     const response = yield call(
       apiAddEventComment,
       action.payload.id,
@@ -488,6 +543,24 @@ function* uploadEventMediaWorker(
   action: EventsAction
 ): Generator<any, void, any> {
   try {
+    if (action.payload.files) {
+      const validation =
+        validateEventMediaFiles(
+          action.payload.files
+        );
+
+      if (!validation.isValid) {
+        yield put(
+          uploadEventMediaFailure(
+            getFirstValidationError(
+              validation
+            )
+          )
+        );
+        return;
+      }
+    }
+
     const response = yield call(
       apiUploadEventMedia,
       action.payload.formData
