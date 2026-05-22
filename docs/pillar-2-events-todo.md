@@ -4,7 +4,7 @@
 
 - Current pillar: Events
 - Parent UI entry: `app/(tabs)/events.tsx`
-- Current next step: Todo 4, parent Events UI
+- Current next step: Todo 5, event screens
 
 ## Todo List
 
@@ -63,17 +63,17 @@ Status: Completed
 
 ### 4. Parent Events UI
 
-Status: Next
+Status: Completed
 
-- [ ] Upgrade `app/(tabs)/events.tsx` from placeholder to Events hub
-- [ ] Add discovery feed section
-- [ ] Add event type filters
-- [ ] Add quick actions for create, calendar, RSVPs, and my events
-- [ ] Add loading, empty, and error states
+- [x] Upgrade `app/(tabs)/events.tsx` from placeholder to Events hub
+- [x] Add discovery feed section
+- [x] Add event type filters
+- [x] Add quick actions for create, calendar, RSVPs, and my events
+- [x] Add loading, empty, and error states
 
 ### 5. Event Screens
 
-Status: Pending
+Status: Next
 
 - [ ] Build event detail screen
 - [ ] Build create event screen
