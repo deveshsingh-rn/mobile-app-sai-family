@@ -4,7 +4,7 @@
 
 - Current pillar: Events
 - Parent UI entry: `app/(tabs)/events.tsx`
-- Current next step: Todo 6, RSVP and comments refinement
+- Current next step: Todo 7, media upload
 
 ## Todo List
 
@@ -85,18 +85,18 @@ Status: Completed
 
 ### 6. RSVP And Comments
 
-Status: Next
+Status: Completed
 
-- [ ] Add RSVP button states
-- [ ] Add cancel RSVP behavior
-- [ ] Show RSVP count
-- [ ] Load event comments
-- [ ] Add comment input
-- [ ] Add comment submit loading and error states
+- [x] Add RSVP button states
+- [x] Add cancel RSVP behavior
+- [x] Show RSVP count
+- [x] Load event comments
+- [x] Add comment input
+- [x] Add comment submit loading and error states
 
 ### 7. Media Upload
 
-Status: Pending
+Status: Next
 
 - [ ] Add event banner picker
 - [ ] Upload banner through `POST /api/media/upload`

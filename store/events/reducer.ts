@@ -7,6 +7,8 @@ import {
 export const initialEventsState: EventsState = {
   addingComment: false,
   calendar: [],
+  commentsError: null,
+  commentsLoading: false,
   comments: [],
   creating: false,
   detail: null,
@@ -15,6 +17,7 @@ export const initialEventsState: EventsState = {
   loading: false,
   myEvents: [],
   myRsvps: [],
+  rsvpPendingIds: {},
   uploadedMedia: null,
   uploadingMedia: false,
 };
@@ -24,12 +27,18 @@ export function eventsReducer(
   action: EventsAction
 ): EventsState {
   switch (action.type) {
+    case EVENTS_ACTIONS.FETCH_COMMENTS_REQUEST:
+      return {
+        ...state,
+        commentsError: null,
+        commentsLoading: true,
+      };
+
     case EVENTS_ACTIONS.FETCH_FEED_REQUEST:
     case EVENTS_ACTIONS.FETCH_DETAIL_REQUEST:
     case EVENTS_ACTIONS.FETCH_MY_RSVPS_REQUEST:
     case EVENTS_ACTIONS.FETCH_MY_EVENTS_REQUEST:
     case EVENTS_ACTIONS.FETCH_CALENDAR_REQUEST:
-    case EVENTS_ACTIONS.FETCH_COMMENTS_REQUEST:
       return {
         ...state,
         error: null,
@@ -45,17 +54,27 @@ export function eventsReducer(
       };
 
     case EVENTS_ACTIONS.DELETE_REQUEST:
+      return {
+        ...state,
+        error: null,
+      };
+
     case EVENTS_ACTIONS.RSVP_REQUEST:
     case EVENTS_ACTIONS.CANCEL_RSVP_REQUEST:
       return {
         ...state,
         error: null,
+        rsvpPendingIds: {
+          ...state.rsvpPendingIds,
+          [action.payload?.id]: true,
+        },
       };
 
     case EVENTS_ACTIONS.ADD_COMMENT_REQUEST:
       return {
         ...state,
         addingComment: true,
+        commentsError: null,
         error: null,
       };
 
@@ -85,7 +104,7 @@ export function eventsReducer(
       return {
         ...state,
         comments: action.payload || [],
-        loading: false,
+        commentsLoading: false,
       };
 
     case EVENTS_ACTIONS.FETCH_MY_RSVPS_SUCCESS:
@@ -175,6 +194,10 @@ export function eventsReducer(
                 event.rsvps,
             }
           : event;
+      const {
+        [action.payload?.id]: _,
+        ...remainingPendingIds
+      } = state.rsvpPendingIds;
 
       return {
         ...state,
@@ -184,11 +207,23 @@ export function eventsReducer(
             : state.detail,
         feed: state.feed.map(updateEvent),
         myRsvps: rsvpedByMe
-          ? state.myRsvps.map(updateEvent)
+          ? state.myRsvps.some(
+              (event) =>
+                event.id === action.payload?.id
+            )
+            ? state.myRsvps.map(updateEvent)
+            : state.detail?.id ===
+                action.payload?.id
+              ? [
+                  updateEvent(state.detail),
+                  ...state.myRsvps,
+                ]
+              : state.myRsvps
           : state.myRsvps.filter(
               (event) =>
                 event.id !== action.payload?.id
             ),
+        rsvpPendingIds: remainingPendingIds,
       };
     }
 
@@ -196,6 +231,7 @@ export function eventsReducer(
       return {
         ...state,
         addingComment: false,
+        commentsError: null,
         comments: [
           action.payload,
           ...state.comments,
@@ -216,12 +252,18 @@ export function eventsReducer(
         uploadingMedia: false,
       };
 
+    case EVENTS_ACTIONS.FETCH_COMMENTS_FAILURE:
+      return {
+        ...state,
+        commentsError: action.payload,
+        commentsLoading: false,
+      };
+
     case EVENTS_ACTIONS.FETCH_FEED_FAILURE:
     case EVENTS_ACTIONS.FETCH_DETAIL_FAILURE:
     case EVENTS_ACTIONS.FETCH_MY_RSVPS_FAILURE:
     case EVENTS_ACTIONS.FETCH_MY_EVENTS_FAILURE:
     case EVENTS_ACTIONS.FETCH_CALENDAR_FAILURE:
-    case EVENTS_ACTIONS.FETCH_COMMENTS_FAILURE:
       return {
         ...state,
         error: action.payload,
@@ -236,9 +278,24 @@ export function eventsReducer(
         error: action.payload,
       };
 
-    case EVENTS_ACTIONS.DELETE_FAILURE:
     case EVENTS_ACTIONS.RSVP_FAILURE:
-    case EVENTS_ACTIONS.CANCEL_RSVP_FAILURE:
+    case EVENTS_ACTIONS.CANCEL_RSVP_FAILURE: {
+        const {
+          [action.payload?.id]: _,
+          ...remainingPendingIds
+        } = state.rsvpPendingIds;
+
+        return {
+          ...state,
+          error:
+            action.payload?.error ||
+            "Unable to update RSVP.",
+          rsvpPendingIds:
+            remainingPendingIds,
+        };
+      }
+
+    case EVENTS_ACTIONS.DELETE_FAILURE:
       return {
         ...state,
         error: action.payload,
@@ -248,6 +305,7 @@ export function eventsReducer(
       return {
         ...state,
         addingComment: false,
+        commentsError: action.payload,
         error: action.payload,
       };
 

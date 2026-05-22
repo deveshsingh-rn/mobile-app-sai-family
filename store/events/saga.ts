@@ -372,6 +372,7 @@ function* rsvpEventWorker(
   } catch (error) {
     yield put(
       rsvpEventFailure(
+        action.payload.id,
         getErrorMessage(error)
       )
     );
@@ -396,6 +397,7 @@ function* cancelEventRsvpWorker(
   } catch (error) {
     yield put(
       cancelEventRsvpFailure(
+        action.payload.id,
         getErrorMessage(error)
       )
     );

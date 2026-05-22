@@ -20,6 +20,25 @@ export const selectIsAddingEventComment = (
   state: RootState
 ) => selectEventsState(state).addingComment;
 
+export const selectEventCommentsLoading = (
+  state: RootState
+) => selectEventsState(state).commentsLoading;
+
+export const selectEventCommentsError = (
+  state: RootState
+) => selectEventsState(state).commentsError;
+
+export const selectIsEventRsvpPending = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? Boolean(
+        selectEventsState(state)
+          .rsvpPendingIds[eventId]
+      )
+    : false;
+
 export const selectIsUploadingEventMedia = (
   state: RootState
 ) => selectEventsState(state).uploadingMedia;

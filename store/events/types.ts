@@ -86,6 +86,8 @@ export type UpdateEventPayload =
 export type EventsState = {
   addingComment: boolean;
   calendar: SaiEvent[];
+  commentsError: string | null;
+  commentsLoading: boolean;
   comments: EventComment[];
   creating: boolean;
   detail: SaiEvent | null;
@@ -94,6 +96,7 @@ export type EventsState = {
   loading: boolean;
   myEvents: SaiEvent[];
   myRsvps: SaiEvent[];
+  rsvpPendingIds: Record<string, boolean>;
   uploadedMedia: UploadEventMediaResult | null;
   uploadingMedia: boolean;
 };

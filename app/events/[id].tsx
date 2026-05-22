@@ -43,9 +43,12 @@ import {
 } from "@/store/events/actions";
 import {
   selectEventComments,
+  selectEventCommentsError,
+  selectEventCommentsLoading,
   selectEventDetail,
   selectEventsError,
   selectEventsLoading,
+  selectIsEventRsvpPending,
   selectIsAddingEventComment,
 } from "@/store/events/selectors";
 import { validateEventCommentContent } from "@/store/events/validation";
@@ -89,6 +92,12 @@ export default function EventDetailRoute() {
   const loading = useAppSelector(
     selectEventsLoading
   );
+  const commentsLoading = useAppSelector(
+    selectEventCommentsLoading
+  );
+  const commentsError = useAppSelector(
+    selectEventCommentsError
+  );
   const addingComment = useAppSelector(
     selectIsAddingEventComment
   );
@@ -101,6 +110,13 @@ export default function EventDetailRoute() {
   const eventId = Array.isArray(id)
     ? id[0]
     : id;
+  const rsvpPending = useAppSelector(
+    (state) =>
+      selectIsEventRsvpPending(
+        state,
+        eventId
+      )
+  );
 
   useEffect(() => {
     if (eventId) {
@@ -327,21 +343,34 @@ export default function EventDetailRoute() {
           </View>
 
           <Pressable
+            disabled={rsvpPending}
             onPress={handleRsvp}
             style={[
               styles.rsvpButton,
               detail.rsvpedByMe &&
                 styles.rsvpButtonActive,
+              rsvpPending &&
+                styles.rsvpButtonPending,
             ]}
           >
-            <UsersRound
-              color={
-                detail.rsvpedByMe
-                  ? "#fffaf0"
-                  : "#7a5311"
-              }
-              size={18}
-            />
+            {rsvpPending ? (
+              <ActivityIndicator
+                color={
+                  detail.rsvpedByMe
+                    ? "#fffaf0"
+                    : "#7a5311"
+                }
+              />
+            ) : (
+              <UsersRound
+                color={
+                  detail.rsvpedByMe
+                    ? "#fffaf0"
+                    : "#7a5311"
+                }
+                size={18}
+              />
+            )}
             <Text
               style={[
                 styles.rsvpButtonText,
@@ -349,9 +378,11 @@ export default function EventDetailRoute() {
                   styles.rsvpButtonTextActive,
               ]}
             >
-              {detail.rsvpedByMe
-                ? "Going"
-                : "RSVP"}{" "}
+              {rsvpPending
+                ? "Updating"
+                : detail.rsvpedByMe
+                  ? "Going"
+                  : "RSVP"}{" "}
               · {detail.rsvps || 0}
             </Text>
           </Pressable>
@@ -401,24 +432,43 @@ export default function EventDetailRoute() {
         </View>
 
         {comments.length === 0 ? (
-          <Text style={styles.emptyComments}>
-            No comments yet.
-          </Text>
-        ) : (
-          comments.map((item) => (
-            <View
-              key={item.id}
-              style={styles.commentItem}
-            >
-              <Text style={styles.commentName}>
-                {item.author?.name ||
-                  "Devotee"}
-              </Text>
-              <Text style={styles.commentText}>
-                {item.content}
-              </Text>
+          commentsLoading ? (
+            <View style={styles.commentsLoader}>
+              <ActivityIndicator
+                color="#b97813"
+              />
             </View>
-          ))
+          ) : (
+            <Text style={styles.emptyComments}>
+              {commentsError ||
+                "No comments yet."}
+            </Text>
+          )
+        ) : (
+          <>
+            {!!commentsError && (
+              <Text
+                style={styles.commentsError}
+              >
+                {commentsError}
+              </Text>
+            )}
+
+            {comments.map((item) => (
+              <View
+                key={item.id}
+                style={styles.commentItem}
+              >
+                <Text style={styles.commentName}>
+                  {item.author?.name ||
+                    "Devotee"}
+                </Text>
+                <Text style={styles.commentText}>
+                  {item.content}
+                </Text>
+              </View>
+            ))}
+          </>
         )}
       </ScrollView>
     </View>
@@ -539,6 +589,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#b97813",
     borderColor: "#b97813",
   },
+  rsvpButtonPending: {
+    opacity: 0.72,
+  },
   rsvpButtonText: {
     color: "#7a5311",
     fontSize: 15,
@@ -621,6 +674,17 @@ const styles = StyleSheet.create({
     color: "#79571b",
     fontSize: 14,
     fontWeight: "700",
+    paddingHorizontal: 18,
+  },
+  commentsLoader: {
+    alignItems: "center",
+    paddingVertical: 18,
+  },
+  commentsError: {
+    color: "#b42318",
+    fontSize: 13,
+    fontWeight: "800",
+    paddingBottom: 10,
     paddingHorizontal: 18,
   },
   emptyText: {

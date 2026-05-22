@@ -151,10 +151,11 @@ export const rsvpEventSuccess = (
   } as const);
 
 export const rsvpEventFailure = (
-  payload: string
+  id: string,
+  error: string
 ) =>
   ({
-    payload,
+    payload: { error, id },
     type: EVENTS_ACTIONS.RSVP_FAILURE,
   } as const);
 
@@ -176,10 +177,11 @@ export const cancelEventRsvpSuccess = (
   } as const);
 
 export const cancelEventRsvpFailure = (
-  payload: string
+  id: string,
+  error: string
 ) =>
   ({
-    payload,
+    payload: { error, id },
     type: EVENTS_ACTIONS.CANCEL_RSVP_FAILURE,
   } as const);
 
