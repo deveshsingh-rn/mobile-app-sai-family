@@ -7,6 +7,9 @@ import {
   ADD_EXPERIENCE_COMMENT_SUCCESS,
   CLEAR_EXPERIENCE_SEARCH,
   DEFAULT_EXPERIENCE_CATEGORIES,
+  FETCH_BOOKMARKED_EXPERIENCES_FAILURE,
+  FETCH_BOOKMARKED_EXPERIENCES_REQUEST,
+  FETCH_BOOKMARKED_EXPERIENCES_SUCCESS,
   FETCH_EXPERIENCE_CATEGORIES_FAILURE,
   FETCH_EXPERIENCE_CATEGORIES_REQUEST,
   FETCH_EXPERIENCE_CATEGORIES_SUCCESS,
@@ -22,12 +25,17 @@ import {
   ExperiencesActionTypes,
   ExperiencesState,
   TOGGLE_LIKE_SUCCESS,
+  TOGGLE_BOOKMARK_SUCCESS,
   UPDATE_EXPERIENCE_SUCCESS,
   DELETE_EXPERIENCE_SUCCESS,
 } from "./types";
 
 const initialState: ExperiencesState = {
   addingComment: false,
+  bookmarkedFeed: [],
+  bookmarksError: null,
+  bookmarksHasMore: false,
+  bookmarksLoading: false,
   categories: DEFAULT_EXPERIENCE_CATEGORIES,
   categoriesLoading: false,
   comments: [],
@@ -66,6 +74,45 @@ export const experiencesReducer = (
         ...state,
         loading: false,
         error: action.payload,
+      };
+
+    case FETCH_BOOKMARKED_EXPERIENCES_REQUEST:
+      return {
+        ...state,
+        bookmarksError: null,
+        bookmarksHasMore:
+          action.payload.offset &&
+          action.payload.offset > 0
+            ? state.bookmarksHasMore
+            : false,
+        bookmarkedFeed:
+          action.payload.offset &&
+          action.payload.offset > 0
+            ? state.bookmarkedFeed
+            : [],
+        bookmarksLoading: true,
+      };
+
+    case FETCH_BOOKMARKED_EXPERIENCES_SUCCESS:
+      return {
+        ...state,
+        bookmarkedFeed:
+          action.payload.offset > 0
+            ? [
+                ...state.bookmarkedFeed,
+                ...action.payload.results,
+              ]
+            : action.payload.results,
+        bookmarksHasMore:
+          action.payload.hasMore,
+        bookmarksLoading: false,
+      };
+
+    case FETCH_BOOKMARKED_EXPERIENCES_FAILURE:
+      return {
+        ...state,
+        bookmarksError: action.payload,
+        bookmarksLoading: false,
       };
 
     case FETCH_EXPERIENCE_CATEGORIES_REQUEST:
@@ -253,6 +300,68 @@ export const experiencesReducer = (
                 likes: action.payload.likes,
                 likedByMe:
                   action.payload.likedByMe,
+              }
+            : state.detail,
+      };
+
+    case TOGGLE_BOOKMARK_SUCCESS:
+      return {
+        ...state,
+        bookmarkedFeed:
+          action.payload.bookmarkedByMe
+            ? state.bookmarkedFeed.map((exp) =>
+                exp.id ===
+                action.payload.experienceId
+                  ? {
+                      ...exp,
+                      bookmarkedByMe: true,
+                      bookmarks:
+                        action.payload.bookmarks,
+                    }
+                  : exp
+              )
+            : state.bookmarkedFeed.filter(
+                (exp) =>
+                  exp.id !==
+                  action.payload.experienceId
+              ),
+        feed: state.feed.map((exp) =>
+          exp.id ===
+          action.payload.experienceId
+            ? {
+                ...exp,
+                bookmarkedByMe:
+                  action.payload
+                    .bookmarkedByMe,
+                bookmarks:
+                  action.payload.bookmarks,
+              }
+            : exp
+        ),
+        searchResults:
+          state.searchResults.map((exp) =>
+            exp.id ===
+            action.payload.experienceId
+              ? {
+                  ...exp,
+                  bookmarkedByMe:
+                    action.payload
+                      .bookmarkedByMe,
+                  bookmarks:
+                    action.payload.bookmarks,
+                }
+              : exp
+          ),
+        detail:
+          state.detail?.id ===
+          action.payload.experienceId
+            ? {
+                ...state.detail,
+                bookmarkedByMe:
+                  action.payload
+                    .bookmarkedByMe,
+                bookmarks:
+                  action.payload.bookmarks,
               }
             : state.detail,
       };

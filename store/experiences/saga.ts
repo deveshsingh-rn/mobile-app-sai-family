@@ -8,6 +8,7 @@ import {
   apiCreateExperience,
   apiAddExperienceComment,
   apiDeleteExperience,
+  apiFetchBookmarkedExperiences,
   apiFetchExperienceCategories,
   apiFetchExperienceDetail,
   apiFetchExperiences,
@@ -25,6 +26,8 @@ import {
   addCommentSuccess,
   deleteExperienceFailure,
   deleteExperienceSuccess,
+  fetchBookmarkedExperiencesFailure,
+  fetchBookmarkedExperiencesSuccess,
   fetchExperiencesFailure,
   fetchExperiencesSuccess,
   fetchExperienceCategoriesFailure,
@@ -33,6 +36,7 @@ import {
   fetchExperienceDetailSuccess,
   searchExperiencesFailure,
   searchExperiencesSuccess,
+  toggleBookmarkSuccess,
   toggleLikeSuccess,
   updateExperienceFailure,
   updateExperienceSuccess,
@@ -42,6 +46,7 @@ import {
   ADD_EXPERIENCE_COMMENT_REQUEST,
   CREATE_EXPERIENCE_REQUEST,
   DELETE_EXPERIENCE_REQUEST,
+  FETCH_BOOKMARKED_EXPERIENCES_REQUEST,
   FETCH_EXPERIENCE_CATEGORIES_REQUEST,
   FETCH_EXPERIENCE_DETAIL_REQUEST,
   FETCH_EXPERIENCES_REQUEST,
@@ -96,6 +101,30 @@ function normalizeComment(comment: any) {
   };
 }
 
+function getExperiencesFromResponse(response: any) {
+  const source =
+    response.experiences ||
+    response.bookmarks ||
+    response.results ||
+    response.items ||
+    response.data?.experiences ||
+    response.data?.bookmarks ||
+    response.data?.results ||
+    response.data?.items ||
+    response.data ||
+    [];
+
+  if (!Array.isArray(source)) {
+    return [];
+  }
+
+  return source.map((item) =>
+    flattenExperience(
+      item.experience || item
+    )
+  );
+}
+
 function* handleFetchExperiences(
   action: any
 ): Generator<any, void, any> {
@@ -124,6 +153,48 @@ function* handleFetchExperiences(
 
     yield put(
       fetchExperiencesFailure(
+        message
+      )
+    );
+  }
+}
+
+function* handleFetchBookmarkedExperiences(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchBookmarkedExperiences,
+      action.payload
+    );
+
+    const results =
+      getExperiencesFromResponse(
+        response
+      ).map((experience) => ({
+        ...experience,
+        bookmarkedByMe: true,
+      }));
+
+    yield put(
+      fetchBookmarkedExperiencesSuccess({
+        hasMore:
+          results.length >=
+          (action.payload.limit || 0),
+        offset:
+          action.payload.offset || 0,
+        results,
+      })
+    );
+  } catch (error: any) {
+    const message =
+      error.response?.data?.error
+        ?.message ||
+      error.message ||
+      "Failed to fetch bookmarks.";
+
+    yield put(
+      fetchBookmarkedExperiencesFailure(
         message
       )
     );
@@ -408,12 +479,27 @@ function* handleToggleBookmark(
   action: any
 ): Generator<any, void, any> {
   try {
-    yield call(
+    const response = yield call(
       apiToggleBookmark,
       action.payload.experienceId
     );
+
+    yield put(
+      toggleBookmarkSuccess(
+        action.payload.experienceId,
+        response.bookmarks ??
+          response.experience?.bookmarks ??
+          response._count?.bookmarks ??
+          0,
+        response.bookmarkedByMe ??
+          response.bookmarked ??
+          response.experience
+            ?.bookmarkedByMe ??
+          true
+      )
+    );
   } catch {
-    // Keep optimistic UI work for the next pass.
+    // Keep current UI if backend rejects the request.
   }
 }
 
@@ -434,6 +520,10 @@ export function* experiencesSaga() {
   yield takeLatest(
     FETCH_EXPERIENCES_REQUEST,
     handleFetchExperiences
+  );
+  yield takeLatest(
+    FETCH_BOOKMARKED_EXPERIENCES_REQUEST,
+    handleFetchBookmarkedExperiences
   );
   yield takeLatest(
     FETCH_EXPERIENCE_CATEGORIES_REQUEST,

@@ -126,6 +126,9 @@ import {
   FETCH_EXPERIENCES_FAILURE,
   FETCH_EXPERIENCES_REQUEST,
   FETCH_EXPERIENCES_SUCCESS,
+  FETCH_BOOKMARKED_EXPERIENCES_FAILURE,
+  FETCH_BOOKMARKED_EXPERIENCES_REQUEST,
+  FETCH_BOOKMARKED_EXPERIENCES_SUCCESS,
   FETCH_EXPERIENCE_CATEGORIES_FAILURE,
   FETCH_EXPERIENCE_CATEGORIES_REQUEST,
   FETCH_EXPERIENCE_CATEGORIES_SUCCESS,
@@ -139,6 +142,7 @@ import {
   TOGGLE_LIKE_SUCCESS,
   TOGGLE_LIKE_REQUEST,
   TOGGLE_BOOKMARK_REQUEST,
+  TOGGLE_BOOKMARK_SUCCESS,
   TOGGLE_REPOST_REQUEST,
   CreateExperiencePayload,
   Experience,
@@ -180,6 +184,39 @@ export const fetchExperiencesFailure = (
 ) =>
   ({
     type: FETCH_EXPERIENCES_FAILURE,
+    payload,
+  } as const);
+
+// ───────────────── FETCH BOOKMARKS ─────────────────
+
+export const fetchBookmarkedExperiencesRequest = (
+  params: {
+    limit?: number;
+    offset?: number;
+  } = {}
+) =>
+  ({
+    type: FETCH_BOOKMARKED_EXPERIENCES_REQUEST,
+    payload: params,
+  } as const);
+
+export const fetchBookmarkedExperiencesSuccess = (
+  payload: {
+    hasMore: boolean;
+    offset: number;
+    results: Experience[];
+  }
+) =>
+  ({
+    type: FETCH_BOOKMARKED_EXPERIENCES_SUCCESS,
+    payload,
+  } as const);
+
+export const fetchBookmarkedExperiencesFailure = (
+  payload: string
+) =>
+  ({
+    type: FETCH_BOOKMARKED_EXPERIENCES_FAILURE,
     payload,
   } as const);
 
@@ -269,6 +306,20 @@ export const toggleBookmarkRequest = (
     payload: {
       experienceId,
       userId,
+    },
+  } as const);
+
+export const toggleBookmarkSuccess = (
+  experienceId: string,
+  bookmarks: number,
+  bookmarkedByMe: boolean
+) =>
+  ({
+    type: TOGGLE_BOOKMARK_SUCCESS,
+    payload: {
+      bookmarkedByMe,
+      bookmarks,
+      experienceId,
     },
   } as const);
 

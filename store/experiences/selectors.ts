@@ -22,6 +22,22 @@ export const selectExperiencesError = (
   state: any
 ) => state.experiences.error;
 
+export const selectBookmarkedExperiencesFeed = (
+  state: any
+) => state.experiences.bookmarkedFeed;
+
+export const selectBookmarkedExperiencesLoading = (
+  state: any
+) => state.experiences.bookmarksLoading;
+
+export const selectBookmarkedExperiencesHasMore = (
+  state: any
+) => state.experiences.bookmarksHasMore;
+
+export const selectBookmarkedExperiencesError = (
+  state: any
+) => state.experiences.bookmarksError;
+
 export const selectExperienceSearchResults = (
   state: any
 ) => state.experiences.searchResults;

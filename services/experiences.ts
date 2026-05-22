@@ -52,6 +52,22 @@ export async function apiSearchExperiences(
   return data;
 }
 
+export async function apiFetchBookmarkedExperiences(
+  params: {
+    limit?: number;
+    offset?: number;
+  }
+) {
+  const { data } = await apiClient.get(
+    "/api/users/me/bookmarks",
+    {
+      params,
+    }
+  );
+
+  return data;
+}
+
 function normalizeCategories(data: any): ExperienceCategory[] {
   const source =
     data?.categories ||

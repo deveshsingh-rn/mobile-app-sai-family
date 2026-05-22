@@ -72,6 +72,10 @@ export type CreateExperiencePayload = {
 
 export interface ExperiencesState {
   addingComment: boolean;
+  bookmarkedFeed: Experience[];
+  bookmarksError: string | null;
+  bookmarksHasMore: boolean;
+  bookmarksLoading: boolean;
   categories: ExperienceCategory[];
   categoriesLoading: boolean;
   comments: ExperienceComment[];
@@ -103,6 +107,15 @@ export const FETCH_EXPERIENCES_SUCCESS =
 
 export const FETCH_EXPERIENCES_FAILURE =
   "FETCH_EXPERIENCES_FAILURE";
+
+export const FETCH_BOOKMARKED_EXPERIENCES_REQUEST =
+  "FETCH_BOOKMARKED_EXPERIENCES_REQUEST";
+
+export const FETCH_BOOKMARKED_EXPERIENCES_SUCCESS =
+  "FETCH_BOOKMARKED_EXPERIENCES_SUCCESS";
+
+export const FETCH_BOOKMARKED_EXPERIENCES_FAILURE =
+  "FETCH_BOOKMARKED_EXPERIENCES_FAILURE";
 
 export const FETCH_EXPERIENCE_CATEGORIES_REQUEST =
   "FETCH_EXPERIENCE_CATEGORIES_REQUEST";
@@ -161,6 +174,9 @@ export const TOGGLE_LIKE_REQUEST =
 export const TOGGLE_BOOKMARK_REQUEST =
   "TOGGLE_BOOKMARK_REQUEST";
 
+export const TOGGLE_BOOKMARK_SUCCESS =
+  "TOGGLE_BOOKMARK_SUCCESS";
+
 export const TOGGLE_REPOST_REQUEST =
   "TOGGLE_REPOST_REQUEST";
 
@@ -203,6 +219,28 @@ export interface FetchExperiencesSuccessAction {
 export interface FetchExperiencesFailureAction {
   type: typeof FETCH_EXPERIENCES_FAILURE;
 
+  payload: string;
+}
+
+export interface FetchBookmarkedExperiencesRequestAction {
+  type: typeof FETCH_BOOKMARKED_EXPERIENCES_REQUEST;
+  payload: {
+    limit?: number;
+    offset?: number;
+  };
+}
+
+export interface FetchBookmarkedExperiencesSuccessAction {
+  type: typeof FETCH_BOOKMARKED_EXPERIENCES_SUCCESS;
+  payload: {
+    hasMore: boolean;
+    offset: number;
+    results: Experience[];
+  };
+}
+
+export interface FetchBookmarkedExperiencesFailureAction {
+  type: typeof FETCH_BOOKMARKED_EXPERIENCES_FAILURE;
   payload: string;
 }
 
@@ -330,6 +368,15 @@ export interface ToggleBookmarkRequestAction {
   };
 }
 
+export interface ToggleBookmarkSuccessAction {
+  type: typeof TOGGLE_BOOKMARK_SUCCESS;
+  payload: {
+    bookmarkedByMe: boolean;
+    bookmarks: number;
+    experienceId: string;
+  };
+}
+
 export interface ToggleRepostRequestAction {
   type: typeof TOGGLE_REPOST_REQUEST;
   payload: {
@@ -391,6 +438,9 @@ export type ExperiencesActionTypes =
   | FetchExperiencesRequestAction
   | FetchExperiencesSuccessAction
   | FetchExperiencesFailureAction
+  | FetchBookmarkedExperiencesRequestAction
+  | FetchBookmarkedExperiencesSuccessAction
+  | FetchBookmarkedExperiencesFailureAction
   | FetchExperienceCategoriesRequestAction
   | FetchExperienceCategoriesSuccessAction
   | FetchExperienceCategoriesFailureAction
@@ -409,6 +459,7 @@ export type ExperiencesActionTypes =
   | CreateExperienceFailureAction
   | ToggleLikeRequestAction
   | ToggleBookmarkRequestAction
+  | ToggleBookmarkSuccessAction
   | ToggleRepostRequestAction
   | ToggleLikeSuccessAction 
   | UpdateExperienceRequestAction
