@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
-  Easing,
   Platform,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
 import { BlurView } from 'expo-blur';
 
 import {
+  Building2,
   CalendarDays,
   House,
   Plus,
@@ -48,6 +48,11 @@ const TABS = [
     name: 'events',
     label: 'Events',
     Icon: CalendarDays,
+  },
+  {
+    name: 'directory',
+    label: 'Directory',
+    Icon: Building2,
   },
   {
     name: 'profile',

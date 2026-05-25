@@ -13,6 +13,7 @@ export default function TabLayout() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="sangha" />
       <Tabs.Screen name="events" />
+      <Tabs.Screen name="directory" />
       <Tabs.Screen name="profile" />
       <Tabs.Screen
         name="experiences"

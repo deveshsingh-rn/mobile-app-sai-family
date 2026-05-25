@@ -11,7 +11,6 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 
@@ -21,6 +20,8 @@ import { router } from "expo-router";
 import {
   ArrowLeft,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   MapPin,
 } from "lucide-react-native";
@@ -55,6 +56,110 @@ const currentMonth = () => {
   ).padStart(2, "0");
 
   return `${date.getFullYear()}-${month}`;
+};
+
+const currentDateKey = () => {
+  const date = new Date();
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+  const day = String(date.getDate()).padStart(
+    2,
+    "0"
+  );
+
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
+const getDateKey = (value: string) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+  const day = String(date.getDate()).padStart(
+    2,
+    "0"
+  );
+
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
+const getMonthDate = (month: string) => {
+  const [year, monthNumber] = month
+    .split("-")
+    .map(Number);
+
+  return new Date(year, monthNumber - 1, 1);
+};
+
+const formatMonthTitle = (month: string) =>
+  getMonthDate(month).toLocaleDateString(
+    "en-IN",
+    {
+      month: "long",
+      year: "numeric",
+    }
+  );
+
+const shiftMonth = (
+  month: string,
+  amount: number
+) => {
+  const date = getMonthDate(month);
+  date.setMonth(date.getMonth() + amount);
+
+  const nextMonth = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+
+  return `${date.getFullYear()}-${nextMonth}`;
+};
+
+const getMonthDays = (month: string) => {
+  const date = getMonthDate(month);
+  const year = date.getFullYear();
+  const monthIndex = date.getMonth();
+  const firstDay = new Date(
+    year,
+    monthIndex,
+    1
+  ).getDay();
+  const totalDays = new Date(
+    year,
+    monthIndex + 1,
+    0
+  ).getDate();
+
+  return [
+    ...Array.from(
+      {
+        length: firstDay,
+      },
+      () => null
+    ),
+    ...Array.from(
+      {
+        length: totalDays,
+      },
+      (_, index) => {
+        const day = index + 1;
+        const dayKey = String(day).padStart(
+          2,
+          "0"
+        );
+
+        return {
+          day,
+          key: `${month}-${dayKey}`,
+        };
+      }
+    ),
+  ];
 };
 
 const formatDate = (value: string) => {
@@ -167,14 +272,46 @@ export default function EventListScreen({
   );
   const [month, setMonth] =
     useState(currentMonth());
+  const [
+    selectedDate,
+    setSelectedDate,
+  ] = useState(currentDateKey());
   const [refreshing, setRefreshing] =
     useState(false);
+
+  const calendarEventsByDay = useMemo(
+    () =>
+      calendar.reduce<
+        Record<string, SaiEvent[]>
+      >((days, event) => {
+        const key = getDateKey(event.startAt);
+
+        if (!key) {
+          return days;
+        }
+
+        return {
+          ...days,
+          [key]: [
+            ...(days[key] || []),
+            event,
+          ],
+        };
+      }, {}),
+    [calendar]
+  );
+
+  const selectedDateEvents = useMemo(
+    () =>
+      calendarEventsByDay[selectedDate] || [],
+    [calendarEventsByDay, selectedDate]
+  );
 
   const config = useMemo(() => {
     if (mode === "calendar") {
       return {
-        data: calendar,
-        empty: "No events in this month.",
+        data: selectedDateEvents,
+        empty: "No events on this date.",
         title: "Event Calendar",
       };
     }
@@ -192,7 +329,12 @@ export default function EventListScreen({
       empty: "You have not RSVP'd to any events yet.",
       title: "My RSVPs",
     };
-  }, [calendar, mode, myEvents, rsvps]);
+  }, [
+    mode,
+    myEvents,
+    rsvps,
+    selectedDateEvents,
+  ]);
 
   const fetchData = useCallback(() => {
     if (mode === "calendar") {
@@ -231,6 +373,159 @@ export default function EventListScreen({
       setRefreshing(false);
     }, 700);
   }, [fetchData]);
+
+  const handleShiftMonth = useCallback(
+    (amount: number) => {
+      const nextMonth = shiftMonth(
+        month,
+        amount
+      );
+      setMonth(nextMonth);
+      setSelectedDate(`${nextMonth}-01`);
+    },
+    [month]
+  );
+
+  const calendarDays = useMemo(
+    () => getMonthDays(month),
+    [month]
+  );
+
+  const renderCalendarHeader = () => {
+    if (mode !== "calendar") {
+      return null;
+    }
+
+    return (
+      <View style={styles.calendarPanel}>
+        <View style={styles.monthHeader}>
+          <Pressable
+            onPress={() =>
+              handleShiftMonth(-1)
+            }
+            style={styles.monthIconButton}
+          >
+            <ChevronLeft
+              color="#5b3b0b"
+              size={20}
+            />
+          </Pressable>
+
+          <Text style={styles.monthTitle}>
+            {formatMonthTitle(month)}
+          </Text>
+
+          <Pressable
+            onPress={() => handleShiftMonth(1)}
+            style={styles.monthIconButton}
+          >
+            <ChevronRight
+              color="#5b3b0b"
+              size={20}
+            />
+          </Pressable>
+        </View>
+
+        <View style={styles.weekRow}>
+          {[
+            "Sun",
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+          ].map((day) => (
+            <Text
+              key={day}
+              style={styles.weekText}
+            >
+              {day}
+            </Text>
+          ))}
+        </View>
+
+        <View style={styles.daysGrid}>
+          {calendarDays.map((item, index) => {
+            if (!item) {
+              return (
+                <View
+                  key={`empty-${index}`}
+                  style={styles.dayCell}
+                />
+              );
+            }
+
+            const isSelected =
+              selectedDate === item.key;
+            const isToday =
+              currentDateKey() === item.key;
+            const count =
+              calendarEventsByDay[item.key]
+                ?.length || 0;
+
+            return (
+              <Pressable
+                key={item.key}
+                onPress={() =>
+                  setSelectedDate(item.key)
+                }
+                style={[
+                  styles.dayCell,
+                  isSelected &&
+                    styles.dayCellSelected,
+                  isToday &&
+                    !isSelected &&
+                    styles.dayCellToday,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.dayText,
+                    isSelected &&
+                      styles.dayTextSelected,
+                  ]}
+                >
+                  {item.day}
+                </Text>
+
+                {!!count && (
+                  <View
+                    style={[
+                      styles.eventDot,
+                      isSelected &&
+                        styles.eventDotSelected,
+                    ]}
+                  />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.selectedDateBar}>
+          <CalendarDays
+            color="#7a5311"
+            size={17}
+          />
+          <Text style={styles.selectedDateText}>
+            {selectedDateEvents.length} event
+            {selectedDateEvents.length === 1
+              ? ""
+              : "s"}{" "}
+            on{" "}
+            {new Date(
+              `${selectedDate}T00:00:00`
+            ).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </Text>
+        </View>
+      </View>
+    );
+  };
 
   const renderEmpty = () => {
     if (loading) {
@@ -277,26 +572,7 @@ export default function EventListScreen({
         <View style={styles.topSpacer} />
       </View>
 
-      {mode === "calendar" && (
-        <View style={styles.monthRow}>
-          <TextInput
-            onChangeText={setMonth}
-            placeholder="YYYY-MM"
-            placeholderTextColor="#a98b54"
-            style={styles.monthInput}
-            value={month}
-          />
-
-          <Pressable
-            onPress={fetchData}
-            style={styles.monthButton}
-          >
-            <Text style={styles.monthButtonText}>
-              Load
-            </Text>
-          </Pressable>
-        </View>
-      )}
+      {renderCalendarHeader()}
 
       {!!error && (
         <Text style={styles.errorText}>
@@ -360,34 +636,103 @@ const styles = StyleSheet.create({
   topSpacer: {
     width: 40,
   },
-  monthRow: {
-    flexDirection: "row",
-    gap: 10,
-    padding: 16,
-  },
-  monthInput: {
+  calendarPanel: {
     backgroundColor: "#fffdf8",
-    borderColor: "#dfc684",
+    borderColor:
+      "rgba(221,187,130,0.54)",
     borderRadius: 8,
     borderWidth: 1,
-    color: "#2d1b02",
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "700",
-    minHeight: 46,
-    paddingHorizontal: 14,
+    margin: 16,
+    padding: 12,
   },
-  monthButton: {
+  monthHeader: {
     alignItems: "center",
-    backgroundColor: "#b97813",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 2,
+    
+  },
+  monthIconButton: {
+    alignItems: "center",
+    backgroundColor:
+      "rgba(185,120,19,0.12)",
+    borderRadius: 8,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  monthTitle: {
+    color: "#2f1b03",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  weekRow: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  weekText: {
+    color: "#8b641f",
+    flex: 1,
+    fontSize: 11,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  daysGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 0,
+    // borderWidth:1,
+    height:230
+  },
+  dayCell: {
+    alignItems: "center",
+    aspectRatio: 1,
     borderRadius: 8,
     justifyContent: "center",
-    paddingHorizontal: 18,
+    marginVertical: 2,
+    width: `${100 / 7}%`,
   },
-  monthButtonText: {
-    color: "#fffaf0",
+  dayCellSelected: {
+    backgroundColor: "#b97813",
+  },
+  dayCellToday: {
+    backgroundColor:
+      "rgba(185,120,19,0.12)",
+  },
+  dayText: {
+    color: "#3f2502",
     fontSize: 14,
     fontWeight: "900",
+  },
+  dayTextSelected: {
+    color: "#fffaf0",
+  },
+  eventDot: {
+    backgroundColor: "#b97813",
+    borderRadius: 3,
+    height: 6,
+    marginTop: 4,
+    width: 6,
+  },
+  eventDotSelected: {
+    backgroundColor: "#fffaf0",
+  },
+  selectedDateBar: {
+    alignItems: "center",
+    backgroundColor:
+      "rgba(185,120,19,0.1)",
+    borderRadius: 8,
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+    padding: 10,
+    borderWidth:1
+  },
+  selectedDateText: {
+    color: "#5b3b0b",
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "800",
   },
   errorText: {
     color: "#b42318",
