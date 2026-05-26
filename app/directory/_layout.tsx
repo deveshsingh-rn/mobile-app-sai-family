@@ -8,6 +8,7 @@ export default function DirectoryLayout() {
       }}
     >
       <Stack.Screen name="business-details" />
+      <Stack.Screen name="business-search" />
       <Stack.Screen name="create-listing" />
     </Stack>
   );

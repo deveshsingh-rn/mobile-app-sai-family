@@ -10,9 +10,6 @@ import {
   Switch,
 } from 'react-native';
 
-// import Ionicons from 'react-native-vector-icons/Ionicons';
-// import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-// import Feather from 'react-native-vector-icons/Feather';
 
 import {
   Ionicons,
@@ -341,7 +338,7 @@ const CreateListingScreen = () => {
                   }
                   style={{
                     paddingHorizontal: 22,
-                    height: 56,
+                    height: 46,
                     borderRadius: 18,
                     backgroundColor: active
                       ? '#FF9A2F'

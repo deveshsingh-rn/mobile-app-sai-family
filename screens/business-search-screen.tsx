@@ -16,6 +16,7 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
@@ -66,6 +67,30 @@ const trending = [
     rank: '2',
     title: 'Prasanthi Nilayam',
     subtitle: 'Ashram • 8.5k views',
+  },
+];
+
+const bottomTabs: {
+  active?: boolean;
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+}[] = [
+  {
+    icon: 'compass-outline',
+    label: 'Explore',
+  },
+  {
+    icon: 'radio-button-off-outline',
+    label: 'Events',
+  },
+  {
+    icon: 'storefront',
+    label: 'Directory',
+    active: true,
+  },
+  {
+    icon: 'people-outline',
+    label: 'Sangha',
   },
 ];
 
@@ -140,10 +165,11 @@ const SearchScreen = () => {
             alignItems: 'center',
           }}>
           {/* Back */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={{
-              width: 56,
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => router.back()}
+              style={{
+                width: 56,
               height: 56,
               borderRadius: 28,
               backgroundColor: '#F3F4F6',
@@ -485,25 +511,7 @@ const SearchScreen = () => {
           shadowRadius: 10,
           elevation: 10,
         }}>
-        {[
-          {
-            icon: 'compass-outline',
-            label: 'Explore',
-          },
-          {
-            icon: 'radio-button-off-outline',
-            label: 'Events',
-          },
-          {
-            icon: 'storefront',
-            label: 'Directory',
-            active: true,
-          },
-          {
-            icon: 'people-outline',
-            label: 'Sangha',
-          },
-        ].map((item, index) => (
+        {bottomTabs.map((item, index) => (
           <TouchableOpacity
             key={index}
             activeOpacity={0.85}

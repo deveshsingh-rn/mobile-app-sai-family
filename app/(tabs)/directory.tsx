@@ -190,7 +190,11 @@ export default function DirectoryScreen() {
           </View>
 
           {/* Search */}
-          <View
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() =>
+              router.push('/directory/business-search')
+            }
             style={{
               marginTop: 28,
               width: '100%',
@@ -216,6 +220,10 @@ export default function DirectoryScreen() {
             />
 
             <TextInput
+              editable={false}
+              onPressIn={() =>
+                router.push('/directory/business-search')
+              }
               placeholder="Find a devotee's service near you..."
               placeholderTextColor="#9CA3AF"
               style={{
@@ -243,7 +251,7 @@ export default function DirectoryScreen() {
                 color="#F97316"
               />
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Categories */}
