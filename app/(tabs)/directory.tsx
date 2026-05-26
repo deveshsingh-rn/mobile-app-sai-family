@@ -275,6 +275,17 @@ export default function DirectoryScreen() {
               <TouchableOpacity
                 key={index}
                 activeOpacity={0.8}
+                onPress={() =>
+                  router.push({
+                    pathname: '/directory/category',
+                    params: {
+                      category: item.title.replace(
+                        /\n/g,
+                        ' ',
+                      ),
+                    },
+                  })
+                }
                 style={{
                   width: '22%',
                   alignItems: 'center',
