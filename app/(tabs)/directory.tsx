@@ -14,6 +14,7 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const categories = [
@@ -161,6 +162,9 @@ export default function DirectoryScreen() {
 
             <TouchableOpacity
               activeOpacity={0.8}
+              onPress={() =>
+                router.push('/directory/create-listing')
+              }
               style={{
                 width: 56,
                 height: 56,
@@ -178,7 +182,7 @@ export default function DirectoryScreen() {
                 elevation: 2,
               }}>
               <Ionicons
-                name="business"
+                name="add"
                 size={24}
                 color="#F97316"
               />
@@ -358,6 +362,9 @@ export default function DirectoryScreen() {
             }}>
             <TouchableOpacity
               activeOpacity={0.9}
+              onPress={() =>
+                router.push('/directory/business-details')
+              }
               style={{
                 width: 420,
                 backgroundColor: '#F8EFE3',
@@ -551,7 +558,529 @@ export default function DirectoryScreen() {
               </View>
             </TouchableOpacity>
           </ScrollView>
+
+                  {/* Devotees Near You */}
+<View
+  style={{
+    marginTop: 34,
+    paddingHorizontal: 24,
+  }}>
+  {/* Header */}
+  <Text
+    style={{
+      fontSize: 22,
+      fontWeight: '800',
+      color: '#111111',
+      marginBottom: 22,
+      letterSpacing: -0.4,
+    }}>
+    Devotees Near You
+  </Text>
+
+  {/* Card 1 */}
+  <TouchableOpacity
+    activeOpacity={0.9}
+    onPress={() =>
+      router.push('/directory/business-details')
+    }
+    style={{
+      backgroundColor: '#FFFFFF',
+      borderRadius: 30,
+      padding: 18,
+      marginBottom: 24,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.03,
+      shadowRadius: 8,
+      elevation: 2,
+    }}>
+    <View
+      style={{
+        flexDirection: 'row',
+      }}>
+      {/* Image */}
+      <Image
+        source={{
+          uri: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=800',
+        }}
+        style={{
+          width: 96,
+          height: 96,
+          borderRadius: 26,
+        }}
+      />
+
+      {/* Online Dot */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 84,
+          top: 72,
+          width: 18,
+          height: 18,
+          borderRadius: 9,
+          backgroundColor: '#22C55E',
+          borderWidth: 3,
+          borderColor: '#FFFFFF',
+        }}
+      />
+
+      {/* Content */}
+      <View
+        style={{
+          flex: 1,
+          marginLeft: 18,
+        }}>
+        {/* Top Row */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              fontSize: 18,
+              fontWeight: '800',
+              color: '#111111',
+              marginRight: 10,
+            }}>
+            Anjali&apos;s Pure Veg ...
+          </Text>
+
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: '#FDE7CF',
+              borderRadius: 16,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              alignItems: 'center',
+              backgroundColor: '#FFF9F2',
+            }}>
+            <Text
+              style={{
+                fontSize: 13,
+                color: '#F97316',
+                fontWeight: '700',
+              }}>
+              ॐ Sai Devotee
+            </Text>
+
+            <Text
+              style={{
+                marginTop: 3,
+                fontSize: 13,
+                color: '#6B7280',
+                fontWeight: '500',
+              }}>
+              1.2 km away
+            </Text>
+          </View>
         </View>
+
+        {/* Description */}
+        <Text
+          numberOfLines={1}
+          style={{
+            marginTop: 12,
+            fontSize: 16,
+            color: '#6B7280',
+            fontWeight: '500',
+          }}>
+          Eggless cakes, traditional sweets, cat...
+        </Text>
+
+        {/* Bottom Info */}
+        <View
+          style={{
+            marginTop: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+          }}>
+          <Ionicons
+            name="star"
+            size={18}
+            color="#FBBF24"
+          />
+
+          <Text
+            style={{
+              marginLeft: 6,
+              fontSize: 16,
+              color: '#4B5563',
+              fontWeight: '600',
+            }}>
+            4.8
+          </Text>
+
+          <View
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: 3,
+              backgroundColor: '#D1D5DB',
+              marginHorizontal: 14,
+            }}
+          />
+
+          <Ionicons
+            name="time-outline"
+            size={18}
+            color="#6B7280"
+          />
+
+          <Text
+            style={{
+              marginLeft: 6,
+              fontSize: 15,
+              color: '#6B7280',
+              fontWeight: '500',
+            }}>
+            Open till 9 PM
+          </Text>
+        </View>
+      </View>
+    </View>
+  </TouchableOpacity>
+
+  {/* Card 2 */}
+  <TouchableOpacity
+    activeOpacity={0.9}
+    onPress={() =>
+      router.push('/directory/business-details')
+    }
+    style={{
+      backgroundColor: '#FFFFFF',
+      borderRadius: 30,
+      padding: 18,
+      marginBottom: 24,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.03,
+      shadowRadius: 8,
+      elevation: 2,
+    }}>
+    <View
+      style={{
+        flexDirection: 'row',
+      }}>
+      {/* Placeholder */}
+      <View
+        style={{
+          width: 96,
+          height: 96,
+          borderRadius: 26,
+          backgroundColor: '#F3F4F6',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
+        <Ionicons
+          name="construct"
+          size={34}
+          color="#9CA3AF"
+        />
+      </View>
+
+      {/* Content */}
+      <View
+        style={{
+          flex: 1,
+          marginLeft: 18,
+        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              fontSize: 18,
+              fontWeight: '800',
+              color: '#111111',
+              marginRight: 10,
+            }}>
+            Om Sai Auto Wor...
+          </Text>
+
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: '#FDE7CF',
+              borderRadius: 16,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              alignItems: 'center',
+              backgroundColor: '#FFF9F2',
+            }}>
+            <Text
+              style={{
+                fontSize: 13,
+                color: '#F97316',
+                fontWeight: '700',
+              }}>
+              ॐ Sai Devotee
+            </Text>
+
+            <Text
+              style={{
+                marginTop: 3,
+                fontSize: 13,
+                color: '#6B7280',
+                fontWeight: '500',
+              }}>
+              2.5 km away
+            </Text>
+          </View>
+        </View>
+
+        <Text
+          numberOfLines={1}
+          style={{
+            marginTop: 12,
+            fontSize: 16,
+            color: '#6B7280',
+            fontWeight: '500',
+          }}>
+          Two-wheeler repair, servicing, spares
+        </Text>
+
+        <View
+          style={{
+            marginTop: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+          }}>
+          <Ionicons
+            name="star"
+            size={18}
+            color="#FBBF24"
+          />
+
+          <Text
+            style={{
+              marginLeft: 6,
+              fontSize: 16,
+              color: '#4B5563',
+              fontWeight: '600',
+            }}>
+            4.5
+          </Text>
+
+          <View
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: 3,
+              backgroundColor: '#D1D5DB',
+              marginHorizontal: 14,
+            }}
+          />
+
+          <Ionicons
+            name="call"
+            size={16}
+            color="#6B7280"
+          />
+
+          <Text
+            style={{
+              marginLeft: 6,
+              fontSize: 15,
+              color: '#6B7280',
+              fontWeight: '500',
+            }}>
+            Call for pickup
+          </Text>
+        </View>
+      </View>
+    </View>
+  </TouchableOpacity>
+
+  {/* Card 3 */}
+  <TouchableOpacity
+    activeOpacity={0.9}
+    style={{
+      backgroundColor: '#FFFFFF',
+      borderRadius: 30,
+      padding: 18,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.03,
+      shadowRadius: 8,
+      elevation: 2,
+    }}>
+    <View
+      style={{
+        flexDirection: 'row',
+      }}>
+      <Image
+        source={{
+          uri: 'https://randomuser.me/api/portraits/men/44.jpg',
+        }}
+        style={{
+          width: 96,
+          height: 96,
+          borderRadius: 26,
+        }}
+      />
+
+      <View
+        style={{
+          flex: 1,
+          marginLeft: 18,
+        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              fontSize: 18,
+              fontWeight: '800',
+              color: '#111111',
+              marginRight: 10,
+            }}>
+            Vidya Tuitions (M...
+          </Text>
+
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: '#FDE7CF',
+              borderRadius: 16,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              alignItems: 'center',
+              backgroundColor: '#FFF9F2',
+            }}>
+            <Text
+              style={{
+                fontSize: 13,
+                color: '#F97316',
+                fontWeight: '700',
+              }}>
+              ॐ Sai Devotee
+            </Text>
+
+            <Text
+              style={{
+                marginTop: 3,
+                fontSize: 13,
+                color: '#6B7280',
+                fontWeight: '500',
+              }}>
+              3.1 km away
+            </Text>
+          </View>
+        </View>
+
+        <Text
+          numberOfLines={1}
+          style={{
+            marginTop: 12,
+            fontSize: 16,
+            color: '#6B7280',
+            fontWeight: '500',
+          }}>
+          CBSE/ICSE classes 8th to 10th
+        </Text>
+
+        <View
+          style={{
+            marginTop: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+          }}>
+          <Ionicons
+            name="star"
+            size={18}
+            color="#FBBF24"
+          />
+
+          <Text
+            style={{
+              marginLeft: 6,
+              fontSize: 16,
+              color: '#4B5563',
+              fontWeight: '600',
+            }}>
+            5.0
+          </Text>
+
+          <View
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: 3,
+              backgroundColor: '#D1D5DB',
+              marginHorizontal: 14,
+            }}
+          />
+
+          <Ionicons
+            name="home"
+            size={16}
+            color="#6B7280"
+          />
+
+          <Text
+            style={{
+              marginLeft: 6,
+              fontSize: 15,
+              color: '#6B7280',
+              fontWeight: '500',
+            }}>
+            Home visits available
+          </Text>
+        </View>
+      </View>
+    </View>
+  </TouchableOpacity>
+
+  {/* Load More */}
+  <TouchableOpacity
+    activeOpacity={0.85}
+    style={{
+      marginTop: 26,
+      height: 68,
+      borderRadius: 22,
+      borderWidth: 1.5,
+      borderColor: '#E5E7EB',
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#FFFFFF',
+    }}>
+    <Text
+      style={{
+        fontSize: 18,
+        color: '#4B5563',
+        fontWeight: '700',
+      }}>
+      Load more businesses
+    </Text>
+  </TouchableOpacity>
+</View>
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
