@@ -268,7 +268,11 @@ const BusinessDetailsScreen = () => {
             </View>
 
             {/* Rating */}
-            <View
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={() =>
+                router.push('/directory/business-review')
+              }
               style={{
                 width: '31%',
                 height: 82,
@@ -301,9 +305,9 @@ const BusinessDetailsScreen = () => {
                   fontWeight: '700',
                   color: '#B45309',
                 }}>
-                89 Reviews
-              </Text>
-            </View>
+                  89 Reviews
+                </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Specialities */}
@@ -601,6 +605,9 @@ const BusinessDetailsScreen = () => {
 
             <TouchableOpacity
               activeOpacity={0.85}
+              onPress={() =>
+                router.push('/directory/business-review')
+              }
               style={{
                 marginTop: 24,
                 width: '100%',
@@ -690,6 +697,7 @@ const BusinessDetailsScreen = () => {
             </ScrollView>
           </View>
         </View>
+        
       </ScrollView>
     </SafeAreaView>
   );

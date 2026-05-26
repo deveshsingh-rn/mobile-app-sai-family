@@ -198,9 +198,9 @@ const CreateListingScreen = () => {
     multiline = false,
   ) => {
     return (
-      <View
-        style={{
-          marginTop: 30,
+        <View
+          style={{
+          marginTop: 22,
         }}>
         <Text
           style={{
@@ -214,14 +214,14 @@ const CreateListingScreen = () => {
         </Text>
 
         <View
-          style={{
-            minHeight: multiline ? 150 : 82,
-            borderRadius: 22,
+            style={{
+            minHeight: multiline ? 118 : 58,
+            borderRadius: 16,
             borderWidth: 1.5,
             borderColor: '#E5E7EB',
             backgroundColor: '#FFFFFF',
-            paddingHorizontal: 24,
-            paddingTop: multiline ? 24 : 0,
+            paddingHorizontal: 18,
+            paddingTop: multiline ? 16 : 0,
             justifyContent: multiline
               ? 'flex-start'
               : 'center',
@@ -233,7 +233,7 @@ const CreateListingScreen = () => {
             placeholderTextColor="#C7CBD3"
             multiline={multiline}
             style={{
-              fontSize: 18,
+              fontSize: 16,
               color: '#111827',
               fontWeight: '500',
               textAlignVertical: multiline
@@ -448,15 +448,15 @@ const CreateListingScreen = () => {
         <View
           style={{
             marginTop: 32,
-            height: 82,
-            borderRadius: 22,
+            minHeight: 64,
+            borderRadius: 16,
             borderWidth: 1.5,
             borderColor: '#E5E7EB',
             backgroundColor: '#FFFFFF',
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            paddingHorizontal: 24,
+            paddingHorizontal: 18,
           }}>
           <View>
             <Text
@@ -677,12 +677,12 @@ const CreateListingScreen = () => {
         <View
           style={{
             marginTop: 10,
-            height: 88,
-            borderRadius: 22,
+            minHeight: 68,
+            borderRadius: 16,
             backgroundColor: '#FFFFFF',
             borderWidth: 1.5,
             borderColor: '#E5E7EB',
-            paddingHorizontal: 24,
+            paddingHorizontal: 18,
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
