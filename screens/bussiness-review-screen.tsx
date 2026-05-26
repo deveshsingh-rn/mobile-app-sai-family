@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  Image,
 } from 'react-native';
 
 
@@ -58,19 +59,19 @@ const ReviewsScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 40,
+          paddingBottom: 28,
         }}>
         {/* Header */}
         <View
           style={{
-            height: 122,
+            height: 82,
             backgroundColor: '#FFFFFF',
             borderBottomWidth: 1,
             borderBottomColor: '#F1F1F1',
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            paddingHorizontal: 30,
+            paddingHorizontal: 18,
           }}>
           {/* Left */}
           <View
@@ -84,15 +85,15 @@ const ReviewsScreen = () => {
               onPress={() => router.back()}
               style={{
                 width: 64,
-                height: 64,
-                borderRadius: 32,
+                height: 44,
+                borderRadius: 22,
                 backgroundColor: '#F7F7F7',
                 justifyContent: 'center',
                 alignItems: 'center',
               }}>
               <Ionicons
                 name="arrow-back"
-                size={30}
+                size={22}
                 color="#4B5563"
               />
             </TouchableOpacity>
@@ -100,8 +101,8 @@ const ReviewsScreen = () => {
             {/* Title */}
             <Text
               style={{
-                marginLeft: 22,
-                fontSize: 26,
+                marginLeft: 14,
+                fontSize: 20,
                 fontWeight: '800',
                 color: '#111827',
                 letterSpacing: -0.4,
@@ -115,15 +116,15 @@ const ReviewsScreen = () => {
             activeOpacity={0.85}
             style={{
               width: 64,
-              height: 64,
-              borderRadius: 32,
+              height: 44,
+              borderRadius: 22,
               backgroundColor: '#F7F7F7',
               justifyContent: 'center',
               alignItems: 'center',
             }}>
             <Ionicons
               name="ellipsis-vertical"
-              size={26}
+              size={20}
               color="#4B5563"
             />
           </TouchableOpacity>
@@ -132,13 +133,13 @@ const ReviewsScreen = () => {
         {/* Rating Card */}
         <View
           style={{
-            marginTop: 42,
-            marginHorizontal: 30,
+            marginTop: 22,
+            marginHorizontal: 18,
             backgroundColor: '#FFFFFF',
-            borderRadius: 34,
-            paddingHorizontal: 34,
-            paddingTop: 42,
-            paddingBottom: 34,
+            borderRadius: 22,
+            paddingHorizontal: 22,
+            paddingTop: 24,
+            paddingBottom: 20,
             shadowColor: '#000',
             shadowOffset: {
               width: 0,
@@ -152,8 +153,8 @@ const ReviewsScreen = () => {
           <Text
             style={{
               textAlign: 'center',
-              fontSize: 92,
-              lineHeight: 96,
+              fontSize: 54,
+              lineHeight: 58,
               fontWeight: '900',
               color: '#111111',
               letterSpacing: -2,
@@ -166,26 +167,26 @@ const ReviewsScreen = () => {
             style={{
               flexDirection: 'row',
               justifyContent: 'center',
-              marginTop: 18,
+              marginTop: 10,
             }}>
             {[1, 2, 3, 4].map(item => (
               <Ionicons
                 key={item}
                 name="star"
-                size={42}
+                size={25}
                 color="#FACC15"
                 style={{
-                  marginHorizontal: 4,
+                  marginHorizontal: 2,
                 }}
               />
             ))}
 
             <Ionicons
               name="star-half-outline"
-              size={42}
+              size={25}
               color="#FACC15"
               style={{
-                marginHorizontal: 4,
+                marginHorizontal: 2,
               }}
             />
           </View>
@@ -193,9 +194,9 @@ const ReviewsScreen = () => {
           {/* Review Count */}
           <Text
             style={{
-              marginTop: 18,
+              marginTop: 10,
               textAlign: 'center',
-              fontSize: 24,
+              fontSize: 15,
               color: '#475569',
               fontWeight: '600',
             }}>
@@ -205,7 +206,7 @@ const ReviewsScreen = () => {
           {/* Rating Bars */}
           <View
             style={{
-              marginTop: 42,
+              marginTop: 22,
             }}>
             {ratingData.map((item, index) => (
               <View
@@ -213,13 +214,13 @@ const ReviewsScreen = () => {
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  marginBottom: 28,
+                  marginBottom: 14,
                 }}>
                 {/* Number */}
                 <Text
                   style={{
                     width: 28,
-                    fontSize: 22,
+                    fontSize: 14,
                     color: '#111111',
                     fontWeight: '600',
                   }}>
@@ -230,10 +231,10 @@ const ReviewsScreen = () => {
                 <View
                   style={{
                     flex: 1,
-                    height: 16,
+                    height: 8,
                     borderRadius: 100,
                     backgroundColor: '#F1F2F4',
-                    marginHorizontal: 24,
+                    marginHorizontal: 14,
                     overflow: 'hidden',
                   }}>
                   <View
@@ -251,7 +252,7 @@ const ReviewsScreen = () => {
                   style={{
                     width: 36,
                     textAlign: 'right',
-                    fontSize: 20,
+                    fontSize: 14,
                     color: '#475569',
                     fontWeight: '500',
                   }}>
@@ -265,14 +266,14 @@ const ReviewsScreen = () => {
         {/* Verified Reviews Card */}
         <View
           style={{
-            marginTop: 40,
-            marginHorizontal: 30,
+            marginTop: 22,
+            marginHorizontal: 18,
             backgroundColor: '#FFF8F1',
-            borderRadius: 34,
+            borderRadius: 22,
             borderWidth: 1.5,
             borderColor: '#F8DFC4',
-            paddingHorizontal: 34,
-            paddingVertical: 40,
+            paddingHorizontal: 22,
+            paddingVertical: 24,
           }}>
           {/* Lock Circle */}
           <View
@@ -281,9 +282,9 @@ const ReviewsScreen = () => {
             }}>
             <View
               style={{
-                width: 82,
-                height: 82,
-                borderRadius: 41,
+                width: 54,
+                height: 54,
+                borderRadius: 27,
                 backgroundColor: '#FFFFFF',
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -298,7 +299,7 @@ const ReviewsScreen = () => {
               }}>
               <Ionicons
                 name="lock-closed"
-                size={34}
+                size={23}
                 color="#EE9B52"
               />
             </View>
@@ -307,10 +308,10 @@ const ReviewsScreen = () => {
           {/* Title */}
           <Text
             style={{
-              marginTop: 34,
+              marginTop: 18,
               textAlign: 'center',
-              fontSize: 28,
-              lineHeight: 36,
+              fontSize: 20,
+              lineHeight: 26,
               color: '#111827',
               fontWeight: '800',
               letterSpacing: -0.4,
@@ -321,10 +322,10 @@ const ReviewsScreen = () => {
           {/* Description */}
           <Text
             style={{
-              marginTop: 24,
+              marginTop: 12,
               textAlign: 'center',
-              fontSize: 22,
-              lineHeight: 40,
+              fontSize: 15,
+              lineHeight: 24,
               color: '#475569',
               fontWeight: '500',
             }}>
@@ -338,16 +339,16 @@ const ReviewsScreen = () => {
           <TouchableOpacity
             activeOpacity={0.88}
             style={{
-              marginTop: 38,
-              height: 88,
-              borderRadius: 26,
+              marginTop: 22,
+              height: 54,
+              borderRadius: 16,
               backgroundColor: '#EE9B52',
               justifyContent: 'center',
               alignItems: 'center',
               shadowColor: '#EE9B52',
               shadowOffset: {
                 width: 0,
-                height: 10,
+                height: 6,
               },
               shadowOpacity: 0.24,
               shadowRadius: 14,
@@ -355,7 +356,7 @@ const ReviewsScreen = () => {
             }}>
             <Text
               style={{
-                fontSize: 24,
+                fontSize: 16,
                 color: '#FFFFFF',
                 fontWeight: '800',
               }}>
@@ -364,24 +365,27 @@ const ReviewsScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {/* ===================================================== */}
+
+
         {/* Reviews Filter */}
 <View
   style={{
-    marginTop: 42,
+    marginTop: 24,
   }}>
   <ScrollView
     horizontal
     showsHorizontalScrollIndicator={false}
     contentContainerStyle={{
-      paddingHorizontal: 22,
+      paddingHorizontal: 18,
     }}>
     {/* Active */}
     <TouchableOpacity
       activeOpacity={0.85}
       style={{
-        height: 58,
-        paddingHorizontal: 28,
-        borderRadius: 29,
+        height: 40,
+        paddingHorizontal: 18,
+        borderRadius: 20,
         backgroundColor: '#111111',
         justifyContent: 'center',
         alignItems: 'center',
@@ -389,7 +393,7 @@ const ReviewsScreen = () => {
         shadowColor: '#000',
         shadowOffset: {
           width: 0,
-          height: 8,
+          height: 5,
         },
         shadowOpacity: 0.14,
         shadowRadius: 12,
@@ -397,7 +401,7 @@ const ReviewsScreen = () => {
       }}>
       <Text
         style={{
-          fontSize: 18,
+          fontSize: 14,
           color: '#FFFFFF',
           fontWeight: '700',
         }}>
@@ -409,9 +413,9 @@ const ReviewsScreen = () => {
     <TouchableOpacity
       activeOpacity={0.85}
       style={{
-        height: 58,
-        paddingHorizontal: 28,
-        borderRadius: 29,
+        height: 40,
+        paddingHorizontal: 18,
+        borderRadius: 20,
         backgroundColor: '#FFFFFF',
         borderWidth: 1.5,
         borderColor: '#E5E7EB',
@@ -421,7 +425,7 @@ const ReviewsScreen = () => {
       }}>
       <Text
         style={{
-          fontSize: 18,
+          fontSize: 14,
           color: '#111827',
           fontWeight: '500',
         }}>
@@ -433,9 +437,9 @@ const ReviewsScreen = () => {
     <TouchableOpacity
       activeOpacity={0.85}
       style={{
-        height: 58,
-        paddingHorizontal: 28,
-        borderRadius: 29,
+        height: 40,
+        paddingHorizontal: 18,
+        borderRadius: 20,
         backgroundColor: '#FFFFFF',
         borderWidth: 1.5,
         borderColor: '#E5E7EB',
@@ -444,7 +448,7 @@ const ReviewsScreen = () => {
       }}>
       <Text
         style={{
-          fontSize: 18,
+          fontSize: 14,
           color: '#111827',
           fontWeight: '500',
         }}>
@@ -457,18 +461,18 @@ const ReviewsScreen = () => {
 {/* Reviews List */}
 <View
   style={{
-    marginTop: 34,
-    paddingHorizontal: 22,
+    marginTop: 22,
+    paddingHorizontal: 18,
   }}>
   {/* Review Card 1 */}
   <View
     style={{
       backgroundColor: '#FFFFFF',
-      borderRadius: 34,
+      borderRadius: 22,
       borderWidth: 1,
       borderColor: '#F1F1F1',
-      padding: 26,
-      marginBottom: 28,
+      padding: 18,
+      marginBottom: 18,
       shadowColor: '#000',
       shadowOffset: {
         width: 0,
@@ -495,20 +499,20 @@ const ReviewsScreen = () => {
             uri: 'https://randomuser.me/api/portraits/women/44.jpg',
           }}
           style={{
-            width: 62,
-            height: 62,
-            borderRadius: 31,
+            width: 46,
+            height: 46,
+            borderRadius: 23,
           }}
         />
 
         <View
           style={{
-            marginLeft: 16,
+            marginLeft: 12,
             flex: 1,
           }}>
           <Text
             style={{
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: '800',
               color: '#111827',
             }}>
@@ -519,15 +523,15 @@ const ReviewsScreen = () => {
           <View
             style={{
               alignSelf: 'flex-start',
-              marginTop: 8,
+              marginTop: 5,
               backgroundColor: '#FFF3E8',
               borderRadius: 10,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
+              paddingHorizontal: 9,
+              paddingVertical: 4,
             }}>
             <Text
               style={{
-                fontSize: 14,
+                fontSize: 11,
                 color: '#E67E22',
                 fontWeight: '600',
               }}>
@@ -540,18 +544,18 @@ const ReviewsScreen = () => {
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              marginTop: 10,
+              marginTop: 7,
             }}>
             <Ionicons
               name="location-sharp"
-              size={16}
+              size={13}
               color="#475569"
             />
 
             <Text
               style={{
                 marginLeft: 5,
-                fontSize: 16,
+                fontSize: 13,
                 color: '#475569',
                 fontWeight: '500',
               }}>
@@ -564,7 +568,7 @@ const ReviewsScreen = () => {
       {/* Time */}
       <Text
         style={{
-          fontSize: 16,
+          fontSize: 12,
           color: '#475569',
           fontWeight: '500',
         }}>
@@ -576,16 +580,16 @@ const ReviewsScreen = () => {
     <View
       style={{
         flexDirection: 'row',
-        marginTop: 26,
+        marginTop: 18,
       }}>
       {[1, 2, 3, 4, 5].map(item => (
         <Ionicons
           key={item}
           name="star"
-          size={28}
+          size={18}
           color="#FACC15"
           style={{
-            marginRight: 6,
+            marginRight: 4,
           }}
         />
       ))}
@@ -594,9 +598,9 @@ const ReviewsScreen = () => {
     {/* Review */}
     <Text
       style={{
-        marginTop: 22,
-        fontSize: 18,
-        lineHeight: 38,
+        marginTop: 14,
+        fontSize: 14,
+        lineHeight: 23,
         color: '#475569',
         fontWeight: '500',
       }}>
@@ -614,7 +618,7 @@ const ReviewsScreen = () => {
       style={{
         height: 1,
         backgroundColor: '#F3F4F6',
-        marginVertical: 26,
+        marginVertical: 18,
       }}
     />
 
@@ -627,7 +631,7 @@ const ReviewsScreen = () => {
       }}>
       <Text
         style={{
-          fontSize: 16,
+          fontSize: 13,
           color: '#475569',
           fontWeight: '700',
         }}>
@@ -642,9 +646,9 @@ const ReviewsScreen = () => {
         <TouchableOpacity
           activeOpacity={0.85}
           style={{
-            height: 42,
-            paddingHorizontal: 18,
-            borderRadius: 21,
+            height: 34,
+            paddingHorizontal: 13,
+            borderRadius: 17,
             backgroundColor: '#F8FAFC',
             flexDirection: 'row',
             alignItems: 'center',
@@ -652,14 +656,14 @@ const ReviewsScreen = () => {
           }}>
           <Ionicons
             name="thumbs-up-outline"
-            size={18}
+            size={15}
             color="#475569"
           />
 
           <Text
             style={{
               marginLeft: 8,
-              fontSize: 17,
+              fontSize: 13,
               color: '#475569',
               fontWeight: '500',
             }}>
@@ -671,16 +675,16 @@ const ReviewsScreen = () => {
         <TouchableOpacity
           activeOpacity={0.85}
           style={{
-            width: 42,
-            height: 42,
-            borderRadius: 21,
+            width: 34,
+            height: 34,
+            borderRadius: 17,
             backgroundColor: '#F8FAFC',
             justifyContent: 'center',
             alignItems: 'center',
           }}>
           <Ionicons
             name="thumbs-down-outline"
-            size={18}
+            size={15}
             color="#475569"
           />
         </TouchableOpacity>
@@ -692,10 +696,10 @@ const ReviewsScreen = () => {
   <View
     style={{
       backgroundColor: '#FFFFFF',
-      borderRadius: 34,
+      borderRadius: 22,
       borderWidth: 1,
       borderColor: '#F1F1F1',
-      padding: 26,
+      padding: 18,
       shadowColor: '#000',
       shadowOffset: {
         width: 0,
@@ -721,20 +725,20 @@ const ReviewsScreen = () => {
             uri: 'https://randomuser.me/api/portraits/men/32.jpg',
           }}
           style={{
-            width: 62,
-            height: 62,
-            borderRadius: 31,
+            width: 46,
+            height: 46,
+            borderRadius: 23,
           }}
         />
 
         <View
           style={{
-            marginLeft: 16,
+            marginLeft: 12,
             flex: 1,
           }}>
           <Text
             style={{
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: '800',
               color: '#111827',
             }}>
@@ -745,24 +749,24 @@ const ReviewsScreen = () => {
           <View
             style={{
               alignSelf: 'flex-start',
-              marginTop: 8,
+              marginTop: 5,
               backgroundColor: '#F3F4F6',
               borderRadius: 10,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
+              paddingHorizontal: 9,
+              paddingVertical: 4,
               flexDirection: 'row',
               alignItems: 'center',
             }}>
             <Ionicons
               name="people"
-              size={14}
+              size={12}
               color="#475569"
             />
 
             <Text
               style={{
                 marginLeft: 6,
-                fontSize: 14,
+                fontSize: 11,
                 color: '#475569',
                 fontWeight: '600',
               }}>
@@ -775,18 +779,18 @@ const ReviewsScreen = () => {
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              marginTop: 10,
+              marginTop: 7,
             }}>
             <Ionicons
               name="location-sharp"
-              size={16}
+              size={13}
               color="#475569"
             />
 
             <Text
               style={{
                 marginLeft: 5,
-                fontSize: 16,
+                fontSize: 13,
                 color: '#475569',
                 fontWeight: '500',
               }}>
@@ -799,7 +803,7 @@ const ReviewsScreen = () => {
       {/* Time */}
       <Text
         style={{
-          fontSize: 16,
+          fontSize: 12,
           color: '#475569',
           fontWeight: '500',
         }}>
@@ -811,23 +815,23 @@ const ReviewsScreen = () => {
     <View
       style={{
         flexDirection: 'row',
-        marginTop: 26,
+        marginTop: 18,
       }}>
       {[1, 2, 3, 4].map(item => (
         <Ionicons
           key={item}
           name="star"
-          size={28}
+          size={18}
           color="#FACC15"
           style={{
-            marginRight: 6,
+            marginRight: 4,
           }}
         />
       ))}
 
       <Ionicons
         name="star-outline"
-        size={28}
+        size={18}
         color="#D1D5DB"
       />
     </View>
@@ -835,9 +839,9 @@ const ReviewsScreen = () => {
     {/* Review */}
     <Text
       style={{
-        marginTop: 22,
-        fontSize: 18,
-        lineHeight: 38,
+        marginTop: 14,
+        fontSize: 14,
+        lineHeight: 23,
         color: '#475569',
         fontWeight: '500',
       }}>
@@ -854,7 +858,7 @@ const ReviewsScreen = () => {
       style={{
         height: 1,
         backgroundColor: '#F3F4F6',
-        marginVertical: 26,
+        marginVertical: 18,
       }}
     />
 
@@ -867,7 +871,7 @@ const ReviewsScreen = () => {
       }}>
       <Text
         style={{
-          fontSize: 16,
+          fontSize: 13,
           color: '#475569',
           fontWeight: '700',
         }}>
@@ -882,9 +886,9 @@ const ReviewsScreen = () => {
         <TouchableOpacity
           activeOpacity={0.85}
           style={{
-            height: 42,
-            paddingHorizontal: 18,
-            borderRadius: 21,
+            height: 34,
+            paddingHorizontal: 13,
+            borderRadius: 17,
             backgroundColor: '#FFF3E8',
             borderWidth: 1,
             borderColor: '#FED7AA',
@@ -894,14 +898,14 @@ const ReviewsScreen = () => {
           }}>
           <Ionicons
             name="thumbs-up"
-            size={18}
+            size={15}
             color="#F59E0B"
           />
 
           <Text
             style={{
               marginLeft: 8,
-              fontSize: 17,
+              fontSize: 13,
               color: '#F59E0B',
               fontWeight: '700',
             }}>
@@ -913,23 +917,23 @@ const ReviewsScreen = () => {
         <TouchableOpacity
           activeOpacity={0.85}
           style={{
-            height: 42,
-            paddingHorizontal: 16,
-            borderRadius: 21,
+            height: 34,
+            paddingHorizontal: 13,
+            borderRadius: 17,
             backgroundColor: '#F8FAFC',
             flexDirection: 'row',
             alignItems: 'center',
           }}>
           <Ionicons
             name="thumbs-down-outline"
-            size={18}
+            size={15}
             color="#475569"
           />
 
           <Text
             style={{
               marginLeft: 8,
-              fontSize: 17,
+              fontSize: 13,
               color: '#475569',
               fontWeight: '500',
             }}>
@@ -944,12 +948,12 @@ const ReviewsScreen = () => {
   <View
     style={{
       alignItems: 'center',
-      marginTop: 44,
+      marginTop: 28,
       marginBottom: 10,
     }}>
     <Ionicons
       name="reload"
-      size={34}
+      size={24}
       color="#EE9B52"
     />
   </View>

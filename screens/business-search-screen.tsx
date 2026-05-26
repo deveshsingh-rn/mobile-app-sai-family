@@ -102,7 +102,7 @@ const SearchScreen = () => {
       return (
         <Feather
           name={item.icon}
-          size={34}
+          size={24}
           color={item.iconColor}
         />
       );
@@ -114,7 +114,7 @@ const SearchScreen = () => {
       return (
         <MaterialCommunityIcons
           name={item.icon}
-          size={38}
+          size={27}
           color={item.iconColor}
         />
       );
@@ -123,7 +123,7 @@ const SearchScreen = () => {
     return (
       <Ionicons
         name="medical"
-        size={34}
+        size={24}
         color={item.iconColor}
       />
     );
@@ -144,11 +144,11 @@ const SearchScreen = () => {
       <View
         style={{
           backgroundColor: '#FFFFFF',
-          paddingHorizontal: 22,
-          paddingTop: 14,
-          paddingBottom: 34,
-          borderBottomLeftRadius: 34,
-          borderBottomRightRadius: 34,
+          paddingHorizontal: 16,
+          paddingTop: 10,
+          paddingBottom: 20,
+          borderBottomLeftRadius: 24,
+          borderBottomRightRadius: 24,
           shadowColor: '#000',
           shadowOffset: {
             width: 0,
@@ -170,15 +170,15 @@ const SearchScreen = () => {
               onPress={() => router.back()}
               style={{
                 width: 56,
-              height: 56,
-              borderRadius: 28,
+              height: 44,
+              borderRadius: 22,
               backgroundColor: '#F3F4F6',
               justifyContent: 'center',
               alignItems: 'center',
             }}>
             <Ionicons
               name="arrow-back"
-              size={28}
+              size={22}
               color="#374151"
             />
           </TouchableOpacity>
@@ -187,19 +187,19 @@ const SearchScreen = () => {
           <View
             style={{
               flex: 1,
-              marginLeft: 16,
-              height: 68,
-              borderRadius: 34,
+              marginLeft: 12,
+              height: 48,
+              borderRadius: 24,
               backgroundColor: '#F9FAFB',
               borderWidth: 1.5,
               borderColor: '#E5E7EB',
               flexDirection: 'row',
               alignItems: 'center',
-              paddingHorizontal: 22,
+              paddingHorizontal: 16,
             }}>
             <Ionicons
               name="search"
-              size={26}
+              size={20}
               color="#9CA3AF"
             />
 
@@ -210,8 +210,8 @@ const SearchScreen = () => {
               placeholderTextColor="#9CA3AF"
               style={{
                 flex: 1,
-                marginLeft: 14,
-                fontSize: 18,
+                marginLeft: 10,
+                fontSize: 15,
                 color: '#111827',
                 fontWeight: '500',
               }}
@@ -224,8 +224,8 @@ const SearchScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 22,
-          paddingBottom: 130,
-          paddingTop: 28,
+          paddingBottom: 96,
+          paddingTop: 20,
         }}>
         {/* Recent Searches */}
         <View>
@@ -237,7 +237,7 @@ const SearchScreen = () => {
             }}>
             <Text
               style={{
-                fontSize: 20,
+                fontSize: 17,
                 fontWeight: '800',
                 color: '#111827',
               }}>
@@ -247,7 +247,7 @@ const SearchScreen = () => {
             <TouchableOpacity activeOpacity={0.8}>
               <Text
                 style={{
-                  fontSize: 17,
+                  fontSize: 14,
                   color: '#F97316',
                   fontWeight: '700',
                 }}>
@@ -261,34 +261,34 @@ const SearchScreen = () => {
             style={{
               flexDirection: 'row',
               flexWrap: 'wrap',
-              marginTop: 24,
+              marginTop: 16,
             }}>
             {recentSearches.map((item, index) => (
               <TouchableOpacity
                 key={index}
                 activeOpacity={0.85}
                 style={{
-                  height: 56,
-                  borderRadius: 18,
+                  height: 40,
+                  borderRadius: 14,
                   backgroundColor: '#FFFFFF',
                   borderWidth: 1,
                   borderColor: '#ECECEC',
                   flexDirection: 'row',
                   alignItems: 'center',
-                  paddingHorizontal: 20,
-                  marginRight: 14,
-                  marginBottom: 14,
+                  paddingHorizontal: 14,
+                  marginRight: 10,
+                  marginBottom: 10,
                 }}>
                 <Ionicons
                   name="time"
-                  size={20}
+                  size={15}
                   color="#9CA3AF"
                 />
 
                 <Text
                   style={{
-                    marginLeft: 12,
-                    fontSize: 17,
+                    marginLeft: 8,
+                    fontSize: 13,
                     color: '#4B5563',
                     fontWeight: '500',
                   }}>
@@ -302,11 +302,11 @@ const SearchScreen = () => {
         {/* Categories */}
         <View
           style={{
-            marginTop: 38,
+            marginTop: 24,
           }}>
           <Text
             style={{
-              fontSize: 20,
+              fontSize: 17,
               fontWeight: '800',
               color: '#111827',
             }}>
@@ -319,7 +319,7 @@ const SearchScreen = () => {
               flexDirection: 'row',
               flexWrap: 'wrap',
               justifyContent: 'space-between',
-              marginTop: 24,
+              marginTop: 16,
             }}>
             {categories.map((item, index) => (
               <TouchableOpacity
@@ -327,14 +327,14 @@ const SearchScreen = () => {
                 activeOpacity={0.88}
                 style={{
                   width: '48%',
-                  height: 170,
-                  borderRadius: 28,
+                  height: 118,
+                  borderRadius: 18,
                   backgroundColor: '#FFFFFF',
                   borderWidth: 1,
                   borderColor: '#ECECEC',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  marginBottom: 18,
+                  marginBottom: 12,
                   shadowColor: '#000',
                   shadowOffset: {
                     width: 0,
@@ -347,9 +347,9 @@ const SearchScreen = () => {
                 {/* Icon Circle */}
                 <View
                   style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: 36,
+                    width: 50,
+                    height: 50,
+                    borderRadius: 25,
                     backgroundColor: item.bg,
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -359,8 +359,8 @@ const SearchScreen = () => {
 
                 <Text
                   style={{
-                    marginTop: 24,
-                    fontSize: 18,
+                    marginTop: 14,
+                    fontSize: 14,
                     fontWeight: '700',
                     color: '#1F2937',
                   }}>
@@ -374,7 +374,7 @@ const SearchScreen = () => {
         {/* Trending */}
         <View
           style={{
-            marginTop: 18,
+            marginTop: 14,
           }}>
           {/* Title */}
           <View
@@ -384,14 +384,14 @@ const SearchScreen = () => {
             }}>
             <Ionicons
               name="flame"
-              size={20}
+              size={16}
               color="#F97316"
             />
 
             <Text
               style={{
-                marginLeft: 10,
-                fontSize: 20,
+                marginLeft: 8,
+                fontSize: 17,
                 fontWeight: '800',
                 color: '#111827',
               }}>
@@ -402,22 +402,22 @@ const SearchScreen = () => {
           {/* Trending Cards */}
           <View
             style={{
-              marginTop: 24,
+              marginTop: 16,
             }}>
             {trending.map((item, index) => (
               <TouchableOpacity
                 key={index}
                 activeOpacity={0.88}
                 style={{
-                  height: 108,
-                  borderRadius: 28,
+                  height: 78,
+                  borderRadius: 18,
                   backgroundColor: '#FFFFFF',
                   borderWidth: 1,
                   borderColor: '#ECECEC',
                   flexDirection: 'row',
                   alignItems: 'center',
-                  paddingHorizontal: 18,
-                  marginBottom: 18,
+                  paddingHorizontal: 14,
+                  marginBottom: 12,
                   shadowColor: '#000',
                   shadowOffset: {
                     width: 0,
@@ -430,16 +430,16 @@ const SearchScreen = () => {
                 {/* Rank */}
                 <View
                   style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 30,
+                    width: 42,
+                    height: 42,
+                    borderRadius: 21,
                     backgroundColor: '#FFF7ED',
                     justifyContent: 'center',
                     alignItems: 'center',
                   }}>
                   <Text
                     style={{
-                      fontSize: 24,
+                      fontSize: 17,
                       fontWeight: '800',
                       color: '#F97316',
                     }}>
@@ -451,12 +451,12 @@ const SearchScreen = () => {
                 <View
                   style={{
                     flex: 1,
-                    marginLeft: 16,
+                    marginLeft: 12,
                   }}>
                   <Text
                     numberOfLines={1}
                     style={{
-                      fontSize: 20,
+                      fontSize: 15,
                       fontWeight: '700',
                       color: '#111827',
                     }}>
@@ -466,7 +466,7 @@ const SearchScreen = () => {
                   <Text
                     style={{
                       marginTop: 6,
-                      fontSize: 16,
+                      fontSize: 12,
                       color: '#6B7280',
                       fontWeight: '500',
                     }}>
@@ -477,7 +477,7 @@ const SearchScreen = () => {
                 {/* Arrow */}
                 <Ionicons
                   name="trending-up"
-                  size={24}
+                  size={18}
                   color="#F97316"
                 />
               </TouchableOpacity>
@@ -493,15 +493,15 @@ const SearchScreen = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          height: 104,
+          height: 78,
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#ECECEC',
           flexDirection: 'row',
           justifyContent: 'space-around',
           alignItems: 'center',
-          paddingBottom: 18,
-          paddingTop: 10,
+          paddingBottom: 10,
+          paddingTop: 8,
           shadowColor: '#000',
           shadowOffset: {
             width: 0,
@@ -522,10 +522,10 @@ const SearchScreen = () => {
               <View
                 style={{
                   position: 'absolute',
-                  top: -10,
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
+                  top: -7,
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
                   backgroundColor: '#F97316',
                 }}
               />
@@ -533,7 +533,7 @@ const SearchScreen = () => {
 
             <Ionicons
               name={item.icon}
-              size={28}
+              size={21}
               color={
                 item.active
                   ? '#F97316'
@@ -544,7 +544,7 @@ const SearchScreen = () => {
             <Text
               style={{
                 marginTop: 8,
-                fontSize: 14,
+                fontSize: 11,
                 fontWeight: item.active
                   ? '700'
                   : '500',
@@ -569,15 +569,15 @@ const SearchScreen = () => {
             }}
             style={{
               width: 38,
-              height: 38,
-              borderRadius: 19,
+              height: 30,
+              borderRadius: 15,
             }}
           />
 
           <Text
             style={{
               marginTop: 8,
-              fontSize: 14,
+              fontSize: 11,
               color: '#9CA3AF',
               fontWeight: '500',
             }}>
