@@ -1,58 +1,53 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
+  Image,
+  ScrollView,
   StatusBar,
-  View,
+  Switch,
   Text,
   TouchableOpacity,
-  ScrollView,
-  Image,
-  Switch,
+  View,
 } from 'react-native';
 
-// import Ionicons from 'react-native-vector-icons/Ionicons';
-// import Feather from 'react-native-vector-icons/Feather';
-
-import {
-  Ionicons,
-} from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const nearYou = [
   {
-    name: 'Priya Sharma',
-    tradition: 'Shirdi Sai Devotee',
     image:
       'https://randomuser.me/api/portraits/women/44.jpg',
     mutual: '3 Mutual\nConnections',
+    name: 'Priya Sharma',
+    tradition: 'Shirdi Sai Devotee',
   },
   {
-    name: 'Rahul Verma',
-    tradition: 'Iskcon Tradition',
     image:
       'https://randomuser.me/api/portraits/men/32.jpg',
     mutual: '1.2 km away',
+    name: 'Rahul Verma',
+    tradition: 'Iskcon Tradition',
   },
 ];
 
 const suggested = [
   {
-    name: 'Ananya Desai',
-    subtitle: 'Art of Living · Bangalore',
+    badge: 'Based on your tradition',
     image:
       'https://randomuser.me/api/portraits/women/68.jpg',
-    badge: 'Based on your tradition',
+    name: 'Ananya Desai',
+    subtitle: 'Art of Living · Bangalore',
   },
   {
-    name: 'Vikram Singh',
-    subtitle: 'Vipassana · Pune',
+    badge: 'Based on your city',
     image:
       'https://randomuser.me/api/portraits/men/75.jpg',
-    badge: 'Based on your city',
+    name: 'Vikram Singh',
+    subtitle: 'Vipassana · Pune',
   },
 ];
 
-const SanghaScreen = () => {
+export default function SanghaScreen() {
   const [enabled, setEnabled] = useState(false);
 
   return (
@@ -69,22 +64,21 @@ const SanghaScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 40,
+          paddingBottom: 110,
         }}>
-        {/* Header */}
         <View
           style={{
-            paddingHorizontal: 22,
-            paddingTop: 24,
+            alignItems: 'center',
             flexDirection: 'row',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            paddingHorizontal: 22,
+            paddingTop: 24,
           }}>
           <Text
             style={{
+              color: '#111827',
               fontSize: 24,
               fontWeight: '800',
-              color: '#111827',
               letterSpacing: -0.4,
             }}>
             Discovery
@@ -93,12 +87,12 @@ const SanghaScreen = () => {
           <TouchableOpacity
             activeOpacity={0.85}
             style={{
-              width: 54,
-              height: 54,
-              borderRadius: 27,
-              backgroundColor: '#FFFFFF',
-              justifyContent: 'center',
               alignItems: 'center',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 27,
+              elevation: 2,
+              height: 54,
+              justifyContent: 'center',
               shadowColor: '#000',
               shadowOffset: {
                 width: 0,
@@ -106,7 +100,7 @@ const SanghaScreen = () => {
               },
               shadowOpacity: 0.03,
               shadowRadius: 10,
-              elevation: 2,
+              width: 54,
             }}>
             <Ionicons
               name="options-outline"
@@ -116,18 +110,16 @@ const SanghaScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Discovery Card */}
         <View
           style={{
-            marginTop: 22,
-            marginHorizontal: 16,
             backgroundColor: '#FFFDFC',
-            borderRadius: 34,
-            borderWidth: 1,
             borderColor: '#F5EFE7',
-            paddingHorizontal: 28,
-            paddingTop: 34,
-            paddingBottom: 28,
+            borderRadius: 30,
+            borderWidth: 1,
+            elevation: 2,
+            marginHorizontal: 16,
+            marginTop: 22,
+            padding: 24,
             shadowColor: '#000',
             shadowOffset: {
               width: 0,
@@ -135,51 +127,97 @@ const SanghaScreen = () => {
             },
             shadowOpacity: 0.03,
             shadowRadius: 10,
-            elevation: 2,
           }}>
-          {/* Title */}
           <Text
             style={{
-              fontSize: 28,
-              lineHeight: 34,
               color: '#111827',
+              fontSize: 28,
               fontWeight: '800',
               letterSpacing: -0.6,
+              lineHeight: 34,
             }}>
             Find Your Sangha
           </Text>
 
-          {/* Subtitle */}
           <Text
             style={{
-              marginTop: 14,
-              fontSize: 18,
-              lineHeight: 34,
               color: '#6B7280',
+              fontSize: 17,
               fontWeight: '500',
-              paddingRight: 18,
+              lineHeight: 30,
+              marginTop: 12,
             }}>
-            Connect with devotees who share
-            your tradition and spiritual
-            journey.
+            Connect with devotees who share your tradition and spiritual journey.
           </Text>
 
-          {/* Toggle Row */}
-          <View
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => router.push('/sangha-hub')}
             style={{
-              marginTop: 42,
+              alignItems: 'center',
+              backgroundColor: '#111111',
+              borderRadius: 22,
               flexDirection: 'row',
-              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              marginTop: 26,
+              padding: 18,
             }}>
-            {/* Icon */}
             <View
               style={{
-                width: 56,
-                height: 56,
-                borderRadius: 28,
-                backgroundColor: '#FFF3E8',
-                justifyContent: 'center',
+                flex: 1,
+              }}>
+              <Text
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 20,
+                  fontWeight: '900',
+                }}>
+                Sangha Hub
+              </Text>
+              <Text
+                style={{
+                  color: 'rgba(255,255,255,0.72)',
+                  fontSize: 14,
+                  fontWeight: '600',
+                  lineHeight: 21,
+                  marginTop: 5,
+                }}>
+                Groups, invitations, chapters, seva and bhajan communities
+              </Text>
+            </View>
+
+            <View
+              style={{
                 alignItems: 'center',
+                backgroundColor: '#FFF7ED',
+                borderRadius: 22,
+                height: 44,
+                justifyContent: 'center',
+                marginLeft: 14,
+                width: 44,
+              }}>
+              <Ionicons
+                name="arrow-forward"
+                size={22}
+                color="#F97316"
+              />
+            </View>
+          </TouchableOpacity>
+
+          <View
+            style={{
+              alignItems: 'flex-start',
+              flexDirection: 'row',
+              marginTop: 28,
+            }}>
+            <View
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#FFF3E8',
+                borderRadius: 28,
+                height: 56,
+                justifyContent: 'center',
+                width: 56,
               }}>
               <Ionicons
                 name="location"
@@ -188,24 +226,21 @@ const SanghaScreen = () => {
               />
             </View>
 
-            {/* Content */}
             <View
               style={{
                 flex: 1,
-                marginLeft: 18,
-                paddingRight: 10,
+                marginLeft: 16,
               }}>
-              {/* Top */}
               <View
                 style={{
+                  alignItems: 'center',
                   flexDirection: 'row',
                   justifyContent: 'space-between',
-                  alignItems: 'center',
                 }}>
                 <Text
                   style={{
-                    fontSize: 17,
                     color: '#111827',
+                    fontSize: 17,
                     fontWeight: '700',
                   }}>
                   Near Me Discovery
@@ -218,87 +253,75 @@ const SanghaScreen = () => {
                     false: '#E5E7EB',
                     true: '#F6C28B',
                   }}
-                  thumbColor={
-                    enabled ? '#EE9B52' : '#FFFFFF'
-                  }
+                  thumbColor={enabled ? '#EE9B52' : '#FFFFFF'}
                 />
               </View>
 
-              {/* Description */}
               <Text
                 style={{
-                  marginTop: 10,
-                  fontSize: 15,
-                  lineHeight: 31,
                   color: '#6B7280',
+                  fontSize: 14,
                   fontWeight: '500',
+                  lineHeight: 25,
+                  marginTop: 8,
                 }}>
-                Opt-in to see devotees nearby.
-                Others will see your
-                approximate area (e.g., Andheri
-                West), never your exact
-                address.
+                Opt-in to see devotees nearby. Others will see only your
+                approximate area.
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Near You */}
         <View
           style={{
-            marginTop: 42,
+            marginTop: 36,
             paddingHorizontal: 20,
           }}>
-          {/* Header */}
           <View
             style={{
+              alignItems: 'center',
               flexDirection: 'row',
               justifyContent: 'space-between',
-              alignItems: 'center',
             }}>
             <Text
               style={{
-                fontSize: 20,
                 color: '#111827',
+                fontSize: 20,
                 fontWeight: '800',
               }}>
               Near You
             </Text>
-
             <Text
               style={{
-                fontSize: 16,
                 color: '#F97316',
-                fontWeight: '600',
+                fontSize: 15,
+                fontWeight: '700',
               }}>
               Andheri West, Mumbai
             </Text>
           </View>
 
-          {/* Cards */}
           <View
             style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
-              marginTop: 22,
+              marginTop: 18,
             }}>
             {nearYou.map((item, index) => (
               <TouchableOpacity
-                key={index}
+                key={item.name}
                 activeOpacity={0.9}
-                onPress={() =>
-                  router.push('/sangha-profile')
-                }
+                onPress={() => router.push('/sangha-profile')}
                 style={{
-                  width: '48%',
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: 28,
-                  borderWidth: 1,
-                  borderColor: '#F0F0F0',
-                  paddingHorizontal: 16,
-                  paddingTop: 22,
-                  paddingBottom: 20,
                   alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#F0F0F0',
+                  borderRadius: 26,
+                  borderWidth: 1,
+                  elevation: 2,
+                  paddingBottom: 18,
+                  paddingHorizontal: 14,
+                  paddingTop: 20,
                   shadowColor: '#000',
                   shadowOffset: {
                     width: 0,
@@ -306,151 +329,100 @@ const SanghaScreen = () => {
                   },
                   shadowOpacity: 0.03,
                   shadowRadius: 10,
-                  elevation: 2,
+                  width: '48%',
                 }}>
-                {/* Top Border */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    borderTopLeftRadius: 28,
-                    borderTopRightRadius: 28,
-                    backgroundColor: '#F3C57C',
-                  }}
-                />
-
-                {/* Avatar */}
                 <Image
-                  source={{
-                    uri: item.image,
-                  }}
+                  source={{ uri: item.image }}
                   style={{
-                    width: 74,
-                    height: 74,
-                    borderRadius: 37,
+                    borderRadius: 36,
+                    height: 72,
+                    width: 72,
                   }}
                 />
 
-                {/* Name */}
                 <Text
                   style={{
-                    marginTop: 18,
-                    fontSize: 17,
                     color: '#111827',
-                    fontWeight: '700',
+                    fontSize: 16,
+                    fontWeight: '800',
+                    marginTop: 16,
                     textAlign: 'center',
                   }}>
                   {item.name}
                 </Text>
 
-                {/* Tradition */}
                 <Text
                   style={{
-                    marginTop: 6,
-                    fontSize: 14,
                     color: '#6B7280',
-                    fontWeight: '500',
+                    fontSize: 13,
+                    fontWeight: '600',
+                    marginTop: 6,
                     textAlign: 'center',
                   }}>
                   {item.tradition}
                 </Text>
 
-                {/* Mutual */}
                 <View
                   style={{
-                    marginTop: 16,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: '#FFF7ED',
-                    paddingHorizontal: 16,
-                    flexDirection: 'row',
                     alignItems: 'center',
+                    backgroundColor: '#FFF7ED',
+                    borderRadius: 18,
+                    flexDirection: 'row',
+                    height: 36,
                     justifyContent: 'center',
+                    marginTop: 14,
+                    paddingHorizontal: 12,
                   }}>
                   <Ionicons
-                    name={
-                      index === 0
-                        ? 'people'
-                        : 'location'
-                    }
-                    size={14}
+                    name={index === 0 ? 'people' : 'location'}
+                    size={13}
                     color="#F59E0B"
                   />
-
                   <Text
                     style={{
-                      marginLeft: 6,
-                      fontSize: 12,
-                      lineHeight: 16,
                       color: '#6B7280',
-                      fontWeight: '500',
+                      fontSize: 11,
+                      fontWeight: '600',
+                      lineHeight: 15,
+                      marginLeft: 5,
                       textAlign: 'center',
                     }}>
                     {item.mutual}
                   </Text>
                 </View>
-
-                {/* Button */}
-                <TouchableOpacity
-                  activeOpacity={0.88}
-                  style={{
-                    marginTop: 18,
-                    width: '100%',
-                    height: 42,
-                    borderRadius: 21,
-                    backgroundColor: '#FFF7ED',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: '#F97316',
-                      fontWeight: '600',
-                    }}>
-                    Connect
-                  </Text>
-                </TouchableOpacity>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Suggested */}
         <View
           style={{
-            marginTop: 42,
+            marginTop: 36,
             paddingHorizontal: 16,
           }}>
-          {/* Title */}
           <Text
             style={{
-              fontSize: 20,
               color: '#111827',
+              fontSize: 20,
               fontWeight: '800',
-              marginBottom: 22,
+              marginBottom: 18,
             }}>
             Suggested For You
           </Text>
 
-          {/* Cards */}
           {suggested.map((item, index) => (
             <TouchableOpacity
-              key={index}
+              key={item.name}
               activeOpacity={0.9}
-              onPress={() =>
-                router.push('/sangha-profile')
-              }
+              onPress={() => router.push('/sangha-profile')}
               style={{
                 backgroundColor: '#FFFFFF',
-                borderRadius: 32,
-                borderWidth: 1,
                 borderColor: '#F1F1F1',
-                padding: 22,
-                marginBottom: 22,
+                borderRadius: 28,
+                borderWidth: 1,
+                elevation: 2,
+                marginBottom: 18,
+                padding: 18,
                 shadowColor: '#000',
                 shadowOffset: {
                   width: 0,
@@ -458,36 +430,30 @@ const SanghaScreen = () => {
                 },
                 shadowOpacity: 0.03,
                 shadowRadius: 10,
-                elevation: 2,
               }}>
-              {/* Top */}
               <View
                 style={{
-                  flexDirection: 'row',
                   alignItems: 'center',
+                  flexDirection: 'row',
                 }}>
-                {/* Avatar */}
                 <Image
-                  source={{
-                    uri: item.image,
-                  }}
+                  source={{ uri: item.image }}
                   style={{
-                    width: 62,
-                    height: 62,
-                    borderRadius: 31,
+                    borderRadius: 30,
+                    height: 60,
+                    width: 60,
                   }}
                 />
 
-                {/* Info */}
                 <View
                   style={{
-                    marginLeft: 18,
                     flex: 1,
+                    marginLeft: 16,
                   }}>
                   <Text
                     style={{
-                      fontSize: 20,
                       color: '#111827',
+                      fontSize: 18,
                       fontWeight: '800',
                     }}>
                     {item.name}
@@ -495,146 +461,41 @@ const SanghaScreen = () => {
 
                   <Text
                     style={{
-                      marginTop: 4,
-                      fontSize: 16,
                       color: '#6B7280',
-                      fontWeight: '500',
+                      fontSize: 14,
+                      fontWeight: '600',
+                      marginTop: 4,
                     }}>
                     {item.subtitle}
                   </Text>
 
-                  {/* Badge */}
                   <View
                     style={{
+                      alignItems: 'center',
                       alignSelf: 'flex-start',
-                      marginTop: 12,
                       backgroundColor: '#FFF7ED',
                       borderRadius: 10,
-                      paddingHorizontal: 12,
-                      paddingVertical: 7,
                       flexDirection: 'row',
-                      alignItems: 'center',
+                      marginTop: 10,
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
                     }}>
                     <Ionicons
-                      name={
-                        index === 0
-                          ? 'flame'
-                          : 'business'
-                      }
-                      size={14}
+                      name={index === 0 ? 'flame' : 'business'}
+                      size={13}
                       color="#F97316"
                     />
-
                     <Text
                       style={{
-                        marginLeft: 6,
-                        fontSize: 13,
                         color: '#F97316',
-                        fontWeight: '600',
+                        fontSize: 12,
+                        fontWeight: '700',
+                        marginLeft: 5,
                       }}>
                       {item.badge}
                     </Text>
                   </View>
                 </View>
-              </View>
-
-              {/* Divider */}
-              <View
-                style={{
-                  height: 1,
-                  backgroundColor: '#F3F4F6',
-                  marginTop: 22,
-                }}
-              />
-
-              {/* Bottom */}
-              <View
-                style={{
-                  marginTop: 20,
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}>
-                {/* Mutual */}
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                  }}>
-                  <Image
-                    source={{
-                      uri: 'https://randomuser.me/api/portraits/men/11.jpg',
-                    }}
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: 13,
-                      borderWidth: 2,
-                      borderColor: '#FFFFFF',
-                    }}
-                  />
-
-                  <Image
-                    source={{
-                      uri: 'https://randomuser.me/api/portraits/women/12.jpg',
-                    }}
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: 13,
-                      borderWidth: 2,
-                      borderColor: '#FFFFFF',
-                      marginLeft: -8,
-                    }}
-                  />
-
-                  <View
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 14,
-                      backgroundColor: '#F3F4F6',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      marginLeft: -8,
-                    }}>
-                    <Text
-                      style={{
-                        fontSize: 11,
-                        color: '#374151',
-                        fontWeight: '700',
-                      }}>
-                      +5
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Connect */}
-                <TouchableOpacity
-                  activeOpacity={0.88}
-                  style={{
-                    width: 108,
-                    height: 44,
-                    borderRadius: 22,
-                    backgroundColor:
-                      index === 0
-                        ? '#111111'
-                        : '#FFF7ED',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color:
-                        index === 0
-                          ? '#FFFFFF'
-                          : '#F97316',
-                      fontWeight: '600',
-                    }}>
-                    Connect
-                  </Text>
-                </TouchableOpacity>
               </View>
             </TouchableOpacity>
           ))}
@@ -642,6 +503,4 @@ const SanghaScreen = () => {
       </ScrollView>
     </SafeAreaView>
   );
-};
-
-export default SanghaScreen;
+}
