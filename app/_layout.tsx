@@ -112,6 +112,8 @@ function AppLayoutContent() {
         <Stack.Screen name="directory" options={{ headerShown: false }} />
         <Stack.Screen name="events" options={{ headerShown: false }} />
         <Stack.Screen name="sangha-hub" options={{ headerShown: false }} />
+        <Stack.Screen name="sangha-hub-list" options={{ headerShown: false }} />
+        <Stack.Screen name="sangha-hub-search" options={{ headerShown: false }} />
         <Stack.Screen name="sangha-list" options={{ headerShown: false }} />
         <Stack.Screen name="sangha-profile" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
+  Modal,
   StatusBar,
   View,
   Text,
@@ -15,6 +16,7 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const purposeData = [
@@ -49,6 +51,12 @@ const purposeData = [
 ];
 
 const SanghaHubScreen = () => {
+  const [filterVisible, setFilterVisible] =
+    useState(false);
+  const [purpose, setPurpose] = useState('All');
+  const [activity, setActivity] = useState('Active');
+  const [privacy, setPrivacy] = useState('Any');
+
   return (
     <SafeAreaView
       style={{
@@ -136,7 +144,9 @@ const SanghaHubScreen = () => {
           </View>
 
           {/* Search */}
-          <View
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => router.push('/sangha-hub-search')}
             style={{
               marginTop: 22,
               height: 62,
@@ -163,6 +173,7 @@ const SanghaHubScreen = () => {
             />
 
             <TextInput
+              editable={false}
               placeholder="Discover groups, chapters, bhajans..."
               placeholderTextColor="#9CA3AF"
               style={{
@@ -177,6 +188,7 @@ const SanghaHubScreen = () => {
             {/* Filter */}
             <TouchableOpacity
               activeOpacity={0.85}
+              onPress={() => setFilterVisible(true)}
               style={{
                 width: 40,
                 height: 40,
@@ -191,7 +203,7 @@ const SanghaHubScreen = () => {
                 color="#F59E0B"
               />
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Pending Invitations */}
@@ -217,8 +229,14 @@ const SanghaHubScreen = () => {
               Pending Invitations
             </Text>
 
-            {/* Badge */}
-            <View
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() =>
+                router.push({
+                  pathname: '/sangha-hub-list',
+                  params: {type: 'pending'},
+                })
+              }
               style={{
                 height: 32,
                 borderRadius: 16,
@@ -235,7 +253,7 @@ const SanghaHubScreen = () => {
                 }}>
                 2 New
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Horizontal Cards */}
@@ -522,6 +540,15 @@ const SanghaHubScreen = () => {
               <TouchableOpacity
                 key={index}
                 activeOpacity={0.88}
+                onPress={() =>
+                  router.push({
+                    pathname: '/sangha-hub-list',
+                    params: {
+                      type: 'purpose',
+                      purpose: item.title,
+                    },
+                  })
+                }
                 style={{
                   width: '48%',
                   height: 138,
@@ -610,7 +637,14 @@ const SanghaHubScreen = () => {
               My Groups
             </Text>
 
-            <TouchableOpacity activeOpacity={0.85}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() =>
+                router.push({
+                  pathname: '/sangha-hub-list',
+                  params: {type: 'groups'},
+                })
+              }>
               <Text
                 style={{
                   fontSize: 18,
@@ -625,6 +659,12 @@ const SanghaHubScreen = () => {
           {/* Group Card */}
           <TouchableOpacity
             activeOpacity={0.88}
+            onPress={() =>
+              router.push({
+                pathname: '/sangha-hub-list',
+                params: {type: 'groups'},
+              })
+            }
             style={{
               marginTop: 24,
               backgroundColor: '#FFFFFF',
@@ -788,6 +828,198 @@ const SanghaHubScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <Modal
+        animationType="slide"
+        onRequestClose={() => setFilterVisible(false)}
+        transparent
+        visible={filterVisible}>
+        <View
+          style={{
+            backgroundColor: 'rgba(17,24,39,0.38)',
+            flex: 1,
+            justifyContent: 'flex-end',
+          }}>
+          <View
+            style={{
+              backgroundColor: '#FAFAF9',
+              borderTopLeftRadius: 30,
+              borderTopRightRadius: 30,
+              paddingBottom: 28,
+              paddingHorizontal: 22,
+              paddingTop: 20,
+            }}>
+            <View
+              style={{
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+              }}>
+              <Text
+                style={{
+                  color: '#1F2937',
+                  fontFamily: 'serif',
+                  fontSize: 24,
+                  fontWeight: '800',
+                }}>
+                Filter Hub
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => setFilterVisible(false)}
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 18,
+                  height: 36,
+                  justifyContent: 'center',
+                  width: 36,
+                }}>
+                <Ionicons
+                  name="close"
+                  size={20}
+                  color="#1F2937"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {[
+              {
+                label: 'Purpose',
+                options: ['All', 'City Chapter', 'Seva', 'Bhajan', 'Online Global'],
+                selected: purpose,
+                setSelected: setPurpose,
+              },
+              {
+                label: 'Activity',
+                options: ['Active', 'New', 'Popular'],
+                selected: activity,
+                setSelected: setActivity,
+              },
+              {
+                label: 'Privacy',
+                options: ['Any', 'Public', 'Invite Only'],
+                selected: privacy,
+                setSelected: setPrivacy,
+              },
+            ].map((group) => (
+              <View
+                key={group.label}
+                style={{
+                  marginTop: 22,
+                }}>
+                <Text
+                  style={{
+                    color: '#374151',
+                    fontSize: 14,
+                    fontWeight: '900',
+                    marginBottom: 12,
+                  }}>
+                  {group.label}
+                </Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                  }}>
+                  {group.options.map((option) => {
+                    const active =
+                      option === group.selected;
+
+                    return (
+                      <TouchableOpacity
+                        key={option}
+                        activeOpacity={0.85}
+                        onPress={() =>
+                          group.setSelected(option)
+                        }
+                        style={{
+                          backgroundColor: active
+                            ? '#F59E0B'
+                            : '#FFFFFF',
+                          borderColor: active
+                            ? '#F59E0B'
+                            : '#ECECEC',
+                          borderRadius: 18,
+                          borderWidth: 1,
+                          paddingHorizontal: 14,
+                          paddingVertical: 10,
+                        }}>
+                        <Text
+                          style={{
+                            color: active
+                              ? '#FFFFFF'
+                              : '#4B5563',
+                            fontSize: 13,
+                            fontWeight: '800',
+                          }}>
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            ))}
+
+            <View
+              style={{
+                flexDirection: 'row',
+                gap: 12,
+                marginTop: 28,
+              }}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => {
+                  setPurpose('All');
+                  setActivity('Active');
+                  setPrivacy('Any');
+                }}
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#ECECEC',
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  flex: 1,
+                  height: 52,
+                  justifyContent: 'center',
+                }}>
+                <Text
+                  style={{
+                    color: '#4B5563',
+                    fontSize: 15,
+                    fontWeight: '900',
+                  }}>
+                  Reset
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => setFilterVisible(false)}
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: '#F59E0B',
+                  borderRadius: 18,
+                  flex: 1,
+                  height: 52,
+                  justifyContent: 'center',
+                }}>
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontSize: 15,
+                    fontWeight: '900',
+                  }}>
+                  Apply
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
