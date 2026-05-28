@@ -39,11 +39,7 @@ const TABS = [
     label: 'Home',
     Icon: House,
   },
-  {
-    name: 'sangha',
-    label: 'Sangha',
-    Icon: Users,
-  },
+
   {
     name: 'events',
     label: 'Events',
@@ -53,6 +49,12 @@ const TABS = [
     name: 'directory',
     label: 'Directory',
     Icon: Building2,
+  },
+
+    {
+    name: 'sangha',
+    label: 'Sangha',
+    Icon: Users,
   },
   {
     name: 'profile',

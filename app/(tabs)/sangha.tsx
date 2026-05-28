@@ -13,11 +13,9 @@ import {
 // import Feather from 'react-native-vector-icons/Feather';
 
 import {
-  Feather,
-  FontAwesome6,
   Ionicons,
-  MaterialCommunityIcons,
 } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const nearYou = [
@@ -285,8 +283,12 @@ const SanghaScreen = () => {
               marginTop: 22,
             }}>
             {nearYou.map((item, index) => (
-              <View
+              <TouchableOpacity
                 key={index}
+                activeOpacity={0.9}
+                onPress={() =>
+                  router.push('/sangha-profile')
+                }
                 style={{
                   width: '48%',
                   backgroundColor: '#FFFFFF',
@@ -412,7 +414,7 @@ const SanghaScreen = () => {
                     Connect
                   </Text>
                 </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
@@ -436,8 +438,12 @@ const SanghaScreen = () => {
 
           {/* Cards */}
           {suggested.map((item, index) => (
-            <View
+            <TouchableOpacity
               key={index}
+              activeOpacity={0.9}
+              onPress={() =>
+                router.push('/sangha-profile')
+              }
               style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: 32,
@@ -630,7 +636,7 @@ const SanghaScreen = () => {
                   </Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
       </ScrollView>

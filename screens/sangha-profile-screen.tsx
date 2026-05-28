@@ -13,6 +13,7 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const interests = [
@@ -52,6 +53,7 @@ const SanghaProfileScreen = () => {
           {/* Back */}
           <TouchableOpacity
             activeOpacity={0.85}
+            onPress={() => router.back()}
             style={{
               width: 54,
               height: 54,
