@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Image,
 } from 'react-native';
 
 
@@ -67,30 +66,6 @@ const trending = [
     rank: '2',
     title: 'Prasanthi Nilayam',
     subtitle: 'Ashram • 8.5k views',
-  },
-];
-
-const bottomTabs: {
-  active?: boolean;
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-}[] = [
-  {
-    icon: 'compass-outline',
-    label: 'Explore',
-  },
-  {
-    icon: 'radio-button-off-outline',
-    label: 'Events',
-  },
-  {
-    icon: 'storefront',
-    label: 'Directory',
-    active: true,
-  },
-  {
-    icon: 'people-outline',
-    label: 'Sangha',
   },
 ];
 
@@ -224,7 +199,7 @@ const SearchScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 22,
-          paddingBottom: 96,
+          paddingBottom: 30,
           paddingTop: 20,
         }}>
         {/* Recent Searches */}
@@ -486,105 +461,6 @@ const SearchScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Bottom Tab */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 78,
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#ECECEC',
-          flexDirection: 'row',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          paddingBottom: 10,
-          paddingTop: 8,
-          shadowColor: '#000',
-          shadowOffset: {
-            width: 0,
-            height: -6,
-          },
-          shadowOpacity: 0.04,
-          shadowRadius: 10,
-          elevation: 10,
-        }}>
-        {bottomTabs.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            activeOpacity={0.85}
-            style={{
-              alignItems: 'center',
-            }}>
-            {item.active && (
-              <View
-                style={{
-                  position: 'absolute',
-                  top: -7,
-                  width: 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: '#F97316',
-                }}
-              />
-            )}
-
-            <Ionicons
-              name={item.icon}
-              size={21}
-              color={
-                item.active
-                  ? '#F97316'
-                  : '#9CA3AF'
-              }
-            />
-
-            <Text
-              style={{
-                marginTop: 8,
-                fontSize: 11,
-                fontWeight: item.active
-                  ? '700'
-                  : '500',
-                color: item.active
-                  ? '#F97316'
-                  : '#9CA3AF',
-              }}>
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-
-        {/* Profile */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={{
-            alignItems: 'center',
-          }}>
-          <Image
-            source={{
-              uri: 'https://randomuser.me/api/portraits/women/44.jpg',
-            }}
-            style={{
-              width: 38,
-              height: 30,
-              borderRadius: 15,
-            }}
-          />
-
-          <Text
-            style={{
-              marginTop: 8,
-              fontSize: 11,
-              color: '#9CA3AF',
-              fontWeight: '500',
-            }}>
-            Profile
-          </Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
