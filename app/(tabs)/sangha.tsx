@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Image,
+  Modal,
   ScrollView,
   StatusBar,
   Switch,
@@ -47,8 +48,28 @@ const suggested = [
   },
 ];
 
+const filters = {
+  distance: ['Nearby', 'Same City', 'Online'],
+  tradition: [
+    'All',
+    'Shirdi Sai',
+    'Iskcon',
+    'Art of Living',
+    'Vipassana',
+  ],
+  purpose: ['Connect', 'Bhajan', 'Seva', 'Events'],
+};
+
 export default function SanghaScreen() {
   const [enabled, setEnabled] = useState(false);
+  const [filterVisible, setFilterVisible] =
+    useState(false);
+  const [selectedDistance, setSelectedDistance] =
+    useState('Nearby');
+  const [selectedTradition, setSelectedTradition] =
+    useState('All');
+  const [selectedPurpose, setSelectedPurpose] =
+    useState('Connect');
 
   return (
     <SafeAreaView
@@ -86,6 +107,7 @@ export default function SanghaScreen() {
 
           <TouchableOpacity
             activeOpacity={0.85}
+            onPress={() => setFilterVisible(true)}
             style={{
               alignItems: 'center',
               backgroundColor: '#FFFFFF',
@@ -108,6 +130,41 @@ export default function SanghaScreen() {
               color="#111827"
             />
           </TouchableOpacity>
+        </View>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: 8,
+            paddingHorizontal: 22,
+            paddingTop: 14,
+          }}>
+          {[
+            selectedDistance,
+            selectedTradition,
+            selectedPurpose,
+          ].map((item) => (
+            <View
+              key={item}
+              style={{
+                backgroundColor: '#FFF7ED',
+                borderColor: '#FDE7CF',
+                borderRadius: 14,
+                borderWidth: 1,
+                paddingHorizontal: 12,
+                paddingVertical: 7,
+              }}>
+              <Text
+                style={{
+                  color: '#F97316',
+                  fontSize: 12,
+                  fontWeight: '800',
+                }}>
+                {item}
+              </Text>
+            </View>
+          ))}
         </View>
 
         <View
@@ -291,14 +348,25 @@ export default function SanghaScreen() {
               }}>
               Near You
             </Text>
-            <Text
-              style={{
-                color: '#F97316',
-                fontSize: 15,
-                fontWeight: '700',
-              }}>
-              Andheri West, Mumbai
-            </Text>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() =>
+                router.push({
+                  pathname: '/sangha-list',
+                  params: {
+                    type: 'near',
+                  },
+                })
+              }>
+              <Text
+                style={{
+                  color: '#F97316',
+                  fontSize: 15,
+                  fontWeight: '700',
+                }}>
+                See all
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <View
@@ -400,15 +468,42 @@ export default function SanghaScreen() {
             marginTop: 36,
             paddingHorizontal: 16,
           }}>
-          <Text
+          <View
             style={{
-              color: '#111827',
-              fontSize: 20,
-              fontWeight: '800',
+              alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
               marginBottom: 18,
             }}>
-            Suggested For You
-          </Text>
+            <Text
+              style={{
+                color: '#111827',
+                fontSize: 20,
+                fontWeight: '800',
+              }}>
+              Suggested For You
+            </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() =>
+                router.push({
+                  pathname: '/sangha-list',
+                  params: {
+                    type: 'suggested',
+                  },
+                })
+              }>
+              <Text
+                style={{
+                  color: '#F97316',
+                  fontSize: 15,
+                  fontWeight: '700',
+                }}>
+                See all
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           {suggested.map((item, index) => (
             <TouchableOpacity
@@ -501,6 +596,200 @@ export default function SanghaScreen() {
           ))}
         </View>
       </ScrollView>
+
+      <Modal
+        animationType="slide"
+        onRequestClose={() => setFilterVisible(false)}
+        transparent
+        visible={filterVisible}>
+        <View
+          style={{
+            backgroundColor: 'rgba(17,24,39,0.38)',
+            flex: 1,
+            justifyContent: 'flex-end',
+          }}>
+          <View
+            style={{
+              backgroundColor: '#FAFAFA',
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              paddingBottom: 28,
+              paddingHorizontal: 20,
+              paddingTop: 18,
+            }}>
+            <View
+              style={{
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+              }}>
+              <Text
+                style={{
+                  color: '#111827',
+                  fontSize: 22,
+                  fontWeight: '900',
+                }}>
+                Filter Sangha
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => setFilterVisible(false)}
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 18,
+                  height: 36,
+                  justifyContent: 'center',
+                  width: 36,
+                }}>
+                <Ionicons
+                  name="close"
+                  size={20}
+                  color="#111827"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {[
+              {
+                label: 'Distance',
+                options: filters.distance,
+                selected: selectedDistance,
+                setSelected: setSelectedDistance,
+              },
+              {
+                label: 'Tradition',
+                options: filters.tradition,
+                selected: selectedTradition,
+                setSelected: setSelectedTradition,
+              },
+              {
+                label: 'Purpose',
+                options: filters.purpose,
+                selected: selectedPurpose,
+                setSelected: setSelectedPurpose,
+              },
+            ].map((group) => (
+              <View
+                key={group.label}
+                style={{
+                  marginTop: 22,
+                }}>
+                <Text
+                  style={{
+                    color: '#374151',
+                    fontSize: 14,
+                    fontWeight: '900',
+                    letterSpacing: 0.4,
+                    marginBottom: 12,
+                  }}>
+                  {group.label}
+                </Text>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                  }}>
+                  {group.options.map((option) => {
+                    const active =
+                      group.selected === option;
+
+                    return (
+                      <TouchableOpacity
+                        key={option}
+                        activeOpacity={0.85}
+                        onPress={() =>
+                          group.setSelected(option)
+                        }
+                        style={{
+                          backgroundColor: active
+                            ? '#111111'
+                            : '#FFFFFF',
+                          borderColor: active
+                            ? '#111111'
+                            : '#EFEFEF',
+                          borderRadius: 18,
+                          borderWidth: 1,
+                          paddingHorizontal: 14,
+                          paddingVertical: 10,
+                        }}>
+                        <Text
+                          style={{
+                            color: active
+                              ? '#FFFFFF'
+                              : '#4B5563',
+                            fontSize: 13,
+                            fontWeight: '800',
+                          }}>
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            ))}
+
+            <View
+              style={{
+                flexDirection: 'row',
+                gap: 12,
+                marginTop: 28,
+              }}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => {
+                  setSelectedDistance('Nearby');
+                  setSelectedTradition('All');
+                  setSelectedPurpose('Connect');
+                }}
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#EFEFEF',
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  flex: 1,
+                  height: 52,
+                  justifyContent: 'center',
+                }}>
+                <Text
+                  style={{
+                    color: '#4B5563',
+                    fontSize: 15,
+                    fontWeight: '900',
+                  }}>
+                  Reset
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() => setFilterVisible(false)}
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: '#F97316',
+                  borderRadius: 18,
+                  flex: 1,
+                  height: 52,
+                  justifyContent: 'center',
+                }}>
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontSize: 15,
+                    fontWeight: '900',
+                  }}>
+                  Apply
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
