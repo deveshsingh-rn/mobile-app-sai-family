@@ -151,7 +151,7 @@ export default function SanghaHubSearchScreen() {
               <Ionicons
                 name="time"
                 size={14}
-                color="#F59E0B"
+                color="#F97316"
               />
               <Text
                 style={{
@@ -197,7 +197,7 @@ export default function SanghaHubSearchScreen() {
               }}>
               <Text
                 style={{
-                  color: '#F59E0B',
+                  color: '#F97316',
                   fontSize: 12,
                   fontWeight: '900',
                 }}>

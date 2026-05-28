@@ -663,7 +663,7 @@ const BusinessDetailsScreen = () => {
               <TouchableOpacity activeOpacity={0.8}>
                 <Text
                   style={{
-                    color: '#F59E0B',
+                    color: '#F97316',
                     fontSize: 16,
                     fontWeight: '700',
                   }}>

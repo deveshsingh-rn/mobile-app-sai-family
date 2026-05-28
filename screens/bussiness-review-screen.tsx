@@ -899,14 +899,14 @@ const ReviewsScreen = () => {
           <Ionicons
             name="thumbs-up"
             size={15}
-            color="#F59E0B"
+            color="#F97316"
           />
 
           <Text
             style={{
               marginLeft: 8,
               fontSize: 13,
-              color: '#F59E0B',
+              color: '#F97316',
               fontWeight: '700',
             }}>
             8

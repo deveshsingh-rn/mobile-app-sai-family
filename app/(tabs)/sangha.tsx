@@ -444,7 +444,7 @@ export default function SanghaScreen() {
                   <Ionicons
                     name={index === 0 ? 'people' : 'location'}
                     size={13}
-                    color="#F59E0B"
+                    color="#F97316"
                   />
                   <Text
                     style={{

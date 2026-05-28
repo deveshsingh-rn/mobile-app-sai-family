@@ -133,7 +133,7 @@ function InvitationCard({
           activeOpacity={0.88}
           style={{
             alignItems: 'center',
-            backgroundColor: '#F59E0B',
+            backgroundColor: '#F97316',
             borderRadius: 16,
             flex: 1,
             height: 46,
@@ -222,7 +222,7 @@ function GroupCard({
             }}>
             <Text
               style={{
-                color: '#F59E0B',
+                color: '#F97316',
                 fontSize: 10,
                 fontWeight: '900',
               }}>

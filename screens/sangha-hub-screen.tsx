@@ -25,7 +25,7 @@ const purposeData = [
     subtitle: 'Local connection',
     icon: 'map-marker-radius',
     bg: '#FFF7D6',
-    iconColor: '#F59E0B',
+    iconColor: '#F97316',
   },
   {
     title: 'Seva',
@@ -125,7 +125,7 @@ const SanghaHubScreen = () => {
               <Ionicons
                 name="notifications"
                 size={22}
-                color="#F59E0B"
+                color="#F97316"
               />
 
               {/* Dot */}
@@ -200,7 +200,7 @@ const SanghaHubScreen = () => {
               <Ionicons
                 name="options-outline"
                 size={20}
-                color="#F59E0B"
+                color="#F97316"
               />
             </TouchableOpacity>
           </TouchableOpacity>
@@ -248,7 +248,7 @@ const SanghaHubScreen = () => {
               <Text
                 style={{
                   fontSize: 16,
-                  color: '#F59E0B',
+                  color: '#F97316',
                   fontWeight: '700',
                 }}>
                 2 New
@@ -320,7 +320,7 @@ const SanghaHubScreen = () => {
                     <Text
                       style={{
                         fontSize: 10,
-                        color: '#F59E0B',
+                        color: '#F97316',
                         fontWeight: '700',
                       }}>
                       ॐ
@@ -419,7 +419,7 @@ const SanghaHubScreen = () => {
                     width: '47%',
                     height: 50,
                     borderRadius: 18,
-                    backgroundColor: '#F59E0B',
+                    backgroundColor: '#F97316',
                     justifyContent: 'center',
                     alignItems: 'center',
                   }}>
@@ -494,7 +494,7 @@ const SanghaHubScreen = () => {
                   marginTop: 24,
                   height: 50,
                   borderRadius: 18,
-                  backgroundColor: '#F59E0B',
+                  backgroundColor: '#F97316',
                   justifyContent: 'center',
                   alignItems: 'center',
                 }}>
@@ -648,7 +648,7 @@ const SanghaHubScreen = () => {
               <Text
                 style={{
                   fontSize: 18,
-                  color: '#F59E0B',
+                  color: '#F97316',
                   fontWeight: '700',
                 }}>
                 View All
@@ -717,7 +717,7 @@ const SanghaHubScreen = () => {
                   <Text
                     style={{
                       fontSize: 10,
-                      color: '#F59E0B',
+                      color: '#F97316',
                       fontWeight: '800',
                     }}>
                     SEVA
@@ -756,7 +756,7 @@ const SanghaHubScreen = () => {
                       width: 10,
                       height: 10,
                       borderRadius: 5,
-                      backgroundColor: '#F59E0B',
+                      backgroundColor: '#F97316',
                       marginTop: 6,
                     }}
                   />
@@ -937,10 +937,10 @@ const SanghaHubScreen = () => {
                         }
                         style={{
                           backgroundColor: active
-                            ? '#F59E0B'
+                            ? '#F97316'
                             : '#FFFFFF',
                           borderColor: active
-                            ? '#F59E0B'
+                            ? '#F97316'
                             : '#ECECEC',
                           borderRadius: 18,
                           borderWidth: 1,
@@ -1001,7 +1001,7 @@ const SanghaHubScreen = () => {
                 onPress={() => setFilterVisible(false)}
                 style={{
                   alignItems: 'center',
-                  backgroundColor: '#F59E0B',
+                  backgroundColor: '#F97316',
                   borderRadius: 18,
                   flex: 1,
                   height: 52,
