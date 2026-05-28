@@ -544,13 +544,17 @@ const SanghaHubScreen = () => {
                   {item.title ===
                   'City Chapter' ? (
                     <MaterialCommunityIcons
-                      name={item.icon}
+                      name={
+                        item.icon as keyof typeof MaterialCommunityIcons.glyphMap
+                      }
                       size={28}
                       color={item.iconColor}
                     />
                   ) : (
                     <Ionicons
-                      name={item.icon}
+                      name={
+                        item.icon as keyof typeof Ionicons.glyphMap
+                      }
                       size={28}
                       color={item.iconColor}
                     />

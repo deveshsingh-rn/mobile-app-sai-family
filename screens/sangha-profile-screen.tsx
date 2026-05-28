@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StatusBar,
   View,
@@ -9,9 +9,7 @@ import {
 } from 'react-native';
 
 import {
-  Feather,
   Ionicons,
-  MaterialCommunityIcons,
 } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,7 +22,56 @@ const interests = [
   'Yoga',
 ];
 
+const profileTabs = [
+  'About',
+  'Experiences',
+  'Events',
+] as const;
+
+type ProfileTab = (typeof profileTabs)[number];
+
+const experiences = [
+  {
+    content:
+      'Today morning bhajan at the mandir felt deeply peaceful. Sharing one small moment from aarti that stayed with me.',
+    image:
+      'https://images.unsplash.com/photo-1609604161777-0c39f681a0ed?q=80&w=900',
+    likes: 42,
+    place: 'Pune Sai Mandir',
+    time: '2h ago',
+  },
+  {
+    content:
+      'Seva with the Sunday food distribution group. Grateful to meet devotees walking the same path.',
+    image:
+      'https://images.unsplash.com/photo-1593113598332-cd288d649433?q=80&w=900',
+    likes: 31,
+    place: 'Community Kitchen',
+    time: '1d ago',
+  },
+];
+
+const events = [
+  {
+    date: '15 Jun',
+    title: 'Thursday Sai Bhajan',
+    time: '7:00 PM',
+    venue: 'Sai Mandir Hall, Pune',
+    type: 'Bhajan',
+  },
+  {
+    date: '22 Jun',
+    title: 'Weekend Seva Drive',
+    time: '8:30 AM',
+    venue: 'Food Distribution Center',
+    type: 'Seva',
+  },
+];
+
 const SanghaProfileScreen = () => {
+  const [activeTab, setActiveTab] =
+    useState<ProfileTab>('About');
+
   return (
     <SafeAreaView
       style={{
@@ -379,101 +426,263 @@ const SanghaProfileScreen = () => {
             flexDirection: 'row',
             paddingHorizontal: 24,
           }}>
-          {/* Active */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={{
-              marginRight: 34,
-              paddingBottom: 16,
-              borderBottomWidth: 2.5,
-              borderBottomColor: '#D96A3D',
-            }}>
-            <Text
-              style={{
-                fontSize: 17,
-                color: '#111111',
-                fontWeight: '700',
-              }}>
-              About
-            </Text>
-          </TouchableOpacity>
+          {profileTabs.map((tab, index) => {
+            const active = activeTab === tab;
 
-          {/* Tab */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={{
-              marginRight: 34,
-              paddingBottom: 16,
-            }}>
-            <Text
-              style={{
-                fontSize: 17,
-                color: '#8B7355',
-                fontWeight: '500',
-              }}>
-              Experiences
-            </Text>
-          </TouchableOpacity>
-
-          {/* Tab */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={{
-              paddingBottom: 16,
-            }}>
-            <Text
-              style={{
-                fontSize: 17,
-                color: '#8B7355',
-                fontWeight: '500',
-              }}>
-              Events
-            </Text>
-          </TouchableOpacity>
+            return (
+              <TouchableOpacity
+                key={tab}
+                activeOpacity={0.85}
+                onPress={() => setActiveTab(tab)}
+                style={{
+                  marginRight:
+                    index === profileTabs.length - 1
+                      ? 0
+                      : 34,
+                  paddingBottom: 16,
+                  borderBottomWidth: active
+                    ? 2.5
+                    : 0,
+                  borderBottomColor: '#D96A3D',
+                }}>
+                <Text
+                  style={{
+                    fontSize: 17,
+                    color: active
+                      ? '#111111'
+                      : '#8B7355',
+                    fontWeight: active ? '700' : '500',
+                  }}>
+                  {tab}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* Journey Card */}
-        <View
-          style={{
-            marginTop: 28,
-            marginHorizontal: 22,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 34,
-            paddingHorizontal: 26,
-            paddingVertical: 28,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: 4,
-            },
-            shadowOpacity: 0.03,
-            shadowRadius: 10,
-            elevation: 2,
-          }}>
-          {/* Title */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-            {/* Icon */}
+        {activeTab === 'About' && (
+          <>
+            {/* Journey Card */}
             <View
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 19,
-                backgroundColor: '#F8EFE7',
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginRight: 14,
+                marginTop: 28,
+                marginHorizontal: 22,
+                backgroundColor: '#FFFFFF',
+                borderRadius: 34,
+                paddingHorizontal: 26,
+                paddingVertical: 28,
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 0,
+                  height: 4,
+                },
+                shadowOpacity: 0.03,
+                shadowRadius: 10,
+                elevation: 2,
               }}>
-              <Ionicons
-                name="leaf"
-                size={18}
-                color="#D96A3D"
-              />
+              {/* Title */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}>
+                {/* Icon */}
+                <View
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 19,
+                    backgroundColor: '#F8EFE7',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginRight: 14,
+                  }}>
+                  <Ionicons
+                    name="leaf"
+                    size={18}
+                    color="#D96A3D"
+                  />
+                </View>
+
+                <Text
+                  style={{
+                    fontSize: 24,
+                    color: '#111111',
+                    fontWeight: '700',
+                    fontFamily: 'serif',
+                  }}>
+                  Spiritual Journey
+                </Text>
+              </View>
+
+              {/* Timeline */}
+              <View
+                style={{
+                  marginTop: 28,
+                  paddingLeft: 10,
+                }}>
+                {[
+                  {
+                    title: 'Joined Sai Family',
+                    subtitle: 'March 2023',
+                    active: true,
+                  },
+                  {
+                    title: 'First Shirdi Visit',
+                    subtitle: '2015 with family',
+                  },
+                  {
+                    title: 'Active Seva',
+                    subtitle:
+                      'Weekly food distribution',
+                  },
+                ].map((item, index) => (
+                  <View
+                    key={index}
+                    style={{
+                      flexDirection: 'row',
+                      marginBottom:
+                        index === 2 ? 0 : 26,
+                    }}>
+                    <View
+                      style={{
+                        alignItems: 'center',
+                        marginRight: 18,
+                      }}>
+                      <View
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 14,
+                          borderWidth: 3,
+                          borderColor: item.active
+                            ? '#E6D6C5'
+                            : '#E8DFD5',
+                          backgroundColor: '#FFFFFF',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}>
+                        {item.active && (
+                          <View
+                            style={{
+                              width: 10,
+                              height: 10,
+                              borderRadius: 5,
+                              backgroundColor:
+                                '#D96A3D',
+                            }}
+                          />
+                        )}
+                      </View>
+
+                      {index !== 2 && (
+                        <View
+                          style={{
+                            width: 2,
+                            height: 54,
+                            backgroundColor:
+                              '#EFE6DD',
+                          }}
+                        />
+                      )}
+                    </View>
+
+                    <View
+                      style={{
+                        flex: 1,
+                        paddingTop: 2,
+                      }}>
+                      <Text
+                        style={{
+                          fontSize: 18,
+                          color: '#111111',
+                          fontWeight: '700',
+                        }}>
+                        {item.title}
+                      </Text>
+
+                      <Text
+                        style={{
+                          marginTop: 6,
+                          fontSize: 16,
+                          color: '#8B7355',
+                          fontWeight: '500',
+                        }}>
+                        {item.subtitle}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
             </View>
 
+            {/* Interests */}
+            <View
+              style={{
+                marginTop: 38,
+                paddingHorizontal: 24,
+              }}>
+              <Text
+                style={{
+                  fontSize: 26,
+                  color: '#111111',
+                  fontWeight: '700',
+                  fontFamily: 'serif',
+                }}>
+                Practices & Interests
+              </Text>
+
+              <View
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  marginTop: 22,
+                }}>
+                {interests.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    activeOpacity={0.85}
+                    style={{
+                      height: 48,
+                      borderRadius: 24,
+                      backgroundColor: '#FFFFFF',
+                      borderWidth: 1,
+                      borderColor: '#F0F0F0',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      paddingHorizontal: 20,
+                      marginRight: 12,
+                      marginBottom: 14,
+                      shadowColor: '#000',
+                      shadowOffset: {
+                        width: 0,
+                        height: 2,
+                      },
+                      shadowOpacity: 0.02,
+                      shadowRadius: 4,
+                      elevation: 1,
+                    }}>
+                    <Text
+                      style={{
+                        fontSize: 17,
+                        color: '#444444',
+                        fontWeight: '500',
+                      }}>
+                      {item}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </>
+        )}
+
+        {activeTab === 'Experiences' && (
+          <View
+            style={{
+              marginTop: 26,
+              paddingHorizontal: 18,
+            }}>
             <Text
               style={{
                 fontSize: 24,
@@ -481,176 +690,233 @@ const SanghaProfileScreen = () => {
                 fontWeight: '700',
                 fontFamily: 'serif',
               }}>
-              Spiritual Journey
+              Shared Experiences
             </Text>
-          </View>
 
-          {/* Timeline */}
+            {experiences.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                activeOpacity={0.9}
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 26,
+                  marginTop: 18,
+                  overflow: 'hidden',
+                  shadowColor: '#000',
+                  shadowOffset: {
+                    width: 0,
+                    height: 4,
+                  },
+                  shadowOpacity: 0.03,
+                  shadowRadius: 10,
+                  elevation: 2,
+                }}>
+                <Image
+                  source={{ uri: item.image }}
+                  style={{
+                    height: 150,
+                    width: '100%',
+                  }}
+                />
+                <View
+                  style={{
+                    padding: 16,
+                  }}>
+                  <View
+                    style={{
+                      alignItems: 'center',
+                      flexDirection: 'row',
+                    }}>
+                    <Ionicons
+                      name="location"
+                      size={15}
+                      color="#D96A3D"
+                    />
+                    <Text
+                      style={{
+                        color: '#8B7355',
+                        fontSize: 13,
+                        fontWeight: '700',
+                        marginLeft: 6,
+                      }}>
+                      {item.place} · {item.time}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      color: '#3F332B',
+                      fontSize: 16,
+                      fontWeight: '600',
+                      lineHeight: 25,
+                      marginTop: 12,
+                    }}>
+                    {item.content}
+                  </Text>
+                  <View
+                    style={{
+                      alignItems: 'center',
+                      flexDirection: 'row',
+                      marginTop: 14,
+                    }}>
+                    <Ionicons
+                      name="heart"
+                      size={18}
+                      color="#D96A3D"
+                    />
+                    <Text
+                      style={{
+                        color: '#8B7355',
+                        fontSize: 14,
+                        fontWeight: '700',
+                        marginLeft: 7,
+                      }}>
+                      {item.likes} blessings
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {activeTab === 'Events' && (
           <View
             style={{
-              marginTop: 28,
-              paddingLeft: 10,
+              marginTop: 26,
+              paddingHorizontal: 18,
             }}>
-            {/* Item */}
-            {[
-              {
-                title: 'Joined Sai Family',
-                subtitle: 'March 2023',
-                active: true,
-              },
-              {
-                title: 'First Shirdi Visit',
-                subtitle: '2015 with family',
-              },
-              {
-                title: 'Active Seva',
-                subtitle:
-                  'Weekly food distribution',
-              },
-            ].map((item, index) => (
-              <View
+            <Text
+              style={{
+                fontSize: 24,
+                color: '#111111',
+                fontWeight: '700',
+                fontFamily: 'serif',
+              }}>
+              Events Joined
+            </Text>
+
+            {events.map((item, index) => (
+              <TouchableOpacity
                 key={index}
+                activeOpacity={0.9}
                 style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 26,
                   flexDirection: 'row',
-                  marginBottom:
-                    index === 2 ? 0 : 26,
+                  marginTop: 18,
+                  padding: 16,
+                  shadowColor: '#000',
+                  shadowOffset: {
+                    width: 0,
+                    height: 4,
+                  },
+                  shadowOpacity: 0.03,
+                  shadowRadius: 10,
+                  elevation: 2,
                 }}>
-                {/* Timeline */}
                 <View
                   style={{
                     alignItems: 'center',
-                    marginRight: 18,
-                  }}>
-                  {/* Dot */}
-                  <View
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 14,
-                      borderWidth: 3,
-                      borderColor: item.active
-                        ? '#E6D6C5'
-                        : '#E8DFD5',
-                      backgroundColor: '#FFFFFF',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}>
-                    {item.active && (
-                      <View
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: 5,
-                          backgroundColor:
-                            '#D96A3D',
-                        }}
-                      />
-                    )}
-                  </View>
-
-                  {/* Line */}
-                  {index !== 2 && (
-                    <View
-                      style={{
-                        width: 2,
-                        height: 54,
-                        backgroundColor:
-                          '#EFE6DD',
-                      }}
-                    />
-                  )}
-                </View>
-
-                {/* Content */}
-                <View
-                  style={{
-                    flex: 1,
-                    paddingTop: 2,
+                    backgroundColor: '#FFF3E8',
+                    borderRadius: 18,
+                    height: 72,
+                    justifyContent: 'center',
+                    width: 72,
                   }}>
                   <Text
                     style={{
+                      color: '#D96A3D',
                       fontSize: 18,
+                      fontWeight: '900',
+                      textAlign: 'center',
+                    }}>
+                    {item.date}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    flex: 1,
+                    marginLeft: 14,
+                  }}>
+                  <View
+                    style={{
+                      alignSelf: 'flex-start',
+                      backgroundColor: '#F8EFE7',
+                      borderRadius: 10,
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                    }}>
+                    <Text
+                      style={{
+                        color: '#D96A3D',
+                        fontSize: 12,
+                        fontWeight: '800',
+                      }}>
+                      {item.type}
+                    </Text>
+                  </View>
+
+                  <Text
+                    style={{
                       color: '#111111',
-                      fontWeight: '700',
+                      fontSize: 18,
+                      fontWeight: '800',
+                      marginTop: 9,
                     }}>
                     {item.title}
                   </Text>
 
-                  <Text
+                  <View
                     style={{
-                      marginTop: 6,
-                      fontSize: 16,
-                      color: '#8B7355',
-                      fontWeight: '500',
+                      alignItems: 'center',
+                      flexDirection: 'row',
+                      marginTop: 8,
                     }}>
-                    {item.subtitle}
-                  </Text>
+                    <Ionicons
+                      name="time-outline"
+                      size={15}
+                      color="#8B7355"
+                    />
+                    <Text
+                      style={{
+                        color: '#8B7355',
+                        fontSize: 14,
+                        fontWeight: '600',
+                        marginLeft: 6,
+                      }}>
+                      {item.time}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={{
+                      alignItems: 'center',
+                      flexDirection: 'row',
+                      marginTop: 6,
+                    }}>
+                    <Ionicons
+                      name="location-outline"
+                      size={15}
+                      color="#8B7355"
+                    />
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: '#8B7355',
+                        flex: 1,
+                        fontSize: 14,
+                        fontWeight: '600',
+                        marginLeft: 6,
+                      }}>
+                      {item.venue}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Interests */}
-        <View
-          style={{
-            marginTop: 38,
-            paddingHorizontal: 24,
-          }}>
-          {/* Title */}
-          <Text
-            style={{
-              fontSize: 26,
-              color: '#111111',
-              fontWeight: '700',
-              fontFamily: 'serif',
-            }}>
-            Practices & Interests
-          </Text>
-
-          {/* Chips */}
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              marginTop: 22,
-            }}>
-            {interests.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                activeOpacity={0.85}
-                style={{
-                  height: 48,
-                  borderRadius: 24,
-                  backgroundColor: '#FFFFFF',
-                  borderWidth: 1,
-                  borderColor: '#F0F0F0',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  paddingHorizontal: 20,
-                  marginRight: 12,
-                  marginBottom: 14,
-                  shadowColor: '#000',
-                  shadowOffset: {
-                    width: 0,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.02,
-                  shadowRadius: 4,
-                  elevation: 1,
-                }}>
-                <Text
-                  style={{
-                    fontSize: 17,
-                    color: '#444444',
-                    fontWeight: '500',
-                  }}>
-                  {item}
-                </Text>
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
