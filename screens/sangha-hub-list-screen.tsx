@@ -182,6 +182,7 @@ function GroupCard({
   return (
     <TouchableOpacity
       activeOpacity={0.9}
+      onPress={() => router.push('/group-details')}
       style={{
         backgroundColor: '#FFFFFF',
         borderRadius: 28,

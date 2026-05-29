@@ -660,10 +660,7 @@ const SanghaHubScreen = () => {
           <TouchableOpacity
             activeOpacity={0.88}
             onPress={() =>
-              router.push({
-                pathname: '/sangha-hub-list',
-                params: {type: 'groups'},
-              })
+              router.push('/group-details')
             }
             style={{
               marginTop: 24,

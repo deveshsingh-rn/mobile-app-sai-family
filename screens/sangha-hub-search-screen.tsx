@@ -181,6 +181,7 @@ export default function SanghaHubSearchScreen() {
           <TouchableOpacity
             key={item.title}
             activeOpacity={0.9}
+            onPress={() => router.push('/group-details')}
             style={{
               backgroundColor: '#FFFFFF',
               borderRadius: 24,
