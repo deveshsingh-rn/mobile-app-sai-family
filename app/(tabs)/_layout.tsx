@@ -1,6 +1,7 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
-import CustomTabBar from '../../components/CustomTabBar';
+import React from "react";
+import { Tabs } from "expo-router";
+
+import CustomTabBar from "@/components/CustomTabBar";
 
 export default function TabLayout() {
   return (
@@ -8,13 +9,18 @@ export default function TabLayout() {
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-      }}>
-
+      }}
+    >
       <Tabs.Screen name="index" />
-     
+      <Tabs.Screen
+        name="create"
+        options={{
+          href: null,
+        }}
+      />
       <Tabs.Screen name="events" />
       <Tabs.Screen name="directory" />
-       <Tabs.Screen name="sangha" />
+      <Tabs.Screen name="sangha" />
       <Tabs.Screen name="profile" />
       <Tabs.Screen
         name="experiences"
@@ -22,7 +28,6 @@ export default function TabLayout() {
           href: null,
         }}
       />
-
     </Tabs>
   );
 }
