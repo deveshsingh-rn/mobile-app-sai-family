@@ -333,21 +333,30 @@ export default function SearchExperiencesScreen() {
     <View style={styles.container}>
       <View style={styles.fixedTop}>
         <View style={styles.header}>
-          <UserCircle2
-            size={32}
-            color="#8e5d10"
-            strokeWidth={1.5}
-          />
+          <View style={styles.headerLeft}>
+            <View style={styles.headerIcon}>
+              <UserCircle2
+                size={23}
+                color="#1F2937"
+                strokeWidth={1.8}
+              />
+            </View>
 
-          <Text style={styles.headerTitle}>
-            Leela Search
-          </Text>
+            <View>
+              <Text style={styles.eyebrow}>Discover</Text>
+              <Text style={styles.headerTitle}>
+                Search
+              </Text>
+            </View>
+          </View>
 
-          <Sparkles
-            size={24}
-            color="#8e5d10"
-            strokeWidth={1.5}
-          />
+          <View style={styles.primaryAction}>
+            <Sparkles
+              size={17}
+              color="#FFFFFF"
+              strokeWidth={2}
+            />
+          </View>
         </View>
 
         <ExperienceTopTabs activeTab="search" />
@@ -356,7 +365,7 @@ export default function SearchExperiencesScreen() {
           <View style={styles.inputBox}>
             <Search
               size={19}
-              color="#9a762e"
+              color="#6B7280"
             />
 
             <TextInput
@@ -455,14 +464,12 @@ export default function SearchExperiencesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fffaf0",
+    backgroundColor: "#FAFAF9",
   },
 
   fixedTop: {
-    backgroundColor:
-      "rgba(255,250,240,0.97)",
-    borderBottomColor:
-      "rgba(224,193,138,0.24)",
+    backgroundColor: "#FAFAF9",
+    borderBottomColor: "#E7D7BE",
     borderBottomWidth: 1,
     paddingTop: 54,
     zIndex: 10,
@@ -476,10 +483,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 
+  headerLeft: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+  },
+
+  headerIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: "center",
+    width: 42,
+  },
+
+  eyebrow: {
+    color: "#F97316",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
   headerTitle: {
-    color: "#4e3309",
-    fontSize: 20,
-    fontWeight: "800",
+    color: "#1F2937",
+    fontSize: 22,
+    fontWeight: "900",
+  },
+
+  primaryAction: {
+    alignItems: "center",
+    backgroundColor: "#1F2937",
+    borderRadius: 12,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
   },
 
   searchWrap: {
@@ -490,8 +529,8 @@ const styles = StyleSheet.create({
 
   inputBox: {
     alignItems: "center",
-    backgroundColor: "#fffdf8",
-    borderColor: "#dfc684",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7D7BE",
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
@@ -500,7 +539,7 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    color: "#3f2b0c",
+    color: "#1F2937",
     flex: 1,
     fontSize: 15,
     fontWeight: "600",
@@ -518,8 +557,7 @@ const styles = StyleSheet.create({
 
   micButton: {
     alignItems: "center",
-    backgroundColor:
-      "rgba(180,126,28,0.12)",
+    backgroundColor: "#FFF7ED",
     borderRadius: 17,
     height: 34,
     justifyContent: "center",
@@ -528,7 +566,7 @@ const styles = StyleSheet.create({
   },
 
   micButtonActive: {
-    backgroundColor: "#b97813",
+    backgroundColor: "#F97316",
   },
 
   errorText: {
@@ -539,7 +577,7 @@ const styles = StyleSheet.create({
   },
 
   listeningText: {
-    color: "#8e5d10",
+    color: "#F97316",
     fontSize: 13,
     fontWeight: "800",
     marginTop: 8,
@@ -557,16 +595,16 @@ const styles = StyleSheet.create({
   },
 
   stateTitle: {
-    color: "#4e3309",
+    color: "#1F2937",
     fontSize: 18,
     fontWeight: "800",
     textAlign: "center",
   },
 
   stateText: {
-    color: "#79571b",
+    color: "#6B7280",
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "700",
     lineHeight: 22,
     marginTop: 8,
     textAlign: "center",

@@ -10,10 +10,6 @@ import {
   View,
 } from "react-native";
 
-import { BlurView } from "expo-blur";
-
-import { LinearGradient } from "expo-linear-gradient";
-
 export type ExperienceTopTabKey =
   | "feed"
   | "search"
@@ -99,19 +95,7 @@ export function ExperienceTopTabs({
               ]}
             >
               {isActive ? (
-                <LinearGradient
-                  colors={[
-                    "#c88a24",
-                    "#8e5d10",
-                  ]}
-                  start={{
-                    x: 0,
-                    y: 0,
-                  }}
-                  end={{
-                    x: 1,
-                    y: 1,
-                  }}
+                <View
                   style={
                     styles.activeTab
                   }
@@ -123,11 +107,9 @@ export function ExperienceTopTabs({
                   >
                     {tab.label}
                   </Text>
-                </LinearGradient>
+                </View>
               ) : (
-                <BlurView
-                  intensity={55}
-                  tint="light"
+                <View
                   style={
                     styles.inactiveTab
                   }
@@ -139,7 +121,7 @@ export function ExperienceTopTabs({
                   >
                     {tab.label}
                   </Text>
-                </BlurView>
+                </View>
               )}
             </Pressable>
           );
@@ -151,16 +133,16 @@ export function ExperienceTopTabs({
 
 const styles = StyleSheet.create({
   wrapper: {
-    paddingBottom: 12,
+    paddingBottom: 10,
   },
 
   content: {
-    paddingHorizontal: 18,
-    gap: 12,
+    paddingHorizontal: 16,
+    gap: 8,
   },
 
   pressable: {
-    borderRadius: 18,
+    borderRadius: 999,
   },
 
   pressed: {
@@ -174,36 +156,38 @@ const styles = StyleSheet.create({
   },
 
   activeTab: {
-    minWidth: 104,
-    height: 46,
+    minWidth: 96,
+    height: 40,
 
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
 
-    borderRadius: 18,
+    borderRadius: 999,
 
     alignItems: "center",
     justifyContent: "center",
 
-    shadowColor: "#8e5d10",
+    backgroundColor: "#1F2937",
+
+    shadowColor: "#7C2D12",
 
     shadowOffset: {
       width: 0,
-      height: 10,
+      height: 7,
     },
 
-    shadowOpacity: 0.24,
-    shadowRadius: 18,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
 
-    elevation: 10,
+    elevation: 4,
   },
 
   inactiveTab: {
-    minWidth: 104,
-    height: 46,
+    minWidth: 96,
+    height: 40,
 
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
 
-    borderRadius: 18,
+    borderRadius: 999,
 
     overflow: "hidden",
 
@@ -213,27 +197,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
 
     borderColor:
-      "rgba(226,195,145,0.45)",
+      "#E7D7BE",
 
-    backgroundColor:
-      "rgba(255,255,255,0.55)",
+    backgroundColor: "#FFFFFF",
   },
 
   activeText: {
     color: "#fff",
 
-    fontSize: 14,
-    fontWeight: "800",
-
-    letterSpacing: 0.2,
+    fontSize: 13,
+    fontWeight: "900",
   },
 
   inactiveText: {
-    color: "#7b5b22",
+    color: "#6B7280",
 
-    fontSize: 14,
-    fontWeight: "700",
-
-    letterSpacing: 0.2,
+    fontSize: 13,
+    fontWeight: "800",
   },
 });

@@ -7,10 +7,6 @@ import {
   Text,
 } from "react-native";
 
-import { BlurView } from "expo-blur";
-
-import { LinearGradient } from "expo-linear-gradient";
-
 export type ExperienceCategory = {
   label: string;
   value: string;
@@ -61,47 +57,29 @@ export function CategoryChips({
             ]}
           >
             {isActive ? (
-              <LinearGradient
-                colors={[
-                  "#d89d38",
-                  "#9b6513",
-                ]}
-                start={{
-                  x: 0,
-                  y: 0,
-                }}
-                end={{
-                  x: 1,
-                  y: 1,
-                }}
+              <Text
                 style={
-                  styles.activeChip
+                  [
+                    styles.chip,
+                    styles.activeChip,
+                    styles.activeText,
+                  ]
                 }
               >
-                <Text
-                  style={
-                    styles.activeText
-                  }
-                >
-                  {category.label}
-                </Text>
-              </LinearGradient>
+                {category.label}
+              </Text>
             ) : (
-              <BlurView
-                intensity={40}
-                tint="light"
+              <Text
                 style={
-                  styles.inactiveChip
+                  [
+                    styles.chip,
+                    styles.inactiveChip,
+                    styles.inactiveText,
+                  ]
                 }
               >
-                <Text
-                  style={
-                    styles.inactiveText
-                  }
-                >
-                  {category.label}
-                </Text>
-              </BlurView>
+                {category.label}
+              </Text>
             )}
           </Pressable>
         );
@@ -112,8 +90,8 @@ export function CategoryChips({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 18,
-    gap: 10,
+    paddingHorizontal: 16,
+    gap: 8,
   },
 
   pressable: {
@@ -130,48 +108,25 @@ const styles = StyleSheet.create({
     opacity: 0.92,
   },
 
-  activeChip: {
-    height: 42,
+  chip: {
+    height: 36,
 
-    paddingHorizontal: 18,
+    paddingHorizontal: 14,
 
     borderRadius: 999,
+    lineHeight: 36,
+    overflow: "hidden",
+    textAlign: "center",
+  },
 
-    alignItems: "center",
-    justifyContent: "center",
-
-    shadowColor: "#9b6513",
-
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-
-    elevation: 6,
+  activeChip: {
+    backgroundColor: "#F97316",
   },
 
   inactiveChip: {
-    height: 42,
-
-    paddingHorizontal: 18,
-
-    borderRadius: 999,
-
-    overflow: "hidden",
-
-    alignItems: "center",
-    justifyContent: "center",
-
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-
-    borderColor:
-      "rgba(225,198,158,0.45)",
-
-    backgroundColor:
-      "rgba(255,255,255,0.55)",
+    borderColor: "#E7D7BE",
   },
 
   activeText: {
@@ -179,8 +134,6 @@ const styles = StyleSheet.create({
 
     fontSize: 13,
     fontWeight: "800",
-
-    letterSpacing: 0.2,
   },
 
   inactiveText: {
@@ -188,7 +141,5 @@ const styles = StyleSheet.create({
 
     fontSize: 13,
     fontWeight: "700",
-
-    letterSpacing: 0.2,
   },
 });

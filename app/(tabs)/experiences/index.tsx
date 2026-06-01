@@ -6,6 +6,7 @@ import React, {
 
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -14,8 +15,11 @@ import {
 } from "react-native";
 
 import { FlashList } from "@shopify/flash-list";
+import { router } from "expo-router";
 
 import {
+  PenLine,
+  Search,
   Sparkles,
   UserCircle2,
 } from "lucide-react-native";
@@ -112,7 +116,7 @@ export default function HomeScreen() {
         offset: 0,
       })
     );
-  }, []);
+  }, [dispatch]);
 
   // ───────────────── REFRESH ─────────────────
 
@@ -135,7 +139,7 @@ export default function HomeScreen() {
     setTimeout(() => {
       setRefreshing(false);
     }, 800);
-  }, [selectedCategory]);
+  }, [dispatch, selectedCategory]);
 
   // ───────────────── PAGINATION ─────────────────
 
@@ -174,9 +178,10 @@ export default function HomeScreen() {
     }, [
       loading,
       loadingMore,
-      feed,
+      feed.length,
       offset,
       selectedCategory,
+      dispatch,
     ]);
 
   // ───────────────── CATEGORY FILTER ─────────────────
@@ -199,12 +204,12 @@ export default function HomeScreen() {
           })
         );
       },
-      []
+      [dispatch]
     );
 
   // ───────────────── ACTIONS ─────────────────
 
-  const handleLike = (
+  const handleLike = useCallback((
     experienceId: string
   ) => {
     if (!account?.id) {
@@ -217,9 +222,9 @@ export default function HomeScreen() {
         account.id
       )
     );
-  };
+  }, [account?.id, dispatch]);
 
-  const handleBookmark = (
+  const handleBookmark = useCallback((
     experienceId: string
   ) => {
     if (!account?.id) {
@@ -232,9 +237,9 @@ export default function HomeScreen() {
         account.id
       )
     );
-  };
+  }, [account?.id, dispatch]);
 
-  const handleRepost = (
+  const handleRepost = useCallback((
     experienceId: string
   ) => {
     if (!account?.id) {
@@ -247,7 +252,7 @@ export default function HomeScreen() {
         account.id
       )
     );
-  };
+  }, [account?.id, dispatch]);
 
   // ───────────────── VIEWABILITY (AUTO-PLAY/PAUSE) ─────────────────
 
@@ -339,21 +344,65 @@ export default function HomeScreen() {
 
       <View style={styles.fixedTop}>
         <View style={styles.header}>
-          <UserCircle2
-            size={32}
-            color="#8e5d10"
-            strokeWidth={1.5}
-          />
+          <View style={styles.headerLeft}>
+            <View style={styles.headerIcon}>
+              <UserCircle2
+                size={23}
+                color="#1F2937"
+                strokeWidth={1.8}
+              />
+            </View>
 
-          <Text style={styles.title}>
-            Leela Feed
-          </Text>
+            <View>
+              <Text style={styles.eyebrow}>
+                Sai Family
+              </Text>
+              <Text style={styles.title}>
+                Experiences
+              </Text>
+            </View>
+          </View>
 
-          <Sparkles
-            size={24}
-            color="#8e5d10"
-            strokeWidth={1.5}
-          />
+          <View style={styles.headerActions}>
+            <Pressable
+              onPress={() => router.push("/(tabs)/experiences/search" as any)}
+              style={styles.headerAction}
+            >
+              <Search
+                size={18}
+                color="#1F2937"
+                strokeWidth={2}
+              />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/(tabs)/experiences/post" as any)}
+              style={styles.primaryAction}
+            >
+              <PenLine
+                size={17}
+                color="#FFFFFF"
+                strokeWidth={2}
+              />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.heroPanel}>
+          <View style={styles.heroTextWrap}>
+            <Text style={styles.heroTitle}>
+              Share blessings, prayers, dreams, and darshan stories.
+            </Text>
+            <Text style={styles.heroMeta}>
+              {feed.length || 0} live posts in your family feed
+            </Text>
+          </View>
+          <View style={styles.heroBadge}>
+            <Sparkles
+              size={18}
+              color="#F97316"
+              strokeWidth={2}
+            />
+          </View>
         </View>
 
         <ExperienceTopTabs activeTab="feed" />
@@ -420,19 +469,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
 
-    backgroundColor: "#fffaf3",
+    backgroundColor: "#FAFAF9",
   },
 
   fixedTop: {
     paddingTop: 54,
 
-    backgroundColor:
-      "rgba(255,250,240,0.97)",
+    backgroundColor: "#FAFAF9",
 
     borderBottomWidth: 1,
 
-    borderBottomColor:
-      "rgba(224,193,138,0.24)",
+    borderBottomColor: "#E7D7BE",
   },
 
   header: {
@@ -441,27 +488,112 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
 
-    paddingHorizontal: 18,
-    paddingBottom: 14,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+
+  headerLeft: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+  },
+
+  headerIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: "center",
+    width: 42,
+  },
+
+  eyebrow: {
+    color: "#F97316",
+    fontSize: 12,
+    fontWeight: "900",
   },
 
   title: {
-    color: "#3f2502",
+    color: "#1F2937",
 
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: "900",
+  },
 
-    letterSpacing: -0.4,
+  headerActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+
+  headerAction: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7D7BE",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
+  },
+
+  primaryAction: {
+    alignItems: "center",
+    backgroundColor: "#1F2937",
+    borderRadius: 12,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
+  },
+
+  heroPanel: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    marginBottom: 12,
+    marginHorizontal: 16,
+    padding: 14,
+  },
+
+  heroTextWrap: {
+    flex: 1,
+  },
+
+  heroTitle: {
+    color: "#1F2937",
+    fontSize: 14,
+    fontWeight: "900",
+    lineHeight: 20,
+  },
+
+  heroMeta: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+
+  heroBadge: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 11,
+    height: 38,
+    justifyContent: "center",
+    marginLeft: 12,
+    width: 38,
   },
 
   categoriesWrapper: {
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    paddingTop: 6,
+    paddingBottom: 12,
+    paddingTop: 4,
   },
 
   content: {
-    paddingTop: 10,
+    paddingTop: 14,
     paddingBottom: 120,
   },
 
@@ -483,9 +615,9 @@ const styles = StyleSheet.create({
   },
 
   emptyText: {
-    color: "#8f6b37",
+    color: "#6B7280",
 
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "800",
   },
 });

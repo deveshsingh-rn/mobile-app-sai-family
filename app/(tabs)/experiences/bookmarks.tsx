@@ -16,6 +16,7 @@ import { FlashList } from "@shopify/flash-list";
 
 import {
   Bookmark,
+  Search,
   Sparkles,
   UserCircle2,
 } from "lucide-react-native";
@@ -254,21 +255,31 @@ export default function BookmarkedExperiencesScreen() {
     <View style={styles.container}>
       <View style={styles.fixedTop}>
         <View style={styles.header}>
-          <UserCircle2
-            color="#8e5d10"
-            size={32}
-            strokeWidth={1.5}
-          />
+          <View style={styles.headerLeft}>
+            <View style={styles.headerIcon}>
+              <UserCircle2
+                color="#1F2937"
+                size={23}
+                strokeWidth={1.8}
+              />
+            </View>
 
-          <Text style={styles.headerTitle}>
-            Bookmarks
-          </Text>
+            <View>
+              <Text style={styles.eyebrow}>Saved</Text>
+              <Text style={styles.headerTitle}>
+                Bookmarks
+              </Text>
+            </View>
+          </View>
 
-          <Sparkles
-            color="#8e5d10"
-            size={24}
-            strokeWidth={1.5}
-          />
+          <View style={styles.headerActions}>
+            <View style={styles.headerAction}>
+              <Search color="#1F2937" size={18} strokeWidth={2} />
+            </View>
+            <View style={styles.primaryAction}>
+              <Sparkles color="#FFFFFF" size={17} strokeWidth={2} />
+            </View>
+          </View>
         </View>
 
         <ExperienceTopTabs activeTab="bookmarks" />
@@ -308,15 +319,13 @@ export default function BookmarkedExperiencesScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fffaf0",
+    backgroundColor: "#FAFAF9",
     flex: 1,
   },
 
   fixedTop: {
-    backgroundColor:
-      "rgba(255,250,240,0.97)",
-    borderBottomColor:
-      "rgba(224,193,138,0.24)",
+    backgroundColor: "#FAFAF9",
+    borderBottomColor: "#E7D7BE",
     borderBottomWidth: 1,
     paddingTop: 54,
     zIndex: 10,
@@ -330,10 +339,58 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 
+  headerLeft: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+  },
+
+  headerIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: "center",
+    width: 42,
+  },
+
+  eyebrow: {
+    color: "#F97316",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
   headerTitle: {
-    color: "#4e3309",
-    fontSize: 20,
-    fontWeight: "800",
+    color: "#1F2937",
+    fontSize: 22,
+    fontWeight: "900",
+  },
+
+  headerActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+
+  headerAction: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7D7BE",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
+  },
+
+  primaryAction: {
+    alignItems: "center",
+    backgroundColor: "#1F2937",
+    borderRadius: 12,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
   },
 
   content: {
@@ -357,8 +414,9 @@ const styles = StyleSheet.create({
 
   emptyIcon: {
     alignItems: "center",
-    backgroundColor:
-      "rgba(185,120,19,0.12)",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderWidth: 1,
     borderRadius: 24,
     height: 48,
     justifyContent: "center",
@@ -367,16 +425,16 @@ const styles = StyleSheet.create({
   },
 
   stateTitle: {
-    color: "#4e3309",
+    color: "#1F2937",
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "900",
     textAlign: "center",
   },
 
   stateText: {
-    color: "#79571b",
+    color: "#6B7280",
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "700",
     lineHeight: 22,
     marginTop: 8,
     textAlign: "center",

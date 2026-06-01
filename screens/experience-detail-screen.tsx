@@ -267,42 +267,38 @@ export default function ExperienceDetailScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fffaf4",
+    backgroundColor: "#FAFAF9",
     flex: 1,
-    marginBottom:120,
-    borderWidth:1
+    marginBottom: 120,
   },
 
   topBar: {
     alignItems: "center",
-    backgroundColor: "#fffaf4",
-    borderBottomColor:
-      "rgba(218,184,126,0.28)",
+    backgroundColor: "#FAFAF9",
+    borderBottomColor: "#E7D7BE",
     borderBottomWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     paddingBottom: 12,
     paddingHorizontal: 16,
     paddingTop: 56,
-    //  marginBottom:150,
-    borderWidth:1
-    
   },
 
   backButton: {
     alignItems: "center",
-    backgroundColor:
-      "rgba(183,122,24,0.12)",
-    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7D7BE",
+    borderRadius: 12,
+    borderWidth: 1,
     height: 40,
     justifyContent: "center",
     width: 40,
   },
 
   title: {
-    color: "#2f1b03",
+    color: "#1F2937",
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "900",
   },
 
   topSpacer: {
@@ -311,7 +307,7 @@ const styles = StyleSheet.create({
 
   loader: {
     alignItems: "center",
-    backgroundColor: "#fffaf4",
+    backgroundColor: "#FAFAF9",
     flex: 1,
     justifyContent: "center",
   },
@@ -330,13 +326,13 @@ const styles = StyleSheet.create({
   },
 
   commentTitle: {
-    color: "#2f1b03",
+    color: "#1F2937",
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "900",
   },
 
   commentCount: {
-    color: "#9d7a42",
+    color: "#F97316",
     fontSize: 14,
     fontWeight: "700",
     marginLeft: 8,
@@ -349,13 +345,13 @@ const styles = StyleSheet.create({
   },
 
   noCommentsTitle: {
-    color: "#4e3309",
+    color: "#1F2937",
     fontSize: 16,
     fontWeight: "800",
   },
 
   noCommentsText: {
-    color: "#79571b",
+    color: "#6B7280",
     fontSize: 14,
     fontWeight: "500",
     marginTop: 8,
@@ -372,14 +368,14 @@ const styles = StyleSheet.create({
 
   emptyContainer: {
     alignItems: "center",
-    backgroundColor: "#fffaf4",
+    backgroundColor: "#FAFAF9",
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 28,
   },
 
   emptyText: {
-    color: "#8d6a36",
+    color: "#6B7280",
     fontSize: 16,
     fontWeight: "700",
     textAlign: "center",

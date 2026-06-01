@@ -264,9 +264,9 @@ export default function PremiumPostScreen() {
 
       <LinearGradient
         colors={[
-          "#fffef9",
-          "#fff7eb",
-          "#fff4e4",
+          "#FAFAF9",
+          "#FFF7ED",
+          "#FAFAF9",
         ]}
         style={
           StyleSheet.absoluteFillObject
@@ -277,19 +277,28 @@ export default function PremiumPostScreen() {
 
       <View style={styles.fixedTop}>
         <View style={styles.header}>
-          <UserCircle2
-            size={30}
-            color="#8c5d11"
-          />
+          <View style={styles.headerLeft}>
+            <View style={styles.headerIcon}>
+              <UserCircle2
+                size={23}
+                color="#1F2937"
+              />
+            </View>
 
-          <Text style={styles.headerTitle}>
-            Leela Feed
-          </Text>
+            <View>
+              <Text style={styles.eyebrow}>Create</Text>
+              <Text style={styles.headerTitle}>
+                Share Experience
+              </Text>
+            </View>
+          </View>
 
-          <Sparkles
-            size={22}
-            color="#8c5d11"
-          />
+          <View style={styles.primaryAction}>
+            <Sparkles
+              size={17}
+              color="#FFFFFF"
+            />
+          </View>
         </View>
 
         <ExperienceTopTabs activeTab="post" />
@@ -670,13 +679,15 @@ function ActionButton({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
- marginBottom:100  },
+    marginBottom: 100,
+  },
 
   fixedTop: {
     paddingTop: 55,
     zIndex: 20,
-    backgroundColor:
-      "rgba(255,248,238,0.94)",
+    backgroundColor: "#FAFAF9",
+    borderBottomColor: "#E7D7BE",
+    borderBottomWidth: 1,
   },
 
   header: {
@@ -689,9 +700,41 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#432604",
-    fontSize: 22,
-    fontWeight: "800",
+    color: "#1F2937",
+    fontSize: 21,
+    fontWeight: "900",
+  },
+
+  headerLeft: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+  },
+
+  headerIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: "center",
+    width: 42,
+  },
+
+  eyebrow: {
+    color: "#F97316",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
+  primaryAction: {
+    alignItems: "center",
+    backgroundColor: "#1F2937",
+    borderRadius: 12,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
   },
 
   body: {
@@ -699,22 +742,20 @@ const styles = StyleSheet.create({
   },
 
   bodyContent: {
-    padding: 18,
+    padding: 16,
     paddingBottom: 160,
   },
 
   card: {
-    borderRadius: 34,
+    borderRadius: 14,
     overflow: "hidden",
-    padding: 20,
+    padding: 16,
 
-    backgroundColor:
-      "rgba(255,255,255,0.58)",
+    backgroundColor: "#FFFFFF",
 
     borderWidth: 1,
 
-    borderColor:
-      "rgba(236,210,167,0.55)",
+    borderColor: "#E7D7BE",
   },
 
   userRow: {
@@ -741,9 +782,9 @@ const styles = StyleSheet.create({
   },
 
   userName: {
-    color: "#311c03",
+    color: "#1F2937",
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "900",
   },
 
   publicRow: {
@@ -754,27 +795,26 @@ const styles = StyleSheet.create({
   },
 
   publicText: {
-    color: "#9d6912",
+    color: "#F97316",
     fontSize: 12,
     fontWeight: "600",
   },
 
   input: {
     marginTop: 18,
-    minHeight: 180,
+    minHeight: 150,
 
-    color: "#3a2203",
-    fontSize: 24,
-    lineHeight: 38,
-    fontWeight: "500",
+    color: "#1F2937",
+    fontSize: 19,
+    lineHeight: 29,
+    fontWeight: "600",
   },
 
   sectionLabel: {
     marginTop: 24,
-    color: "#5d3902",
+    color: "#1F2937",
     fontSize: 13,
     fontWeight: "800",
-    letterSpacing: 0.4,
     textTransform: "uppercase",
   },
 
@@ -788,20 +828,18 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor:
-      "rgba(255,255,255,0.72)",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor:
-      "rgba(236,209,168,0.7)",
+    borderColor: "#E7D7BE",
   },
 
   categoryChipActive: {
-    backgroundColor: "#8e5d10",
-    borderColor: "#8e5d10",
+    backgroundColor: "#F97316",
+    borderColor: "#F97316",
   },
 
   categoryText: {
-    color: "#8b5b0f",
+    color: "#6B7280",
     fontSize: 13,
     fontWeight: "800",
   },
@@ -812,14 +850,14 @@ const styles = StyleSheet.create({
 
   mediaContainer: {
     marginTop: 18,
-    borderRadius: 26,
+    borderRadius: 12,
     overflow: "hidden",
   },
 
   media: {
     width: "100%",
-    height: 350,
-    borderRadius: 26,
+    height: 280,
+    borderRadius: 12,
   },
 
   closeButton: {
@@ -862,12 +900,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
 
-    borderRadius: 22,
+    borderRadius: 12,
 
     padding: 18,
 
-    backgroundColor:
-      "rgba(255,239,210,0.9)",
+    backgroundColor: "#FFF7ED",
   },
 
   audioInfo: {
@@ -876,14 +913,14 @@ const styles = StyleSheet.create({
   },
 
   audioTitle: {
-    color: "#5d3902",
+    color: "#1F2937",
     fontSize: 15,
     fontWeight: "700",
   },
 
   audioName: {
     marginTop: 4,
-    color: "#87622c",
+    color: "#6B7280",
     fontSize: 13,
   },
 
@@ -900,14 +937,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
 
-    backgroundColor:
-      "rgba(249,228,188,0.7)",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderWidth: 1,
   },
 
   locationText: {
     marginLeft: 6,
 
-    color: "#8b5b0f",
+    color: "#C2410C",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -931,7 +969,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
 
     borderTopColor:
-      "rgba(236,209,168,0.5)",
+      "#E7D7BE",
   },
 
   actions: {
@@ -948,13 +986,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
 
-    backgroundColor:
-      "rgba(255,255,255,0.75)",
+    backgroundColor: "#FFFFFF",
 
     borderWidth: 1,
 
-    borderColor:
-      "rgba(236,209,168,0.5)",
+    borderColor: "#E7D7BE",
   },
 
   postButton: {
@@ -983,6 +1019,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 15,
     fontWeight: "800",
-    letterSpacing: 0.3,
   },
 });

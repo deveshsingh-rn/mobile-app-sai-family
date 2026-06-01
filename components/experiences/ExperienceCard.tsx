@@ -19,9 +19,9 @@ import {
   MessageCircle,
   Repeat2,
   Play,
+  MapPin,
+  Share2,
 } from "lucide-react-native";
-
-import { BlurView } from "expo-blur";
 
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -89,11 +89,15 @@ export function ExperienceCard({
   return (
     <Pressable
       onPress={handleOpenDetail}
+      style={({ pressed }) => [
+        pressed && styles.pressed,
+      ]}
     >
-      <BlurView
-        intensity={40}
-        tint="light"
-        style={[styles.card, hideBorder && styles.cardNoBorder]}
+      <View
+        style={[
+          styles.card,
+          hideBorder && styles.cardNoBorder,
+        ]}
       >
         {/* USER */}
 
@@ -129,6 +133,14 @@ export function ExperienceCard({
               @{item.authorHandle}
             </Text>
           </View>
+
+          {!!item.category && (
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>
+                {String(item.category)}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* CONTENT */}
@@ -147,9 +159,18 @@ export function ExperienceCard({
         {!disableNavigation &&
           item.content?.length > 90 && (
             <Text style={styles.readMore}>
-              Read more
+              Read full experience
             </Text>
           )}
+
+        {!!item.location && (
+          <View style={styles.locationRow}>
+            <MapPin color="#9CA3AF" size={14} />
+            <Text numberOfLines={1} style={styles.locationText}>
+              {item.location}
+            </Text>
+          </View>
+        )}
 
         {/* MEDIA */}
 
@@ -237,7 +258,7 @@ export function ExperienceCard({
           >
             <MessageCircle
               size={20}
-              color="#7a7a7a"
+              color="#6B7280"
             />
 
             <Text
@@ -260,7 +281,7 @@ export function ExperienceCard({
           >
             <Repeat2
               size={20}
-              color="#1ea672"
+              color="#16A34A"
             />
 
             <Text
@@ -283,10 +304,10 @@ export function ExperienceCard({
           >
             <Bookmark
               size={20}
-              color="#b0851d"
+              color="#F97316"
               fill={
                 item.bookmarkedByMe
-                  ? "#b0851d"
+                  ? "#F97316"
                   : "transparent"
               }
             />
@@ -303,39 +324,45 @@ export function ExperienceCard({
               )
             }
           >
-            <Text
-              style={styles.share}
-            >
-              Share
-            </Text>
+            <Share2 color="#6B7280" size={19} />
           </Pressable>
         </View>
-      </BlurView>
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 18,
-    marginBottom: 18,
-
-    padding: 18,
-
-    borderRadius: 28,
+    marginHorizontal: 16,
+    marginBottom: 14,
+    padding: 16,
+    borderRadius: 14,
 
     overflow: "hidden",
 
-    backgroundColor:
-      "rgba(255,255,255,0.55)",
+    backgroundColor: "#FFFFFF",
 
     borderWidth: 1,
 
-    borderColor:
-      "rgba(231,208,170,0.45)",
+    borderColor: "#E7D7BE",
+    shadowColor: "#7C2D12",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    elevation: 2,
   },
   cardNoBorder: {
     borderWidth: 0,
+    marginHorizontal: 0,
+    shadowOpacity: 0,
+  },
+
+  pressed: {
+    opacity: 0.9,
   },
 
   header: {
@@ -344,10 +371,9 @@ const styles = StyleSheet.create({
   },
 
   avatar: {
-    width: 48,
-    height: 48,
-
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
 
     alignItems: "center",
     justifyContent: "center",
@@ -362,46 +388,80 @@ const styles = StyleSheet.create({
 
   headerInfo: {
     marginLeft: 12,
+    flex: 1,
   },
 
   name: {
-    color: "#2d1a03",
+    color: "#1F2937",
 
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "900",
   },
 
   handle: {
     marginTop: 2,
 
-    color: "#8b6a3d",
+    color: "#6B7280",
 
     fontSize: 12,
+    fontWeight: "700",
+  },
+
+  categoryBadge: {
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+
+  categoryText: {
+    color: "#C2410C",
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "capitalize",
   },
 
   content: {
-    marginTop: 16,
+    marginTop: 14,
 
-    color: "#3c2503",
+    color: "#1F2937",
 
-    fontSize: 16,
-    lineHeight: 28,
+    fontSize: 15,
+    lineHeight: 23,
+    fontWeight: "600",
   },
 
   readMore: {
-    color: "#9d6912",
-    fontSize: 14,
-    fontWeight: "800",
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "900",
     marginTop: 6,
+  },
+
+  locationRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 12,
+  },
+
+  locationText: {
+    color: "#6B7280",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "700",
   },
 
   mediaContainer: {
     width: "100%",
-    height: 320,
-    marginTop: 16,
-    borderRadius: 22,
+    height: 280,
+    marginTop: 14,
+    borderRadius: 12,
     overflow: "hidden",
     position: "relative",
+    backgroundColor: "#F6EFD9",
   },
 
   media: {
@@ -428,7 +488,10 @@ const styles = StyleSheet.create({
   },
 
   actions: {
-    marginTop: 18,
+    marginTop: 14,
+    borderTopColor: "#F1E4CE",
+    borderTopWidth: 1,
+    paddingTop: 12,
 
     flexDirection: "row",
     alignItems: "center",
@@ -440,18 +503,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    minHeight: 30,
   },
 
   actionText: {
-    color: "#6f5220",
+    color: "#6B7280",
 
     fontSize: 13,
-    fontWeight: "700",
-  },
-
-  share: {
-    color: "#8b6515",
-
-    fontWeight: "700",
+    fontWeight: "800",
   },
 });
