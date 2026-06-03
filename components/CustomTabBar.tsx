@@ -16,7 +16,6 @@ import {
   Building2,
   CalendarDays,
   House,
-  Plus,
   UserCircle2,
   Users,
 } from "lucide-react-native";
