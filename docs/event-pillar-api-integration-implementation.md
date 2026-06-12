@@ -54,27 +54,24 @@ Current backend integration already exists for:
 
 Current API client already injects `x-user-id` from SecureStore in `services/api.ts`, so protected endpoints should work if the user has a saved devotee account.
 
-## Important Collection Difference
+## Important Payload Decision
 
-The Postman collection now shows `POST /api/events`, `PATCH /api/events/:id`, and draft endpoints as `form-data` with optional `bannerImage`.
+The Postman collection now confirms the current Phase 1 frontend flow:
 
-Current frontend does:
-
-1. Upload image through `POST /api/media/upload`.
-2. Use returned `bannerUrl`.
+1. Upload banner media through `POST /api/media/upload`.
+2. Use the returned `url` as `bannerUrl`.
 3. Create/update event with JSON payload.
 
 Recommended frontend strategy:
 
-- Phase 1: keep the current upload-then-JSON flow because it is already implemented and less risky.
-- Phase 2: add optional direct form-data create/update only if backend requires it or if we want one request instead of two.
-- Service layer should support both patterns cleanly:
-  - `apiCreateEventJson(payload)`
-  - `apiCreateEventForm(formData)`
-  - `apiUpdateEventJson(id, payload)`
-  - `apiUpdateEventForm(id, formData)`
+- Phase 1: keep the current upload-then-JSON flow.
+- Phase 2: add optional direct multipart create/update only if product decides to reduce upload + submit from two requests to one request.
+- Service layer should keep JSON create/update as the primary contract:
+  - `apiCreateEvent(payload)`
+  - `apiUpdateEvent(id, payload)`
+  - `apiUploadEventMedia(file)`
 
-Do not mix form-data construction into screens. Keep it in a mapper/helper inside the events module.
+Do not mix upload or payload mapping logic into screens. Keep upload handling and event payload mapping in `services/events.ts`, sagas, or event-module helpers.
 
 ## Target Events State Shape
 
@@ -426,8 +423,8 @@ API plan:
 - `POST /api/events/suggestions/title` for suggestions.
 - `GET /api/places/search` for venue search.
 - `POST /api/events/drafts`, `PATCH /api/events/drafts/:id`, `POST /api/events/drafts/:id/publish`.
-- Keep current `POST /api/media/upload` + `bannerUrl` JSON create/update initially.
-- Later support direct `bannerImage` form-data create/update.
+- Keep current `POST /api/media/upload` + `bannerUrl` JSON create/update.
+- Add direct multipart create/update later only if product chooses a one-request upload flow.
 
 Redux additions:
 
@@ -635,7 +632,7 @@ Todo:
 - [ ] Test every Events API in `postman-api-collection.json`.
 - [ ] Record actual response shapes for each endpoint.
 - [ ] Compare real response against frontend types in `store/events/types.ts`.
-- [ ] Decide whether create/update will stay JSON with `bannerUrl` or move to form-data with `bannerImage`.
+- [x] Decide create/update will stay JSON with `bannerUrl` after the media-upload step.
 
 Done when:
 
@@ -756,10 +753,8 @@ Todo:
 - [ ] Add publish draft flow.
 - [ ] Add recurrence type and validation.
 - [ ] Add recurrence payload to create/update if backend accepts it.
-- [ ] Decide final create/update payload mode:
-  - [ ] JSON + `bannerUrl`
-  - [ ] form-data + `bannerImage`
-  - [ ] support both
+- [x] Phase 1 payload mode decided: upload media first, then JSON create/update with `bannerUrl`.
+- [ ] Add optional multipart create/update only if product later chooses a one-request upload flow.
 
 Done when:
 
@@ -910,7 +905,7 @@ Recommended future tests:
 ## Risk Review
 
 - Biggest risk: replacing fallback data too early and making the polished UI look empty. Mitigation: selector-level fallback until API is verified.
-- Biggest API mismatch: collection uses form-data for create/update while current frontend uses JSON after media upload. Mitigation: support both in service layer.
+- Previously ambiguous create/update payload mode is resolved: frontend uses media upload first, then JSON with `bannerUrl`. Mitigation: keep this flow stable while adding draft or future multipart support.
 - Biggest state risk: one global `loading` will cause unrelated screens to flicker. Mitigation: add endpoint-specific loading fields.
 - Biggest product risk: organizer flows need analytics/attendee APIs before My Events feels real. Mitigation: implement those before removing posted-event fallback stats.
 - Biggest auth risk: protected endpoints rely on `x-user-id`. Mitigation: verify SecureStore account is hydrated before calling protected APIs and keep 401 logout behavior predictable.

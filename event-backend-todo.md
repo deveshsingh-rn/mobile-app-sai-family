@@ -351,7 +351,7 @@ These APIs are present in the Postman collection / backend TODO, but are not yet
 
 6. **Create/Edit Enhancements**
    - Wire title suggestions, place search, drafts, publish draft.
-   - Decide whether frontend should keep JSON `bannerUrl` create/update or move to direct `multipart/form-data` create/update.
+   - Decision confirmed: frontend keeps the two-step create/update flow, uploading media first and then sending JSON with `bannerUrl`.
 
 ### Frontend Architecture Requirement
 

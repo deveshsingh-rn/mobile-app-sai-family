@@ -1338,7 +1338,7 @@
         },
         {
           "name": "POST /api/events/drafts - Create Draft",
-          "description": "Requires x-user-id. Uses multipart/form-data so Create Event can autosave text and optional banner image. Recurrence can be JSON string.",
+          "description": "Requires x-user-id. Frontend Phase 1 flow: upload banner first with POST /api/media/upload, then autosave draft metadata here as JSON with bannerUrl. Backend also supports multipart later if frontend moves to one-request upload.",
           "event": [
             {
               "listen": "test",
@@ -1362,85 +1362,13 @@
               }
             ],
             "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "title",
-                  "value": "Weekly Sai Bhajan Draft",
-                  "type": "text"
-                },
-                {
-                  "key": "description",
-                  "value": "Draft for weekly bhajan gathering.",
-                  "type": "text"
-                },
-                {
-                  "key": "type",
-                  "value": "bhajan",
-                  "type": "text"
-                },
-                {
-                  "key": "startAt",
-                  "value": "2026-06-20T13:30:00.000Z",
-                  "type": "text"
-                },
-                {
-                  "key": "endAt",
-                  "value": "2026-06-20T15:00:00.000Z",
-                  "type": "text"
-                },
-                {
-                  "key": "timezone",
-                  "value": "Asia/Kolkata",
-                  "type": "text"
-                },
-                {
-                  "key": "venueName",
-                  "value": "Sai Mandir Hall",
-                  "type": "text"
-                },
-                {
-                  "key": "address",
-                  "value": "MG Road, Pune, Maharashtra",
-                  "type": "text"
-                },
-                {
-                  "key": "city",
-                  "value": "Pune",
-                  "type": "text"
-                },
-                {
-                  "key": "state",
-                  "value": "Maharashtra",
-                  "type": "text"
-                },
-                {
-                  "key": "country",
-                  "value": "India",
-                  "type": "text"
-                },
-                {
-                  "key": "latitude",
-                  "value": "18.5204",
-                  "type": "text"
-                },
-                {
-                  "key": "longitude",
-                  "value": "73.8567",
-                  "type": "text"
-                },
-                {
-                  "key": "recurrence",
-                  "value": "{\"frequency\":\"weekly\",\"interval\":1,\"count\":3}",
-                  "type": "text"
-                },
-                {
-                  "key": "bannerImage",
-                  "type": "file",
-                  "src": [],
-                  "disabled": true
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Weekly Sai Bhajan Draft\",\n  \"description\": \"Draft for weekly bhajan gathering.\",\n  \"type\": \"bhajan\",\n  \"startAt\": \"2026-06-20T13:30:00.000Z\",\n  \"endAt\": \"2026-06-20T15:00:00.000Z\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"venueName\": \"Sai Mandir Hall\",\n  \"address\": \"MG Road, Pune, Maharashtra\",\n  \"city\": \"Pune\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"latitude\": 18.5204,\n  \"longitude\": 73.8567,\n  \"bannerUrl\": \"{{uploadedMediaUrl}}\",\n  \"recurrence\": {\n    \"frequency\": \"weekly\",\n    \"interval\": 1,\n    \"count\": 3\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
                 }
-              ]
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/events/drafts",
@@ -1458,24 +1386,27 @@
         },
         {
           "name": "PATCH /api/events/drafts/:id - Update Draft",
-          "description": "Requires x-user-id. Uses multipart/form-data. Update any draft fields before publish.",
+          "description": "Requires x-user-id. Frontend Phase 1 flow sends JSON metadata updates. If banner changed, upload it first with POST /api/media/upload and pass the returned URL as bannerUrl.",
           "request": {
             "method": "PATCH",
             "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
               {
                 "key": "x-user-id",
                 "value": "{{authorId}}"
               }
             ],
             "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "title",
-                  "value": "Updated Weekly Sai Bhajan Draft",
-                  "type": "text"
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Weekly Sai Bhajan Draft\",\n  \"bannerUrl\": \"{{uploadedMediaUrl}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
                 }
-              ]
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/events/drafts/{{eventDraftId}}",
@@ -1535,7 +1466,7 @@
         },
         {
           "name": "POST /api/events - Create Event",
-          "description": "Validation: title min 3, description min 10, address min 5, latitude -90..90, longitude -180..180, startAt/endAt required and endAt >= startAt. Optional type enum: bhajan|pooja|seva|medical|satsang|darshan|general. Requires x-user-id. Use JSON for metadata-only requests. Use multipart/form-data when uploading a banner image; accepted file keys: bannerImage, banner, or file.",
+          "description": "Validation: title min 3, description min 10, address min 5, latitude -90..90, longitude -180..180, startAt/endAt required and endAt >= startAt. Optional type enum: bhajan|pooja|seva|medical|satsang|darshan|general. Requires x-user-id. Frontend Phase 1 flow: upload banner first with POST /api/media/upload, then create event here as JSON with bannerUrl. Backend also supports multipart later if frontend moves to one-request upload.",
           "event": [
             {
               "listen": "test",
@@ -1557,90 +1488,22 @@
             "method": "POST",
             "header": [
               {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
                 "key": "x-user-id",
                 "value": "{{authorId}}"
               }
             ],
             "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "title",
-                  "value": "Thursday Sai Bhajan",
-                  "type": "text"
-                },
-                {
-                  "key": "description",
-                  "value": "Weekly satsang and aarti for all devotees.",
-                  "type": "text"
-                },
-                {
-                  "key": "type",
-                  "value": "bhajan",
-                  "type": "text"
-                },
-                {
-                  "key": "startAt",
-                  "value": "2026-06-15T13:30:00.000Z",
-                  "type": "text"
-                },
-                {
-                  "key": "endAt",
-                  "value": "2026-06-15T15:00:00.000Z",
-                  "type": "text"
-                },
-                {
-                  "key": "timezone",
-                  "value": "Asia/Kolkata",
-                  "type": "text"
-                },
-                {
-                  "key": "venueName",
-                  "value": "Sai Mandir Hall",
-                  "type": "text"
-                },
-                {
-                  "key": "address",
-                  "value": "MG Road, Pune, Maharashtra",
-                  "type": "text"
-                },
-                {
-                  "key": "city",
-                  "value": "Pune",
-                  "type": "text"
-                },
-                {
-                  "key": "state",
-                  "value": "Maharashtra",
-                  "type": "text"
-                },
-                {
-                  "key": "country",
-                  "value": "India",
-                  "type": "text"
-                },
-                {
-                  "key": "latitude",
-                  "value": "18.5204",
-                  "type": "text"
-                },
-                {
-                  "key": "longitude",
-                  "value": "73.8567",
-                  "type": "text"
-                },
-                {
-                  "key": "bannerUrl",
-                  "value": "https://example.com/banner.jpg",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "bannerImage",
-                  "type": "file",
-                  "src": []
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Thursday Sai Bhajan\",\n  \"description\": \"Weekly satsang and aarti for all devotees.\",\n  \"type\": \"bhajan\",\n  \"startAt\": \"2026-06-15T13:30:00.000Z\",\n  \"endAt\": \"2026-06-15T15:00:00.000Z\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"venueName\": \"Sai Mandir Hall\",\n  \"address\": \"MG Road, Pune, Maharashtra\",\n  \"city\": \"Pune\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"latitude\": 18.5204,\n  \"longitude\": 73.8567,\n  \"bannerUrl\": \"{{uploadedMediaUrl}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
                 }
-              ]
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/events",
@@ -1892,102 +1755,27 @@
         },
         {
           "name": "PATCH /api/events/:id - Update Event",
-          "description": "Validation: at least one field required. If provided, title min 3, description min 10, address min 5, lat/lng range checks. endAt must not be before startAt. Only owner/admin can update. Requires x-user-id. This request uses multipart/form-data so it can update text fields and optionally replace the banner image; accepted file keys: bannerImage, banner, or file.",
+          "description": "Validation: at least one field required. If provided, title min 3, description min 10, address min 5, lat/lng range checks. endAt must not be before startAt. Only owner/admin can update. Requires x-user-id. Frontend Phase 1 flow sends JSON metadata. If banner changed, upload it first with POST /api/media/upload and pass the returned URL as bannerUrl.",
           "request": {
             "method": "PATCH",
             "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
               {
                 "key": "x-user-id",
                 "value": "{{authorId}}"
               }
             ],
             "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "title",
-                  "value": "Updated Thursday Sai Bhajan",
-                  "type": "text"
-                },
-                {
-                  "key": "description",
-                  "value": "Updated details for the Thursday Sai bhajan gathering.",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "type",
-                  "value": "bhajan",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "startAt",
-                  "value": "2026-06-12T18:30:00.000Z",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "endAt",
-                  "value": "2026-06-12T20:00:00.000Z",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "timezone",
-                  "value": "Asia/Kolkata",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "venueName",
-                  "value": "Sai Mandir Hall",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "address",
-                  "value": "MG Road, Pune, Maharashtra",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "city",
-                  "value": "Pune",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "state",
-                  "value": "Maharashtra",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "country",
-                  "value": "India",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "latitude",
-                  "value": "18.5204",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "longitude",
-                  "value": "73.8567",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "bannerImage",
-                  "type": "file",
-                  "src": [],
-                  "disabled": true
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Thursday Sai Bhajan\",\n  \"description\": \"Updated details for the Thursday Sai bhajan gathering.\",\n  \"bannerUrl\": \"{{uploadedMediaUrl}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
                 }
-              ]
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/events/{{eventId}}",
@@ -2638,6 +2426,24 @@
         {
           "name": "POST /api/media/upload - Event Banner",
           "description": "Supports single file key `file` OR multiple key `files` (up to 10). Allowed MIME: image/jpeg, image/png, image/webp, video/mp4, video/quicktime, audio/mpeg, audio/mp4, audio/wav, audio/webm. Max 150MB per file. Requires x-user-id. Response includes media[] with mimeType and a top-level url for the first uploaded file.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Media uploaded\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "const uploadedUrl = json.url || (json.media && json.media[0] && json.media[0].url);",
+                  "if (uploadedUrl) {",
+                  "  pm.environment.set(\"uploadedMediaUrl\", uploadedUrl);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [

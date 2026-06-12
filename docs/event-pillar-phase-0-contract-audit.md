@@ -16,7 +16,7 @@ Status: Started
 | Test every Events API | Pending | Needs backend running and a valid created account/event. |
 | Record actual response shapes | Pending | Use the tables below. |
 | Compare responses with frontend types | Pending | Main type file is `store/events/types.ts`. |
-| Decide create/update payload mode | Pending | Backend supports JSON metadata and multipart with `bannerImage`; frontend currently uses media upload then JSON `bannerUrl`. |
+| Decide create/update payload mode | Done | Frontend Phase 1 will use the two-step flow: upload media with `POST /api/media/upload`, then create/update events as JSON with `bannerUrl`. Multipart create/update remains backend-supported for future one-request upload. |
 
 ## How To Start
 
@@ -87,25 +87,31 @@ Backend supports:
 2. Multipart create/update when uploading `bannerImage`, `banner`, or `file`.
 3. Separate `POST /api/media/upload`, returning URL(s).
 
+Postman collection update:
+
+- `POST /api/events` explicitly documents the Phase 1 frontend flow: upload banner first with `POST /api/media/upload`, then send JSON event payload with `bannerUrl`.
+- `PATCH /api/events/:id` follows the same rule when the banner changes.
+- `POST /api/events/drafts` and `PATCH /api/events/drafts/:id` also use JSON metadata with `bannerUrl` after media upload.
+
 Current frontend flow:
 
 1. `POST /api/media/upload`
 2. Store returned `url` as `bannerUrl`
 3. `POST /api/events` with JSON metadata
 
-Recommended decision for Phase 1:
+Decision for Phase 1:
 
 - Keep current frontend flow: media upload first, JSON create/update second.
 - Add multipart create/update support later only if we want to reduce two requests into one.
 - Reason: current UI and saga are already built around `bannerUrl`, so this is lower-risk.
 
-Decision owner:
+Decision date:
 
-- Frontend + backend together.
+- 2026-06-12
 
 Decision:
 
-- [ ] Keep JSON + `bannerUrl`
+- [x] Keep JSON + `bannerUrl`
 - [ ] Move to multipart create/update
 - [ ] Support both in frontend service
 
@@ -238,7 +244,7 @@ Phase 0 is complete when:
 - [ ] One event can be created and read back.
 - [ ] One success response is recorded for each endpoint group.
 - [ ] One expected error response is recorded for protected/validation groups.
-- [ ] We have confirmed whether frontend will use JSON + `bannerUrl`, multipart create/update, or both.
+- [x] We have confirmed frontend will use media upload first, then JSON create/update with `bannerUrl`.
 - [ ] `store/events/types.ts` gaps are listed before Phase 1 code starts.
 
 ## Recommended Phase 0 Order
