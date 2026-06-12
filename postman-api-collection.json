@@ -119,6 +119,7 @@
       "item": [
         {
           "name": "POST /accounts - Create devotee account with profile image",
+          "description": "Validation: profileImage is required (jpg/png/webp, <=5MB). name min 2, email valid, mobileNumber 8-15 chars, completeAddress min 10, pincode 4-10 digits, occupation min 2. Optional expoPushToken must match Expo token format.",
           "event": [
             {
               "listen": "test",
@@ -133,6 +134,7 @@
                   "if (json.account && json.account.memberId) {",
                   "  pm.environment.set(\"memberId\", json.account.memberId);",
                   "  pm.environment.set(\"authorId\", json.account.id);",
+                  "  pm.collectionVariables.set(\"authorId\", json.account.id);",
                   "}"
                 ]
               }
@@ -200,6 +202,12 @@
                   "type": "text"
                 },
                 {
+                  "key": "expoPushToken",
+                  "value": "ExponentPushToken[REPLACE_WITH_DEVICE_TOKEN]",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
                   "key": "profileImage",
                   "type": "file",
                   "src": []
@@ -241,6 +249,25 @@
     {
       "name": "Experiences API",
       "item": [
+        {
+          "name": "GET /api/experiences/categories - List Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/experiences/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "experiences",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
         {
           "name": "GET /api/experiences - Leela Feed",
           "request": {
@@ -325,6 +352,23 @@
                   "}"
                 ]
               }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const envAuthorId = pm.environment.get(\"authorId\");",
+                  "const colAuthorId = pm.collectionVariables.get(\"authorId\");",
+                  "const authorId = envAuthorId || colAuthorId;",
+                  "if (!authorId) {",
+                  "  throw new Error(\"authorId is not set. Run POST /accounts first (Create devotee account) to populate authorId.\");",
+                  "}",
+                  "if (!envAuthorId && colAuthorId) {",
+                  "  pm.environment.set(\"authorId\", colAuthorId);",
+                  "}"
+                ]
+              }
             }
           ],
           "request": {
@@ -350,19 +394,95 @@
                 },
                 {
                   "key": "location",
-                  "value": "Pune, Maharashtra",
+                  "value": "Pune, Maharashtra, India",
                   "type": "text"
                 },
                 {
                   "key": "mediaFiles",
                   "type": "file",
                   "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/experiences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "experiences"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/experiences - Create Video Post (YouTube)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const authorId = pm.environment.get(\"authorId\") || pm.collectionVariables.get(\"authorId\");",
+                  "if (!authorId) throw new Error(\"authorId is not set. Run POST /accounts first.\");",
+                  "pm.environment.set(\"authorId\", authorId);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Video experience created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "const media = json.experience?.mediaAttachments?.[0];",
+                  "if (json.experience?.id) pm.environment.set(\"experienceId\", json.experience.id);",
+                  "pm.test(\"Media attachment exists\", function () {",
+                  "  pm.expect(media).to.exist;",
+                  "  pm.expect(media.type).to.eql(\"video\");",
+                  "});",
+                  "pm.test(\"Background upload started\", function () {",
+                  "  pm.expect(json.experience.uploadStatus).to.eql(\"processing\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "content",
+                  "value": "YouTube video upload post test",
+                  "type": "text"
                 },
                 {
-                  "key": "mediaAttachments",
-                  "value": "[{\"type\":\"image\",\"url\":\"https://example.com/leela-photo.jpg\"}]",
-                  "type": "text",
-                  "disabled": true
+                  "key": "category",
+                  "value": "miracles",
+                  "type": "text"
+                },
+                {
+                  "key": "location",
+                  "value": "Pune, Maharashtra, India",
+                  "type": "text"
+                },
+                {
+                  "key": "mediaFiles",
+                  "type": "file",
+                  "src": []
                 }
               ]
             },
@@ -555,6 +675,2081 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "POST /api/users/me/push-token - Register Expo Push Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"ExponentPushToken[REPLACE_WITH_DEVICE_TOKEN]\",\n  \"platform\": \"android\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/push-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "push-token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/users/me/push-test - Send Test Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/push-test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "push-test"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/experiences/:id - Update Own Post",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated leela text from postman\",\n  \"category\": \"blessings\",\n  \"location\": \"Pune, Maharashtra\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/experiences/{{experienceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "experiences",
+                "{{experienceId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/experiences/:id - Delete Own Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/experiences/{{experienceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "experiences",
+                "{{experienceId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/experiences/:id/upload-status - Upload Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/experiences/{{experienceId}}/upload-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "experiences",
+                "{{experienceId}}",
+                "upload-status"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin API",
+      "item": [
+        {
+          "name": "GET /api/admin/users - List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "isActive",
+                  "value": "false",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "Ananya",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/admin/users/:id/status - Ban/Allow",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/{{authorId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{authorId}}",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/admin/content - List Content",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/content?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "content"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "category",
+                  "value": "miracles",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/admin/content/:id - Delete Content",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/content/{{experienceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "content",
+                "{{experienceId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/admin/categories - List Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/categories - Create Category Label",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"miracles\",\n  \"label\": \"Miracle Stories\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/admin/categories/:category - Update Category Label",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Blessings & Grace\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/categories/blessings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "categories",
+                "blessings"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events API",
+      "item": [
+        {
+          "name": "GET /api/events - Discovery",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events?page=1&limit=20&type=bhajan",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "type",
+                  "value": "bhajan",
+                  "disabled": true
+                },
+                {
+                  "key": "lat",
+                  "value": "18.5204",
+                  "disabled": true
+                },
+                {
+                  "key": "lng",
+                  "value": "73.8567",
+                  "disabled": true
+                },
+                {
+                  "key": "radius",
+                  "value": "25",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/events/home - Home Sections",
+          "description": "Events hub aggregate API. Returns sections.happeningToday, thisWeek, thisMonth, comingSoon, trendingSections.today/thisWeek/thisMonth/comingSoon, eventTypeGuide, trendingThisWeek, topOrganisers, weeklySchedule, and stats. Optional query: lat, lng, radius, timezone, dateFrom, dateTo, limit.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/home?limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "home"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "lat",
+                  "value": "18.5204",
+                  "disabled": true
+                },
+                {
+                  "key": "lng",
+                  "value": "73.8567",
+                  "disabled": true
+                },
+                {
+                  "key": "radius",
+                  "value": "25",
+                  "disabled": true
+                },
+                {
+                  "key": "timezone",
+                  "value": "Asia/Kolkata",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/events/nearby - Nearby Events",
+          "description": "Nearby map/list API. Required query: lat, lng. Optional: radius, type, limit. Returns events with distanceKm and center.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/nearby?lat=18.5204&lng=73.8567&radius=25&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "nearby"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "18.5204"
+                },
+                {
+                  "key": "lng",
+                  "value": "73.8567"
+                },
+                {
+                  "key": "radius",
+                  "value": "25"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "type",
+                  "value": "bhajan",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/events/recommendations - Recommended Events",
+          "description": "Recommended events using initial type + popularity + optional distance heuristics. Optional x-user-id improves recommendations from RSVP history.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/recommendations?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "recommendations"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "lat",
+                  "value": "18.5204",
+                  "disabled": true
+                },
+                {
+                  "key": "lng",
+                  "value": "73.8567",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events/suggestions/title",
+          "description": "Template-based title suggestions for the Create Event form. No external AI dependency yet.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"bhajan\",\n  \"city\": \"Pune\",\n  \"venueName\": \"Sai Mandir Hall\",\n  \"intention\": \"Thursday evening devotion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/suggestions/title",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "suggestions",
+                "title"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/places/search",
+          "description": "Local-safe venue search. Uses local fixture places plus previously used event venues. Optional query: city, limit.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/places/search?q=Sai&city=Pune&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "places",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "Sai"
+                },
+                {
+                  "key": "city",
+                  "value": "Pune"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events/drafts - Create Draft",
+          "description": "Requires x-user-id. Uses multipart/form-data so Create Event can autosave text and optional banner image. Recurrence can be JSON string.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.draft && json.draft.id) {",
+                  "  pm.environment.set(\"eventDraftId\", json.draft.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Weekly Sai Bhajan Draft",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Draft for weekly bhajan gathering.",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "bhajan",
+                  "type": "text"
+                },
+                {
+                  "key": "startAt",
+                  "value": "2026-06-20T13:30:00.000Z",
+                  "type": "text"
+                },
+                {
+                  "key": "endAt",
+                  "value": "2026-06-20T15:00:00.000Z",
+                  "type": "text"
+                },
+                {
+                  "key": "timezone",
+                  "value": "Asia/Kolkata",
+                  "type": "text"
+                },
+                {
+                  "key": "venueName",
+                  "value": "Sai Mandir Hall",
+                  "type": "text"
+                },
+                {
+                  "key": "address",
+                  "value": "MG Road, Pune, Maharashtra",
+                  "type": "text"
+                },
+                {
+                  "key": "city",
+                  "value": "Pune",
+                  "type": "text"
+                },
+                {
+                  "key": "state",
+                  "value": "Maharashtra",
+                  "type": "text"
+                },
+                {
+                  "key": "country",
+                  "value": "India",
+                  "type": "text"
+                },
+                {
+                  "key": "latitude",
+                  "value": "18.5204",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "73.8567",
+                  "type": "text"
+                },
+                {
+                  "key": "recurrence",
+                  "value": "{\"frequency\":\"weekly\",\"interval\":1,\"count\":3}",
+                  "type": "text"
+                },
+                {
+                  "key": "bannerImage",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/drafts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "drafts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/events/drafts/:id - Update Draft",
+          "description": "Requires x-user-id. Uses multipart/form-data. Update any draft fields before publish.",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Updated Weekly Sai Bhajan Draft",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/drafts/{{eventDraftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "drafts",
+                "{{eventDraftId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events/drafts/:id/publish",
+          "description": "Requires x-user-id. Publishes a draft. If recurrence exists, creates generated event occurrences and returns series plus events.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.event && json.event.id) {",
+                  "  pm.environment.set(\"eventId\", json.event.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/drafts/{{eventDraftId}}/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "drafts",
+                "{{eventDraftId}}",
+                "publish"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events - Create Event",
+          "description": "Validation: title min 3, description min 10, address min 5, latitude -90..90, longitude -180..180, startAt/endAt required and endAt >= startAt. Optional type enum: bhajan|pooja|seva|medical|satsang|darshan|general. Requires x-user-id. Use JSON for metadata-only requests. Use multipart/form-data when uploading a banner image; accepted file keys: bannerImage, banner, or file.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Event created\", function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json.event && json.event.id) {",
+                  "  pm.environment.set(\"eventId\", json.event.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Thursday Sai Bhajan",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Weekly satsang and aarti for all devotees.",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "bhajan",
+                  "type": "text"
+                },
+                {
+                  "key": "startAt",
+                  "value": "2026-06-15T13:30:00.000Z",
+                  "type": "text"
+                },
+                {
+                  "key": "endAt",
+                  "value": "2026-06-15T15:00:00.000Z",
+                  "type": "text"
+                },
+                {
+                  "key": "timezone",
+                  "value": "Asia/Kolkata",
+                  "type": "text"
+                },
+                {
+                  "key": "venueName",
+                  "value": "Sai Mandir Hall",
+                  "type": "text"
+                },
+                {
+                  "key": "address",
+                  "value": "MG Road, Pune, Maharashtra",
+                  "type": "text"
+                },
+                {
+                  "key": "city",
+                  "value": "Pune",
+                  "type": "text"
+                },
+                {
+                  "key": "state",
+                  "value": "Maharashtra",
+                  "type": "text"
+                },
+                {
+                  "key": "country",
+                  "value": "India",
+                  "type": "text"
+                },
+                {
+                  "key": "latitude",
+                  "value": "18.5204",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "73.8567",
+                  "type": "text"
+                },
+                {
+                  "key": "bannerUrl",
+                  "value": "https://example.com/banner.jpg",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "bannerImage",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/events/:id - Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/events/:id/reviews",
+          "description": "Returns event reviews with average rating summary. Public read.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/reviews?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events/:id/reviews",
+          "description": "Requires x-user-id. One review per user per event. User must have RSVP status going.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"content\": \"Beautifully organised satsang. Felt peaceful and connected.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "reviews"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/events/:id/photos",
+          "description": "Returns event photo gallery. Public read.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/photos?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "photos"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events/:id/photos",
+          "description": "Requires x-user-id and multipart/form-data. Event must be completed. Organizer/admin or RSVP attendee can upload. Accepted file keys: photo, photos, file, files. Images only: JPG, PNG, WEBP.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "caption",
+                  "value": "After-event satsang moments",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "photos",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/photos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "photos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/events/:id/attendees - Organizer Attendees",
+          "description": "Owner/admin only. Returns RSVP attendees with status, guestCount, reminderMinutesBefore, checkedInAt, and summary totals. Optional query: status=going|cancelled, checkedIn=true|false, limit, offset.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/attendees?limit=50&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "attendees"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "checkedIn",
+                  "value": "true",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/events/:id/analytics - Organizer Analytics",
+          "description": "Owner/admin only. Returns lightweight organizer metrics: views, shares, bookmarks, comments, RSVPs, guestCount, checkIns, recent 7-day activity, and conversion rates.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/analytics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "analytics"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/events/:id - Update Event",
+          "description": "Validation: at least one field required. If provided, title min 3, description min 10, address min 5, lat/lng range checks. endAt must not be before startAt. Only owner/admin can update. Requires x-user-id. This request uses multipart/form-data so it can update text fields and optionally replace the banner image; accepted file keys: bannerImage, banner, or file.",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Updated Thursday Sai Bhajan",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Updated details for the Thursday Sai bhajan gathering.",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "bhajan",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "startAt",
+                  "value": "2026-06-12T18:30:00.000Z",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "endAt",
+                  "value": "2026-06-12T20:00:00.000Z",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "timezone",
+                  "value": "Asia/Kolkata",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "venueName",
+                  "value": "Sai Mandir Hall",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "address",
+                  "value": "MG Road, Pune, Maharashtra",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "city",
+                  "value": "Pune",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "state",
+                  "value": "Maharashtra",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "country",
+                  "value": "India",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "latitude",
+                  "value": "18.5204",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "longitude",
+                  "value": "73.8567",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "bannerImage",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events/:id/bookmark",
+          "description": "Requires x-user-id. Saves the event to the current user's bookmarks. Idempotent. Response includes updated bookmark count and bookmarkedByMe=true.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/bookmark",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "bookmark"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/events/:id/bookmark",
+          "description": "Requires x-user-id. Removes the event from the current user's bookmarks. Idempotent. Response includes updated bookmark count and bookmarkedByMe=false.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/bookmark",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "bookmark"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events/:id/rsvp",
+          "description": "Requires x-user-id. Event must exist and be published. Optional JSON body: {\"status\":\"going\",\"guestCount\":0,\"reminderMinutesBefore\":30}. `guests` is still accepted for compatibility. Response includes { event, rsvp } with guestCount and reminderMinutesBefore.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"going\",\n  \"guestCount\": 1,\n  \"reminderMinutesBefore\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/rsvp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "rsvp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/events/:id/rsvp",
+          "description": "Requires x-user-id. Response includes { event: { id, rsvps, rsvpedByMe:false }, eventId, rsvped:false, _count }.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/rsvp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "rsvp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events/:id/check-in - Organizer Check In",
+          "description": "Owner/admin only. Checks in an RSVP attendee. Body userId defaults to current x-user-id if omitted, but organizers normally pass the attendee userId.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{authorId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/check-in",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "check-in"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events/:id/report - Organizer Event Report",
+          "description": "Owner/admin only. Event must be completed. Creates an after-event report with reason and optional details.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Event completed\",\n  \"details\": \"The satsang was completed peacefully with strong devotee participation.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "report"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events/:id/share - Track Share",
+          "description": "Tracks a share action for analytics. x-user-id is optional. channel can be whatsapp, copy_link, instagram, etc.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"channel\": \"whatsapp\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/share",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "share"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/rsvps",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/rsvps?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "rsvps"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/events?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "events"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/event-bookmarks",
+          "description": "Requires x-user-id. Returns event bookmarks sorted newest first. Response includes bookmarks[] with event and events[] compatibility array.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/event-bookmarks?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "event-bookmarks"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/calendar/preferences",
+          "description": "Requires x-user-id. Returns or creates default calendar preferences.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/calendar/preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "calendar",
+                "preferences"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/users/me/calendar/preferences",
+          "description": "Requires x-user-id. Updates calendar preferences used by the mobile calendar and ICS feed.",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"defaultReminderMinutes\": 60,\n  \"showRsvpedEvents\": true,\n  \"showCreatedEvents\": true,\n  \"showBookmarkedEvents\": true,\n  \"weekStartsOn\": 1,\n  \"timezone\": \"Asia/Kolkata\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/calendar/preferences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "calendar",
+                "preferences"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/calendar.ics",
+          "description": "Requires x-user-id. Downloads an ICS calendar containing future RSVP, created, and bookmarked events according to calendar preferences.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/calendar.ics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "calendar.ics"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/events/calendar?month=YYYY-MM",
+          "description": "Returns { month, days, calendar, summary }. summary includes totalEvents, activeDays, attending, and byType counts.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/calendar?month={{month}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "calendar"
+              ],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "{{month}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/community-calendars",
+          "description": "Lists active community calendars. Optional x-user-id marks subscribedByMe. Optional query: city, type.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.calendars && json.calendars[0]) {",
+                  "  pm.environment.set(\"communityCalendarId\", json.calendars[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/community-calendars",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "community-calendars"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "Pune",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "bhajan",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/community-calendars/:id/subscribe",
+          "description": "Requires x-user-id. Subscribes current user to a community calendar. Run GET /api/community-calendars first to populate communityCalendarId.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/community-calendars/{{communityCalendarId}}/subscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "community-calendars",
+                "{{communityCalendarId}}",
+                "subscribe"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/community-calendars/:id/subscribe",
+          "description": "Requires x-user-id. Unsubscribes current user from a community calendar.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/community-calendars/{{communityCalendarId}}/subscribe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "community-calendars",
+                "{{communityCalendarId}}",
+                "subscribe"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/events/:id/comments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/comments?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "comments"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events/:id/comments",
+          "description": "Validation: content required, min 1 and max 1000 chars. Requires x-user-id.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"I will join this event with my family.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}",
+                "comments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/media/upload - Event Banner",
+          "description": "Supports single file key `file` OR multiple key `files` (up to 10). Allowed MIME: image/jpeg, image/png, image/webp, video/mp4, video/quicktime, audio/mpeg, audio/mp4, audio/wav, audio/webm. Max 150MB per file. Requires x-user-id. Response includes media[] with mimeType and a top-level url for the first uploaded file.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": [],
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/media/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "media",
+                "upload"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/notifications/event-reminder (Admin)",
+          "description": "Admin only (x-user-id must be mandir_admin/super_admin). Body can be {\"eventId\":\"...\"} or {\"daysAhead\":30}.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"{{eventId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/event-reminder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "event-reminder"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/events/:id - Cancel Event",
+          "description": "Owner/admin only. Soft cancels the event. Response: {\"success\":true,\"id\":\"...\",\"status\":\"cancelled\"}.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/events/{{eventId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events",
+                "{{eventId}}"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     }
@@ -588,6 +2783,21 @@
     {
       "key": "experienceId",
       "value": "create-experience-first",
+      "type": "string"
+    },
+    {
+      "key": "adminId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "eventId",
+      "value": "create-event-first",
+      "type": "string"
+    },
+    {
+      "key": "month",
+      "value": "2026-05",
       "type": "string"
     }
   ]
