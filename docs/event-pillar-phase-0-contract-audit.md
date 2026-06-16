@@ -7,15 +7,15 @@ Postman source: `postman-api-collection.json`
 
 ## Phase 0 Status
 
-Status: Started
+Status: Complete
 
 | Item | Status | Finding |
 | --- | --- | --- |
 | Confirm backend base URL | Done | `app.json` has `expo.extra.apiBaseUrl = http://192.168.1.11:4000`. `EXPO_PUBLIC_API_BASE_URL` can override it at runtime. |
 | Confirm auth header | Done | `services/api.ts` reads `sai-family.devotee-account` from SecureStore and injects `x-user-id` using `account.id || account.authorId`. |
-| Test every Events API | Pending | Needs backend running and a valid created account/event. |
-| Record actual response shapes | Pending | Use the tables below. |
-| Compare responses with frontend types | Pending | Main type file is `store/events/types.ts`. |
+| Test every Events API | Done | `event-api-real-record.md` records 40 smoke-tested APIs: 2 health APIs, 31 Events/Pillar 2 APIs, 4 user calendar/event APIs, and 3 supporting API groups. |
+| Record actual response shapes | Done | Real wrappers and sample payloads are recorded in `event-api-real-record.md`. |
+| Compare responses with frontend types | Done | `store/events/types.ts` supports the first core slice only; richer home, bookmark, attendee, analytics, review, photo, draft, place, preference, and community calendar types are still needed. |
 | Decide create/update payload mode | Done | Frontend Phase 1 will use the two-step flow: upload media with `POST /api/media/upload`, then create/update events as JSON with `bannerUrl`. Multipart create/update remains backend-supported for future one-request upload. |
 
 ## How To Start
@@ -38,6 +38,23 @@ curl http://192.168.1.11:4000/health/db
 6. Paste the real response shape summary into this file.
 
 ## Environment Findings
+
+### Real API Record
+
+Smoke-test source: `event-api-real-record.md`
+
+- Test date: 2026-06-12
+- Tested base URL: `http://localhost:4000`
+- Test author ID: `cmq9awrmi000e9m0yrtugdg9u`
+- Test author name: `Ananya Sharma`
+- Total covered APIs: 40
+
+Breakdown:
+
+- 2 health APIs
+- 31 Events / Pillar 2 APIs
+- 4 user calendar / user event APIs
+- 3 supporting API groups: media upload, places search, title suggestions, community calendars
 
 ### Base URL
 
@@ -121,93 +138,128 @@ Decision:
 
 | Endpoint | Expected | Actual status | Notes |
 | --- | --- | --- | --- |
-| `GET /health` | `200` | Pending |  |
-| `GET /health/db` | `200` | Pending |  |
-| `POST /accounts` | `201`, returns `account.id` | Pending | Required before protected API tests. |
+| `GET /health` | `200` | Done | `{ status, service, timestamp }` |
+| `GET /health/db` | `200` | Done | `{ status, database, timestamp }` |
+| `POST /accounts` | `201`, returns `account.id` | Done | Existing test author used: `cmq9awrmi000e9m0yrtugdg9u`. |
 
 ### Group B: Core Discovery And CRUD
 
 | Endpoint | Frontend currently wired? | Actual status | Response shape notes |
 | --- | --- | --- | --- |
-| `GET /api/events` | Yes | Pending | Should return `events[]` and pagination. |
-| `POST /api/events` | Yes | Pending | Should return `{ event }`. |
-| `GET /api/events/:id` | Yes | Pending | Should return rich detail fields if available. |
-| `PATCH /api/events/:id` | Yes | Pending | Should return `{ event }`. |
-| `DELETE /api/events/:id` | Yes | Pending | Should return `{ success, id, status }`. |
+| `GET /api/events` | Yes | Done | `{ events, pagination }`; list items include `_count`, `rsvpedByMe`, `bookmarkedByMe`, `isOwner`, `distanceKm`. |
+| `POST /api/events` | Yes | Done | `{ event }`; JSON payload with `bannerUrl`. |
+| `GET /api/events/:id` | Yes | Done | `{ event }`; detail adds `media`, `permissions`, `organizer`, `attendeesPreview`, `guidelines`, `faq`, `tags`, `similarEvents`. |
+| `PATCH /api/events/:id` | Yes | Done | `{ event }`; JSON partial payload. |
+| `DELETE /api/events/:id` | Yes | Done | `{ success, id, status }`; status observed as `cancelled`. |
 
 ### Group C: RSVP And Comments
 
 | Endpoint | Frontend currently wired? | Actual status | Response shape notes |
 | --- | --- | --- | --- |
-| `POST /api/events/:id/rsvp` | Yes | Pending | Should return `{ event, rsvp }`. |
-| `DELETE /api/events/:id/rsvp` | Yes | Pending | Should return event RSVP count and `rsvpedByMe=false`. |
-| `GET /api/users/me/rsvps` | Yes | Pending | May return `rsvps[]` with `event`, or `events[]`. |
-| `GET /api/events/:id/comments` | Yes | Pending | Should return `comments[]`. |
-| `POST /api/events/:id/comments` | Yes | Pending | Should return `{ comment }`. |
+| `POST /api/events/:id/rsvp` | Yes | Done | `{ event, rsvp }`; normal attendance uses `status: "going"`, optional `guestCount`, `reminderMinutesBefore`. |
+| `DELETE /api/events/:id/rsvp` | Yes | Done | `{ event, eventId, rsvped, _count }`. |
+| `GET /api/users/me/rsvps` | Yes | Done | `{ events, pagination }`. |
+| `GET /api/events/:id/comments` | Yes | Done | `{ comments, pagination }`. |
+| `POST /api/events/:id/comments` | Yes | Done | `{ eventId, comment, _count }`; comment author is under `user`. |
 
 ### Group D: Events Hub APIs
 
 | Endpoint | Frontend currently wired? | Actual status | Response shape notes |
 | --- | --- | --- | --- |
-| `GET /api/events/home` | No | Pending | Needed for static hub sections. |
-| `GET /api/events/nearby` | No | Pending | Needed for map/list nearby UI. |
-| `GET /api/events/recommendations` | No | Pending | Needed for calendar recommendations. |
+| `GET /api/events/home` | No | Done | `{ sections, trendingSections, eventTypeGuide, trendingThisWeek, topOrganisers, weeklySchedule, stats }`. |
+| `GET /api/events/nearby` | No | Done | `{ events, center, radiusKm }`. |
+| `GET /api/events/recommendations` | No | Done | `{ events, basis }`. |
 
 ### Group E: Bookmarks
 
 | Endpoint | Frontend currently wired? | Actual status | Response shape notes |
 | --- | --- | --- | --- |
-| `POST /api/events/:id/bookmark` | No | Pending | Should return `bookmarkedByMe=true`. |
-| `DELETE /api/events/:id/bookmark` | No | Pending | Should return `bookmarkedByMe=false`. |
-| `GET /api/users/me/event-bookmarks` | No | Pending | Should return bookmarked events. |
+| `POST /api/events/:id/bookmark` | No | Done | `{ event, eventId, bookmarked, _count }`. |
+| `DELETE /api/events/:id/bookmark` | No | Done | `{ event, eventId, bookmarked, _count }`. |
+| `GET /api/users/me/event-bookmarks` | No | Done | `{ bookmarks, events, pagination }`. |
 
 ### Group F: Detail Richness
 
 | Endpoint | Frontend currently wired? | Actual status | Response shape notes |
 | --- | --- | --- | --- |
-| `GET /api/events/:id/reviews` | No | Pending | Needed for detail reviews. |
-| `POST /api/events/:id/reviews` | No | Pending | Requires RSVP/attendance. |
-| `GET /api/events/:id/photos` | No | Pending | Needed for gallery/photos. |
-| `POST /api/events/:id/photos` | No | Pending | Multipart. |
-| `POST /api/events/:id/share` | No | Pending | Share tracking. |
-| `POST /api/events/:id/report` | No | Pending | Organizer report. |
+| `GET /api/events/:id/reviews` | No | Done | `{ reviews, summary, pagination }`. |
+| `POST /api/events/:id/reviews` | No | Guarded | `{ review, summary }` or `{ error }`; observed `EVENT_REVIEW_NOT_ALLOWED` until RSVP condition is satisfied. |
+| `GET /api/events/:id/photos` | No | Done | `{ photos, pagination }`. |
+| `POST /api/events/:id/photos` | No | Guarded | Multipart; file keys: `photo`, `photos`, `file`, `files`; response `{ photos, _count }` or `{ error }`. |
+| `POST /api/events/:id/share` | No | Done | `{ eventId, shares, shared }`. |
+| `POST /api/events/:id/report` | No | Guarded | `{ report }` or `{ error }`; observed `EVENT_NOT_COMPLETED` for future event. |
 
 ### Group G: Organizer Tools
 
 | Endpoint | Frontend currently wired? | Actual status | Response shape notes |
 | --- | --- | --- | --- |
-| `GET /api/events/:id/attendees` | No | Pending | Needed for manage attendees. |
-| `POST /api/events/:id/check-in` | No | Pending | Owner/admin only. |
-| `GET /api/events/:id/analytics` | No | Pending | Needed for My Events stats. |
+| `GET /api/events/:id/attendees` | No | Done | `{ attendees, pagination }`. |
+| `POST /api/events/:id/check-in` | No | Done | `{ rsvp, _count }`. |
+| `GET /api/events/:id/analytics` | No | Done | `{ event, analytics }`. |
 
 ### Group H: Calendar Product
 
 | Endpoint | Frontend currently wired? | Actual status | Response shape notes |
 | --- | --- | --- | --- |
-| `GET /api/events/calendar` | Yes | Pending | Currently consumed as flat events. Audit summary too. |
-| `GET /api/users/me/calendar/preferences` | No | Pending | Needed for calendar settings. |
-| `PATCH /api/users/me/calendar/preferences` | No | Pending | Needed for toggles. |
-| `GET /api/users/me/calendar.ics` | No | Pending | Export flow. |
-| `GET /api/community-calendars` | No | Pending | Needed for community calendars. |
-| `POST /api/community-calendars/:id/subscribe` | No | Pending |  |
-| `DELETE /api/community-calendars/:id/subscribe` | No | Pending |  |
+| `GET /api/events/calendar` | Yes | Done | `{ days, summary }`; existing frontend flattens `days[].events`, but calendar UI can use `days` and `dots` directly. |
+| `GET /api/users/me/calendar/preferences` | No | Done | `{ preference }`. |
+| `PATCH /api/users/me/calendar/preferences` | No | Done | `{ preference }`; backend uses `showRsvpedEvents`, `showCreatedEvents`, `showBookmarkedEvents`. |
+| `GET /api/users/me/calendar.ics` | No | Done | `text/calendar`. |
+| `GET /api/community-calendars` | No | Done | `{ calendars }`. |
+| `POST /api/community-calendars/:id/subscribe` | No | Done | `{ calendar, subscription }`. |
+| `DELETE /api/community-calendars/:id/subscribe` | No | Done | `{ calendar }`. |
 
 ### Group I: Create/Edit Enhancements
 
 | Endpoint | Frontend currently wired? | Actual status | Response shape notes |
 | --- | --- | --- | --- |
-| `POST /api/events/suggestions/title` | No | Pending | Needed for suggestion chips. |
-| `GET /api/places/search` | No | Pending | Needed for venue search. |
-| `POST /api/events/drafts` | No | Pending | Multipart. |
-| `PATCH /api/events/drafts/:id` | No | Pending | Multipart. |
-| `POST /api/events/drafts/:id/publish` | No | Pending |  |
+| `POST /api/events/suggestions/title` | No | Done | `{ suggestions }`. |
+| `GET /api/places/search` | No | Done | `{ places }`. |
+| `POST /api/events/drafts` | No | Done | JSON with `bannerUrl`; response `{ draft }`. |
+| `PATCH /api/events/drafts/:id` | No | Done | JSON partial; response `{ draft }`. |
+| `POST /api/events/drafts/:id/publish` | No | Done | `{ draft, event, events, series }`; recurring publish may create a series. |
 
 ### Group J: Media And Admin
 
 | Endpoint | Frontend currently wired? | Actual status | Response shape notes |
 | --- | --- | --- | --- |
-| `POST /api/media/upload` | Yes | Pending | Should return top-level `url`. |
-| `POST /api/notifications/event-reminder` | No | Pending | Admin only; not needed for devotee UI now. |
+| `POST /api/media/upload` | Yes | Done | `{ media, url }`; use top-level `url` as `bannerUrl`. |
+| `POST /api/notifications/event-reminder` | No | Not part of devotee UI | Admin-only endpoint; keep out of current mobile flow. |
+
+## Frontend Type Gap Summary
+
+Current `store/events/types.ts` supports the first core slice:
+
+- Basic `SaiEvent`
+- `EventComment`
+- Create/update payloads
+- Media upload result
+- Feed/detail/calendar/my-events/my-RSVPs/comments state
+
+Required additions before full API integration:
+
+- Pagination metadata shared by list endpoints.
+- Rich event counts: `_count.rsvps`, `_count.comments`, `_count.bookmarks`, `_count.views`, `_count.shares`, `_count.reviews`, `_count.photos`, `_count.reports`.
+- Event ownership and interaction flags: `bookmarkedByMe`, `isOwner`, `distanceKm`, `permissions`.
+- Rich detail fields: `media`, `organizer`, `attendeesPreview`, `guidelines`, `faq`, `tags`, `similarEvents`.
+- Event home response: `sections`, `trendingSections`, `eventTypeGuide`, `trendingThisWeek`, `topOrganisers`, `weeklySchedule`, `stats`.
+- Nearby and recommendation responses.
+- Bookmark state and pending IDs.
+- RSVP payload/result with `status`, `guestCount`, `reminderMinutesBefore`, `checkedInAt`.
+- Attendees and check-in responses.
+- Analytics response.
+- Reviews, review summary, photos, share, and report responses.
+- Drafts and recurring event series response.
+- Calendar month response using `{ days, summary }`, not only flattened events.
+- Calendar preference response using backend names: `showRsvpedEvents`, `showCreatedEvents`, `showBookmarkedEvents`.
+- Community calendar subscribe/unsubscribe responses.
+- Place search and title suggestion responses.
+
+Implementation implication:
+
+- Phase 1 should first add typed response mappers in `services/events.ts` / `store/events/saga.ts`.
+- Existing UI should keep selector-level fallback data until each backend-backed slice is verified on device.
+- Avoid adding API calls directly inside screens.
 
 ## Response Capture Template
 
@@ -239,13 +291,13 @@ Notes:
 
 Phase 0 is complete when:
 
-- [ ] Backend health endpoint works from the same network as the app.
-- [ ] A real `authorId` is available.
-- [ ] One event can be created and read back.
-- [ ] One success response is recorded for each endpoint group.
-- [ ] One expected error response is recorded for protected/validation groups.
+- [x] Backend health endpoint works in the tested local Docker environment.
+- [x] A real `authorId` is available: `cmq9awrmi000e9m0yrtugdg9u`.
+- [x] One event can be created and read back.
+- [x] One success response is recorded for each endpoint group.
+- [x] Expected guarded/error responses are recorded for reviews and reports.
 - [x] We have confirmed frontend will use media upload first, then JSON create/update with `bannerUrl`.
-- [ ] `store/events/types.ts` gaps are listed before Phase 1 code starts.
+- [x] `store/events/types.ts` gaps are listed before Phase 1 code starts.
 
 ## Recommended Phase 0 Order
 

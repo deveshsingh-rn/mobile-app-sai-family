@@ -623,20 +623,23 @@ Add validation for:
 
 ### Phase 0: Contract Audit
 
-Status: Started
+Status: Complete
+
+Source of truth: `event-api-real-record.md`
 
 Todo:
 
 - [x] Confirm backend base URL in `app.json` / env.
 - [x] Confirm `x-user-id` is attached for protected event endpoints.
-- [ ] Test every Events API in `postman-api-collection.json`.
-- [ ] Record actual response shapes for each endpoint.
-- [ ] Compare real response against frontend types in `store/events/types.ts`.
+- [x] Test every Events API in `postman-api-collection.json`.
+- [x] Record actual response shapes for each endpoint.
+- [x] Compare real response against frontend types in `store/events/types.ts`.
 - [x] Decide create/update will stay JSON with `bannerUrl` after the media-upload step.
 
 Done when:
 
 - We have one sample success and one sample error response per endpoint group.
+- `docs/event-pillar-phase-0-contract-audit.md` lists the frontend type gaps before Phase 1 code starts.
 
 ### Phase 1: Stabilize Core Existing Integration
 
