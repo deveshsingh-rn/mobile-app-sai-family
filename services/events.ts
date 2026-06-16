@@ -1,6 +1,20 @@
 import { apiClient } from "./api";
+import type {
+  CreateEventPayload,
+  EventCommentsResult,
+  EventListParams,
+  EventListResult,
+  EventCalendarResult,
+  EventRsvpPayload,
+  EventRsvpResult,
+  SaiEvent,
+  UpdateEventPayload,
+  UploadEventMediaResult,
+} from "@/store/events/types";
 
-export async function apiFetchEvents(params = {}) {
+export async function apiFetchEvents(
+  params: EventListParams = {}
+): Promise<EventListResult> {
   const { data } = await apiClient.get(
     "/api/events",
     {
@@ -11,7 +25,9 @@ export async function apiFetchEvents(params = {}) {
   return data;
 }
 
-export async function apiFetchEventDetail(id: string) {
+export async function apiFetchEventDetail(
+  id: string
+): Promise<{ event: SaiEvent }> {
   const { data } = await apiClient.get(
     `/api/events/${id}`
   );
@@ -19,7 +35,9 @@ export async function apiFetchEventDetail(id: string) {
   return data;
 }
 
-export async function apiCreateEvent(payload: unknown) {
+export async function apiCreateEvent(
+  payload: CreateEventPayload
+): Promise<{ event: SaiEvent }> {
   const { data } = await apiClient.post(
     "/api/events",
     payload
@@ -30,8 +48,8 @@ export async function apiCreateEvent(payload: unknown) {
 
 export async function apiUpdateEvent(
   id: string,
-  payload: unknown
-) {
+  payload: Omit<UpdateEventPayload, "id">
+): Promise<{ event: SaiEvent }> {
   const { data } = await apiClient.patch(
     `/api/events/${id}`,
     payload
@@ -40,7 +58,13 @@ export async function apiUpdateEvent(
   return data;
 }
 
-export async function apiDeleteEvent(id: string) {
+export async function apiDeleteEvent(
+  id: string
+): Promise<{
+  id: string;
+  status?: string;
+  success: boolean;
+}> {
   const { data } = await apiClient.delete(
     `/api/events/${id}`
   );
@@ -48,15 +72,23 @@ export async function apiDeleteEvent(id: string) {
   return data;
 }
 
-export async function apiRsvpEvent(id: string) {
+export async function apiRsvpEvent(
+  id: string,
+  payload: EventRsvpPayload = {
+    status: "going",
+  }
+): Promise<EventRsvpResult> {
   const { data } = await apiClient.post(
-    `/api/events/${id}/rsvp`
+    `/api/events/${id}/rsvp`,
+    payload
   );
 
   return data;
 }
 
-export async function apiCancelEventRsvp(id: string) {
+export async function apiCancelEventRsvp(
+  id: string
+): Promise<EventRsvpResult> {
   const { data } = await apiClient.delete(
     `/api/events/${id}/rsvp`
   );
@@ -64,7 +96,9 @@ export async function apiCancelEventRsvp(id: string) {
   return data;
 }
 
-export async function apiFetchMyRsvps(params = {}) {
+export async function apiFetchMyRsvps(
+  params: EventListParams = {}
+): Promise<EventListResult> {
   const { data } = await apiClient.get(
     "/api/users/me/rsvps",
     {
@@ -75,7 +109,9 @@ export async function apiFetchMyRsvps(params = {}) {
   return data;
 }
 
-export async function apiFetchMyEvents(params = {}) {
+export async function apiFetchMyEvents(
+  params: EventListParams = {}
+): Promise<EventListResult> {
   const { data } = await apiClient.get(
     "/api/users/me/events",
     {
@@ -88,7 +124,7 @@ export async function apiFetchMyEvents(params = {}) {
 
 export async function apiFetchEventCalendar(
   month: string
-) {
+): Promise<EventCalendarResult> {
   const { data } = await apiClient.get(
     "/api/events/calendar",
     {
@@ -103,8 +139,8 @@ export async function apiFetchEventCalendar(
 
 export async function apiFetchEventComments(
   id: string,
-  params = {}
-) {
+  params: EventListParams = {}
+): Promise<EventCommentsResult> {
   const { data } = await apiClient.get(
     `/api/events/${id}/comments`,
     {
@@ -118,7 +154,13 @@ export async function apiFetchEventComments(
 export async function apiAddEventComment(
   id: string,
   content: string
-) {
+): Promise<{
+  _count?: {
+    comments?: number;
+  };
+  comment: unknown;
+  eventId?: string;
+}> {
   const { data } = await apiClient.post(
     `/api/events/${id}/comments`,
     {
@@ -131,7 +173,7 @@ export async function apiAddEventComment(
 
 export async function apiUploadEventMedia(
   formData: FormData
-) {
+): Promise<UploadEventMediaResult> {
   const { data } = await apiClient.post(
     "/api/media/upload",
     formData,

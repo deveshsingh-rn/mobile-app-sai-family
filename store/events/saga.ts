@@ -51,7 +51,12 @@ import {
 
 import {
   EVENTS_ACTIONS,
+  EventCalendarDay,
+  EventCalendarResult,
   EventsAction,
+  EventCommentsResult,
+  EventListResult,
+  EventPagination,
   SaiEvent,
 } from "./types";
 import {
@@ -75,11 +80,25 @@ function getErrorMessage(error: any) {
 function normalizeEvent(event: any): SaiEvent {
   const source =
     event?.event || event;
+  const counts = source?._count || {};
 
   return {
     ...source,
+    bookmarkedByMe:
+      source?.bookmarkedByMe ??
+      source?.isBookmarked ??
+      false,
+    bookmarks:
+      counts.bookmarks ??
+      source?.bookmarksCount ??
+      source?.bookmarks ??
+      0,
+    checkIns:
+      counts.checkIns ??
+      source?.checkInsCount ??
+      source?.checkIns,
     comments:
-      source?._count?.comments ??
+      counts.comments ??
       source?.commentsCount ??
       source?.comments ??
       0,
@@ -100,16 +119,32 @@ function normalizeEvent(event: any): SaiEvent {
       source?.owner?.profileImageUrl ||
       source?.author?.profileImageUrl ||
       null,
+    photos:
+      counts.photos ??
+      source?.photosCount ??
+      source?.photos,
+    reviews:
+      counts.reviews ??
+      source?.reviewsCount ??
+      source?.reviews,
     rsvpedByMe:
       source?.rsvpedByMe ??
       source?.isRsvped ??
       source?.hasRsvped ??
       false,
     rsvps:
-      source?._count?.rsvps ??
+      counts.rsvps ??
       source?.rsvpsCount ??
       source?.rsvps ??
       0,
+    shares:
+      counts.shares ??
+      source?.sharesCount ??
+      source?.shares,
+    views:
+      counts.views ??
+      source?.viewsCount ??
+      source?.views,
   };
 }
 
@@ -122,20 +157,42 @@ function getEventFromResponse(response: any) {
   );
 }
 
-function getEventsFromResponse(response: any) {
-  if (Array.isArray(response?.days)) {
-    return response.days.flatMap(
-      (day: any) =>
-        Array.isArray(day.events)
-          ? day.events.map((event: any) =>
-              normalizeEvent(event)
-            )
-          : []
-    );
+function normalizePagination(
+  pagination: any
+): EventPagination | null {
+  if (!pagination) {
+    return null;
   }
 
+  return {
+    hasMore:
+      pagination.hasMore ??
+      pagination.nextOffset != null,
+    limit: Number(pagination.limit || 20),
+    nextOffset:
+      pagination.nextOffset ?? null,
+    offset: Number(pagination.offset || 0),
+    page:
+      pagination.page !== undefined
+        ? Number(pagination.page)
+        : undefined,
+    total:
+      pagination.total !== undefined
+        ? Number(pagination.total)
+        : undefined,
+    totalPages:
+      pagination.totalPages !== undefined
+        ? Number(pagination.totalPages)
+        : undefined,
+  };
+}
+
+function getEventListFromResponse(
+  response: any
+): EventListResult {
   const source =
     response?.events ||
+    response?.bookmarks ||
     response?.rsvps ||
     response?.items ||
     response?.results ||
@@ -144,18 +201,62 @@ function getEventsFromResponse(response: any) {
     response?.data?.rsvps ||
     response?.data?.items ||
     response?.data?.results ||
+    response?.data?.bookmarks ||
     response?.data ||
     [];
 
   if (!Array.isArray(source)) {
-    return [];
+    return {
+      events: [],
+      pagination:
+        normalizePagination(
+          response?.pagination ||
+            response?.data?.pagination
+        ),
+    };
   }
 
-  return source.map((item) =>
-    normalizeEvent(
-      item?.event || item
-    )
-  );
+  return {
+    events: source.map((item) =>
+      normalizeEvent(
+        item?.event || item
+      )
+    ),
+    pagination:
+      normalizePagination(
+        response?.pagination ||
+          response?.data?.pagination
+      ),
+  };
+}
+
+function getCalendarFromResponse(
+  response: any
+): EventCalendarResult {
+  const days = Array.isArray(response?.days)
+    ? response.days.map(
+        (day: any): EventCalendarDay => ({
+          ...day,
+          events: Array.isArray(day.events)
+            ? day.events.map((event: any) =>
+                normalizeEvent(event)
+              )
+            : [],
+        })
+      )
+    : [];
+
+  return {
+    days,
+    events: days.flatMap(
+      (day: EventCalendarDay) =>
+        day.events
+    ),
+    summary:
+      response?.summary ||
+      response?.data?.summary ||
+      null,
+  };
 }
 
 function normalizeComment(comment: any) {
@@ -168,7 +269,9 @@ function normalizeComment(comment: any) {
   };
 }
 
-function getCommentsFromResponse(response: any) {
+function getCommentsFromResponse(
+  response: any
+): EventCommentsResult {
   const source =
     response?.comments ||
     response?.items ||
@@ -180,10 +283,24 @@ function getCommentsFromResponse(response: any) {
     [];
 
   if (!Array.isArray(source)) {
-    return [];
+    return {
+      comments: [],
+      pagination:
+        normalizePagination(
+          response?.pagination ||
+            response?.data?.pagination
+        ),
+    };
   }
 
-  return source.map(normalizeComment);
+  return {
+    comments: source.map(normalizeComment),
+    pagination:
+      normalizePagination(
+        response?.pagination ||
+          response?.data?.pagination
+      ),
+  };
 }
 
 function getRsvpCount(response: any, fallback = 0) {
@@ -236,7 +353,7 @@ function* fetchEventsWorker(
 
     yield put(
       fetchEventsSuccess(
-        getEventsFromResponse(response)
+        getEventListFromResponse(response)
       )
     );
   } catch (error) {
@@ -382,7 +499,10 @@ function* rsvpEventWorker(
   try {
     const response = yield call(
       apiRsvpEvent,
-      action.payload.id
+      action.payload.id,
+      action.payload.rsvp || {
+        status: "going",
+      }
     );
 
     yield put(
@@ -437,7 +557,7 @@ function* fetchMyRsvpsWorker(
 
     yield put(
       fetchMyRsvpsSuccess(
-        getEventsFromResponse(response)
+        getEventListFromResponse(response)
       )
     );
   } catch (error) {
@@ -460,7 +580,7 @@ function* fetchMyEventsWorker(
 
     yield put(
       fetchMyEventsSuccess(
-        getEventsFromResponse(response)
+        getEventListFromResponse(response)
       )
     );
   } catch (error) {
@@ -483,7 +603,7 @@ function* fetchEventCalendarWorker(
 
     yield put(
       fetchEventCalendarSuccess(
-        getEventsFromResponse(response)
+        getCalendarFromResponse(response)
       )
     );
   } catch (error) {

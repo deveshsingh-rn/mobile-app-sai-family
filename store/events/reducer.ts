@@ -7,20 +7,55 @@ import {
 export const initialEventsState: EventsState = {
   addingComment: false,
   calendar: [],
+  calendarDays: [],
+  calendarSummary: null,
   commentsError: null,
   commentsLoading: false,
   comments: [],
+  commentsPagination: null,
   creating: false,
   detail: null,
   error: null,
   feed: [],
+  feedPagination: null,
   loading: false,
   myEvents: [],
+  myEventsPagination: null,
   myRsvps: [],
+  myRsvpsPagination: null,
   rsvpPendingIds: {},
   uploadedMedia: null,
   uploadingMedia: false,
 };
+
+function shouldAppend(payload: any) {
+  return Boolean(
+    payload?.pagination?.offset &&
+      payload.pagination.offset > 0
+  );
+}
+
+function mergeById(
+  current: any[],
+  incoming: any[]
+) {
+  const seen = new Set<string>();
+
+  return [...current, ...incoming].filter(
+    (item) => {
+      if (!item?.id) {
+        return true;
+      }
+
+      if (seen.has(item.id)) {
+        return false;
+      }
+
+      seen.add(item.id);
+      return true;
+    }
+  );
+}
 
 export function eventsReducer(
   state: EventsState = initialEventsState,
@@ -89,7 +124,14 @@ export function eventsReducer(
     case EVENTS_ACTIONS.FETCH_FEED_SUCCESS:
       return {
         ...state,
-        feed: action.payload || [],
+        feed: shouldAppend(action.payload)
+          ? mergeById(
+              state.feed,
+              action.payload?.events || []
+            )
+          : action.payload?.events || [],
+        feedPagination:
+          action.payload?.pagination || null,
         loading: false,
       };
 
@@ -103,7 +145,14 @@ export function eventsReducer(
     case EVENTS_ACTIONS.FETCH_COMMENTS_SUCCESS:
       return {
         ...state,
-        comments: action.payload || [],
+        comments: shouldAppend(action.payload)
+          ? mergeById(
+              state.comments,
+              action.payload?.comments || []
+            )
+          : action.payload?.comments || [],
+        commentsPagination:
+          action.payload?.pagination || null,
         commentsLoading: false,
       };
 
@@ -111,20 +160,38 @@ export function eventsReducer(
       return {
         ...state,
         loading: false,
-        myRsvps: action.payload || [],
+        myRsvps: shouldAppend(action.payload)
+          ? mergeById(
+              state.myRsvps,
+              action.payload?.events || []
+            )
+          : action.payload?.events || [],
+        myRsvpsPagination:
+          action.payload?.pagination || null,
       };
 
     case EVENTS_ACTIONS.FETCH_MY_EVENTS_SUCCESS:
       return {
         ...state,
         loading: false,
-        myEvents: action.payload || [],
+        myEvents: shouldAppend(action.payload)
+          ? mergeById(
+              state.myEvents,
+              action.payload?.events || []
+            )
+          : action.payload?.events || [],
+        myEventsPagination:
+          action.payload?.pagination || null,
       };
 
     case EVENTS_ACTIONS.FETCH_CALENDAR_SUCCESS:
       return {
         ...state,
-        calendar: action.payload || [],
+        calendar: action.payload?.events || [],
+        calendarDays:
+          action.payload?.days || [],
+        calendarSummary:
+          action.payload?.summary || null,
         loading: false,
       };
 

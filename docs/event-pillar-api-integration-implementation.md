@@ -643,15 +643,17 @@ Done when:
 
 ### Phase 1: Stabilize Core Existing Integration
 
-Status: Not started
+Status: In progress
 
 Todo:
 
-- [ ] Update `services/events.ts` with typed params for existing endpoints.
-- [ ] Strengthen `SaiEvent` type with `status`, `capacity`, `bookmarkedByMe`, `views`, `shares`, `checkIns`, `rating`, `reviews`.
-- [ ] Ensure `GET /api/events` supports `q`, `dateFrom`, `dateTo`, `sort`, `lat`, `lng`, `radius`.
-- [ ] Add pagination metadata to store for feed, RSVPs, my events, comments.
-- [ ] Update reducer to append on pagination instead of replacing when offset > 0.
+- [x] Update `services/events.ts` with typed params for existing endpoints.
+- [x] Strengthen `SaiEvent` type with `status`, `bookmarkedByMe`, `views`, `shares`, `checkIns`, `rating`, `reviews`, rich counts, permissions, organizer, media, tags, FAQ, and related detail fields.
+- [x] Ensure `GET /api/events` supports `q`, `dateFrom`, `dateTo`, `sort`, `lat`, `lng`, `radius`.
+- [x] Add pagination metadata to store for feed, RSVPs, my events, comments.
+- [x] Update reducer to append on pagination instead of replacing when offset > 0.
+- [x] Preserve calendar `{ days, summary }` metadata while keeping existing flat calendar event selector.
+- [x] Improve saga mappers for real backend wrappers: `{ events, pagination }`, `{ comments, pagination }`, `{ days, summary }`, `{ media, url }`, and `{ event, rsvp }`.
 - [ ] Keep all existing UI fallback data until API coverage is verified.
 - [ ] Run create, edit, delete, RSVP, comments, calendar smoke test.
 

@@ -7,30 +7,120 @@ export type EventType =
   | "darshan"
   | "general";
 
+export type EventStatus =
+  | "draft"
+  | "published"
+  | "live"
+  | "completed"
+  | "cancelled";
+
+export type EventSort =
+  | "soonest"
+  | "popular"
+  | "nearby"
+  | "latest";
+
+export type EventPagination = {
+  hasMore?: boolean;
+  limit: number;
+  nextOffset?: number | null;
+  offset: number;
+  page?: number;
+  total?: number;
+  totalPages?: number;
+};
+
+export type EventCounts = {
+  bookmarks?: number;
+  checkIns?: number;
+  comments?: number;
+  photos?: number;
+  reports?: number;
+  reviews?: number;
+  rsvps?: number;
+  shares?: number;
+  views?: number;
+};
+
+export type EventUserSummary = {
+  handle?: string | null;
+  id: string;
+  name: string;
+  profileImageUrl?: string | null;
+};
+
+export type EventMedia = {
+  assetType?: string | null;
+  contentType?: string | null;
+  id?: string;
+  mimeType?: string | null;
+  thumbnailUrl?: string | null;
+  type?: "image" | "video" | "audio" | string;
+  url: string;
+};
+
+export type EventPermission = {
+  canDelete?: boolean;
+  canEdit?: boolean;
+  canManageAttendees?: boolean;
+};
+
+export type EventOrganizer =
+  EventUserSummary & {
+    bio?: string | null;
+    eventsOrganized?: number;
+    phone?: string | null;
+    rating?: number;
+  };
+
+export type EventFaq = {
+  answer: string;
+  question: string;
+};
+
 export type SaiEvent = {
   address: string;
   bannerUrl?: string | null;
+  bookmarkedByMe?: boolean;
+  bookmarks?: number;
   city?: string | null;
+  checkIns?: number;
   comments?: number;
   country?: string | null;
   createdAt?: string;
   description: string;
+  distanceKm?: number | null;
   endAt: string;
+  faq?: EventFaq[];
+  guidelines?: string[];
   id: string;
+  isOwner?: boolean;
   latitude: number;
   longitude: number;
+  media?: EventMedia[];
+  organizer?: EventOrganizer | null;
   ownerId?: string;
   ownerName?: string | null;
   ownerProfileImageUrl?: string | null;
+  permissions?: EventPermission;
+  photos?: number;
+  rating?: number;
+  reviews?: number;
   rsvpedByMe?: boolean;
   rsvps?: number;
+  shares?: number;
+  similarEvents?: SaiEvent[];
   startAt: string;
   state?: string | null;
+  status?: EventStatus;
+  tags?: string[];
   timezone?: string;
   title: string;
   type?: EventType;
   updatedAt?: string;
   venueName?: string | null;
+  views?: number;
+  _count?: EventCounts;
 };
 
 export type EventComment = {
@@ -42,6 +132,73 @@ export type EventComment = {
   content: string;
   createdAt: string;
   id: string;
+};
+
+export type EventListParams = {
+  dateFrom?: string;
+  dateTo?: string;
+  lat?: number;
+  limit?: number;
+  lng?: number;
+  offset?: number;
+  page?: number;
+  q?: string;
+  radius?: number;
+  sort?: EventSort | string;
+  type?: EventType | string;
+};
+
+export type EventListResult = {
+  events: SaiEvent[];
+  pagination?: EventPagination | null;
+};
+
+export type EventCommentsResult = {
+  comments: EventComment[];
+  pagination?: EventPagination | null;
+};
+
+export type EventCalendarDay = {
+  date: string;
+  dots?: {
+    color?: string;
+    key?: string;
+    selectedDotColor?: string;
+  }[];
+  events: SaiEvent[];
+};
+
+export type EventCalendarSummary = {
+  attending?: number;
+  byType?: Partial<Record<EventType, number>>;
+  total?: number;
+};
+
+export type EventCalendarResult = {
+  days: EventCalendarDay[];
+  events: SaiEvent[];
+  summary?: EventCalendarSummary | null;
+};
+
+export type EventRsvpPayload = {
+  guestCount?: number;
+  reminderMinutesBefore?: number;
+  status?: "going" | "interested" | "not_going" | string;
+};
+
+export type EventRsvp = {
+  checkedInAt?: string | null;
+  eventId: string;
+  guestCount?: number;
+  id: string;
+  reminderMinutesBefore?: number | null;
+  status?: string;
+  userId: string;
+};
+
+export type EventRsvpResult = {
+  event: SaiEvent;
+  rsvp?: EventRsvp;
 };
 
 export type UploadEventMediaPayload = {
@@ -56,7 +213,17 @@ export type UploadEventMediaPayload = {
   formData: FormData;
 };
 
+export type UploadedEventMedia = {
+  assetType?: string | null;
+  contentType?: string | null;
+  mimeType?: string | null;
+  thumbnailUrl?: string | null;
+  type?: string;
+  url: string;
+};
+
 export type UploadEventMediaResult = {
+  media?: UploadedEventMedia[];
   url?: string;
   urls?: string[];
 };
@@ -68,10 +235,23 @@ export type CreateEventPayload = {
   country?: string;
   description: string;
   endAt: string;
+  faq?: EventFaq[];
+  guidelines?: string[];
   latitude: number;
   longitude: number;
+  recurrence?: {
+    count?: number;
+    frequency:
+      | "daily"
+      | "weekly"
+      | "monthly"
+      | string;
+    interval?: number;
+    until?: string;
+  };
   startAt: string;
   state?: string;
+  tags?: string[];
   timezone?: string;
   title: string;
   type?: EventType;
@@ -89,14 +269,20 @@ export type EventsState = {
   commentsError: string | null;
   commentsLoading: boolean;
   comments: EventComment[];
+  commentsPagination: EventPagination | null;
   creating: boolean;
   detail: SaiEvent | null;
   error: string | null;
   feed: SaiEvent[];
+  feedPagination: EventPagination | null;
   loading: boolean;
   myEvents: SaiEvent[];
+  myEventsPagination: EventPagination | null;
   myRsvps: SaiEvent[];
+  myRsvpsPagination: EventPagination | null;
   rsvpPendingIds: Record<string, boolean>;
+  calendarDays: EventCalendarDay[];
+  calendarSummary: EventCalendarSummary | null;
   uploadedMedia: UploadEventMediaResult | null;
   uploadingMedia: boolean;
 };

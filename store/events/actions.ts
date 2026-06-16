@@ -1,7 +1,12 @@
 import {
   CreateEventPayload,
   EVENTS_ACTIONS,
+  EventCalendarResult,
   EventComment,
+  EventCommentsResult,
+  EventListParams,
+  EventListResult,
+  EventRsvpPayload,
   SaiEvent,
   UpdateEventPayload,
   UploadEventMediaPayload,
@@ -9,14 +14,7 @@ import {
 } from "./types";
 
 export const fetchEventsRequest = (
-  payload: {
-    lat?: number;
-    limit?: number;
-    lng?: number;
-    page?: number;
-    radius?: number;
-    type?: string;
-  } = {}
+  payload: EventListParams = {}
 ) =>
   ({
     payload,
@@ -24,7 +22,7 @@ export const fetchEventsRequest = (
   } as const);
 
 export const fetchEventsSuccess = (
-  payload: SaiEvent[]
+  payload: EventListResult
 ) =>
   ({
     payload,
@@ -135,9 +133,14 @@ export const deleteEventFailure = (
     type: EVENTS_ACTIONS.DELETE_FAILURE,
   } as const);
 
-export const rsvpEventRequest = (id: string) =>
+export const rsvpEventRequest = (
+  id: string,
+  rsvp: EventRsvpPayload = {
+    status: "going",
+  }
+) =>
   ({
-    payload: { id },
+    payload: { id, rsvp },
     type: EVENTS_ACTIONS.RSVP_REQUEST,
   } as const);
 
@@ -186,10 +189,7 @@ export const cancelEventRsvpFailure = (
   } as const);
 
 export const fetchMyRsvpsRequest = (
-  payload: {
-    limit?: number;
-    offset?: number;
-  } = {}
+  payload: EventListParams = {}
 ) =>
   ({
     payload,
@@ -197,7 +197,7 @@ export const fetchMyRsvpsRequest = (
   } as const);
 
 export const fetchMyRsvpsSuccess = (
-  payload: SaiEvent[]
+  payload: EventListResult
 ) =>
   ({
     payload,
@@ -213,10 +213,7 @@ export const fetchMyRsvpsFailure = (
   } as const);
 
 export const fetchMyEventsRequest = (
-  payload: {
-    limit?: number;
-    offset?: number;
-  } = {}
+  payload: EventListParams = {}
 ) =>
   ({
     payload,
@@ -224,7 +221,7 @@ export const fetchMyEventsRequest = (
   } as const);
 
 export const fetchMyEventsSuccess = (
-  payload: SaiEvent[]
+  payload: EventListResult
 ) =>
   ({
     payload,
@@ -248,7 +245,7 @@ export const fetchEventCalendarRequest = (
   } as const);
 
 export const fetchEventCalendarSuccess = (
-  payload: SaiEvent[]
+  payload: EventCalendarResult
 ) =>
   ({
     payload,
@@ -265,10 +262,7 @@ export const fetchEventCalendarFailure = (
 
 export const fetchEventCommentsRequest = (
   id: string,
-  params: {
-    limit?: number;
-    offset?: number;
-  } = {}
+  params: EventListParams = {}
 ) =>
   ({
     payload: { id, params },
@@ -276,7 +270,7 @@ export const fetchEventCommentsRequest = (
   } as const);
 
 export const fetchEventCommentsSuccess = (
-  payload: EventComment[]
+  payload: EventCommentsResult
 ) =>
   ({
     payload,
