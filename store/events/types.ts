@@ -179,15 +179,46 @@ export type EventCalendarDay = {
 };
 
 export type EventCalendarSummary = {
+  activeDays?: number;
   attending?: number;
   byType?: Partial<Record<EventType, number>>;
   total?: number;
+  totalEvents?: number;
 };
 
 export type EventCalendarResult = {
   days: EventCalendarDay[];
   events: SaiEvent[];
   summary?: EventCalendarSummary | null;
+};
+
+export type EventRecommendationResult = {
+  basis?: string[] | string | null;
+  events: SaiEvent[];
+};
+
+export type CalendarPreferences = {
+  defaultReminderMinutes?: number;
+  id?: string;
+  showBookmarkedEvents?: boolean;
+  showCreatedEvents?: boolean;
+  showRsvpedEvents?: boolean;
+  timezone?: string;
+  userId?: string;
+  weekStartsOn?: number;
+};
+
+export type CommunityCalendar = {
+  city?: string | null;
+  country?: string | null;
+  description?: string | null;
+  id: string;
+  slug?: string;
+  state?: string | null;
+  subscribedByMe?: boolean;
+  subscribers?: number;
+  title: string;
+  type?: EventType | string;
 };
 
 export type EventRsvpPayload = {
@@ -280,6 +311,9 @@ export type EventsState = {
   commentsLoading: boolean;
   comments: EventComment[];
   commentsPagination: EventPagination | null;
+  communityCalendarPendingIds: Record<string, boolean>;
+  communityCalendars: CommunityCalendar[];
+  communityCalendarsLoading: boolean;
   creating: boolean;
   detail: SaiEvent | null;
   error: string | null;
@@ -290,6 +324,13 @@ export type EventsState = {
   myEventsPagination: EventPagination | null;
   myRsvps: SaiEvent[];
   myRsvpsPagination: EventPagination | null;
+  calendarPreferences: CalendarPreferences | null;
+  calendarPreferencesLoading: boolean;
+  calendarExporting: boolean;
+  calendarExportError: string | null;
+  recommendations: SaiEvent[];
+  recommendationsBasis: EventRecommendationResult["basis"];
+  recommendationsLoading: boolean;
   rsvpPendingIds: Record<string, boolean>;
   calendarDays: EventCalendarDay[];
   calendarSummary: EventCalendarSummary | null;
@@ -322,6 +363,12 @@ export const EVENTS_ACTIONS = {
     "events/fetchCalendarRequest",
   FETCH_CALENDAR_SUCCESS:
     "events/fetchCalendarSuccess",
+  FETCH_CALENDAR_PREFERENCES_FAILURE:
+    "events/fetchCalendarPreferencesFailure",
+  FETCH_CALENDAR_PREFERENCES_REQUEST:
+    "events/fetchCalendarPreferencesRequest",
+  FETCH_CALENDAR_PREFERENCES_SUCCESS:
+    "events/fetchCalendarPreferencesSuccess",
   FETCH_COMMENTS_FAILURE:
     "events/fetchCommentsFailure",
   FETCH_COMMENTS_REQUEST:
@@ -352,12 +399,48 @@ export const EVENTS_ACTIONS = {
     "events/fetchMyRsvpsRequest",
   FETCH_MY_RSVPS_SUCCESS:
     "events/fetchMyRsvpsSuccess",
+  FETCH_COMMUNITY_CALENDARS_FAILURE:
+    "events/fetchCommunityCalendarsFailure",
+  FETCH_COMMUNITY_CALENDARS_REQUEST:
+    "events/fetchCommunityCalendarsRequest",
+  FETCH_COMMUNITY_CALENDARS_SUCCESS:
+    "events/fetchCommunityCalendarsSuccess",
+  FETCH_RECOMMENDATIONS_FAILURE:
+    "events/fetchRecommendationsFailure",
+  FETCH_RECOMMENDATIONS_REQUEST:
+    "events/fetchRecommendationsRequest",
+  FETCH_RECOMMENDATIONS_SUCCESS:
+    "events/fetchRecommendationsSuccess",
+  EXPORT_CALENDAR_FAILURE:
+    "events/exportCalendarFailure",
+  EXPORT_CALENDAR_REQUEST:
+    "events/exportCalendarRequest",
+  EXPORT_CALENDAR_SUCCESS:
+    "events/exportCalendarSuccess",
   RSVP_FAILURE: "events/rsvpFailure",
   RSVP_REQUEST: "events/rsvpRequest",
   RSVP_SUCCESS: "events/rsvpSuccess",
   UPDATE_FAILURE: "events/updateFailure",
   UPDATE_REQUEST: "events/updateRequest",
   UPDATE_SUCCESS: "events/updateSuccess",
+  SUBSCRIBE_COMMUNITY_CALENDAR_FAILURE:
+    "events/subscribeCommunityCalendarFailure",
+  SUBSCRIBE_COMMUNITY_CALENDAR_REQUEST:
+    "events/subscribeCommunityCalendarRequest",
+  SUBSCRIBE_COMMUNITY_CALENDAR_SUCCESS:
+    "events/subscribeCommunityCalendarSuccess",
+  UNSUBSCRIBE_COMMUNITY_CALENDAR_FAILURE:
+    "events/unsubscribeCommunityCalendarFailure",
+  UNSUBSCRIBE_COMMUNITY_CALENDAR_REQUEST:
+    "events/unsubscribeCommunityCalendarRequest",
+  UNSUBSCRIBE_COMMUNITY_CALENDAR_SUCCESS:
+    "events/unsubscribeCommunityCalendarSuccess",
+  UPDATE_CALENDAR_PREFERENCES_FAILURE:
+    "events/updateCalendarPreferencesFailure",
+  UPDATE_CALENDAR_PREFERENCES_REQUEST:
+    "events/updateCalendarPreferencesRequest",
+  UPDATE_CALENDAR_PREFERENCES_SUCCESS:
+    "events/updateCalendarPreferencesSuccess",
   UPLOAD_MEDIA_FAILURE:
     "events/uploadMediaFailure",
   UPLOAD_MEDIA_REQUEST:

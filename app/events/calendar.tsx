@@ -7,6 +7,7 @@ import React, {
 
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -19,39 +20,51 @@ import {router} from "expo-router";
 import {
   ArrowLeft,
   Bell,
-  BookOpen,
   CalendarCheck,
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  CircleHelp,
   Download,
-  EllipsisVertical,
-  Filter,
-  Headphones,
   Heart,
   MapPin,
   Music,
   Plus,
   Settings,
-  Share2,
   Sparkles,
   Users,
 } from "lucide-react-native";
 
 import {
+  exportCalendarRequest,
   fetchEventCalendarRequest,
+  fetchEventRecommendationsRequest,
+  fetchCalendarPreferencesRequest,
+  fetchCommunityCalendarsRequest,
   fetchMyRsvpsRequest,
+  subscribeCommunityCalendarRequest,
+  unsubscribeCommunityCalendarRequest,
+  updateCalendarPreferencesRequest,
 } from "@/store/events/actions";
 import {
+  selectCalendarExportError,
+  selectCalendarExporting,
+  selectCalendarPreferences,
+  selectCalendarPreferencesLoading,
+  selectCommunityCalendars,
+  selectCommunityCalendarsLoading,
   selectEventCalendar,
+  selectEventCalendarDays,
+  selectEventCalendarSummary,
+  selectEventRecommendations,
+  selectEventRecommendationsLoading,
   selectEventsError,
   selectEventsLoading,
   selectMyEventRsvps,
 } from "@/store/events/selectors";
 import {
   EventType,
+  EventCalendarDay,
   SaiEvent,
 } from "@/store/events/types";
 import {
@@ -70,8 +83,18 @@ const palette = {
   soft: "#F6EFD9",
 };
 
+const eventTypeOrder: EventType[] = [
+  "satsang",
+  "bhajan",
+  "pooja",
+  "seva",
+  "medical",
+  "darshan",
+  "general",
+];
+
 const typeMeta: Record<
-  EventType | "festival" | "workshop",
+  EventType,
   {
     color: string;
     label: string;
@@ -84,10 +107,6 @@ const typeMeta: Record<
   darshan: {
     color: "#7C2D12",
     label: "Darshan",
-  },
-  festival: {
-    color: "#F59E0B",
-    label: "Festival",
   },
   general: {
     color: "#78716C",
@@ -109,29 +128,35 @@ const typeMeta: Record<
     color: "#16A34A",
     label: "Seva",
   },
-  workshop: {
-    color: "#57534E",
-    label: "Workshop",
-  },
 };
+
+const reminderOptions: {
+  label: string;
+  minutes: number;
+}[] = [
+  {
+    label: "15 minutes before",
+    minutes: 15,
+  },
+  {
+    label: "30 minutes before",
+    minutes: 30,
+  },
+  {
+    label: "1 hour before",
+    minutes: 60,
+  },
+  {
+    label: "1 day before",
+    minutes: 1440,
+  },
+];
 
 type CalendarDay = {
   date: Date;
   day: number;
   inMonth: boolean;
   key: string;
-};
-
-type StaticEvent = {
-  attendees?: string;
-  dateKey?: string;
-  day?: string;
-  id: string;
-  location: string;
-  tag?: "New" | "Popular";
-  time: string;
-  title: string;
-  type: keyof typeof typeMeta;
 };
 
 const currentMonth = () => {
@@ -259,86 +284,25 @@ const formatCompactDate = (value: string) => {
   };
 };
 
-const fallbackSelectedEvents: StaticEvent[] = [
-  {
-    attendees: "124 going",
-    id: "morning-satsang",
-    location: "Sai Temple, Downtown",
-    time: "7:00 AM",
-    title: "Morning Satsang",
-    type: "satsang",
-  },
-  {
-    attendees: "89 going",
-    id: "evening-bhajan",
-    location: "Community Center, East Side",
-    time: "6:30 PM",
-    title: "Evening Bhajan",
-    type: "bhajan",
-  },
-];
-
-const fallbackUpcoming: StaticEvent[] = [
-  {
-    day: "SAT 17",
-    id: "buddha-purnima",
-    location: "9:00 AM - Main Temple",
-    time: "9:00 AM",
-    title: "Buddha Purnima Celebration",
-    type: "festival",
-  },
-  {
-    day: "SUN 18",
-    id: "sunday-satsang",
-    location: "7:00 AM - Sai Temple",
-    time: "7:00 AM",
-    title: "Morning Satsang",
-    type: "satsang",
-  },
-  {
-    day: "TUE 20",
-    id: "weekly-bhajan",
-    location: "6:00 PM - Community Hall",
-    time: "6:00 PM",
-    title: "Bhajan Evening & Satsang",
-    type: "bhajan",
-  },
-];
-
-const recommendations: StaticEvent[] = [
-  {
-    id: "meditation-workshop",
-    location: "Wellness Center, North District",
-    tag: "New",
-    time: "Sat, May 17 - 10:00 AM",
-    title: "Meditation Workshop",
-    type: "workshop",
-  },
-  {
-    id: "spiritual-discourse",
-    location: "Grand Temple Hall",
-    tag: "Popular",
-    time: "Sun, May 18 - 4:00 PM",
-    title: "Spiritual Discourse",
-    type: "satsang",
-  },
-];
-
 function eventLocation(event: SaiEvent) {
   return event.venueName || event.city || event.address || "Venue pending";
 }
 
-function eventType(event?: SaiEvent): keyof typeof typeMeta {
-  return event?.type || "general";
+function eventType(event?: SaiEvent): EventType {
+  return event?.type && typeMeta[event.type]
+    ? event.type
+    : "general";
 }
 
 function SectionHeader({
   action,
   eyebrow,
+  onActionPress,
   title,
 }: {
   action?: string;
   eyebrow?: string;
+  onActionPress?: () => void;
   title: string;
 }) {
   return (
@@ -348,7 +312,10 @@ function SectionHeader({
         {!!eyebrow && <Text style={styles.sectionEyebrow}>{eyebrow}</Text>}
       </View>
       {!!action && (
-        <Pressable style={styles.textAction}>
+        <Pressable
+          onPress={onActionPress}
+          style={styles.textAction}
+        >
           <Text style={styles.textActionLabel}>{action}</Text>
         </Pressable>
       )}
@@ -359,7 +326,7 @@ function SectionHeader({
 function TypePill({
   type,
 }: {
-  type: keyof typeof typeMeta;
+  type: EventType;
 }) {
   const meta = typeMeta[type];
 
@@ -380,19 +347,15 @@ function TypePill({
 
 function SelectedEventCard({
   event,
-  item,
 }: {
-  event?: SaiEvent;
-  item?: StaticEvent;
+  event: SaiEvent;
 }) {
-  const type = event ? eventType(event) : item?.type || "general";
+  const type = eventType(event);
 
   return (
     <Pressable
       onPress={() => {
-        if (event?.id) {
-          router.push(`/events/${event.id}` as any);
-        }
+        router.push(`/events/${event.id}` as any);
       }}
       style={({pressed}) => [
         styles.selectedCard,
@@ -409,20 +372,20 @@ function SelectedEventCard({
       <View style={styles.selectedBody}>
         <View style={styles.selectedTitleRow}>
           <Text numberOfLines={2} style={styles.selectedTitle}>
-            {event?.title || item?.title}
+            {event.title}
           </Text>
           <Text style={styles.selectedTime}>
-            {event ? formatTime(event.startAt) : item?.time}
+            {formatTime(event.startAt)}
           </Text>
         </View>
         <Text numberOfLines={1} style={styles.selectedLocation}>
-          {event ? eventLocation(event) : item?.location}
+          {eventLocation(event)}
         </Text>
         <View style={styles.selectedMetaRow}>
           <View style={styles.inlineMeta}>
             <Users color="#9CA3AF" size={13} />
             <Text style={styles.inlineMetaText}>
-              {event?.rsvps ?? item?.attendees ?? "24"} going
+              {event.rsvps ?? 0} going
             </Text>
           </View>
           <TypePill type={type} />
@@ -434,25 +397,16 @@ function SelectedEventCard({
 
 function UpcomingCard({
   event,
-  item,
 }: {
-  event?: SaiEvent;
-  item?: StaticEvent;
+  event: SaiEvent;
 }) {
-  const date = event
-    ? formatCompactDate(event.startAt)
-    : {
-        day: item?.day?.split(" ")[1] || "17",
-        weekday: item?.day?.split(" ")[0] || "SAT",
-      };
-  const type = event ? eventType(event) : item?.type || "general";
+  const date = formatCompactDate(event.startAt);
+  const type = eventType(event);
 
   return (
     <Pressable
       onPress={() => {
-        if (event?.id) {
-          router.push(`/events/${event.id}` as any);
-        }
+        router.push(`/events/${event.id}` as any);
       }}
       style={({pressed}) => [
         styles.upcomingCard,
@@ -465,12 +419,10 @@ function UpcomingCard({
       </View>
       <View style={styles.upcomingBody}>
         <Text numberOfLines={1} style={styles.upcomingTitle}>
-          {event?.title || item?.title}
+          {event.title}
         </Text>
         <Text numberOfLines={1} style={styles.upcomingMeta}>
-          {event
-            ? `${formatTime(event.startAt)} - ${eventLocation(event)}`
-            : item?.location}
+          {`${formatTime(event.startAt)} - ${eventLocation(event)}`}
         </Text>
         <TypePill type={type} />
       </View>
@@ -479,39 +431,54 @@ function UpcomingCard({
 }
 
 function RecommendationCard({
-  item,
+  event,
 }: {
-  item: StaticEvent;
+  event: SaiEvent;
 }) {
   return (
-    <View style={styles.recommendationCard}>
+    <Pressable
+      onPress={() => router.push(`/events/${event.id}` as any)}
+      style={styles.recommendationCard}
+    >
       <View style={styles.recommendationImage}>
-        <Text style={styles.imageText}>Event Image</Text>
+        <Text style={styles.imageText}>{event.type || "Event"}</Text>
       </View>
       <View style={styles.recommendationBody}>
         <View style={styles.recommendationTitleRow}>
-          <Text style={styles.recommendationTitle}>{item.title}</Text>
-          {!!item.tag && (
-            <View style={styles.smallBadge}>
-              <Text style={styles.smallBadgeText}>{item.tag}</Text>
-            </View>
-          )}
+          <Text style={styles.recommendationTitle}>{event.title}</Text>
         </View>
         <View style={styles.detailLine}>
           <CalendarDays color={palette.muted} size={13} />
-          <Text style={styles.detailText}>{item.time}</Text>
+          <Text style={styles.detailText}>
+            {formatTime(event.startAt)}
+          </Text>
         </View>
         <View style={styles.detailLine}>
           <MapPin color={palette.muted} size={13} />
-          <Text style={styles.detailText}>{item.location}</Text>
+          <Text style={styles.detailText}>{eventLocation(event)}</Text>
         </View>
         <View style={styles.recommendationFooter}>
-          <TypePill type={item.type} />
-          <Pressable style={styles.primaryMiniButton}>
-            <Text style={styles.primaryMiniText}>Add to Calendar</Text>
-          </Pressable>
+          <TypePill type={eventType(event)} />
+          <View style={styles.primaryMiniButton}>
+            <Text style={styles.primaryMiniText}>View</Text>
+          </View>
         </View>
       </View>
+    </Pressable>
+  );
+}
+
+function EmptySmallCard({
+  icon,
+  text,
+}: {
+  icon: React.ReactNode;
+  text: string;
+}) {
+  return (
+    <View style={styles.emptySmallCard}>
+      {icon}
+      <Text style={styles.emptySmallText}>{text}</Text>
     </View>
   );
 }
@@ -544,15 +511,27 @@ function QuickAction({
 
 function PreferenceRow({
   active,
+  disabled,
+  onPress,
   subtitle,
   title,
 }: {
   active?: boolean;
+  disabled?: boolean;
+  onPress?: () => void;
   subtitle: string;
   title: string;
 }) {
   return (
-    <View style={styles.preferenceRow}>
+    <Pressable
+      disabled={disabled}
+      onPress={onPress}
+      style={({pressed}) => [
+        styles.preferenceRow,
+        pressed && styles.pressed,
+        disabled && styles.disabled,
+      ]}
+    >
       <View style={styles.preferenceTextWrap}>
         <Text style={styles.preferenceTitle}>{title}</Text>
         <Text style={styles.preferenceSubtitle}>{subtitle}</Text>
@@ -570,7 +549,7 @@ function PreferenceRow({
           ]}
         />
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -579,33 +558,75 @@ export default function EventCalendarRoute() {
   const loading = useAppSelector(selectEventsLoading);
   const error = useAppSelector(selectEventsError);
   const calendar = useAppSelector(selectEventCalendar);
+  const calendarDaysFromApi = useAppSelector(selectEventCalendarDays);
+  const calendarSummary = useAppSelector(selectEventCalendarSummary);
+  const recommendations = useAppSelector(selectEventRecommendations);
+  const recommendationsLoading = useAppSelector(
+    selectEventRecommendationsLoading
+  );
+  const calendarPreferences = useAppSelector(selectCalendarPreferences);
+  const calendarPreferencesLoading = useAppSelector(
+    selectCalendarPreferencesLoading
+  );
+  const calendarExporting = useAppSelector(selectCalendarExporting);
+  const calendarExportError = useAppSelector(selectCalendarExportError);
+  const communityCalendars = useAppSelector(selectCommunityCalendars);
+  const communityCalendarsLoading = useAppSelector(
+    selectCommunityCalendarsLoading
+  );
   const rsvps = useAppSelector(selectMyEventRsvps);
   const [month, setMonth] = useState(currentMonth());
   const [selectedDate, setSelectedDate] = useState(currentDateKey());
   const [refreshing, setRefreshing] = useState(false);
 
+  const liveCalendarEvents = useMemo(
+    () =>
+      calendarDaysFromApi.length
+        ? calendarDaysFromApi.flatMap((day) => day.events)
+        : calendar,
+    [calendar, calendarDaysFromApi]
+  );
+
+  const calendarMetaByDay = useMemo(
+    () =>
+      calendarDaysFromApi.reduce<Record<string, EventCalendarDay>>(
+        (days, day) => ({
+          ...days,
+          [day.date]: day,
+        }),
+        {}
+      ),
+    [calendarDaysFromApi]
+  );
+
   const calendarEventsByDay = useMemo(
     () =>
-      calendar.reduce<Record<string, SaiEvent[]>>((days, event) => {
-        const key = getEventDateKey(event.startAt);
+      liveCalendarEvents.reduce<Record<string, SaiEvent[]>>(
+        (days, event) => {
+          const key = getEventDateKey(event.startAt);
 
-        if (!key) {
-          return days;
-        }
+          if (!key) {
+            return days;
+          }
 
-        return {
-          ...days,
-          [key]: [...(days[key] || []), event],
-        };
-      }, {}),
-    [calendar]
+          return {
+            ...days,
+            [key]: [...(days[key] || []), event],
+          };
+        },
+        {}
+      ),
+    [liveCalendarEvents]
   );
 
   const selectedDateEvents = calendarEventsByDay[selectedDate] || [];
   const calendarDays = useMemo(() => getCalendarDays(month), [month]);
   const monthEvents = useMemo(
-    () => calendar.filter((event) => getEventDateKey(event.startAt).startsWith(month)),
-    [calendar, month]
+    () =>
+      liveCalendarEvents.filter((event) =>
+        getEventDateKey(event.startAt).startsWith(month)
+      ),
+    [liveCalendarEvents, month]
   );
 
   const typeCounts = useMemo(
@@ -623,7 +644,7 @@ export default function EventCalendarRoute() {
 
   const upcomingEvents = useMemo(
     () =>
-      [...calendar]
+      [...liveCalendarEvents]
         .filter((event) => new Date(event.startAt).getTime() >= Date.now())
         .sort(
           (a, b) =>
@@ -631,11 +652,26 @@ export default function EventCalendarRoute() {
             new Date(b.startAt).getTime()
         )
         .slice(0, 3),
-    [calendar]
+    [liveCalendarEvents]
   );
+
+  const summaryTotal =
+    calendarSummary?.total ??
+    calendarSummary?.totalEvents ??
+    monthEvents.length;
+  const summaryAttending = calendarSummary?.attending ?? rsvps.length;
+  const reminderMinutes =
+    calendarPreferences?.defaultReminderMinutes ?? 30;
 
   const fetchData = useCallback(() => {
     dispatch(fetchEventCalendarRequest(month));
+    dispatch(
+      fetchEventRecommendationsRequest({
+        limit: 10,
+      })
+    );
+    dispatch(fetchCalendarPreferencesRequest());
+    dispatch(fetchCommunityCalendarsRequest());
     dispatch(
       fetchMyRsvpsRequest({
         limit: 20,
@@ -647,6 +683,12 @@ export default function EventCalendarRoute() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (calendarExportError) {
+      Alert.alert("Calendar export", calendarExportError);
+    }
+  }, [calendarExportError]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -665,11 +707,44 @@ export default function EventCalendarRoute() {
     [month]
   );
 
-  const selectedList =
-    selectedDateEvents.length > 0 ? selectedDateEvents : fallbackSelectedEvents;
-  const upcomingList =
-    upcomingEvents.length > 0 ? upcomingEvents : fallbackUpcoming;
-  const myCalendarList = rsvps.length > 0 ? rsvps.slice(0, 3) : calendar.slice(0, 3);
+  const handleExportCalendar = useCallback(() => {
+    dispatch(exportCalendarRequest());
+  }, [dispatch]);
+
+  const handleTogglePreference = useCallback(
+    (key: "showBookmarkedEvents" | "showCreatedEvents" | "showRsvpedEvents") => {
+      dispatch(
+        updateCalendarPreferencesRequest({
+          [key]: !calendarPreferences?.[key],
+        })
+      );
+    },
+    [calendarPreferences, dispatch]
+  );
+
+  const handleReminderChange = useCallback(
+    (minutes: number) => {
+      dispatch(
+        updateCalendarPreferencesRequest({
+          defaultReminderMinutes: minutes,
+        })
+      );
+    },
+    [dispatch]
+  );
+
+  const handleCommunityCalendarPress = useCallback(
+    (id: string, subscribed?: boolean) => {
+      dispatch(
+        subscribed
+          ? unsubscribeCommunityCalendarRequest(id)
+          : subscribeCommunityCalendarRequest(id)
+      );
+    },
+    [dispatch]
+  );
+
+  const myCalendarList = rsvps.slice(0, 3);
 
   return (
     <View style={styles.container}>
@@ -681,8 +756,11 @@ export default function EventCalendarRoute() {
           <ArrowLeft color={palette.ink} size={20} />
         </Pressable>
         <Text style={styles.headerTitle}>Events Calendar</Text>
-        <Pressable style={styles.headerButton}>
-          <EllipsisVertical color={palette.ink} size={20} />
+        <Pressable
+          onPress={() => router.push("/events/create" as any)}
+          style={styles.headerButton}
+        >
+          <Plus color={palette.ink} size={20} />
         </Pressable>
       </View>
 
@@ -713,7 +791,7 @@ export default function EventCalendarRoute() {
               <ChevronRight color={palette.ink} size={18} />
             </Pressable>
           </View>
-          <Text style={styles.monthHint}>Swipe to navigate months</Text>
+          <Text style={styles.monthHint}>Use arrows to navigate months</Text>
         </View>
 
         <ScrollView
@@ -721,11 +799,9 @@ export default function EventCalendarRoute() {
           horizontal
           showsHorizontalScrollIndicator={false}
         >
-          {(["satsang", "bhajan", "festival", "workshop"] as const).map(
-            (type) => (
-              <TypePill key={type} type={type} />
-            )
-          )}
+          {eventTypeOrder.map((type) => (
+            <TypePill key={type} type={type} />
+          ))}
         </ScrollView>
 
         <View style={styles.calendarPanel}>
@@ -744,15 +820,9 @@ export default function EventCalendarRoute() {
               const isSelected = selectedDate === item.key;
               const isToday = currentDateKey() === item.key;
               const eventCount = calendarEventsByDay[item.key]?.length || 0;
-              const fallbackCount =
-                item.inMonth && [1, 3, 4, 6, 8, 11, 15, 17, 20, 24, 25, 27, 29, 31].includes(item.day)
-                  ? item.day === 8 || item.day === 24
-                    ? 3
-                    : item.day === 15
-                      ? 2
-                      : 1
-                  : 0;
-              const count = eventCount || fallbackCount;
+              const dotCount =
+                calendarMetaByDay[item.key]?.dots?.length || 0;
+              const count = eventCount || dotCount;
 
               return (
                 <Pressable
@@ -818,11 +888,14 @@ export default function EventCalendarRoute() {
               {formatSelectedDate(selectedDate)}
             </Text>
             <Text style={styles.selectedHeaderSub}>
-              {selectedDateEvents.length || fallbackSelectedEvents.length} events scheduled
+              {selectedDateEvents.length} events scheduled
             </Text>
           </View>
-          <Pressable style={styles.filterButton}>
-            <Filter color={palette.ink} size={16} />
+          <Pressable
+            onPress={() => setSelectedDate(currentDateKey())}
+            style={styles.todayButton}
+          >
+            <Text style={styles.todayButtonText}>Today</Text>
           </Pressable>
         </View>
 
@@ -834,25 +907,33 @@ export default function EventCalendarRoute() {
           </View>
         ) : (
           <View style={styles.cardStack}>
-            {selectedList.map((item) =>
-              "startAt" in item ? (
-                <SelectedEventCard key={item.id} event={item} />
-              ) : (
-                <SelectedEventCard key={item.id} item={item} />
-              )
+            {selectedDateEvents.map((event) => (
+              <SelectedEventCard key={event.id} event={event} />
+            ))}
+            {!selectedDateEvents.length && (
+              <EmptySmallCard
+                icon={<CalendarDays color={palette.primary} size={20} />}
+                text="No live events are scheduled for this date."
+              />
             )}
           </View>
         )}
 
         <View style={styles.sectionBand}>
-          <SectionHeader title="Upcoming This Week" action="View All" />
+          <SectionHeader
+            action="View All"
+            onActionPress={() => router.push("/events" as any)}
+            title="Upcoming This Week"
+          />
           <View style={styles.cardStack}>
-            {upcomingList.map((item) =>
-              "startAt" in item ? (
-                <UpcomingCard key={item.id} event={item} />
-              ) : (
-                <UpcomingCard key={item.id} item={item} />
-              )
+            {upcomingEvents.map((event) => (
+              <UpcomingCard key={event.id} event={event} />
+            ))}
+            {!upcomingEvents.length && (
+              <EmptySmallCard
+                icon={<CalendarCheck color={palette.primary} size={20} />}
+                text="No upcoming events returned for this month yet."
+              />
             )}
           </View>
         </View>
@@ -864,25 +945,27 @@ export default function EventCalendarRoute() {
               <View style={styles.statIcon}>
                 <CalendarDays color={palette.ink} size={17} />
               </View>
-              <Text style={styles.statValue}>{monthEvents.length || 23}</Text>
+              <Text style={styles.statValue}>{summaryTotal}</Text>
               <Text style={styles.statLabel}>Total Events</Text>
             </View>
             <View style={styles.statCard}>
               <View style={styles.statIcon}>
                 <CheckCircle2 color={palette.ink} size={17} />
               </View>
-              <Text style={styles.statValue}>{rsvps.length || 8}</Text>
+              <Text style={styles.statValue}>{summaryAttending}</Text>
               <Text style={styles.statLabel}>Attending</Text>
             </View>
           </View>
           <View style={styles.breakdownCard}>
             <Text style={styles.breakdownTitle}>Event Types</Text>
-            {(["satsang", "bhajan", "festival", "workshop"] as const).map(
-              (type, index) => (
+            {eventTypeOrder.map(
+              (type) => (
                 <View key={type} style={styles.breakdownRow}>
                   <TypePill type={type} />
                   <Text style={styles.breakdownValue}>
-                    {typeCounts[type] || [8, 7, 5, 3][index]} events
+                    {calendarSummary?.byType?.[type] ??
+                      typeCounts[type] ??
+                      0} events
                   </Text>
                 </View>
               )
@@ -892,21 +975,43 @@ export default function EventCalendarRoute() {
 
         <View style={styles.sectionBand}>
           <SectionHeader
-            action="Tune"
+            action="Refresh"
             eyebrow="Based on your interests"
+            onActionPress={() =>
+              dispatch(
+                fetchEventRecommendationsRequest({
+                  limit: 10,
+                })
+              )
+            }
             title="Recommended for You"
           />
           <View style={styles.cardStack}>
-            {recommendations.map((item) => (
-              <RecommendationCard key={item.id} item={item} />
+            {recommendationsLoading && (
+              <View style={styles.loadingBox}>
+                <ActivityIndicator color={palette.primary} />
+              </View>
+            )}
+            {recommendations.map((event) => (
+              <RecommendationCard key={event.id} event={event} />
             ))}
+            {!recommendationsLoading && !recommendations.length && (
+              <EmptySmallCard
+                icon={<Sparkles color={palette.primary} size={20} />}
+                text="Recommendations will appear after backend returns matching events."
+              />
+            )}
           </View>
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="My Calendar Events" action="Manage" />
+          <SectionHeader
+            action="Manage"
+            onActionPress={() => router.push("/events/rsvps" as any)}
+            title="My Calendar Events"
+          />
           <View style={styles.cardStack}>
-            {(myCalendarList.length ? myCalendarList : calendar.slice(0, 3)).map(
+            {myCalendarList.map(
               (event) => (
                 <View key={event.id} style={styles.myEventCard}>
                   <View style={styles.myEventIcon}>
@@ -926,21 +1031,19 @@ export default function EventCalendarRoute() {
                       >
                         <Text style={styles.outlineMiniText}>View Details</Text>
                       </Pressable>
-                      <Pressable style={styles.iconMiniButton}>
+                      <View style={styles.iconMiniButton}>
                         <Bell color={palette.muted} size={14} />
-                      </Pressable>
+                      </View>
                     </View>
                   </View>
                 </View>
               )
             )}
-            {!myCalendarList.length && !calendar.length && (
-              <View style={styles.emptySmallCard}>
-                <CalendarCheck color={palette.primary} size={20} />
-                <Text style={styles.emptySmallText}>
-                  RSVP to events and they will appear here.
-                </Text>
-              </View>
+            {!myCalendarList.length && (
+              <EmptySmallCard
+                icon={<CalendarCheck color={palette.primary} size={20} />}
+                text="RSVP to events and they will appear here."
+              />
             )}
           </View>
         </View>
@@ -955,46 +1058,62 @@ export default function EventCalendarRoute() {
               title="Create Event"
             />
             <QuickAction
-              icon={<Share2 color={palette.ink} size={20} />}
-              subtitle="Invite friends"
-              title="Share Calendar"
+              icon={<CalendarCheck color={palette.ink} size={20} />}
+              onPress={() => router.push("/events/rsvps" as any)}
+              subtitle="Events you are attending"
+              title="My RSVPs"
             />
             <QuickAction
               icon={<Download color={palette.ink} size={20} />}
-              subtitle="Download calendar"
-              title="Export"
+              onPress={handleExportCalendar}
+              subtitle={calendarExporting ? "Preparing file" : "Download ICS feed"}
+              title={calendarExporting ? "Exporting" : "Export"}
             />
             <QuickAction
               icon={<Settings color={palette.ink} size={20} />}
-              subtitle="Calendar preferences"
+              onPress={() =>
+                Alert.alert(
+                  "Calendar settings",
+                  "Reminder and feed preferences are available below."
+                )
+              }
+              subtitle="Reminder and feed rules"
               title="Settings"
             />
           </View>
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Calendar Sync" />
-          {[
-            ["Google Calendar", "Not connected", "Sync your Sai Family events with Google Calendar for seamless scheduling"],
-            ["Apple Calendar", "Not connected", "Keep your events in sync across all your Apple devices"],
-            ["Outlook Calendar", "Not connected", "Integrate with Microsoft Outlook for work and personal scheduling"],
-          ].map(([title, status, description]) => (
-            <View key={title} style={styles.syncCard}>
+          <SectionHeader title="Calendar Export" />
+            <View style={styles.syncCard}>
               <View style={styles.syncTop}>
                 <View style={styles.syncIcon}>
                   <CalendarDays color={palette.ink} size={18} />
                 </View>
                 <View style={styles.syncTextWrap}>
-                  <Text style={styles.syncTitle}>{title}</Text>
-                  <Text style={styles.syncStatus}>{status}</Text>
+                  <Text style={styles.syncTitle}>ICS Calendar Feed</Text>
+                  <Text style={styles.syncStatus}>
+                    {calendarExporting ? "Preparing export" : "Ready from backend"}
+                  </Text>
                 </View>
-                <Pressable style={styles.primaryMiniButton}>
-                  <Text style={styles.primaryMiniText}>Connect</Text>
+                <Pressable
+                  disabled={calendarExporting}
+                  onPress={handleExportCalendar}
+                  style={[
+                    styles.primaryMiniButton,
+                    calendarExporting && styles.disabled,
+                  ]}
+                >
+                  <Text style={styles.primaryMiniText}>
+                    {calendarExporting ? "Exporting" : "Export"}
+                  </Text>
                 </Pressable>
               </View>
-              <Text style={styles.syncDescription}>{description}</Text>
+              <Text style={styles.syncDescription}>
+                Downloads future RSVP, created, and bookmarked events using
+                your current calendar preferences.
+              </Text>
             </View>
-          ))}
         </View>
 
         <View style={styles.sectionBand}>
@@ -1002,16 +1121,17 @@ export default function EventCalendarRoute() {
             eyebrow="Subscribe to community event feeds"
             title="Community Calendars"
           />
-          {[
-            ["Downtown Sai Community", "1,234 members - 45 events this month", true],
-            ["Youth Spiritual Circle", "567 members - 23 events this month", false],
-            ["Service & Seva Group", "892 members - 18 events this month", false],
-          ].map(([title, subtitle, subscribed]) => (
-            <View key={String(title)} style={styles.communityCard}>
+          {communityCalendarsLoading && (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator color={palette.primary} />
+            </View>
+          )}
+          {communityCalendars.map((calendarItem) => (
+            <View key={calendarItem.id} style={styles.communityCard}>
               <View style={styles.communityIcon}>
-                {subscribed ? (
+                {calendarItem.subscribedByMe ? (
                   <Users color={palette.ink} size={20} />
-                ) : title === "Youth Spiritual Circle" ? (
+                ) : calendarItem.type === "seva" ? (
                   <Heart color={palette.ink} size={20} />
                 ) : (
                   <Sparkles color={palette.ink} size={20} />
@@ -1019,95 +1139,112 @@ export default function EventCalendarRoute() {
               </View>
               <View style={styles.communityBody}>
                 <View style={styles.communityTitleRow}>
-                  <Text style={styles.communityTitle}>{title}</Text>
-                  {!!subscribed && (
+                  <Text style={styles.communityTitle}>
+                    {calendarItem.title}
+                  </Text>
+                  {!!calendarItem.subscribedByMe && (
                     <CheckCircle2 color={palette.primary} size={16} />
                   )}
                 </View>
-                <Text style={styles.communitySubtitle}>{subtitle}</Text>
+                <Text style={styles.communitySubtitle}>
+                  {[
+                    calendarItem.city,
+                    calendarItem.state,
+                    calendarItem.country,
+                  ]
+                    .filter(Boolean)
+                    .join(", ") || "Community calendar"}
+                  {` - ${calendarItem.subscribers ?? 0} subscribers`}
+                </Text>
                 <Pressable
+                  onPress={() =>
+                    handleCommunityCalendarPress(
+                      calendarItem.id,
+                      calendarItem.subscribedByMe
+                    )
+                  }
                   style={[
                     styles.communityButton,
-                    !subscribed && styles.communityButtonFilled,
+                    !calendarItem.subscribedByMe &&
+                      styles.communityButtonFilled,
                   ]}
                 >
                   <Text
                     style={[
                       styles.communityButtonText,
-                      !subscribed && styles.communityButtonTextFilled,
+                      !calendarItem.subscribedByMe &&
+                        styles.communityButtonTextFilled,
                     ]}
                   >
-                    {subscribed ? "Unsubscribe" : "Subscribe"}
+                    {calendarItem.subscribedByMe ? "Unsubscribe" : "Subscribe"}
                   </Text>
                 </Pressable>
               </View>
             </View>
           ))}
+          {!communityCalendarsLoading && !communityCalendars.length && (
+            <EmptySmallCard
+              icon={<Users color={palette.primary} size={20} />}
+              text="No community calendars returned by backend yet."
+            />
+          )}
         </View>
 
         <View style={styles.section}>
           <SectionHeader title="Notification Preferences" />
           <View style={styles.preferenceCard}>
             <PreferenceRow
-              active
-              subtitle="Get notified before events start"
+              active={reminderMinutes > 0}
+              disabled={calendarPreferencesLoading}
+              onPress={() =>
+                handleReminderChange(reminderMinutes > 0 ? 0 : 30)
+              }
+              subtitle={`${reminderMinutes || 0} minutes before events start`}
               title="Event Reminders"
             />
             <PreferenceRow
-              active
-              subtitle="Notify when new events are posted"
-              title="New Events"
+              active={Boolean(calendarPreferences?.showRsvpedEvents)}
+              disabled={calendarPreferencesLoading}
+              onPress={() => handleTogglePreference("showRsvpedEvents")}
+              subtitle="Show events you RSVP to in calendar feed"
+              title="RSVP Events"
             />
             <PreferenceRow
-              subtitle="Changes to events you're attending"
-              title="Event Updates"
+              active={Boolean(calendarPreferences?.showCreatedEvents)}
+              disabled={calendarPreferencesLoading}
+              onPress={() => handleTogglePreference("showCreatedEvents")}
+              subtitle="Show events created by you in calendar feed"
+              title="Created Events"
             />
             <PreferenceRow
-              active
-              subtitle="When friends invite you to events"
-              title="Community Invites"
+              active={Boolean(calendarPreferences?.showBookmarkedEvents)}
+              disabled={calendarPreferencesLoading}
+              onPress={() => handleTogglePreference("showBookmarkedEvents")}
+              subtitle="Show bookmarked events in calendar feed"
+              title="Bookmarked Events"
             />
           </View>
           <View style={styles.reminderCard}>
             <Text style={styles.breakdownTitle}>Reminder Timing</Text>
-            {["15 minutes before", "30 minutes before", "1 hour before", "1 day before"].map(
-              (item, index) => (
-                <View key={item} style={styles.radioRow}>
+            {reminderOptions.map(({label, minutes}) => (
+                <Pressable
+                  disabled={calendarPreferencesLoading}
+                  key={String(minutes)}
+                  onPress={() => handleReminderChange(minutes)}
+                  style={styles.radioRow}
+                >
                   <View
                     style={[
                       styles.radio,
-                      index === 0 && styles.radioActive,
+                      reminderMinutes === minutes && styles.radioActive,
                     ]}
                   />
-                  <Text style={styles.radioText}>{item}</Text>
-                </View>
-              )
-            )}
+                  <Text style={styles.radioText}>{label}</Text>
+                </Pressable>
+              ))}
           </View>
         </View>
 
-        <View style={styles.sectionBandLast}>
-          <SectionHeader title="Help & Support" />
-          {[
-            [CircleHelp, "Calendar FAQ"],
-            [BookOpen, "User Guide"],
-            [Headphones, "Contact Support"],
-          ].map(([Icon, label]) => {
-            const SupportIcon = Icon as typeof CircleHelp;
-
-            return (
-              <Pressable key={String(label)} style={styles.supportRow}>
-                <View style={styles.supportLeft}>
-                  <View style={styles.supportIcon}>
-                    <SupportIcon color={palette.ink} size={19} />
-                  </View>
-                  <Text style={styles.supportText}>{label as string}</Text>
-                </View>
-                <ChevronRight color="#A8A29E" size={17} />
-              </Pressable>
-            );
-          })}
-        </View>
       </ScrollView>
     </View>
   );
@@ -1277,6 +1414,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     fontWeight: "700",
+  },
+  disabled: {
+    opacity: 0.6,
   },
   dotRow: {
     flexDirection: "row",
@@ -1811,6 +1951,21 @@ const styles = StyleSheet.create({
   },
   switchTrackActive: {
     backgroundColor: palette.ink,
+  },
+  todayButton: {
+    alignItems: "center",
+    backgroundColor: palette.card,
+    borderColor: palette.border,
+    borderRadius: 10,
+    borderWidth: 1,
+    minWidth: 64,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  todayButtonText: {
+    color: palette.ink,
+    fontSize: 12,
+    fontWeight: "900",
   },
   syncCard: {
     backgroundColor: palette.card,

@@ -1,10 +1,13 @@
 import { apiClient } from "./api";
 import type {
   CreateEventPayload,
+  CalendarPreferences,
+  CommunityCalendar,
   EventCommentsResult,
   EventListParams,
   EventListResult,
   EventCalendarResult,
+  EventRecommendationResult,
   EventRsvpPayload,
   EventRsvpResult,
   SaiEvent,
@@ -132,6 +135,96 @@ export async function apiFetchEventCalendar(
         month,
       },
     }
+  );
+
+  return data;
+}
+
+export async function apiFetchEventRecommendations(
+  params: {
+    limit?: number;
+  } = {}
+): Promise<EventRecommendationResult> {
+  const { data } = await apiClient.get(
+    "/api/events/recommendations",
+    {
+      params,
+    }
+  );
+
+  return data;
+}
+
+export async function apiFetchCalendarPreferences(): Promise<{
+  preference: CalendarPreferences;
+}> {
+  const { data } = await apiClient.get(
+    "/api/users/me/calendar/preferences"
+  );
+
+  return data;
+}
+
+export async function apiUpdateCalendarPreferences(
+  payload: Partial<CalendarPreferences>
+): Promise<{
+  preference: CalendarPreferences;
+}> {
+  const { data } = await apiClient.patch(
+    "/api/users/me/calendar/preferences",
+    payload
+  );
+
+  return data;
+}
+
+export async function apiExportCalendarIcs(): Promise<string> {
+  const { data } = await apiClient.get(
+    "/api/users/me/calendar.ics",
+    {
+      responseType: "text",
+    }
+  );
+
+  return data;
+}
+
+export async function apiFetchCommunityCalendars(params: {
+  city?: string;
+  type?: string;
+} = {}): Promise<{
+  calendars: CommunityCalendar[];
+}> {
+  const { data } = await apiClient.get(
+    "/api/community-calendars",
+    {
+      params,
+    }
+  );
+
+  return data;
+}
+
+export async function apiSubscribeCommunityCalendar(
+  id: string
+): Promise<{
+  calendar: CommunityCalendar;
+  subscription?: unknown;
+}> {
+  const { data } = await apiClient.post(
+    `/api/community-calendars/${id}/subscribe`
+  );
+
+  return data;
+}
+
+export async function apiUnsubscribeCommunityCalendar(
+  id: string
+): Promise<{
+  calendar: CommunityCalendar;
+}> {
+  const { data } = await apiClient.delete(
+    `/api/community-calendars/${id}/subscribe`
   );
 
   return data;

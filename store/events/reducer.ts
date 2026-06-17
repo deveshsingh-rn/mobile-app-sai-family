@@ -13,6 +13,9 @@ export const initialEventsState: EventsState = {
   commentsLoading: false,
   comments: [],
   commentsPagination: null,
+  communityCalendarPendingIds: {},
+  communityCalendars: [],
+  communityCalendarsLoading: false,
   creating: false,
   detail: null,
   error: null,
@@ -23,6 +26,13 @@ export const initialEventsState: EventsState = {
   myEventsPagination: null,
   myRsvps: [],
   myRsvpsPagination: null,
+  calendarExportError: null,
+  calendarExporting: false,
+  calendarPreferences: null,
+  calendarPreferencesLoading: false,
+  recommendations: [],
+  recommendationsBasis: null,
+  recommendationsLoading: false,
   rsvpPendingIds: {},
   uploadedMedia: null,
   uploadingMedia: false,
@@ -80,6 +90,35 @@ export function eventsReducer(
         loading: true,
       };
 
+    case EVENTS_ACTIONS.FETCH_RECOMMENDATIONS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        recommendationsLoading: true,
+      };
+
+    case EVENTS_ACTIONS.FETCH_CALENDAR_PREFERENCES_REQUEST:
+    case EVENTS_ACTIONS.UPDATE_CALENDAR_PREFERENCES_REQUEST:
+      return {
+        ...state,
+        calendarPreferencesLoading: true,
+        error: null,
+      };
+
+    case EVENTS_ACTIONS.EXPORT_CALENDAR_REQUEST:
+      return {
+        ...state,
+        calendarExportError: null,
+        calendarExporting: true,
+      };
+
+    case EVENTS_ACTIONS.FETCH_COMMUNITY_CALENDARS_REQUEST:
+      return {
+        ...state,
+        communityCalendarsLoading: true,
+        error: null,
+      };
+
     case EVENTS_ACTIONS.CREATE_REQUEST:
     case EVENTS_ACTIONS.UPDATE_REQUEST:
       return {
@@ -101,6 +140,16 @@ export function eventsReducer(
         error: null,
         rsvpPendingIds: {
           ...state.rsvpPendingIds,
+          [action.payload?.id]: true,
+        },
+      };
+
+    case EVENTS_ACTIONS.SUBSCRIBE_COMMUNITY_CALENDAR_REQUEST:
+    case EVENTS_ACTIONS.UNSUBSCRIBE_COMMUNITY_CALENDAR_REQUEST:
+      return {
+        ...state,
+        communityCalendarPendingIds: {
+          ...state.communityCalendarPendingIds,
           [action.payload?.id]: true,
         },
       };
@@ -194,6 +243,63 @@ export function eventsReducer(
           action.payload?.summary || null,
         loading: false,
       };
+
+    case EVENTS_ACTIONS.FETCH_RECOMMENDATIONS_SUCCESS:
+      return {
+        ...state,
+        recommendations:
+          action.payload?.events || [],
+        recommendationsBasis:
+          action.payload?.basis || null,
+        recommendationsLoading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_CALENDAR_PREFERENCES_SUCCESS:
+    case EVENTS_ACTIONS.UPDATE_CALENDAR_PREFERENCES_SUCCESS:
+      return {
+        ...state,
+        calendarPreferences:
+          action.payload || null,
+        calendarPreferencesLoading: false,
+      };
+
+    case EVENTS_ACTIONS.EXPORT_CALENDAR_SUCCESS:
+      return {
+        ...state,
+        calendarExportError: null,
+        calendarExporting: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_COMMUNITY_CALENDARS_SUCCESS:
+      return {
+        ...state,
+        communityCalendars:
+          action.payload || [],
+        communityCalendarsLoading: false,
+      };
+
+    case EVENTS_ACTIONS.SUBSCRIBE_COMMUNITY_CALENDAR_SUCCESS:
+    case EVENTS_ACTIONS.UNSUBSCRIBE_COMMUNITY_CALENDAR_SUCCESS: {
+      const {
+        [action.payload?.id]: _,
+        ...remainingPendingIds
+      } = state.communityCalendarPendingIds;
+
+      return {
+        ...state,
+        communityCalendarPendingIds:
+          remainingPendingIds,
+        communityCalendars:
+          state.communityCalendars.map((calendar) =>
+            calendar.id === action.payload?.id
+              ? {
+                  ...calendar,
+                  ...action.payload,
+                }
+              : calendar
+          ),
+      };
+    }
 
     case EVENTS_ACTIONS.CREATE_SUCCESS:
       return {
@@ -337,6 +443,35 @@ export function eventsReducer(
         loading: false,
       };
 
+    case EVENTS_ACTIONS.FETCH_RECOMMENDATIONS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        recommendationsLoading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_CALENDAR_PREFERENCES_FAILURE:
+    case EVENTS_ACTIONS.UPDATE_CALENDAR_PREFERENCES_FAILURE:
+      return {
+        ...state,
+        calendarPreferencesLoading: false,
+        error: action.payload,
+      };
+
+    case EVENTS_ACTIONS.EXPORT_CALENDAR_FAILURE:
+      return {
+        ...state,
+        calendarExportError: action.payload,
+        calendarExporting: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_COMMUNITY_CALENDARS_FAILURE:
+      return {
+        ...state,
+        communityCalendarsLoading: false,
+        error: action.payload,
+      };
+
     case EVENTS_ACTIONS.CREATE_FAILURE:
     case EVENTS_ACTIONS.UPDATE_FAILURE:
       return {
@@ -359,6 +494,23 @@ export function eventsReducer(
             "Unable to update RSVP.",
           rsvpPendingIds:
             remainingPendingIds,
+        };
+      }
+
+    case EVENTS_ACTIONS.SUBSCRIBE_COMMUNITY_CALENDAR_FAILURE:
+    case EVENTS_ACTIONS.UNSUBSCRIBE_COMMUNITY_CALENDAR_FAILURE: {
+        const {
+          [action.payload?.id]: _,
+          ...remainingPendingIds
+        } = state.communityCalendarPendingIds;
+
+        return {
+          ...state,
+          communityCalendarPendingIds:
+            remainingPendingIds,
+          error:
+            action.payload?.error ||
+            "Unable to update community calendar.",
         };
       }
 

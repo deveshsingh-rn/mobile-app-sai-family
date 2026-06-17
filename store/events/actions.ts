@@ -1,11 +1,14 @@
 import {
   CreateEventPayload,
   EVENTS_ACTIONS,
+  CalendarPreferences,
+  CommunityCalendar,
   EventCalendarResult,
   EventComment,
   EventCommentsResult,
   EventListParams,
   EventListResult,
+  EventRecommendationResult,
   EventRsvpPayload,
   SaiEvent,
   UpdateEventPayload,
@@ -258,6 +261,175 @@ export const fetchEventCalendarFailure = (
   ({
     payload,
     type: EVENTS_ACTIONS.FETCH_CALENDAR_FAILURE,
+  } as const);
+
+export const fetchEventRecommendationsRequest = (
+  payload: {
+    limit?: number;
+  } = {}
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_RECOMMENDATIONS_REQUEST,
+  } as const);
+
+export const fetchEventRecommendationsSuccess = (
+  payload: EventRecommendationResult
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_RECOMMENDATIONS_SUCCESS,
+  } as const);
+
+export const fetchEventRecommendationsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_RECOMMENDATIONS_FAILURE,
+  } as const);
+
+export const fetchCalendarPreferencesRequest = () =>
+  ({
+    type: EVENTS_ACTIONS.FETCH_CALENDAR_PREFERENCES_REQUEST,
+  } as const);
+
+export const fetchCalendarPreferencesSuccess = (
+  payload: CalendarPreferences
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_CALENDAR_PREFERENCES_SUCCESS,
+  } as const);
+
+export const fetchCalendarPreferencesFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_CALENDAR_PREFERENCES_FAILURE,
+  } as const);
+
+export const updateCalendarPreferencesRequest = (
+  payload: Partial<CalendarPreferences>
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.UPDATE_CALENDAR_PREFERENCES_REQUEST,
+  } as const);
+
+export const updateCalendarPreferencesSuccess = (
+  payload: CalendarPreferences
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.UPDATE_CALENDAR_PREFERENCES_SUCCESS,
+  } as const);
+
+export const updateCalendarPreferencesFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.UPDATE_CALENDAR_PREFERENCES_FAILURE,
+  } as const);
+
+export const exportCalendarRequest = () =>
+  ({
+    type: EVENTS_ACTIONS.EXPORT_CALENDAR_REQUEST,
+  } as const);
+
+export const exportCalendarSuccess = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.EXPORT_CALENDAR_SUCCESS,
+  } as const);
+
+export const exportCalendarFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.EXPORT_CALENDAR_FAILURE,
+  } as const);
+
+export const fetchCommunityCalendarsRequest = (
+  payload: {
+    city?: string;
+    type?: string;
+  } = {}
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_COMMUNITY_CALENDARS_REQUEST,
+  } as const);
+
+export const fetchCommunityCalendarsSuccess = (
+  payload: CommunityCalendar[]
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_COMMUNITY_CALENDARS_SUCCESS,
+  } as const);
+
+export const fetchCommunityCalendarsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_COMMUNITY_CALENDARS_FAILURE,
+  } as const);
+
+export const subscribeCommunityCalendarRequest = (
+  id: string
+) =>
+  ({
+    payload: { id },
+    type: EVENTS_ACTIONS.SUBSCRIBE_COMMUNITY_CALENDAR_REQUEST,
+  } as const);
+
+export const subscribeCommunityCalendarSuccess = (
+  payload: CommunityCalendar
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.SUBSCRIBE_COMMUNITY_CALENDAR_SUCCESS,
+  } as const);
+
+export const subscribeCommunityCalendarFailure = (
+  id: string,
+  error: string
+) =>
+  ({
+    payload: { error, id },
+    type: EVENTS_ACTIONS.SUBSCRIBE_COMMUNITY_CALENDAR_FAILURE,
+  } as const);
+
+export const unsubscribeCommunityCalendarRequest = (
+  id: string
+) =>
+  ({
+    payload: { id },
+    type: EVENTS_ACTIONS.UNSUBSCRIBE_COMMUNITY_CALENDAR_REQUEST,
+  } as const);
+
+export const unsubscribeCommunityCalendarSuccess = (
+  payload: CommunityCalendar
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.UNSUBSCRIBE_COMMUNITY_CALENDAR_SUCCESS,
+  } as const);
+
+export const unsubscribeCommunityCalendarFailure = (
+  id: string,
+  error: string
+) =>
+  ({
+    payload: { error, id },
+    type: EVENTS_ACTIONS.UNSUBSCRIBE_COMMUNITY_CALENDAR_FAILURE,
   } as const);
 
 export const fetchEventCommentsRequest = (

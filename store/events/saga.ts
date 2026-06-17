@@ -12,12 +12,19 @@ import {
   apiFetchEventCalendar,
   apiFetchEventComments,
   apiFetchEventDetail,
+  apiFetchEventRecommendations,
   apiFetchEvents,
+  apiFetchCalendarPreferences,
+  apiFetchCommunityCalendars,
   apiFetchMyEvents,
   apiFetchMyRsvps,
+  apiExportCalendarIcs,
   apiRsvpEvent,
+  apiSubscribeCommunityCalendar,
   apiUpdateEvent,
+  apiUpdateCalendarPreferences,
   apiUploadEventMedia,
+  apiUnsubscribeCommunityCalendar,
 } from "@/services/events";
 
 import {
@@ -31,10 +38,16 @@ import {
   deleteEventSuccess,
   fetchEventCalendarFailure,
   fetchEventCalendarSuccess,
+  fetchCalendarPreferencesFailure,
+  fetchCalendarPreferencesSuccess,
+  fetchCommunityCalendarsFailure,
+  fetchCommunityCalendarsSuccess,
   fetchEventCommentsFailure,
   fetchEventCommentsSuccess,
   fetchEventDetailFailure,
   fetchEventDetailSuccess,
+  fetchEventRecommendationsFailure,
+  fetchEventRecommendationsSuccess,
   fetchEventsFailure,
   fetchEventsSuccess,
   fetchMyEventsFailure,
@@ -43,8 +56,16 @@ import {
   fetchMyRsvpsSuccess,
   rsvpEventFailure,
   rsvpEventSuccess,
+  exportCalendarFailure,
+  exportCalendarSuccess,
+  subscribeCommunityCalendarFailure,
+  subscribeCommunityCalendarSuccess,
   updateEventFailure,
   updateEventSuccess,
+  updateCalendarPreferencesFailure,
+  updateCalendarPreferencesSuccess,
+  unsubscribeCommunityCalendarFailure,
+  unsubscribeCommunityCalendarSuccess,
   uploadEventMediaFailure,
   uploadEventMediaSuccess,
 } from "./actions";
@@ -57,6 +78,7 @@ import {
   EventCommentsResult,
   EventListResult,
   EventPagination,
+  EventRecommendationResult,
   SaiEvent,
 } from "./types";
 import {
@@ -245,17 +267,47 @@ function getCalendarFromResponse(
         })
       )
     : [];
+  const calendarSource =
+    response?.calendar ||
+    response?.events ||
+    response?.data?.calendar ||
+    response?.data?.events ||
+    [];
+  const calendarEvents = Array.isArray(calendarSource)
+    ? calendarSource.map(normalizeEvent)
+    : [];
 
   return {
     days,
-    events: days.flatMap(
-      (day: EventCalendarDay) =>
-        day.events
-    ),
+    events: days.length
+      ? days.flatMap(
+          (day: EventCalendarDay) =>
+            day.events
+        )
+      : calendarEvents,
     summary:
       response?.summary ||
       response?.data?.summary ||
       null,
+  };
+}
+
+function getRecommendationsFromResponse(
+  response: any
+): EventRecommendationResult {
+  const source =
+    response?.events ||
+    response?.data?.events ||
+    [];
+
+  return {
+    basis:
+      response?.basis ||
+      response?.data?.basis ||
+      null,
+    events: Array.isArray(source)
+      ? source.map(normalizeEvent)
+      : [],
   };
 }
 
@@ -615,6 +667,169 @@ function* fetchEventCalendarWorker(
   }
 }
 
+function* fetchEventRecommendationsWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchEventRecommendations,
+      action.payload || {}
+    );
+
+    yield put(
+      fetchEventRecommendationsSuccess(
+        getRecommendationsFromResponse(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchEventRecommendationsFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* fetchCalendarPreferencesWorker(): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchCalendarPreferences
+    );
+
+    yield put(
+      fetchCalendarPreferencesSuccess(
+        response?.preference ||
+          response?.data?.preference ||
+          response
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchCalendarPreferencesFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* updateCalendarPreferencesWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiUpdateCalendarPreferences,
+      action.payload || {}
+    );
+
+    yield put(
+      updateCalendarPreferencesSuccess(
+        response?.preference ||
+          response?.data?.preference ||
+          response
+      )
+    );
+  } catch (error) {
+    yield put(
+      updateCalendarPreferencesFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* exportCalendarWorker(): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiExportCalendarIcs
+    );
+
+    yield put(
+      exportCalendarSuccess(response)
+    );
+  } catch (error) {
+    yield put(
+      exportCalendarFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* fetchCommunityCalendarsWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchCommunityCalendars,
+      action.payload || {}
+    );
+
+    yield put(
+      fetchCommunityCalendarsSuccess(
+        response?.calendars ||
+          response?.data?.calendars ||
+          []
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchCommunityCalendarsFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* subscribeCommunityCalendarWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiSubscribeCommunityCalendar,
+      action.payload.id
+    );
+
+    yield put(
+      subscribeCommunityCalendarSuccess(
+        response?.calendar ||
+          response?.data?.calendar
+      )
+    );
+  } catch (error) {
+    yield put(
+      subscribeCommunityCalendarFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* unsubscribeCommunityCalendarWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiUnsubscribeCommunityCalendar,
+      action.payload.id
+    );
+
+    yield put(
+      unsubscribeCommunityCalendarSuccess(
+        response?.calendar ||
+          response?.data?.calendar
+      )
+    );
+  } catch (error) {
+    yield put(
+      unsubscribeCommunityCalendarFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
 function* fetchEventCommentsWorker(
   action: EventsAction
 ): Generator<any, void, any> {
@@ -764,6 +979,34 @@ export function* eventsSaga() {
   yield takeLatest(
     EVENTS_ACTIONS.FETCH_CALENDAR_REQUEST,
     fetchEventCalendarWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_RECOMMENDATIONS_REQUEST,
+    fetchEventRecommendationsWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_CALENDAR_PREFERENCES_REQUEST,
+    fetchCalendarPreferencesWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.UPDATE_CALENDAR_PREFERENCES_REQUEST,
+    updateCalendarPreferencesWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.EXPORT_CALENDAR_REQUEST,
+    exportCalendarWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_COMMUNITY_CALENDARS_REQUEST,
+    fetchCommunityCalendarsWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.SUBSCRIBE_COMMUNITY_CALENDAR_REQUEST,
+    subscribeCommunityCalendarWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.UNSUBSCRIBE_COMMUNITY_CALENDAR_REQUEST,
+    unsubscribeCommunityCalendarWorker
   );
   yield takeLatest(
     EVENTS_ACTIONS.FETCH_COMMENTS_REQUEST,

@@ -94,3 +94,46 @@ export const selectEventCalendarDays = (
 export const selectEventCalendarSummary = (
   state: RootState
 ) => selectEventsState(state).calendarSummary;
+
+export const selectEventRecommendations = (
+  state: RootState
+) => selectEventsState(state).recommendations;
+
+export const selectEventRecommendationsLoading = (
+  state: RootState
+) => selectEventsState(state).recommendationsLoading;
+
+export const selectCalendarPreferences = (
+  state: RootState
+) => selectEventsState(state).calendarPreferences;
+
+export const selectCalendarPreferencesLoading = (
+  state: RootState
+) => selectEventsState(state).calendarPreferencesLoading;
+
+export const selectCalendarExporting = (
+  state: RootState
+) => selectEventsState(state).calendarExporting;
+
+export const selectCalendarExportError = (
+  state: RootState
+) => selectEventsState(state).calendarExportError;
+
+export const selectCommunityCalendars = (
+  state: RootState
+) => selectEventsState(state).communityCalendars;
+
+export const selectCommunityCalendarsLoading = (
+  state: RootState
+) => selectEventsState(state).communityCalendarsLoading;
+
+export const selectIsCommunityCalendarPending = (
+  state: RootState,
+  calendarId?: string
+) =>
+  calendarId
+    ? Boolean(
+        selectEventsState(state)
+          .communityCalendarPendingIds[calendarId]
+      )
+    : false;

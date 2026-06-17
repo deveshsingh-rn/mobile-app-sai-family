@@ -24,6 +24,8 @@ import {
   ChevronRight,
   Clock3,
   MapPin,
+  Plus,
+  RotateCw,
 } from "lucide-react-native";
 
 import {
@@ -33,12 +35,20 @@ import {
 } from "@/store/events/actions";
 import {
   selectEventCalendar,
+  selectEventCalendarDays,
+  selectEventCalendarSummary,
   selectEventsError,
   selectEventsLoading,
   selectMyEventRsvps,
+  selectMyEventRsvpsPagination,
   selectMyEvents,
+  selectMyEventsPagination,
 } from "@/store/events/selectors";
-import { SaiEvent } from "@/store/events/types";
+import {
+  EventCalendarDay,
+  EventPagination,
+  SaiEvent,
+} from "@/store/events/types";
 import {
   useAppDispatch,
   useAppSelector,
@@ -191,9 +201,18 @@ const formatTime = (value: string) => {
 
 function CompactEventCard({
   item,
+  mode,
 }: {
   item: SaiEvent;
+  mode: EventListMode;
 }) {
+  const countLabel =
+    mode === "my-events"
+      ? `${item.rsvps || 0} RSVPs · ${item.comments || 0} comments`
+      : item.rsvpedByMe
+        ? "You are going"
+        : item.type || "Event";
+
   return (
     <Pressable
       onPress={() =>
@@ -213,6 +232,17 @@ function CompactEventCard({
       </View>
 
       <View style={styles.cardBody}>
+        <View style={styles.cardMetaTop}>
+          <Text style={styles.typePill}>
+            {item.type || "general"}
+          </Text>
+          {!!item.status && (
+            <Text style={styles.statusText}>
+              {item.status}
+            </Text>
+          )}
+        </View>
+
         <Text
           numberOfLines={2}
           style={styles.cardTitle}
@@ -244,8 +274,20 @@ function CompactEventCard({
               item.address}
           </Text>
         </View>
+
+        <Text style={styles.countText}>
+          {countLabel}
+        </Text>
       </View>
     </Pressable>
+  );
+}
+
+function getEventsFromCalendarDays(
+  days: EventCalendarDay[]
+) {
+  return days.flatMap((day) =>
+    Array.isArray(day.events) ? day.events : []
   );
 }
 
@@ -264,11 +306,23 @@ export default function EventListScreen({
   const rsvps = useAppSelector(
     selectMyEventRsvps
   );
+  const rsvpPagination = useAppSelector(
+    selectMyEventRsvpsPagination
+  );
   const myEvents = useAppSelector(
     selectMyEvents
   );
+  const myEventsPagination = useAppSelector(
+    selectMyEventsPagination
+  );
   const calendar = useAppSelector(
     selectEventCalendar
+  );
+  const calendarDaysFromApi = useAppSelector(
+    selectEventCalendarDays
+  );
+  const calendarSummary = useAppSelector(
+    selectEventCalendarSummary
   );
   const [month, setMonth] =
     useState(currentMonth());
@@ -280,8 +334,15 @@ export default function EventListScreen({
     useState(false);
 
   const calendarEventsByDay = useMemo(
-    () =>
-      calendar.reduce<
+    () => {
+      const apiEvents =
+        calendarDaysFromApi.length > 0
+          ? getEventsFromCalendarDays(
+              calendarDaysFromApi
+            )
+          : calendar;
+
+      return apiEvents.reduce<
         Record<string, SaiEvent[]>
       >((days, event) => {
         const key = getDateKey(event.startAt);
@@ -297,8 +358,20 @@ export default function EventListScreen({
             event,
           ],
         };
-      }, {}),
-    [calendar]
+      }, {});
+    },
+    [calendar, calendarDaysFromApi]
+  );
+
+  const calendarMetaByDay = useMemo(
+    () =>
+      calendarDaysFromApi.reduce<
+        Record<string, EventCalendarDay>
+      >((days, day) => ({
+        ...days,
+        [day.date]: day,
+      }), {}),
+    [calendarDaysFromApi]
   );
 
   const selectedDateEvents = useMemo(
@@ -335,6 +408,19 @@ export default function EventListScreen({
     rsvps,
     selectedDateEvents,
   ]);
+
+  const activePagination: EventPagination | null | undefined =
+    mode === "my-events"
+      ? myEventsPagination
+      : mode === "rsvps"
+        ? rsvpPagination
+        : null;
+
+  const canLoadMore = Boolean(
+    activePagination?.hasMore &&
+      activePagination.nextOffset != null &&
+      !loading
+  );
 
   const fetchData = useCallback(() => {
     if (mode === "calendar") {
@@ -374,6 +460,12 @@ export default function EventListScreen({
     }, 700);
   }, [fetchData]);
 
+  useEffect(() => {
+    if (!loading && refreshing) {
+      setRefreshing(false);
+    }
+  }, [loading, refreshing]);
+
   const handleShiftMonth = useCallback(
     (amount: number) => {
       const nextMonth = shiftMonth(
@@ -385,6 +477,38 @@ export default function EventListScreen({
     },
     [month]
   );
+
+  const handleToday = useCallback(() => {
+    const todayMonth = currentMonth();
+    setMonth(todayMonth);
+    setSelectedDate(currentDateKey());
+  }, []);
+
+  const handleLoadMore = useCallback(() => {
+    if (!canLoadMore) {
+      return;
+    }
+
+    const params = {
+      limit: activePagination?.limit || 20,
+      offset: activePagination?.nextOffset || 0,
+    };
+
+    if (mode === "my-events") {
+      dispatch(fetchMyEventsRequest(params));
+      return;
+    }
+
+    if (mode === "rsvps") {
+      dispatch(fetchMyRsvpsRequest(params));
+    }
+  }, [
+    activePagination?.limit,
+    activePagination?.nextOffset,
+    canLoadMore,
+    dispatch,
+    mode,
+  ]);
 
   const calendarDays = useMemo(
     () => getMonthDays(month),
@@ -426,6 +550,28 @@ export default function EventListScreen({
           </Pressable>
         </View>
 
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryNumber}>
+              {calendarSummary?.total ?? calendar.length}
+            </Text>
+            <Text style={styles.summaryLabel}>Total</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryNumber}>
+              {calendarSummary?.attending ?? rsvps.length}
+            </Text>
+            <Text style={styles.summaryLabel}>Attending</Text>
+          </View>
+          <Pressable
+            onPress={handleToday}
+            style={styles.todayButton}
+          >
+            <RotateCw color="#7a5311" size={14} />
+            <Text style={styles.todayText}>Today</Text>
+          </Pressable>
+        </View>
+
         <View style={styles.weekRow}>
           {[
             "Sun",
@@ -462,7 +608,12 @@ export default function EventListScreen({
               currentDateKey() === item.key;
             const count =
               calendarEventsByDay[item.key]
-                ?.length || 0;
+                ?.length ||
+              calendarMetaByDay[item.key]?.dots
+                ?.length ||
+              0;
+            const hasBackendDay =
+              Boolean(calendarMetaByDay[item.key]);
 
             return (
               <Pressable
@@ -477,6 +628,8 @@ export default function EventListScreen({
                   isToday &&
                     !isSelected &&
                     styles.dayCellToday,
+                  hasBackendDay &&
+                    styles.dayCellWithData,
                 ]}
               >
                 <Text
@@ -490,13 +643,26 @@ export default function EventListScreen({
                 </Text>
 
                 {!!count && (
-                  <View
-                    style={[
-                      styles.eventDot,
-                      isSelected &&
-                        styles.eventDotSelected,
-                    ]}
-                  />
+                  <View style={styles.dayCountWrap}>
+                    <View
+                      style={[
+                        styles.eventDot,
+                        isSelected &&
+                          styles.eventDotSelected,
+                      ]}
+                    />
+                    {count > 1 && (
+                      <Text
+                        style={[
+                          styles.dayCountText,
+                          isSelected &&
+                            styles.dayTextSelected,
+                        ]}
+                      >
+                        {count}
+                      </Text>
+                    )}
+                  </View>
                 )}
               </Pressable>
             );
@@ -523,6 +689,18 @@ export default function EventListScreen({
             })}
           </Text>
         </View>
+
+        <Pressable
+          onPress={() =>
+            router.push("/events/create" as any)
+          }
+          style={styles.createInlineButton}
+        >
+          <Plus color="#FFFFFF" size={16} />
+          <Text style={styles.createInlineText}>
+            Create event for this date
+          </Text>
+        </Pressable>
       </View>
     );
   };
@@ -569,7 +747,20 @@ export default function EventListScreen({
           {config.title}
         </Text>
 
-        <View style={styles.topSpacer} />
+        <Pressable
+          onPress={() =>
+            mode === "calendar"
+              ? router.push("/events/create" as any)
+              : handleRefresh()
+          }
+          style={styles.iconButton}
+        >
+          {mode === "calendar" ? (
+            <Plus color="#5b3b0b" size={21} />
+          ) : (
+            <RotateCw color="#5b3b0b" size={19} />
+          )}
+        </Pressable>
       </View>
 
       {renderCalendarHeader()}
@@ -587,6 +778,24 @@ export default function EventListScreen({
         data={config.data}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={renderEmpty}
+        ListFooterComponent={
+          canLoadMore ? (
+            <Pressable
+              onPress={handleLoadMore}
+              style={styles.loadMoreButton}
+            >
+              <Text style={styles.loadMoreText}>
+                Load more
+              </Text>
+            </Pressable>
+          ) : config.data.length > 0 ? (
+            <Text style={styles.endText}>
+              You are all caught up
+            </Text>
+          ) : null
+        }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.4}
         refreshControl={
           <RefreshControl
             onRefresh={handleRefresh}
@@ -595,7 +804,10 @@ export default function EventListScreen({
           />
         }
         renderItem={({ item }) => (
-          <CompactEventCard item={item} />
+          <CompactEventCard
+            item={item}
+            mode={mode}
+          />
         )}
         showsVerticalScrollIndicator={false}
       />
@@ -633,9 +845,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "900",
   },
-  topSpacer: {
-    width: 40,
-  },
   calendarPanel: {
     backgroundColor: "#fffdf8",
     borderColor:
@@ -649,8 +858,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 2,
-    
+    marginBottom: 10,
   },
   monthIconButton: {
     alignItems: "center",
@@ -664,6 +872,45 @@ const styles = StyleSheet.create({
   monthTitle: {
     color: "#2f1b03",
     fontSize: 17,
+    fontWeight: "900",
+  },
+  summaryRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  summaryItem: {
+    backgroundColor: "rgba(185,120,19,0.08)",
+    borderRadius: 8,
+    flex: 1,
+    padding: 10,
+  },
+  summaryNumber: {
+    color: "#2f1b03",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  summaryLabel: {
+    color: "#8b641f",
+    fontSize: 11,
+    fontWeight: "800",
+    marginTop: 2,
+  },
+  todayButton: {
+    alignItems: "center",
+    backgroundColor: "#fffaf0",
+    borderColor:
+      "rgba(221,187,130,0.54)",
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 6,
+    justifyContent: "center",
+    paddingHorizontal: 10,
+  },
+  todayText: {
+    color: "#7a5311",
+    fontSize: 12,
     fontWeight: "900",
   },
   weekRow: {
@@ -681,8 +928,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 0,
-    // borderWidth:1,
-    height:230
   },
   dayCell: {
     alignItems: "center",
@@ -698,6 +943,11 @@ const styles = StyleSheet.create({
   dayCellToday: {
     backgroundColor:
       "rgba(185,120,19,0.12)",
+  },
+  dayCellWithData: {
+    borderColor:
+      "rgba(185,120,19,0.22)",
+    borderWidth: 1,
   },
   dayText: {
     color: "#3f2502",
@@ -717,6 +967,18 @@ const styles = StyleSheet.create({
   eventDotSelected: {
     backgroundColor: "#fffaf0",
   },
+  dayCountWrap: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  dayCountText: {
+    color: "#7a5311",
+    fontSize: 9,
+    fontWeight: "900",
+    marginLeft: 3,
+  },
   selectedDateBar: {
     alignItems: "center",
     backgroundColor:
@@ -726,7 +988,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 12,
     padding: 10,
-    borderWidth:1
+    borderWidth: 1,
   },
   selectedDateText: {
     color: "#5b3b0b",
@@ -740,6 +1002,21 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     paddingHorizontal: 18,
     paddingTop: 10,
+  },
+  createInlineButton: {
+    alignItems: "center",
+    backgroundColor: "#b97813",
+    borderRadius: 8,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 12,
+    minHeight: 44,
+  },
+  createInlineText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
   },
   listContent: {
     paddingBottom: 110,
@@ -778,6 +1055,12 @@ const styles = StyleSheet.create({
   cardBody: {
     flex: 1,
   },
+  cardMetaTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
   cardTitle: {
     color: "#2f1b03",
     fontSize: 16,
@@ -795,6 +1078,52 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: "700",
+  },
+  countText: {
+    color: "#8b641f",
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 9,
+  },
+  typePill: {
+    backgroundColor:
+      "rgba(185,120,19,0.12)",
+    borderRadius: 999,
+    color: "#7a5311",
+    fontSize: 10,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    textTransform: "capitalize",
+  },
+  statusText: {
+    color: "#8b641f",
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "capitalize",
+  },
+  loadMoreButton: {
+    alignItems: "center",
+    alignSelf: "center",
+    backgroundColor:
+      "rgba(185,120,19,0.12)",
+    borderRadius: 8,
+    marginTop: 4,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+  },
+  loadMoreText: {
+    color: "#5b3b0b",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  endText: {
+    color: "#8b641f",
+    fontSize: 12,
+    fontWeight: "800",
+    paddingVertical: 18,
+    textAlign: "center",
   },
   stateBox: {
     alignItems: "center",
