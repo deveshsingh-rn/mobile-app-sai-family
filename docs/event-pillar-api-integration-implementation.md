@@ -685,21 +685,21 @@ Done when:
 
 ### Phase 3: Event Detail Enrichment
 
-Status: Not started
+Status: In progress
 
 Todo:
 
-- [ ] Extend `SaiEventDetail` type.
-- [ ] Update `fetchEventDetailSuccess` to store rich detail.
-- [ ] Add bookmark/unbookmark service/actions/saga/reducer.
-- [ ] Wire bookmark button in `app/events/[id].tsx`.
-- [ ] Add reviews service/actions/saga/reducer.
-- [ ] Wire reviews section.
-- [ ] Add photos service/actions/saga/reducer.
-- [ ] Wire gallery/photos section.
-- [ ] Add share tracking service/action.
-- [ ] Add report service/action.
-- [ ] Replace organizer, attendees preview, guidelines, FAQ, similar events, and tags with backend data when present.
+- [x] Extend `SaiEventDetail` type.
+- [x] Update `fetchEventDetailSuccess` to store rich detail.
+- [x] Add bookmark/unbookmark service/actions/saga/reducer.
+- [x] Wire bookmark button in `app/events/[id].tsx`.
+- [x] Add reviews service/actions/saga/reducer.
+- [x] Wire reviews section.
+- [x] Add photos service/actions/saga/reducer.
+- [x] Wire gallery/photos section.
+- [x] Add share tracking service/action.
+- [x] Add report service/action.
+- [x] Replace organizer, attendees preview, guidelines, FAQ, similar events, and tags with backend data when present.
 
 Done when:
 
@@ -872,7 +872,7 @@ Done when:
 ### `app/events/my-events.tsx`
 
 - [x] Wire analytics.
-- [ ] Wire attendees/check-in/report/photos.
+- [ ] Add dedicated attendee/photo management drill-in from posted event cards.
 - [x] Replace posted stats with analytics-backed values.
 
 ## Testing Plan

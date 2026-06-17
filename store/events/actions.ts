@@ -10,6 +10,7 @@ import {
   EventCommentsResult,
   EventListParams,
   EventListResult,
+  EventPhotosResult,
   EventRecommendationResult,
   EventReportPayload,
   EventReview,
@@ -21,6 +22,7 @@ import {
   UpdateEventPayload,
   UploadEventMediaPayload,
   UploadEventMediaResult,
+  UploadEventPhotosPayload,
 } from "./types";
 
 export const fetchEventsRequest = (
@@ -582,6 +584,64 @@ export const fetchEventReviewsFailure = (
   ({
     payload: { error, id },
     type: EVENTS_ACTIONS.FETCH_REVIEWS_FAILURE,
+  } as const);
+
+export const fetchEventPhotosRequest = (
+  id: string,
+  params: EventListParams = {}
+) =>
+  ({
+    payload: { id, params },
+    type: EVENTS_ACTIONS.FETCH_PHOTOS_REQUEST,
+  } as const);
+
+export const fetchEventPhotosSuccess = (
+  id: string,
+  payload: EventPhotosResult
+) =>
+  ({
+    payload: { id, result: payload },
+    type: EVENTS_ACTIONS.FETCH_PHOTOS_SUCCESS,
+  } as const);
+
+export const fetchEventPhotosFailure = (
+  id: string,
+  error: string
+) =>
+  ({
+    payload: { error, id },
+    type: EVENTS_ACTIONS.FETCH_PHOTOS_FAILURE,
+  } as const);
+
+export const uploadEventPhotosRequest = (
+  id: string,
+  payload: UploadEventPhotosPayload
+) =>
+  ({
+    payload: { id, ...payload },
+    type: EVENTS_ACTIONS.UPLOAD_PHOTOS_REQUEST,
+  } as const);
+
+export const uploadEventPhotosSuccess = (
+  id: string,
+  payload: EventPhotosResult & {
+    count?: {
+      photos?: number;
+    } | null;
+  }
+) =>
+  ({
+    payload: { id, result: payload },
+    type: EVENTS_ACTIONS.UPLOAD_PHOTOS_SUCCESS,
+  } as const);
+
+export const uploadEventPhotosFailure = (
+  id: string,
+  error: string
+) =>
+  ({
+    payload: { error, id },
+    type: EVENTS_ACTIONS.UPLOAD_PHOTOS_FAILURE,
   } as const);
 
 export const addEventReviewRequest = (

@@ -7,6 +7,7 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
+  Image,
   ImageBackground,
   Linking,
   Pressable,
@@ -18,6 +19,7 @@ import {
   View,
 } from "react-native";
 
+import * as ImagePicker from "expo-image-picker";
 import {
   router,
   useLocalSearchParams,
@@ -53,11 +55,13 @@ import {
   fetchEventAttendeesRequest,
   fetchEventCommentsRequest,
   fetchEventDetailRequest,
+  fetchEventPhotosRequest,
   fetchEventReviewsRequest,
   reportEventRequest,
   rsvpEventRequest,
   shareEventRequest,
   unbookmarkEventRequest,
+  uploadEventPhotosRequest,
 } from "@/store/events/actions";
 import {
   selectEventCheckInPendingIds,
@@ -67,6 +71,8 @@ import {
   selectEventCommentsError,
   selectEventCommentsLoading,
   selectEventDetail,
+  selectEventPhotos,
+  selectEventPhotosLoading,
   selectEventReviews,
   selectEventReviewsLoading,
   selectEventsError,
@@ -77,12 +83,18 @@ import {
   selectIsEventReportPending,
   selectIsEventRsvpPending,
   selectIsEventSharePending,
+  selectIsUploadingEventPhotos,
 } from "@/store/events/selectors";
-import { validateEventCommentContent } from "@/store/events/validation";
+import {
+  getFirstValidationError,
+  validateEventCommentContent,
+  validateEventMediaFiles,
+} from "@/store/events/validation";
 import type {
   EventComment,
   EventFaq,
   EventAttendee,
+  EventPhoto,
   EventReview,
   EventUserSummary,
   SaiEvent,
@@ -175,6 +187,15 @@ export default function EventDetailRoute() {
   const addingReview = useAppSelector((state) =>
     selectIsAddingEventReview(state, eventId)
   );
+  const photos = useAppSelector((state) =>
+    selectEventPhotos(state, eventId)
+  );
+  const photosLoading = useAppSelector((state) =>
+    selectEventPhotosLoading(state, eventId)
+  );
+  const uploadingPhotos = useAppSelector((state) =>
+    selectIsUploadingEventPhotos(state, eventId)
+  );
   const attendees = useAppSelector((state) =>
     selectEventAttendees(state, eventId)
   );
@@ -194,6 +215,12 @@ export default function EventDetailRoute() {
       );
       dispatch(
         fetchEventReviewsRequest(eventId, {
+          limit: 20,
+          offset: 0,
+        })
+      );
+      dispatch(
+        fetchEventPhotosRequest(eventId, {
           limit: 20,
           offset: 0,
         })
@@ -281,6 +308,67 @@ export default function EventDetailRoute() {
     },
     [dispatch, eventId]
   );
+
+  const handleUploadPhoto = useCallback(async () => {
+    if (!eventId || uploadingPhotos) {
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission needed",
+        "Please allow photo access to upload event photos."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      mediaTypes: ["images"],
+      quality: 0.86,
+    });
+
+    if (result.canceled) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    const file = {
+      fileSize: asset.fileSize,
+      mimeType: asset.mimeType || "image/jpeg",
+      name: asset.fileName || `event-photo-${Date.now()}.jpg`,
+      uri: asset.uri,
+    };
+
+    if (!file.mimeType?.startsWith("image/")) {
+      Alert.alert("Event photo", "Please choose a JPG, PNG, or WEBP image.");
+      return;
+    }
+
+    const validation = validateEventMediaFiles([file]);
+
+    if (!validation.isValid) {
+      Alert.alert("Event photo", getFirstValidationError(validation));
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("photo", {
+      name: file.name,
+      type: file.mimeType,
+      uri: file.uri,
+    } as any);
+
+    dispatch(
+      uploadEventPhotosRequest(eventId, {
+        files: [file],
+        formData,
+      })
+    );
+  }, [dispatch, eventId, uploadingPhotos]);
 
   const handleDelete = useCallback(() => {
     if (!eventId) {
@@ -492,6 +580,12 @@ export default function EventDetailRoute() {
           <SimilarEventsSection events={detail.similarEvents} />
         )}
         {!!tags.length && <TagsSection tags={tags} />}
+        <PhotosSection
+          onUpload={handleUploadPhoto}
+          photos={photos?.photos || []}
+          photosLoading={photosLoading}
+          uploadingPhotos={uploadingPhotos}
+        />
         <ReviewsSection
           addingReview={addingReview}
           onChangeReview={setReviewContent}
@@ -867,6 +961,61 @@ function TagsSection({tags}: {tags: string[]}) {
           </View>
         ))}
       </View>
+    </Section>
+  );
+}
+
+function PhotosSection({
+  onUpload,
+  photos,
+  photosLoading,
+  uploadingPhotos,
+}: {
+  onUpload: () => void;
+  photos: EventPhoto[];
+  photosLoading: boolean;
+  uploadingPhotos: boolean;
+}) {
+  return (
+    <Section>
+      <SectionTitle action={`${photos.length}`} title="Event Photos" />
+      <Pressable
+        disabled={uploadingPhotos}
+        onPress={onUpload}
+        style={[styles.photoUploadButton, uploadingPhotos && styles.disabled]}
+      >
+        {uploadingPhotos ? (
+          <ActivityIndicator color="#FFFFFF" size="small" />
+        ) : (
+          <ImageIcon color="#FFFFFF" size={16} />
+        )}
+        <Text style={styles.photoUploadText}>
+          {uploadingPhotos ? "Uploading Photo" : "Upload Photo"}
+        </Text>
+      </Pressable>
+      {photosLoading && !photos.length ? (
+        <ActivityIndicator color="#1F2937" />
+      ) : !photos.length ? (
+        <Text style={styles.emptyComments}>
+          Event photos will appear here after the gathering.
+        </Text>
+      ) : (
+        <View style={styles.photoGrid}>
+          {photos.map((photo) => (
+            <View key={photo.id || photo.url} style={styles.photoTile}>
+              <Image
+                source={{uri: photo.thumbnailUrl || photo.url}}
+                style={styles.photoImage}
+              />
+              {!!photo.caption && (
+                <Text numberOfLines={2} style={styles.photoCaption}>
+                  {photo.caption}
+                </Text>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
     </Section>
   );
 }
@@ -1587,6 +1736,48 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     lineHeight: 22,
     marginBottom: 12,
+  },
+  photoCaption: {
+    color: "#4B5563",
+    fontSize: 11,
+    fontWeight: "700",
+    lineHeight: 15,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+  },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 14,
+  },
+  photoImage: {
+    backgroundColor: "#F6EFD9",
+    height: 112,
+    width: "100%",
+  },
+  photoTile: {
+    backgroundColor: "#FAFAF9",
+    borderColor: "#F6EFD9",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexBasis: "48%",
+    flexGrow: 1,
+    overflow: "hidden",
+  },
+  photoUploadButton: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 8,
+    height: 44,
+    justifyContent: "center",
+  },
+  photoUploadText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
   },
   plusAvatar: {
     alignItems: "center",

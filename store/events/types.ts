@@ -182,6 +182,20 @@ export type EventReviewsResult = {
   } | null;
 };
 
+export type EventPhoto = {
+  author?: EventUserSummary;
+  caption?: string | null;
+  createdAt?: string;
+  id: string;
+  thumbnailUrl?: string | null;
+  url: string;
+};
+
+export type EventPhotosResult = {
+  pagination?: EventPagination | null;
+  photos: EventPhoto[];
+};
+
 export type EventReportPayload = {
   details?: string;
   reason: string;
@@ -335,6 +349,19 @@ export type UploadEventMediaPayload = {
   formData: FormData;
 };
 
+export type UploadEventPhotosPayload = {
+  caption?: string;
+  files?: {
+    fileSize?: number | null;
+    mimeType?: string | null;
+    name?: string | null;
+    size?: number | null;
+    type?: string | null;
+    uri?: string;
+  }[];
+  formData: FormData;
+};
+
 export type UploadedEventMedia = {
   assetType?: string | null;
   contentType?: string | null;
@@ -420,6 +447,9 @@ export type EventsState = {
   recommendationsBasis: EventRecommendationResult["basis"];
   recommendationsLoading: boolean;
   reportPendingIds: Record<string, boolean>;
+  photoUploadingIds: Record<string, boolean>;
+  photosByEventId: Record<string, EventPhotosResult>;
+  photosLoadingIds: Record<string, boolean>;
   reviewsByEventId: Record<string, EventReviewsResult>;
   reviewsLoadingIds: Record<string, boolean>;
   rsvpPendingIds: Record<string, boolean>;
@@ -527,6 +557,12 @@ export const EVENTS_ACTIONS = {
     "events/fetchReviewsRequest",
   FETCH_REVIEWS_SUCCESS:
     "events/fetchReviewsSuccess",
+  FETCH_PHOTOS_FAILURE:
+    "events/fetchPhotosFailure",
+  FETCH_PHOTOS_REQUEST:
+    "events/fetchPhotosRequest",
+  FETCH_PHOTOS_SUCCESS:
+    "events/fetchPhotosSuccess",
   EXPORT_CALENDAR_FAILURE:
     "events/exportCalendarFailure",
   EXPORT_CALENDAR_REQUEST:
@@ -554,6 +590,12 @@ export const EVENTS_ACTIONS = {
     "events/checkInRequest",
   CHECK_IN_SUCCESS:
     "events/checkInSuccess",
+  UPLOAD_PHOTOS_FAILURE:
+    "events/uploadPhotosFailure",
+  UPLOAD_PHOTOS_REQUEST:
+    "events/uploadPhotosRequest",
+  UPLOAD_PHOTOS_SUCCESS:
+    "events/uploadPhotosSuccess",
   SHARE_FAILURE:
     "events/shareFailure",
   SHARE_REQUEST:

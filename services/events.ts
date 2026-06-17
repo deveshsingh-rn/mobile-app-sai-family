@@ -7,6 +7,7 @@ import type {
   EventAttendeesResult,
   EventCommentsResult,
   EventListParams,
+  EventPhotosResult,
   EventReportPayload,
   EventReviewPayload,
   EventReviewsResult,
@@ -394,6 +395,43 @@ export async function apiReportEvent(
   const { data } = await apiClient.post(
     `/api/events/${id}/report`,
     payload
+  );
+
+  return data;
+}
+
+export async function apiFetchEventPhotos(
+  id: string,
+  params: EventListParams = {}
+): Promise<EventPhotosResult> {
+  const { data } = await apiClient.get(
+    `/api/events/${id}/photos`,
+    {
+      params,
+    }
+  );
+
+  return data;
+}
+
+export async function apiUploadEventPhotos(
+  id: string,
+  formData: FormData
+): Promise<{
+  _count?: {
+    photos?: number;
+  };
+  photos?: unknown[];
+}> {
+  const { data } = await apiClient.post(
+    `/api/events/${id}/photos`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      timeout: 150000,
+    }
   );
 
   return data;

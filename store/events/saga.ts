@@ -17,6 +17,7 @@ import {
   apiFetchEventCalendar,
   apiFetchEventComments,
   apiFetchEventDetail,
+  apiFetchEventPhotos,
   apiFetchEventRecommendations,
   apiFetchEventReviews,
   apiFetchEvents,
@@ -32,6 +33,7 @@ import {
   apiUnbookmarkEvent,
   apiUpdateEvent,
   apiUpdateCalendarPreferences,
+  apiUploadEventPhotos,
   apiUploadEventMedia,
   apiUnsubscribeCommunityCalendar,
 } from "@/services/events";
@@ -65,6 +67,8 @@ import {
   fetchEventCommentsSuccess,
   fetchEventDetailFailure,
   fetchEventDetailSuccess,
+  fetchEventPhotosFailure,
+  fetchEventPhotosSuccess,
   fetchEventRecommendationsFailure,
   fetchEventRecommendationsSuccess,
   fetchEventReviewsFailure,
@@ -93,6 +97,8 @@ import {
   unbookmarkEventSuccess,
   unsubscribeCommunityCalendarFailure,
   unsubscribeCommunityCalendarSuccess,
+  uploadEventPhotosFailure,
+  uploadEventPhotosSuccess,
   uploadEventMediaFailure,
   uploadEventMediaSuccess,
 } from "./actions";
@@ -105,6 +111,7 @@ import {
   EventsAction,
   EventCommentsResult,
   EventReview,
+  EventPhotosResult,
   EventListResult,
   EventPagination,
   EventRecommendationResult,
@@ -415,6 +422,74 @@ function getReviewsFromResponse(
     summary:
       response?.summary ||
       response?.data?.summary ||
+      null,
+  };
+}
+
+function normalizePhoto(photo: any) {
+  if (!photo) {
+    return undefined;
+  }
+
+  return {
+    ...photo,
+    author:
+      photo?.author ||
+      photo?.user ||
+      undefined,
+    id:
+      photo?.id ||
+      photo?.url ||
+      `${Date.now()}`,
+    thumbnailUrl:
+      photo?.thumbnailUrl ||
+      photo?.thumbnail ||
+      photo?.url,
+    url:
+      photo?.url ||
+      photo?.imageUrl ||
+      photo?.mediaUrl,
+  };
+}
+
+function getPhotosFromResponse(
+  response: any
+): EventPhotosResult {
+  const source =
+    response?.photos ||
+    response?.items ||
+    response?.results ||
+    response?.data?.photos ||
+    response?.data?.items ||
+    response?.data?.results ||
+    [];
+
+  return {
+    pagination:
+      normalizePagination(
+        response?.pagination ||
+          response?.data?.pagination
+      ),
+    photos: Array.isArray(source)
+      ? source
+          .map(normalizePhoto)
+          .filter(Boolean)
+      : [],
+  };
+}
+
+function getUploadedPhotosFromResponse(
+  response: any
+) {
+  const result = getPhotosFromResponse(response);
+
+  return {
+    ...result,
+    count:
+      response?._count ||
+      response?.count ||
+      response?.data?._count ||
+      response?.data?.count ||
       null,
   };
 }
@@ -1107,6 +1182,58 @@ function* fetchEventReviewsWorker(
   }
 }
 
+function* fetchEventPhotosWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchEventPhotos,
+      action.payload.id,
+      action.payload.params || {}
+    );
+
+    yield put(
+      fetchEventPhotosSuccess(
+        action.payload.id,
+        getPhotosFromResponse(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchEventPhotosFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* uploadEventPhotosWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiUploadEventPhotos,
+      action.payload.id,
+      action.payload.formData
+    );
+
+    yield put(
+      uploadEventPhotosSuccess(
+        action.payload.id,
+        getUploadedPhotosFromResponse(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      uploadEventPhotosFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
 function* addEventReviewWorker(
   action: EventsAction
 ): Generator<any, void, any> {
@@ -1416,6 +1543,14 @@ export function* eventsSaga() {
   yield takeLatest(
     EVENTS_ACTIONS.FETCH_REVIEWS_REQUEST,
     fetchEventReviewsWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_PHOTOS_REQUEST,
+    fetchEventPhotosWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.UPLOAD_PHOTOS_REQUEST,
+    uploadEventPhotosWorker
   );
   yield takeLatest(
     EVENTS_ACTIONS.ADD_REVIEW_REQUEST,

@@ -41,6 +41,9 @@ export const initialEventsState: EventsState = {
   recommendationsBasis: null,
   recommendationsLoading: false,
   reportPendingIds: {},
+  photoUploadingIds: {},
+  photosByEventId: {},
+  photosLoadingIds: {},
   reviewsByEventId: {},
   reviewsLoadingIds: {},
   rsvpPendingIds: {},
@@ -231,6 +234,25 @@ export function eventsReducer(
         ...state,
         reviewsLoadingIds: {
           ...state.reviewsLoadingIds,
+          [action.payload?.id]: true,
+        },
+      };
+
+    case EVENTS_ACTIONS.FETCH_PHOTOS_REQUEST:
+      return {
+        ...state,
+        photosLoadingIds: {
+          ...state.photosLoadingIds,
+          [action.payload?.id]: true,
+        },
+      };
+
+    case EVENTS_ACTIONS.UPLOAD_PHOTOS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        photoUploadingIds: {
+          ...state.photoUploadingIds,
           [action.payload?.id]: true,
         },
       };
@@ -671,6 +693,79 @@ export function eventsReducer(
       };
     }
 
+    case EVENTS_ACTIONS.FETCH_PHOTOS_SUCCESS: {
+      const id = action.payload?.id;
+      const {
+        [id]: _,
+        ...remainingLoadingIds
+      } = state.photosLoadingIds;
+
+      return {
+        ...state,
+        photosByEventId: {
+          ...state.photosByEventId,
+          [id]: action.payload?.result || {
+            photos: [],
+          },
+        },
+        photosLoadingIds:
+          remainingLoadingIds,
+      };
+    }
+
+    case EVENTS_ACTIONS.UPLOAD_PHOTOS_SUCCESS: {
+      const id = action.payload?.id;
+      const {
+        [id]: _,
+        ...remainingUploadingIds
+      } = state.photoUploadingIds;
+      const existing =
+        state.photosByEventId[id] || {
+          photos: [],
+        };
+      const result =
+        action.payload?.result || {
+          photos: [],
+        };
+      const nextPhotos = mergeById(
+        result.photos || [],
+        existing.photos || []
+      );
+      const nextPhotoCount =
+        result.count?.photos ??
+        nextPhotos.length;
+      const changes = {
+        photos: nextPhotoCount,
+      };
+
+      return {
+        ...state,
+        detail:
+          state.detail &&
+          state.detail.id === id
+            ? {
+                ...state.detail,
+                ...changes,
+              }
+            : state.detail,
+        feed: state.feed.map((event) =>
+          updateEventById(event, id, changes)
+        ),
+        myEvents: state.myEvents.map((event) =>
+          updateEventById(event, id, changes)
+        ),
+        photoUploadingIds:
+          remainingUploadingIds,
+        photosByEventId: {
+          ...state.photosByEventId,
+          [id]: {
+            ...existing,
+            photos: nextPhotos,
+          },
+        },
+      };
+    }
+
     case EVENTS_ACTIONS.FETCH_ATTENDEES_SUCCESS: {
       const {
         [action.payload?.id]: _,
@@ -988,6 +1083,38 @@ export function eventsReducer(
             "Unable to load reviews.",
           reviewsLoadingIds:
             remainingLoadingIds,
+        };
+      }
+
+    case EVENTS_ACTIONS.FETCH_PHOTOS_FAILURE: {
+        const {
+          [action.payload?.id]: _,
+          ...remainingLoadingIds
+        } = state.photosLoadingIds;
+
+        return {
+          ...state,
+          error:
+            action.payload?.error ||
+            "Unable to load event photos.",
+          photosLoadingIds:
+            remainingLoadingIds,
+        };
+      }
+
+    case EVENTS_ACTIONS.UPLOAD_PHOTOS_FAILURE: {
+        const {
+          [action.payload?.id]: _,
+          ...remainingUploadingIds
+        } = state.photoUploadingIds;
+
+        return {
+          ...state,
+          error:
+            action.payload?.error ||
+            "Unable to upload event photos.",
+          photoUploadingIds:
+            remainingUploadingIds,
         };
       }
 

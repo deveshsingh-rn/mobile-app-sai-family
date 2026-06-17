@@ -97,6 +97,38 @@ export const selectEventReviewsLoading = (
       )
     : false;
 
+export const selectEventPhotos = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? selectEventsState(state).photosByEventId[
+        eventId
+      ] || null
+    : null;
+
+export const selectEventPhotosLoading = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? Boolean(
+        selectEventsState(state)
+          .photosLoadingIds[eventId]
+      )
+    : false;
+
+export const selectIsUploadingEventPhotos = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? Boolean(
+        selectEventsState(state)
+          .photoUploadingIds[eventId]
+      )
+    : false;
+
 export const selectIsAddingEventReview = (
   state: RootState,
   eventId?: string
