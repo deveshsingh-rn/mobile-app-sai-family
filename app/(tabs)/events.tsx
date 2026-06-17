@@ -7,7 +7,6 @@ import React, {
 
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -22,7 +21,6 @@ import {
   Bookmark,
   Calendar,
   CalendarCheck,
-  Check,
   ChevronDown,
   Clock3,
   HandHeart,
@@ -42,13 +40,19 @@ import {
   Users,
 } from "lucide-react-native";
 
-import { fetchEventsRequest } from "@/store/events/actions";
 import {
+  fetchCommunityCalendarsRequest,
+  fetchEventsRequest,
+} from "@/store/events/actions";
+import {
+  selectCommunityCalendars,
+  selectCommunityCalendarsLoading,
   selectEventsError,
   selectEventsFeed,
   selectEventsLoading,
 } from "@/store/events/selectors";
 import {
+  CommunityCalendar,
   EventType,
   SaiEvent,
 } from "@/store/events/types";
@@ -59,254 +63,15 @@ import {
 
 const EVENT_FILTERS: {
   label: string;
-  value: EventType | "all" | "festival";
+  value: EventType | "all";
 }[] = [
   { label: "All Events", value: "all" },
   { label: "Bhajan", value: "bhajan" },
   { label: "Seva", value: "seva" },
   { label: "Satsang", value: "satsang" },
-  { label: "Festival", value: "festival" },
   { label: "Pooja", value: "pooja" },
-];
-
-const staticSections = [
-  {
-    background: "#FFFFFF",
-    count: "3 events",
-    title: "Happening Today",
-    events: [
-      {
-        attendees: "+47 attending",
-        bookmarked: false,
-        date: "Today",
-        going: true,
-        id: "today-bhajan",
-        imageLabel: "Evening Bhajan",
-        location: "Sai Temple, Downtown",
-        title: "Evening Bhajan Session",
-        time: "6:00 PM - 7:30 PM",
-        urgency: "In 2 hours",
-      },
-      {
-        attendees: "+23 volunteering",
-        bookmarked: true,
-        date: "Today",
-        going: false,
-        id: "today-seva",
-        imageLabel: "Seva Program",
-        location: "Community Center, East Side",
-        title: "Community Food Seva",
-        time: "8:00 PM - 9:00 PM",
-        urgency: "In 4 hours",
-      },
-      {
-        attendees: "+89 attending",
-        bookmarked: false,
-        date: "Today",
-        going: false,
-        id: "today-aarti",
-        imageLabel: "Aarti Ceremony",
-        location: "Shirdi Sai Mandir, North Area",
-        title: "Night Aarti & Prasad",
-        time: "9:30 PM - 10:00 PM",
-        urgency: "In 5 hours",
-      },
-    ],
-  },
-  {
-    background: "#FAFAF9",
-    count: "8 events",
-    title: "This Week",
-    events: [
-      {
-        attendees: "+34 interested",
-        bookmarked: false,
-        date: "Fri, Jan 26",
-        going: false,
-        id: "week-satsang",
-        imageLabel: "Satsang",
-        location: "Sai Spiritual Center",
-        title: "Weekly Spiritual Discourse",
-        time: "7:00 PM",
-      },
-      {
-        attendees: "+18 interested",
-        bookmarked: false,
-        date: "Sat, Jan 27",
-        going: false,
-        id: "week-youth",
-        imageLabel: "Youth Program",
-        location: "Yoga & Meditation Hall",
-        title: "Youth Meditation Workshop",
-        time: "10:00 AM",
-      },
-      {
-        attendees: "+62 going",
-        bookmarked: true,
-        date: "Sat, Jan 27",
-        going: true,
-        id: "week-bhajan",
-        imageLabel: "Bhajan Night",
-        location: "Main Temple Hall",
-        title: "Saturday Bhajan Sandhya",
-        time: "6:30 PM",
-      },
-      {
-        attendees: "+28 volunteering",
-        bookmarked: false,
-        date: "Sun, Jan 28",
-        going: false,
-        id: "week-seva",
-        imageLabel: "Seva Activity",
-        location: "Sai Temple Complex",
-        title: "Sunday Temple Cleaning Seva",
-        time: "8:00 AM",
-      },
-    ],
-    moreLabel: "View 3 More This Week",
-  },
-  {
-    background: "#FFFFFF",
-    count: "12 events",
-    title: "This Month",
-    events: [
-      {
-        attendees: "+156 interested",
-        bookmarked: false,
-        date: "Tue, Feb 6",
-        going: false,
-        id: "month-festival",
-        imageLabel: "Festival",
-        location: "Grand Temple Complex",
-        title: "Maha Shivaratri Celebration",
-        time: "All Day",
-      },
-      {
-        attendees: "+41 going",
-        bookmarked: true,
-        date: "Sat, Feb 10",
-        going: true,
-        id: "month-workshop",
-        imageLabel: "Workshop",
-        location: "Cultural Center Hall",
-        title: "Vedic Chanting Workshop",
-        time: "3:00 PM",
-      },
-      {
-        attendees: "+27 interested",
-        bookmarked: false,
-        date: "Thu, Feb 15",
-        going: false,
-        id: "month-pooja",
-        imageLabel: "Pooja",
-        location: "Pooja Hall, Main Temple",
-        title: "Satyanarayana Vratam Pooja",
-        time: "6:00 PM",
-      },
-    ],
-    moreLabel: "View 8 More This Month",
-  },
-  {
-    background: "#FAFAF9",
-    count: "15 events",
-    title: "Coming Soon",
-    events: [
-      {
-        attendees: "+38 interested",
-        bookmarked: false,
-        date: "Mar 8-10",
-        going: false,
-        id: "soon-retreat",
-        imageLabel: "Retreat",
-        location: "Mountain Retreat Center",
-        title: "Weekend Spiritual Retreat",
-        time: "3 Days",
-      },
-      {
-        attendees: "+72 going",
-        bookmarked: true,
-        date: "Apr 12-15",
-        going: true,
-        id: "soon-shirdi",
-        imageLabel: "Pilgrimage",
-        location: "Shirdi, Maharashtra",
-        title: "Shirdi Darshan Group Trip",
-        time: "4 Days",
-      },
-      {
-        attendees: "+198 interested",
-        bookmarked: false,
-        date: "Tue, Apr 16",
-        going: false,
-        id: "soon-ram",
-        imageLabel: "Festival",
-        location: "Grand Temple Complex",
-        title: "Ram Navami Grand Celebration",
-        time: "All Day",
-      },
-    ],
-    moreLabel: "View 12 More Upcoming",
-  },
-] as const;
-
-const communities = [
-  {
-    description:
-      "Connect with young devotees, organize events, and share spiritual experiences",
-    events: "15 events/month",
-    joined: true,
-    members: "2.4K members",
-    title: "Youth Sai Devotees",
-  },
-  {
-    description:
-      "Join hands in service activities, food distribution, and community welfare programs",
-    events: "22 events/month",
-    joined: false,
-    members: "1.8K members",
-    title: "Seva Volunteers Network",
-  },
-  {
-    description:
-      "Learn devotional songs, participate in bhajan sessions, and celebrate through music",
-    events: "18 events/month",
-    joined: false,
-    members: "3.1K members",
-    title: "Bhajan & Kirtan Circle",
-  },
-];
-
-const nearbyEvents = [
-  {
-    attendees: "45 going",
-    bookmarked: false,
-    date: "Today, 6:00 PM",
-    description:
-      "Join us for a divine evening of devotional singing and spiritual connection at the community center.",
-    distance: "2.3 km away",
-    title: "Thursday Evening Bhajan Sandhya",
-    type: "Bhajan",
-  },
-  {
-    attendees: "82 going",
-    bookmarked: true,
-    date: "Tomorrow, 7:00 AM",
-    description:
-      "Special worship ceremony honoring spiritual masters with traditional rituals and prasad distribution.",
-    distance: "4.1 km away",
-    title: "Guru Poornima Special Pooja",
-    type: "Pooja",
-  },
-  {
-    attendees: "28 going",
-    bookmarked: false,
-    date: "Saturday, 10:00 AM",
-    description:
-      "Volunteer opportunity to serve meals to the underprivileged community members with love.",
-    distance: "5.8 km away",
-    title: "Weekend Food Distribution Seva",
-    type: "Seva",
-  },
+  { label: "Medical", value: "medical" },
+  { label: "Darshan", value: "darshan" },
 ];
 
 const mapMarkers = [
@@ -319,147 +84,6 @@ const mapMarkers = [
   { icon: Heart, left: "60%", top: "25%" },
   { icon: Music, right: "40%", top: "55%" },
 ] as const;
-
-const eventTypeGuide = [
-  {
-    count: "18 this month",
-    icon: Music,
-    label: "Bhajan",
-    summary: "Devotional music, aarti, and group singing.",
-  },
-  {
-    count: "11 active",
-    icon: HandHeart,
-    label: "Seva",
-    summary: "Food drives, temple help, and volunteer work.",
-  },
-  {
-    count: "9 upcoming",
-    icon: CalendarCheck,
-    label: "Pooja",
-    summary: "Rituals, vratam, prasad, and mandir ceremonies.",
-  },
-  {
-    count: "5 camps",
-    icon: Stethoscope,
-    label: "Medical",
-    summary: "Health camps and community care support.",
-  },
-];
-
-const activeCommittees = [
-  {
-    initials: "SY",
-    members: "42 members",
-    title: "Sai Youth Events",
-    trend: "+6 new helpers",
-  },
-  {
-    initials: "SV",
-    members: "67 members",
-    title: "Seva Volunteers",
-    trend: "3 drives this week",
-  },
-  {
-    initials: "BM",
-    members: "31 members",
-    title: "Bhajan Mandali",
-    trend: "2 rehearsals planned",
-  },
-];
-
-const trendingEvents = [
-  {
-    meta: "Sat, 6:30 PM · Main Temple Hall",
-    rank: "01",
-    title: "Saturday Bhajan Sandhya",
-    value: "62 going",
-  },
-  {
-    meta: "Sun, 8:00 AM · Sai Temple Complex",
-    rank: "02",
-    title: "Temple Cleaning Seva",
-    value: "28 volunteers",
-  },
-  {
-    meta: "Tue, All Day · Grand Temple Complex",
-    rank: "03",
-    title: "Maha Shivaratri Celebration",
-    value: "156 interested",
-  },
-];
-
-const topOrganisers = [
-  {
-    avatar: "RS",
-    events: "24 events",
-    name: "Ravi Sharma",
-    specialty: "Bhajan and satsang host",
-  },
-  {
-    avatar: "PP",
-    events: "19 events",
-    name: "Priya Patel",
-    specialty: "Seva coordination",
-  },
-  {
-    avatar: "AD",
-    events: "15 events",
-    name: "Amit Desai",
-    specialty: "Youth workshops",
-  },
-];
-
-const weeklySchedule = [
-  {
-    day: "Mon",
-    items: "2",
-    label: "Reading",
-  },
-  {
-    day: "Tue",
-    items: "1",
-    label: "Pooja",
-  },
-  {
-    day: "Wed",
-    items: "3",
-    label: "Seva",
-  },
-  {
-    day: "Thu",
-    items: "4",
-    label: "Bhajan",
-  },
-  {
-    day: "Fri",
-    items: "2",
-    label: "Satsang",
-  },
-  {
-    day: "Sat",
-    items: "5",
-    label: "Meetups",
-  },
-  {
-    day: "Sun",
-    items: "6",
-    label: "Mandir",
-  },
-];
-
-const communityStories = [
-  {
-    by: "Neha K.",
-    text: "The food seva team helped serve 300 meals last Sunday with new volunteers from the app.",
-    title: "Seva story",
-  },
-  {
-    by: "Bhajan Circle",
-    text: "Our weekly bhajan night moved to a bigger hall after 80 devotees joined through Events.",
-    title: "Community growth",
-  },
-];
 
 type UiEvent = {
   attendees: string;
@@ -504,7 +128,7 @@ const formatTime = (value: string) => {
 
 const toUiEvent = (event: SaiEvent): UiEvent => ({
   attendees: `+${event.rsvps || 0} going`,
-  bookmarked: false,
+  bookmarked: Boolean(event.bookmarkedByMe),
   date: formatDate(event.startAt),
   going: !!event.rsvpedByMe,
   id: event.id,
@@ -515,13 +139,70 @@ const toUiEvent = (event: SaiEvent): UiEvent => ({
   title: event.title,
 });
 
+const startOfToday = () => {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const endOfToday = () => {
+  const date = startOfToday();
+  date.setDate(date.getDate() + 1);
+  return date;
+};
+
+const endOfWeek = () => {
+  const date = startOfToday();
+  date.setDate(date.getDate() + 7);
+  return date;
+};
+
+const endOfMonth = () => {
+  const date = startOfToday();
+  date.setMonth(date.getMonth() + 1);
+  return date;
+};
+
+const isBetween = (event: SaiEvent, start: Date, end: Date) => {
+  const time = new Date(event.startAt).getTime();
+  return time >= start.getTime() && time < end.getTime();
+};
+
+const isFutureEvent = (event: SaiEvent) =>
+  new Date(event.startAt).getTime() >= Date.now();
+
+const sortBySoonest = (items: SaiEvent[]) =>
+  [...items].sort(
+    (a, b) =>
+      new Date(a.startAt).getTime() -
+      new Date(b.startAt).getTime()
+  );
+
+const getTypeIcon = (type?: string) => {
+  if (type === "seva") {
+    return HandHeart;
+  }
+  if (type === "medical") {
+    return Stethoscope;
+  }
+  if (type === "pooja" || type === "darshan") {
+    return Heart;
+  }
+  return Music;
+};
+
+const eventTypeLabel = (type?: string) =>
+  type ? type.charAt(0).toUpperCase() + type.slice(1) : "Event";
+
 function EventsScreen() {
   const dispatch = useAppDispatch();
   const events = useAppSelector(selectEventsFeed);
+  const communityCalendars = useAppSelector(selectCommunityCalendars);
+  const communityCalendarsLoading = useAppSelector(selectCommunityCalendarsLoading);
   const loading = useAppSelector(selectEventsLoading);
   const error = useAppSelector(selectEventsError);
 
-  const [selectedType, setSelectedType] = useState<EventType | "all" | "festival">("all");
+  const [selectedType, setSelectedType] = useState<EventType | "all">("all");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [refreshing, setRefreshing] = useState(false);
 
@@ -530,7 +211,7 @@ function EventsScreen() {
       limit: 20,
       page: 1,
       type:
-        selectedType === "all" || selectedType === "festival"
+        selectedType === "all"
           ? undefined
           : selectedType,
     }),
@@ -539,24 +220,77 @@ function EventsScreen() {
 
   useEffect(() => {
     dispatch(fetchEventsRequest(fetchParams));
+    dispatch(fetchCommunityCalendarsRequest());
   }, [dispatch, fetchParams]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     dispatch(fetchEventsRequest(fetchParams));
+    dispatch(fetchCommunityCalendarsRequest());
     setTimeout(() => setRefreshing(false), 700);
   }, [dispatch, fetchParams]);
 
-  const apiEvents = useMemo(() => events.slice(0, 3).map(toUiEvent), [events]);
-  const firstSection = apiEvents.length > 0
-    ? {
-        ...staticSections[0],
-        count: `${apiEvents.length} events`,
-        events: apiEvents,
-      }
-    : staticSections[0];
+  const futureEvents = useMemo(
+    () => sortBySoonest(events.filter(isFutureEvent)),
+    [events]
+  );
+  const today = useMemo(() => {
+    const start = startOfToday();
+    const end = endOfToday();
+    return sortBySoonest(events.filter((event) => isBetween(event, start, end)));
+  }, [events]);
+  const week = useMemo(() => {
+    const start = endOfToday();
+    const end = endOfWeek();
+    return sortBySoonest(events.filter((event) => isBetween(event, start, end)));
+  }, [events]);
+  const month = useMemo(() => {
+    const start = endOfWeek();
+    const end = endOfMonth();
+    return sortBySoonest(events.filter((event) => isBetween(event, start, end)));
+  }, [events]);
+  const later = useMemo(() => {
+    const start = endOfMonth();
+    return sortBySoonest(
+      events.filter(
+        (event) => new Date(event.startAt).getTime() >= start.getTime()
+      )
+    );
+  }, [events]);
+  const nearbyLiveEvents = useMemo(
+    () =>
+      [...futureEvents]
+        .sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999))
+        .slice(0, 6),
+    [futureEvents]
+  );
 
-  const sections = [firstSection, ...staticSections.slice(1)];
+  const sections = [
+    {
+      background: "#FFFFFF",
+      count: `${today.length} events`,
+      events: today.slice(0, 4).map(toUiEvent),
+      title: "Happening Today",
+    },
+    {
+      background: "#FAFAF9",
+      count: `${week.length} events`,
+      events: week.slice(0, 4).map(toUiEvent),
+      title: "This Week",
+    },
+    {
+      background: "#FFFFFF",
+      count: `${month.length} events`,
+      events: month.slice(0, 4).map(toUiEvent),
+      title: "This Month",
+    },
+    {
+      background: "#FAFAF9",
+      count: `${later.length} events`,
+      events: later.slice(0, 4).map(toUiEvent),
+      title: "Coming Soon",
+    },
+  ];
 
   return (
     <View style={styles.container}>
@@ -618,7 +352,7 @@ function EventsScreen() {
       </View>
 
       {viewMode === "map" ? (
-        <MapOverview />
+        <MapOverview events={nearbyLiveEvents} />
       ) : (
       <ScrollView
         refreshControl={
@@ -643,22 +377,24 @@ function EventsScreen() {
             background={section.background}
             count={section.count}
             events={[...section.events]}
-            moreLabel={"moreLabel" in section ? section.moreLabel : undefined}
             title={section.title}
           />
         ))}
 
-        <EventProductSections />
+        <EventProductSections events={futureEvents} />
         <CreateEventCta />
-        <ActivityStats />
-        <SuggestedCommunities />
+        <ActivityStats events={events} />
+        <SuggestedCommunities
+          calendars={communityCalendars}
+          loading={communityCalendarsLoading}
+        />
       </ScrollView>
       )}
     </View>
   );
 }
 
-function MapOverview() {
+function MapOverview({events}: {events: SaiEvent[]}) {
   return (
     <ScrollView
       contentContainerStyle={styles.mapScrollContent}
@@ -705,12 +441,17 @@ function MapOverview() {
         <View style={[styles.mapGridHorizontal, { top: "50%" }]} />
         <View style={[styles.mapGridHorizontal, { top: "75%" }]} />
 
-        {mapMarkers.map((marker, index) => {
-          const Icon = marker.icon;
+        {events.slice(0, 8).map((event, index) => {
+          const Icon = getTypeIcon(event.type);
+          const marker = mapMarkers[index % mapMarkers.length];
           return (
-            <View key={index} style={[styles.mapMarker, marker]}>
+            <Pressable
+              key={event.id}
+              onPress={() => router.push(`/events/${event.id}` as any)}
+              style={[styles.mapMarker, marker]}
+            >
               <Icon color="#FFFFFF" size={15} />
-            </View>
+            </Pressable>
           );
         })}
 
@@ -724,7 +465,7 @@ function MapOverview() {
         </View>
 
         <View style={styles.eventCountBadge}>
-          <Text style={styles.eventCountText}>12 Events</Text>
+          <Text style={styles.eventCountText}>{events.length} Events</Text>
         </View>
 
         <View style={styles.mapControls}>
@@ -739,7 +480,9 @@ function MapOverview() {
         <View style={styles.nearbyHeader}>
           <View>
             <Text style={styles.nearbyTitle}>Nearby Events</Text>
-            <Text style={styles.nearbySubtitle}>12 spiritual gatherings around you</Text>
+            <Text style={styles.nearbySubtitle}>
+              {events.length} spiritual gatherings from backend
+            </Text>
           </View>
           <Pressable>
             <Text style={styles.nearbyViewAll}>View All ›</Text>
@@ -751,13 +494,20 @@ function MapOverview() {
           horizontal
           showsHorizontalScrollIndicator={false}
         >
-          {nearbyEvents.map((event) => (
-            <NearbyEventCard key={event.title} event={event} />
+          {events.map((event) => (
+            <NearbyEventCard key={event.id} event={event} />
           ))}
+          {!events.length && (
+            <View style={styles.nearbyEmpty}>
+              <Text style={styles.nearbyDescription}>
+                No nearby events returned yet.
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </View>
 
-      <EventProductSections compact />
+      <EventProductSections compact events={events} />
     </ScrollView>
   );
 }
@@ -769,26 +519,33 @@ function MapControlButton({ icon }: { icon: React.ReactNode }) {
 function NearbyEventCard({
   event,
 }: {
-  event: (typeof nearbyEvents)[number];
+  event: SaiEvent;
 }) {
   return (
-    <Pressable style={styles.nearbyCard}>
+    <Pressable
+      onPress={() => router.push(`/events/${event.id}` as any)}
+      style={styles.nearbyCard}
+    >
       <View style={styles.nearbyImage}>
-        <Text style={styles.nearbyImageText}>Event Image</Text>
+        <Text style={styles.nearbyImageText}>{eventTypeLabel(event.type)}</Text>
         <View style={styles.nearbyTypeBadge}>
-          <Text style={styles.nearbyTypeText}>{event.type}</Text>
+          <Text style={styles.nearbyTypeText}>{eventTypeLabel(event.type)}</Text>
         </View>
         <View style={styles.nearbyHeart}>
           <Heart
             color="#4B5563"
-            fill={event.bookmarked ? "#6B7280" : "transparent"}
+            fill={event.bookmarkedByMe ? "#6B7280" : "transparent"}
             size={14}
           />
         </View>
-        <View style={styles.nearbyDistanceBadge}>
-          <MapPin color="#FFFFFF" size={11} />
-          <Text style={styles.nearbyDistanceText}>{event.distance}</Text>
-        </View>
+        {event.distanceKm != null && (
+          <View style={styles.nearbyDistanceBadge}>
+            <MapPin color="#FFFFFF" size={11} />
+            <Text style={styles.nearbyDistanceText}>
+              {event.distanceKm.toFixed(1)} km
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.nearbyBody}>
@@ -801,11 +558,11 @@ function NearbyEventCard({
         <View style={styles.nearbyMetaRow}>
           <View style={styles.nearbyMetaItem}>
             <Calendar color="#9CA3AF" size={12} />
-            <Text style={styles.nearbyMetaText}>{event.date}</Text>
+            <Text style={styles.nearbyMetaText}>{formatDate(event.startAt)}</Text>
           </View>
           <View style={styles.nearbyMetaItem}>
             <Users color="#9CA3AF" size={12} />
-            <Text style={styles.nearbyMetaText}>{event.attendees}</Text>
+            <Text style={styles.nearbyMetaText}>{event.rsvps || 0} going</Text>
           </View>
         </View>
       </View>
@@ -836,6 +593,15 @@ function EventSection({
       {events.map((event) => (
         <EventCard key={event.id} event={event} />
       ))}
+
+      {!events.length && (
+        <View style={styles.emptySectionCard}>
+          <Calendar color="#9CA3AF" size={18} />
+          <Text style={styles.emptySectionText}>
+            No live events returned for this section.
+          </Text>
+        </View>
+      )}
 
       {!!moreLabel && (
         <Pressable style={styles.viewMoreButton}>
@@ -884,16 +650,8 @@ function EventCard({ event }: { event: UiEvent }) {
           <MetaRow icon="location" label={event.location} />
 
           <View style={styles.attendeeRow}>
-            <View style={styles.avatarStack}>
-              {[101, 102, 103].map((seed, index) => (
-                <Image
-                  key={seed}
-                  source={{
-                    uri: `https://api.dicebear.com/7.x/notionists/png?scale=200&seed=${seed}`,
-                  }}
-                  style={[styles.avatar, index > 0 && styles.avatarOverlap]}
-                />
-              ))}
+            <View style={styles.attendeeIcon}>
+              <Users color="#FFFFFF" size={13} />
             </View>
             <Text style={styles.attendeeText}>{event.attendees}</Text>
           </View>
@@ -902,11 +660,7 @@ function EventCard({ event }: { event: UiEvent }) {
 
       <View style={styles.cardActions}>
         <Pressable style={[styles.rsvpButton, event.going && styles.rsvpButtonActive]}>
-          {event.going ? (
-            <Check color="#FFFFFF" size={16} />
-          ) : (
-            <CalendarCheck color="#4B5563" size={16} />
-          )}
+          <CalendarCheck color={event.going ? "#FFFFFF" : "#4B5563"} size={16} />
           <Text style={[styles.rsvpButtonText, event.going && styles.rsvpButtonTextActive]}>
             {event.going ? "Going" : "Interested"}
           </Text>
@@ -946,21 +700,39 @@ function MetaRow({
   );
 }
 
-function EventProductSections({ compact = false }: { compact?: boolean }) {
+function EventProductSections({
+  compact = false,
+  events,
+}: {
+  compact?: boolean;
+  events: SaiEvent[];
+}) {
   return (
     <View style={[styles.productWrap, compact && styles.productWrapCompact]}>
-      <EventTypeGuide />
-      <ActiveCommittees />
-      <TrendingThisWeek />
-      <TopOrganisers />
+      <EventTypeGuide events={events} />
+      <TrendingThisWeek events={events} />
       <EventQuickActions />
-      <WeekScheduler />
-      <CommunityStories />
+      <WeekScheduler events={events} />
     </View>
   );
 }
 
-function EventTypeGuide() {
+function EventTypeGuide({events}: {events: SaiEvent[]}) {
+  const guide = EVENT_FILTERS.filter((item) => item.value !== "all").map(
+    (item) => {
+      const Icon = getTypeIcon(item.value);
+      const count = events.filter((event) => event.type === item.value).length;
+
+      return {
+        count: `${count} live`,
+        icon: Icon,
+        label: item.label,
+        summary: `Live ${item.label.toLowerCase()} gatherings from backend.`,
+        type: item.value,
+      };
+    }
+  );
+
   return (
     <View style={styles.productSection}>
       <SectionHeading
@@ -972,11 +744,22 @@ function EventTypeGuide() {
         horizontal
         showsHorizontalScrollIndicator={false}
       >
-        {eventTypeGuide.map((item) => {
+        {guide.map((item) => {
           const Icon = item.icon;
 
           return (
-            <Pressable key={item.label} style={styles.typeGuideCard}>
+            <Pressable
+              key={item.label}
+              onPress={() =>
+                router.push({
+                  pathname: "/events",
+                  params: {
+                    type: item.type,
+                  },
+                } as any)
+              }
+              style={styles.typeGuideCard}
+            >
               <View style={styles.typeGuideIcon}>
                 <Icon color="#1F2937" size={22} />
               </View>
@@ -991,30 +774,11 @@ function EventTypeGuide() {
   );
 }
 
-function ActiveCommittees() {
-  return (
-    <View style={styles.productSectionAlt}>
-      <SectionHeading
-        subtitle="Teams actively hosting and managing events"
-        title="Active Committees"
-      />
-      {activeCommittees.map((item) => (
-        <View key={item.title} style={styles.committeeRow}>
-          <View style={styles.committeeAvatar}>
-            <Text style={styles.committeeAvatarText}>{item.initials}</Text>
-          </View>
-          <View style={styles.committeeBody}>
-            <Text style={styles.committeeTitle}>{item.title}</Text>
-            <Text style={styles.committeeMeta}>{item.members}</Text>
-          </View>
-          <Text style={styles.committeeTrend}>{item.trend}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
+function TrendingThisWeek({events}: {events: SaiEvent[]}) {
+  const trending = [...events]
+    .sort((a, b) => (b.rsvps || 0) - (a.rsvps || 0))
+    .slice(0, 5);
 
-function TrendingThisWeek() {
   return (
     <View style={styles.productSection}>
       <SectionHeading
@@ -1022,43 +786,27 @@ function TrendingThisWeek() {
         subtitle="Most saved and most RSVP activity"
         title="Trending This Week"
       />
-      {trendingEvents.map((event) => (
-        <View key={event.rank} style={styles.trendingRow}>
-          <Text style={styles.trendingRank}>{event.rank}</Text>
+      {trending.map((event, index) => (
+        <Pressable
+          key={event.id}
+          onPress={() => router.push(`/events/${event.id}` as any)}
+          style={styles.trendingRow}
+        >
+          <Text style={styles.trendingRank}>
+            {String(index + 1).padStart(2, "0")}
+          </Text>
           <View style={styles.trendingBody}>
             <Text numberOfLines={1} style={styles.trendingTitle}>{event.title}</Text>
-            <Text numberOfLines={1} style={styles.trendingMeta}>{event.meta}</Text>
+            <Text numberOfLines={1} style={styles.trendingMeta}>
+              {formatDate(event.startAt)} · {event.venueName || event.city || event.address}
+            </Text>
           </View>
-          <Text style={styles.trendingValue}>{event.value}</Text>
-        </View>
+          <Text style={styles.trendingValue}>{event.rsvps || 0} going</Text>
+        </Pressable>
       ))}
-    </View>
-  );
-}
-
-function TopOrganisers() {
-  return (
-    <View style={styles.productSectionAlt}>
-      <SectionHeading
-        subtitle="Recognize people who keep the calendar alive"
-        title="Top Event Organisers"
-      />
-      <ScrollView
-        contentContainerStyle={styles.organiserContent}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      >
-        {topOrganisers.map((organiser) => (
-          <View key={organiser.name} style={styles.organiserCard}>
-            <View style={styles.organiserAvatar}>
-              <Text style={styles.organiserAvatarText}>{organiser.avatar}</Text>
-            </View>
-            <Text numberOfLines={1} style={styles.organiserName}>{organiser.name}</Text>
-            <Text numberOfLines={2} style={styles.organiserSpecialty}>{organiser.specialty}</Text>
-            <Text style={styles.organiserEvents}>{organiser.events}</Text>
-          </View>
-        ))}
-      </ScrollView>
+      {!trending.length && (
+        <Text style={styles.emptySectionText}>No trending events yet.</Text>
+      )}
     </View>
   );
 }
@@ -1115,7 +863,24 @@ function EventQuickActions() {
   );
 }
 
-function WeekScheduler() {
+function WeekScheduler({events}: {events: SaiEvent[]}) {
+  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const todayIndex = new Date().getDay();
+  const schedule = weekdays.map((day, index) => {
+    const count = events.filter(
+      (event) => new Date(event.startAt).getDay() === index
+    ).length;
+    const firstType = events.find(
+      (event) => new Date(event.startAt).getDay() === index
+    )?.type;
+
+    return {
+      count,
+      day,
+      label: firstType ? eventTypeLabel(firstType) : "Open",
+    };
+  });
+
   return (
     <View style={styles.productSectionAlt}>
       <SectionHeading
@@ -1127,47 +892,26 @@ function WeekScheduler() {
         horizontal
         showsHorizontalScrollIndicator={false}
       >
-        {weeklySchedule.map((day, index) => (
+        {schedule.map((day, index) => (
           <View
             key={day.day}
             style={[
               styles.schedulerDay,
-              index === 5 && styles.schedulerDayActive,
+              index === todayIndex && styles.schedulerDayActive,
             ]}
           >
-            <Text style={[styles.schedulerDayText, index === 5 && styles.schedulerDayTextActive]}>
+            <Text style={[styles.schedulerDayText, index === todayIndex && styles.schedulerDayTextActive]}>
               {day.day}
             </Text>
-            <Text style={[styles.schedulerCount, index === 5 && styles.schedulerCountActive]}>
-              {day.items}
+            <Text style={[styles.schedulerCount, index === todayIndex && styles.schedulerCountActive]}>
+              {day.count}
             </Text>
-            <Text numberOfLines={1} style={[styles.schedulerLabel, index === 5 && styles.schedulerLabelActive]}>
+            <Text numberOfLines={1} style={[styles.schedulerLabel, index === todayIndex && styles.schedulerLabelActive]}>
               {day.label}
             </Text>
           </View>
         ))}
       </ScrollView>
-    </View>
-  );
-}
-
-function CommunityStories() {
-  return (
-    <View style={styles.productSection}>
-      <SectionHeading
-        subtitle="Impact from events and gatherings"
-        title="Community Stories"
-      />
-      {communityStories.map((story) => (
-        <View key={story.title} style={styles.storyCard}>
-          <View style={styles.storyAccent} />
-          <View style={styles.storyBody}>
-            <Text style={styles.storyTitle}>{story.title}</Text>
-            <Text style={styles.storyText}>{story.text}</Text>
-            <Text style={styles.storyBy}>Shared by {story.by}</Text>
-          </View>
-        </View>
-      ))}
     </View>
   );
 }
@@ -1212,16 +956,26 @@ function CreateEventCta() {
   );
 }
 
-function ActivityStats() {
+function ActivityStats({events}: {events: SaiEvent[]}) {
+  const totalRsvps = events.reduce((total, event) => total + (event.rsvps || 0), 0);
+  const totalComments = events.reduce((total, event) => total + (event.comments || 0), 0);
+  const bookmarked = events.filter((event) => event.bookmarkedByMe).length;
+  const cities = new Set(events.map((event) => event.city).filter(Boolean)).size;
+
   return (
     <View style={styles.statsSection}>
-      <Text style={styles.smallSectionTitle}>Your Event Activity</Text>
+      <Text style={styles.smallSectionTitle}>Live Event Activity</Text>
       <View style={styles.statsGrid}>
-        <StatCard icon={<CalendarCheck color="#1F2937" size={19} />} label="Events Attended" value="12" />
-        <StatCard icon={<Bookmark color="#1F2937" size={19} />} label="Saved Events" value="8" />
-        <StatCard icon={<Clock3 color="#1F2937" size={19} />} label="Hours of Seva" value="24" />
-        <StatCard icon={<Users color="#1F2937" size={19} />} label="Connections Made" value="156" />
+        <StatCard icon={<CalendarCheck color="#1F2937" size={19} />} label="Events Listed" value={String(events.length)} />
+        <StatCard icon={<Users color="#1F2937" size={19} />} label="Total RSVPs" value={String(totalRsvps)} />
+        <StatCard icon={<Bookmark color="#1F2937" size={19} />} label="Bookmarked" value={String(bookmarked)} />
+        <StatCard icon={<MapPin color="#1F2937" size={19} />} label="Cities" value={String(cities)} />
       </View>
+      {!!totalComments && (
+        <Text style={styles.activityFootnote}>
+          {totalComments} community comments across visible events.
+        </Text>
+      )}
     </View>
   );
 }
@@ -1244,36 +998,52 @@ function StatCard({
   );
 }
 
-function SuggestedCommunities() {
+function SuggestedCommunities({
+  calendars,
+  loading,
+}: {
+  calendars: CommunityCalendar[];
+  loading: boolean;
+}) {
   return (
     <View style={styles.communitySection}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.smallSectionTitle}>Suggested Communities</Text>
-        <Text style={styles.viewAllText}>View All</Text>
+        <Text style={styles.smallSectionTitle}>Community Calendars</Text>
+        {loading && <ActivityIndicator color="#F97316" />}
       </View>
 
-      {communities.map((community) => (
-        <View key={community.title} style={styles.communityCard}>
+      {calendars.map((calendar) => (
+        <View key={calendar.id} style={styles.communityCard}>
           <View style={styles.communityThumb}>
             <Users color="#FFFFFF" size={24} />
           </View>
           <View style={styles.communityBody}>
-            <Text numberOfLines={1} style={styles.communityTitle}>{community.title}</Text>
-            <Text numberOfLines={2} style={styles.communityDescription}>{community.description}</Text>
+            <Text numberOfLines={1} style={styles.communityTitle}>{calendar.title}</Text>
+            <Text numberOfLines={2} style={styles.communityDescription}>
+              {calendar.description || "Community event calendar from backend."}
+            </Text>
             <View style={styles.communityMeta}>
               <Users color="#6B7280" size={13} />
-              <Text style={styles.communityMetaText}>{community.members}</Text>
+              <Text style={styles.communityMetaText}>{calendar.subscribers ?? 0} subscribers</Text>
               <Calendar color="#6B7280" size={13} />
-              <Text style={styles.communityMetaText}>{community.events}</Text>
+              <Text style={styles.communityMetaText}>{eventTypeLabel(calendar.type)}</Text>
             </View>
-            <Pressable style={[styles.joinButton, community.joined && styles.joinButtonActive]}>
-              <Text style={[styles.joinButtonText, community.joined && styles.joinButtonTextActive]}>
-                Join Community
+            <Pressable style={[styles.joinButton, calendar.subscribedByMe && styles.joinButtonActive]}>
+              <Text style={[styles.joinButtonText, calendar.subscribedByMe && styles.joinButtonTextActive]}>
+                {calendar.subscribedByMe ? "Subscribed" : "View Calendar"}
               </Text>
             </Pressable>
           </View>
         </View>
       ))}
+      {!loading && !calendars.length && (
+        <View style={styles.emptySectionCard}>
+          <Users color="#9CA3AF" size={18} />
+          <Text style={styles.emptySectionText}>
+            No community calendars returned yet.
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -1286,6 +1056,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     marginTop: 9,
+  },
+  attendeeIcon: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 12,
+    height: 24,
+    justifyContent: "center",
+    width: 24,
   },
   attendeeText: {
     color: "#6B7280",
@@ -1580,6 +1358,29 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     height: 4,
     width: 4,
+  },
+  activityFootnote: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 12,
+  },
+  emptySectionCard: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F6EFD9",
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    padding: 14,
+  },
+  emptySectionText: {
+    color: "#6B7280",
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "700",
   },
   errorText: {
     color: "#B42318",
@@ -1983,6 +1784,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     marginTop: 5,
+  },
+  nearbyEmpty: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F6EFD9",
+    borderRadius: 16,
+    borderWidth: 1,
+    justifyContent: "center",
+    marginRight: 12,
+    padding: 14,
+    width: 260,
   },
   nearbyDistanceBadge: {
     alignItems: "center",
