@@ -7,10 +7,11 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
-  Image,
   ImageBackground,
+  Linking,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -27,26 +28,15 @@ import {
   Calendar,
   CalendarCheck,
   CalendarPlus,
-  Check,
-  ChevronDown,
-  CircleDot,
-  CircleHelp,
   Clock3,
   Flag,
   Image as ImageIcon,
   Map,
   MapPin,
-  Medal,
   Navigation,
   Pencil,
-  Phone,
   SendHorizonal,
   Share2,
-  ShieldCheck,
-  Shirt,
-  Smartphone,
-  Star,
-  ThumbsUp,
   Trash2,
   Users,
 } from "lucide-react-native";
@@ -70,12 +60,16 @@ import {
   selectIsEventRsvpPending,
 } from "@/store/events/selectors";
 import { validateEventCommentContent } from "@/store/events/validation";
+import type {
+  EventComment,
+  EventFaq,
+  EventUserSummary,
+  SaiEvent,
+} from "@/store/events/types";
 import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
-
-const avatarSeeds = [192837, 564738, 847392, 738291];
 
 const formatLongDate = (value?: string) => {
   const date = value ? new Date(value) : null;
@@ -90,6 +84,25 @@ const formatLongDate = (value?: string) => {
     weekday: "long",
     year: "numeric",
   });
+};
+
+const getEventLocation = (event: SaiEvent) =>
+  event.venueName || event.address || event.city || "Location pending";
+
+const getCityLine = (event: SaiEvent) =>
+  [event.city, event.state, event.country].filter(Boolean).join(", ");
+
+const openEventMaps = (event: SaiEvent) => {
+  const destination =
+    event.latitude && event.longitude
+      ? `${event.latitude},${event.longitude}`
+      : encodeURIComponent(getEventLocation(event));
+
+  Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${destination}`);
+};
+
+type EventDetailWithExtras = SaiEvent & {
+  attendeesPreview?: EventUserSummary[];
 };
 
 const formatTime = (value?: string) => {
@@ -181,6 +194,17 @@ export default function EventDetailRoute() {
     ]);
   }, [dispatch, eventId]);
 
+  const handleShare = useCallback(() => {
+    if (!detail) {
+      return;
+    }
+
+    Share.share({
+      message: `${detail.title}\n${formatLongDate(detail.startAt)} · ${formatTime(detail.startAt)}\n${getEventLocation(detail)}`,
+      title: detail.title,
+    });
+  }, [detail]);
+
   if (loading && !detail) {
     return (
       <View style={styles.loader}>
@@ -197,8 +221,16 @@ export default function EventDetailRoute() {
     );
   }
 
-  const location = detail.venueName || detail.address || "Location pending";
-  const cityLine = [detail.city, detail.state].filter(Boolean).join(", ");
+  const liveDetail = detail as EventDetailWithExtras;
+  const location = getEventLocation(detail);
+  const cityLine = getCityLine(detail);
+  const canEdit = Boolean(detail.permissions?.canEdit || detail.isOwner);
+  const canDelete = Boolean(detail.permissions?.canDelete || detail.isOwner);
+  const mediaCount = (detail.media?.length || 0) + (detail.bannerUrl ? 1 : 0);
+  const tags = [
+    detail.type,
+    ...(detail.tags || []),
+  ].filter(Boolean) as string[];
 
   return (
     <View style={styles.container}>
@@ -226,35 +258,53 @@ export default function EventDetailRoute() {
           </Pressable>
 
           <View style={styles.heroActions}>
-            <Pressable
-              onPress={() => router.push(`/events/edit?id=${detail.id}` as any)}
-              style={styles.heroButton}
-            >
-              <Pencil color="#FFFFFF" size={17} />
-            </Pressable>
-            <Pressable onPress={handleDelete} style={styles.heroButton}>
-              <Trash2 color="#FFFFFF" size={17} />
-            </Pressable>
-            <Pressable style={styles.heroButton}>
+            {canEdit && (
+              <Pressable
+                onPress={() => router.push(`/events/edit?id=${detail.id}` as any)}
+                style={styles.heroButton}
+              >
+                <Pencil color="#FFFFFF" size={17} />
+              </Pressable>
+            )}
+            {canDelete && (
+              <Pressable onPress={handleDelete} style={styles.heroButton}>
+                <Trash2 color="#FFFFFF" size={17} />
+              </Pressable>
+            )}
+            <Pressable onPress={handleShare} style={styles.heroButton}>
               <Share2 color="#FFFFFF" size={18} />
             </Pressable>
           </View>
 
-          <View style={styles.galleryDots}>
-            {[0, 1, 2, 3].map((item) => (
+          {mediaCount > 1 && (
+            <View style={styles.galleryDots}>
+            {Array.from({length: Math.min(mediaCount, 4)}).map((_, item) => (
               <View
                 key={item}
                 style={[styles.galleryDot, item === 0 && styles.galleryDotActive]}
               />
             ))}
           </View>
+          )}
         </ImageBackground>
 
         <Section style={styles.eventHeader}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>{detail.title}</Text>
-            <Pressable style={styles.bookmarkButton}>
-              <Bookmark color="#1F2937" size={22} />
+            <Pressable
+              onPress={() =>
+                Alert.alert(
+                  "Bookmark",
+                  "Bookmark API exists in backend; frontend Redux wiring is the next integration step."
+                )
+              }
+              style={styles.bookmarkButton}
+            >
+              <Bookmark
+                color="#1F2937"
+                fill={detail.bookmarkedByMe ? "#1F2937" : "transparent"}
+                size={22}
+              />
             </Pressable>
           </View>
 
@@ -270,15 +320,26 @@ export default function EventDetailRoute() {
           />
         </Section>
 
-        <OrganizerSection />
-        <AttendeesSection count={detail.rsvps || 0} />
+        <OrganizerSection event={detail} />
+        <AttendeesSection
+          count={detail.rsvps || 0}
+          preview={liveDetail.attendeesPreview || []}
+        />
         <AboutSection description={detail.description} />
-        <LocationSection location={location} address={detail.address} cityLine={cityLine} />
-        <GuidelinesSection />
-        <ReviewsSection />
-        <FaqSection />
-        <SimilarEventsSection />
-        <TagsSection type={detail.type || "general"} />
+        {!!detail.guidelines?.length && (
+          <GuidelinesSection guidelines={detail.guidelines} />
+        )}
+        <LocationSection
+          event={detail}
+          location={location}
+          address={detail.address}
+          cityLine={cityLine}
+        />
+        {!!detail.faq?.length && <FaqSection faq={detail.faq} />}
+        {!!detail.similarEvents?.length && (
+          <SimilarEventsSection events={detail.similarEvents} />
+        )}
+        {!!tags.length && <TagsSection tags={tags} />}
         <CommentsSection
           addingComment={addingComment}
           comment={comment}
@@ -288,7 +349,10 @@ export default function EventDetailRoute() {
           onChangeComment={setComment}
           onSubmitComment={handleComment}
         />
-        <ShareReportSection />
+        <ShareReportSection
+          canReport={Boolean(canEdit || detail.isOwner)}
+          onShare={handleShare}
+        />
       </ScrollView>
 
       <View style={styles.fixedCta}>
@@ -316,7 +380,15 @@ export default function EventDetailRoute() {
             </Text>
           </Pressable>
         </View>
-        <Pressable style={styles.calendarButton}>
+        <Pressable
+          onPress={() =>
+            Alert.alert(
+              "Calendar",
+              "Use the RSVP button to include this event in your live calendar feed."
+            )
+          }
+          style={styles.calendarButton}
+        >
           <CalendarPlus color="#1F2937" size={15} />
           <Text style={styles.calendarText}>Add to Calendar</Text>
         </Pressable>
@@ -335,13 +407,7 @@ function Section({
   return <View style={[styles.section, style]}>{children}</View>;
 }
 
-function SectionTitle({
-  action,
-  title,
-}: {
-  action?: string;
-  title: string;
-}) {
+function SectionTitle({action, title}: {action?: string; title: string}) {
   return (
     <View style={styles.sectionTitleRow}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -370,90 +436,60 @@ function QuickInfo({
   );
 }
 
-function OrganizerSection() {
+function OrganizerSection({event}: {event: SaiEvent}) {
+  const organizer = event.organizer;
+  const organizerName =
+    organizer?.name || event.ownerName || "Event organizer";
+
   return (
     <Section>
       <SectionTitle title="Organized By" />
       <View style={styles.organizerRow}>
-        <Image
-          source={{uri: "https://api.dicebear.com/7.x/notionists/png?scale=200&seed=847293"}}
-          style={styles.organizerAvatar}
-        />
+        <View style={styles.organizerAvatar}>
+          <Users color="#F97316" size={22} />
+        </View>
         <View style={styles.organizerBody}>
-          <Text style={styles.organizerName}>Rajesh Kumar</Text>
-          <View style={styles.inlineMeta}>
-            <Star color="#1F2937" fill="#1F2937" size={12} />
-            <Text style={styles.inlineText}>4.9</Text>
-            <Text style={styles.inlineMuted}>•</Text>
-            <Text style={styles.inlineMuted}>127 events organized</Text>
-          </View>
+          <Text style={styles.organizerName}>{organizerName}</Text>
+          {!!organizer?.eventsOrganized && (
+            <View style={styles.inlineMeta}>
+              <Text style={styles.inlineText}>
+                {organizer.eventsOrganized} events organized
+              </Text>
+            </View>
+          )}
           <View style={styles.activeRow}>
             <View style={styles.activeDot} />
             <Text style={styles.inlineMuted}>Active organizer</Text>
           </View>
         </View>
-        <Pressable style={styles.followButton}>
-          <Text style={styles.followText}>Follow</Text>
-        </Pressable>
       </View>
-      <View style={styles.badgeRow}>
-        <TrustBadge icon={<ShieldCheck color="#6B7280" size={13} />} label="Verified" />
-        <TrustBadge icon={<Medal color="#6B7280" size={13} />} label="Top Organizer" />
-      </View>
+      {!!organizer?.bio && <Text style={styles.paragraph}>{organizer.bio}</Text>}
     </Section>
   );
 }
 
-function TrustBadge({icon, label}: {icon: React.ReactNode; label: string}) {
-  return (
-    <View style={styles.trustBadge}>
-      {icon}
-      <Text style={styles.trustText}>{label}</Text>
-    </View>
-  );
-}
-
-function AttendeesSection({count}: {count: number}) {
+function AttendeesSection({
+  count,
+  preview,
+}: {
+  count: number;
+  preview: EventUserSummary[];
+}) {
   return (
     <Section>
-      <SectionTitle action="See All" title="Who's Attending" />
-      <View style={styles.connectionBox}>
-        <View style={styles.smallAvatarStack}>
-          {[923847, 384756].map((seed, index) => (
-            <Image
-              key={seed}
-              source={{uri: `https://api.dicebear.com/7.x/notionists/png?scale=200&seed=${seed}`}}
-              style={[styles.smallAvatar, index > 0 && styles.avatarOverlap]}
-            />
-          ))}
-        </View>
-        <Text style={styles.connectionText}>
-          Priya Sharma and 2 others from your connections are attending
-        </Text>
-      </View>
-
+      <SectionTitle title="Who's Attending" />
       <View style={styles.attendeeSummary}>
-        <View style={styles.avatarStack}>
-          {avatarSeeds.map((seed, index) => (
-            <Image
-              key={seed}
-              source={{uri: `https://api.dicebear.com/7.x/notionists/png?scale=200&seed=${seed}`}}
-              style={[styles.attendeeAvatar, index > 0 && styles.bigAvatarOverlap]}
-            />
-          ))}
-          <View style={[styles.attendeeAvatar, styles.plusAvatar, styles.bigAvatarOverlap]}>
-            <Text style={styles.plusText}>+42</Text>
-          </View>
+        <View style={styles.attendeeAvatar}>
+          <Users color="#FFFFFF" size={18} />
         </View>
         <View>
-          <Text style={styles.attendeeCount}>{count || 46} attending</Text>
-          <Text style={styles.attendeeSub}>50 spots available</Text>
+          <Text style={styles.attendeeCount}>{count} attending</Text>
+          <Text style={styles.attendeeSub}>
+            {preview.length
+              ? preview.map((item) => item.name).slice(0, 3).join(", ")
+              : "RSVP devotees will appear here when backend sends preview."}
+          </Text>
         </View>
-      </View>
-
-      <View style={styles.activityLine}>
-        <Clock3 color="#9CA3AF" size={13} />
-        <Text style={styles.activityText}>Last person joined 12 minutes ago</Text>
       </View>
     </Section>
   );
@@ -464,103 +500,55 @@ function AboutSection({description}: {description: string}) {
     <Section>
       <SectionTitle title="About This Event" />
       <Text style={styles.paragraph}>{description}</Text>
-      <Text style={styles.paragraph}>
-        The evening begins with melodious bhajans, followed by aarti ceremony, prasad, and
-        community gathering.
-      </Text>
-      <Checklist
-        icon="check"
-        title="What to Expect"
-        items={[
-          "Traditional bhajan singing",
-          "Sacred aarti ceremony",
-          "Prasad distribution",
-          "Community gathering and networking",
-        ]}
-      />
-      <Checklist
-        icon="dot"
-        title="What to Bring"
-        items={["Comfortable seating mat optional", "Traditional attire recommended"]}
-      />
-      <Pressable style={styles.readMore}>
-        <Text style={styles.readMoreText}>Read More</Text>
-        <ChevronDown color="#1F2937" size={13} />
-      </Pressable>
     </Section>
-  );
-}
-
-function Checklist({
-  icon,
-  items,
-  title,
-}: {
-  icon: "check" | "dot";
-  items: string[];
-  title: string;
-}) {
-  return (
-    <View style={styles.checkBlock}>
-      <Text style={styles.subhead}>{title}</Text>
-      {items.map((item) => (
-        <View key={item} style={styles.checkRow}>
-          {icon === "check" ? (
-            <Check color="#1F2937" size={14} />
-          ) : (
-            <CircleDot color="#6B7280" size={13} />
-          )}
-          <Text style={styles.checkText}>{item}</Text>
-        </View>
-      ))}
-    </View>
   );
 }
 
 function LocationSection({
   address,
   cityLine,
+  event,
   location,
 }: {
   address?: string;
   cityLine: string;
+  event: SaiEvent;
   location: string;
 }) {
   return (
     <Section>
-      <SectionTitle action="Directions" title="Location" />
+      <SectionTitle title="Location" />
       <View style={styles.mapPreview}>
         <Map color="#9CA3AF" size={54} />
         <MapPin color="#1F2937" size={36} style={styles.mapPin} />
       </View>
       <Text style={styles.locationTitle}>{location}</Text>
       <Text style={styles.locationAddress}>{address || cityLine || "Address pending"}</Text>
-      <View style={styles.facilityRow}>
-        <Text style={styles.facilityText}>Free parking available</Text>
-        <Text style={styles.facilityText}>Wheelchair accessible</Text>
-      </View>
       <View style={styles.twoButtons}>
-        <Pressable style={styles.primarySmallButton}>
+        <Pressable
+          onPress={() => openEventMaps(event)}
+          style={styles.primarySmallButton}
+        >
           <Navigation color="#FFFFFF" size={16} />
           <Text style={styles.primarySmallText}>Open in Maps</Text>
-        </Pressable>
-        <Pressable style={styles.secondarySmallButton}>
-          <Phone color="#1F2937" size={16} />
-          <Text style={styles.secondarySmallText}>Call Venue</Text>
         </Pressable>
       </View>
     </Section>
   );
 }
 
-function GuidelinesSection() {
+function GuidelinesSection({guidelines}: {guidelines: string[]}) {
   return (
     <Section>
       <SectionTitle title="Event Guidelines" />
-      <Guideline icon={<Clock3 color="#4B5563" size={16} />} title="Arrive on Time" text="Please arrive 10 minutes early to find seating before the event begins." />
-      <Guideline icon={<Smartphone color="#4B5563" size={16} />} title="Silence Devices" text="Keep mobile phones on silent mode during prayers and ceremonies." />
-      <Guideline icon={<Shirt color="#4B5563" size={16} />} title="Dress Code" text="Traditional or modest attire is appreciated but not mandatory." />
-      <Guideline icon={<Users color="#4B5563" size={16} />} title="Family Friendly" text="Children are welcome. Seating area available for families." />
+      {guidelines.map((item) => (
+        <Guideline
+          key={item}
+          icon={<Clock3 color="#4B5563" size={16} />}
+          text={item}
+          title="Guideline"
+        />
+      ))}
     </Section>
   );
 }
@@ -577,117 +565,52 @@ function Guideline({icon, text, title}: {icon: React.ReactNode; text: string; ti
   );
 }
 
-function ReviewsSection() {
-  return (
-    <Section>
-      <SectionTitle action="See All 89" title="Reviews" />
-      <View style={styles.ratingBox}>
-        <View style={styles.ratingScore}>
-          <Text style={styles.ratingNumber}>4.8</Text>
-          <View style={styles.starsRow}>
-            {[0, 1, 2, 3, 4].map((item) => (
-              <Star key={item} color="#1F2937" fill="#1F2937" size={12} />
-            ))}
-          </View>
-          <Text style={styles.ratingSub}>89 reviews</Text>
-        </View>
-        <View style={styles.ratingBars}>
-          {[78, 15, 5, 2, 1].map((width, index) => (
-            <View key={index} style={styles.ratingLine}>
-              <Text style={styles.ratingLabel}>{5 - index}★</Text>
-              <View style={styles.ratingTrack}>
-                <View style={[styles.ratingFill, {width: `${width}%`}]} />
-              </View>
-            </View>
-          ))}
-        </View>
-      </View>
-      <Review name="Meera Patel" seed="637281" text="Beautiful spiritual experience. The bhajan singing was melodious and the atmosphere was very peaceful." />
-      <Review name="Arjun Reddy" seed="928374" text="Attended with my family. Very well organized event with great community participation." />
-    </Section>
-  );
-}
-
-function Review({name, seed, text}: {name: string; seed: string; text: string}) {
-  return (
-    <View style={styles.review}>
-      <Image source={{uri: `https://api.dicebear.com/7.x/notionists/png?scale=200&seed=${seed}`}} style={styles.reviewAvatar} />
-      <View style={styles.reviewBody}>
-        <View style={styles.reviewTop}>
-          <Text style={styles.reviewName}>{name}</Text>
-          <Text style={styles.reviewDate}>2 weeks ago</Text>
-        </View>
-        <View style={styles.starsRow}>
-          {[0, 1, 2, 3, 4].map((item) => (
-            <Star key={item} color="#1F2937" fill="#1F2937" size={11} />
-          ))}
-        </View>
-        <Text style={styles.reviewText}>{text}</Text>
-        <View style={styles.helpfulRow}>
-          <ThumbsUp color="#6B7280" size={13} />
-          <Text style={styles.helpfulText}>Helpful</Text>
-          <Text style={styles.helpfulText}>Reply</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function FaqSection() {
+function FaqSection({faq}: {faq: EventFaq[]}) {
   return (
     <Section>
       <SectionTitle title="Frequently Asked Questions" />
-      {[
-        "Is registration mandatory?",
-        "Can I bring children?",
-        "Is there parking available?",
-        "What if I need to cancel?",
-        "Is food provided?",
-      ].map((question) => (
-        <Pressable key={question} style={styles.faqRow}>
-          <Text style={styles.faqText}>{question}</Text>
-          <ChevronDown color="#9CA3AF" size={14} />
-        </Pressable>
+      {faq.map((item) => (
+        <View key={item.question} style={styles.faqRow}>
+          <Text style={styles.faqText}>{item.question}</Text>
+          <Text style={styles.faqAnswer}>{item.answer}</Text>
+        </View>
       ))}
-      <Pressable style={styles.askButton}>
-        <CircleHelp color="#1F2937" size={16} />
-        <Text style={styles.askText}>Ask a Question</Text>
-      </Pressable>
     </Section>
   );
 }
 
-function SimilarEventsSection() {
+function SimilarEventsSection({events}: {events: SaiEvent[]}) {
   return (
     <Section>
-      <SectionTitle action="See All" title="Similar Events" />
-      {[
-        "Sunday Morning Meditation",
-        "Sai Satcharitra Reading",
-        "Community Lunch Seva",
-      ].map((title, index) => (
-        <View key={title} style={styles.similarCard}>
+      <SectionTitle title="Similar Events" />
+      {events.map((event) => (
+        <Pressable
+          key={event.id}
+          onPress={() => router.push(`/events/${event.id}` as any)}
+          style={styles.similarCard}
+        >
           <View style={styles.similarImage}>
             <ImageIcon color="#6B7280" size={24} />
           </View>
           <View style={styles.similarBody}>
-            <Text numberOfLines={1} style={styles.similarTitle}>{title}</Text>
-            <Text style={styles.similarMeta}>{index === 0 ? "Sun, May 18" : "Sat, May 24"}</Text>
-            <Text numberOfLines={1} style={styles.similarMeta}>Shirdi Sai Temple</Text>
+            <Text numberOfLines={1} style={styles.similarTitle}>{event.title}</Text>
+            <Text style={styles.similarMeta}>{formatLongDate(event.startAt)}</Text>
+            <Text numberOfLines={1} style={styles.similarMeta}>
+              {getEventLocation(event)}
+            </Text>
           </View>
-          <Bookmark color="#9CA3AF" size={18} />
-        </View>
+        </Pressable>
       ))}
     </Section>
   );
 }
 
-function TagsSection({type}: {type: string}) {
+function TagsSection({tags}: {tags: string[]}) {
   return (
     <Section>
       <SectionTitle title="Tags" />
       <View style={styles.tags}>
-        {[type, "Aarti", "Spiritual", "Devotional", "Community", "Weekly", "Free", "Family Friendly"].map((tag) => (
+        {Array.from(new Set(tags)).map((tag) => (
           <View key={tag} style={styles.tag}>
             <Text style={styles.tagText}>{tag}</Text>
           </View>
@@ -708,7 +631,7 @@ function CommentsSection({
 }: {
   addingComment: boolean;
   comment: string;
-  comments: {id: string; content: string; author?: {name?: string}}[];
+  comments: EventComment[];
   commentsError?: string | null;
   commentsLoading: boolean;
   onChangeComment: (value: string) => void;
@@ -753,18 +676,34 @@ function CommentsSection({
   );
 }
 
-function ShareReportSection() {
+function ShareReportSection({
+  canReport,
+  onShare,
+}: {
+  canReport: boolean;
+  onShare: () => void;
+}) {
   return (
     <Section style={styles.shareSection}>
       <View style={styles.twoButtons}>
-        <Pressable style={styles.secondarySmallButton}>
+        <Pressable onPress={onShare} style={styles.secondarySmallButton}>
           <Share2 color="#1F2937" size={16} />
           <Text style={styles.secondarySmallText}>Share Event</Text>
         </Pressable>
-        <Pressable style={styles.secondarySmallButton}>
-          <Flag color="#1F2937" size={16} />
-          <Text style={styles.secondarySmallText}>Report</Text>
-        </Pressable>
+        {canReport && (
+          <Pressable
+            onPress={() =>
+              Alert.alert(
+                "Event report",
+                "Backend report API exists; frontend report form wiring is the next step."
+              )
+            }
+            style={styles.secondarySmallButton}
+          >
+            <Flag color="#1F2937" size={16} />
+            <Text style={styles.secondarySmallText}>Report</Text>
+          </Pressable>
+        )}
       </View>
     </Section>
   );
@@ -985,21 +924,25 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   faqRow: {
-    alignItems: "center",
+    alignItems: "flex-start",
     borderColor: "#F6EFD9",
     borderRadius: 12,
     borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
     marginBottom: 10,
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
+  faqAnswer: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 19,
+    marginTop: 7,
+  },
   faqText: {
     color: "#1F2937",
-    flex: 1,
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "900",
   },
   fixedCopy: {
     flex: 1,

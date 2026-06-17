@@ -393,7 +393,7 @@ export default function EventListScreen({
       return {
         data: myEvents,
         empty: "You have not created any events yet.",
-        title: "My Events",
+        title: "My Events lo",
       };
     }
 

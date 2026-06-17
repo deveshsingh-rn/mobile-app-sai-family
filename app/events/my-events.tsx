@@ -7,7 +7,7 @@ import React, {
 
 import {
   ActivityIndicator,
-  Image,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -26,14 +26,12 @@ import {
   CalendarPlus,
   Clock3,
   Edit3,
-  Ellipsis,
   Filter,
   History,
   MapPin,
-  MoreVertical,
   Navigation,
+  Plus,
   Search,
-  Share2,
   Star,
   TrendingUp,
   Users,
@@ -47,15 +45,21 @@ import {
   selectEventsError,
   selectEventsLoading,
   selectMyEventRsvps,
+  selectMyEventRsvpsPagination,
   selectMyEvents,
+  selectMyEventsPagination,
 } from "@/store/events/selectors";
-import {SaiEvent} from "@/store/events/types";
+import {
+  EventPagination,
+  SaiEvent,
+} from "@/store/events/types";
 import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
 
 type MyEventsTab = "attending" | "posted";
+type EventFilter = "all" | "upcoming" | "past" | "nearby";
 
 type DisplayEvent = {
   attendees: string;
@@ -69,85 +73,9 @@ type DisplayEvent = {
   muted?: boolean;
   official?: boolean;
   primaryAction: string;
+  source: SaiEvent;
   title: string;
 };
-
-const fallbackAttending: DisplayEvent[] = [
-  {
-    attendees: "45 devotees attending",
-    badge: "Upcoming",
-    bookmarked: true,
-    date: "May 28, 2025 · 9:00 AM",
-    host: "Ramesh Kumar",
-    imageLabel: "Event Image",
-    location: "Sai Mandir, Mumbai",
-    primaryAction: "Add to Calendar",
-    title: "Sai Baba Aarti & Prasad Distribution",
-  },
-  {
-    attendees: "18 devotees attending",
-    badge: "Tomorrow",
-    date: "May 25, 2025 · 7:00 AM",
-    host: "Priya Sharma",
-    imageLabel: "Meditation Session",
-    location: "Sai Spiritual Center, Pune",
-    primaryAction: "Set Reminder",
-    title: "Morning Meditation & Prayer",
-  },
-  {
-    attendees: "90 devotees attending",
-    badge: "Next Week",
-    bookmarked: true,
-    date: "June 1, 2025 · 5:00 PM",
-    host: "Sai Family Team",
-    imageLabel: "Community Gathering",
-    location: "Community Hall, Nashik",
-    official: true,
-    primaryAction: "Event Details",
-    title: "Sai Family Community Satsang",
-  },
-  {
-    attendees: "30 devotees attended",
-    badge: "Past",
-    date: "May 20, 2025 · 6:00 PM",
-    imageLabel: "Past Event Image",
-    location: "Sai Temple, Delhi",
-    muted: true,
-    primaryAction: "View Photos",
-    title: "Thursday Bhajan Night",
-  },
-];
-
-const fallbackPosted: DisplayEvent[] = [
-  {
-    attendees: "42 RSVPs · 38 checked in · 156 views",
-    badge: "LIVE NOW",
-    date: "Today · 6:00 PM - 8:00 PM",
-    imageLabel: "Event Banner",
-    location: "Sai Mandir, Andheri West",
-    primaryAction: "View Analytics",
-    title: "Evening Sai Aarti Ceremony",
-  },
-  {
-    attendees: "67 RSVPs · 80 capacity · 342 views",
-    badge: "Upcoming",
-    date: "May 30, 2025 · 10:00 AM",
-    imageLabel: "Workshop Banner",
-    location: "Wellness Center, Bandra",
-    primaryAction: "Manage Attendees",
-    title: "Spiritual Meditation Workshop",
-  },
-  {
-    attendees: "54 attended · 4.9 rating · 12 reviews",
-    badge: "Completed",
-    date: "May 18, 2025 · 7:00 PM",
-    imageLabel: "Past Event",
-    location: "Sai Temple, Juhu",
-    muted: true,
-    primaryAction: "View Report",
-    title: "Community Bhajan Night",
-  },
-];
 
 const formatDate = (value?: string) => {
   if (!value) {
@@ -184,6 +112,27 @@ const formatTime = (value?: string) => {
   });
 };
 
+const isPastEvent = (event: SaiEvent) =>
+  new Date(event.endAt || event.startAt).getTime() < Date.now();
+
+const getEventBadge = (
+  event: SaiEvent,
+  mode: MyEventsTab
+) => {
+  if (event.status === "live") {
+    return "LIVE NOW";
+  }
+
+  if (isPastEvent(event)) {
+    return mode === "posted" ? "Completed" : "Past";
+  }
+
+  return mode === "posted" ? "Posted" : "Upcoming";
+};
+
+const getEventLocation = (event: SaiEvent) =>
+  event.venueName || event.city || event.address || "Location pending";
+
 const toDisplayEvent = (
   event: SaiEvent,
   mode: MyEventsTab
@@ -192,24 +141,78 @@ const toDisplayEvent = (
     mode === "posted"
       ? `${event.rsvps || 0} RSVPs · ${event.comments || 0} comments`
       : `${event.rsvps || 0} devotees attending`,
-  badge: mode === "posted" ? "Posted" : "Upcoming",
-  bookmarked: event.rsvpedByMe,
+  badge: getEventBadge(event, mode),
+  bookmarked: event.bookmarkedByMe || event.rsvpedByMe,
   date: `${formatDate(event.startAt)} · ${formatTime(event.startAt)}`,
   host: event.ownerName || "Verified Host",
   id: event.id,
-  imageLabel: event.type || "Event Image",
-  location: event.venueName || event.city || event.address || "Location pending",
-  primaryAction: mode === "posted" ? "Manage Event" : "Add to Calendar",
+  imageLabel: event.type || "Event",
+  location: getEventLocation(event),
+  muted: isPastEvent(event),
+  official: Boolean(event.permissions?.canManageAttendees),
+  primaryAction: mode === "posted" ? "Manage Event" : "View Details",
+  source: event,
   title: event.title,
 });
+
+const applyFilter = (
+  events: SaiEvent[],
+  filter: EventFilter
+) => {
+  if (filter === "upcoming") {
+    return events.filter((event) => !isPastEvent(event));
+  }
+
+  if (filter === "past") {
+    return events.filter(isPastEvent);
+  }
+
+  if (filter === "nearby") {
+    return events.filter((event) => event.distanceKm != null);
+  }
+
+  return events;
+};
+
+const sumRsvps = (events: SaiEvent[]) =>
+  events.reduce((total, event) => total + (event.rsvps || 0), 0);
+
+const getNextEvent = (events: SaiEvent[]) =>
+  [...events]
+    .filter((event) => !isPastEvent(event))
+    .sort(
+      (a, b) =>
+        new Date(a.startAt).getTime() -
+        new Date(b.startAt).getTime()
+    )[0];
+
+const getRelativeStart = (event: SaiEvent) => {
+  const diff = new Date(event.startAt).getTime() - Date.now();
+  const minutes = Math.max(0, Math.round(diff / 60000));
+
+  if (minutes < 60) {
+    return `In ${minutes} min`;
+  }
+
+  const hours = Math.round(minutes / 60);
+
+  if (hours < 24) {
+    return `In ${hours} hr`;
+  }
+
+  return `In ${Math.round(hours / 24)} days`;
+};
 
 export default function MyEventsRoute() {
   const dispatch = useAppDispatch();
   const loading = useAppSelector(selectEventsLoading);
   const error = useAppSelector(selectEventsError);
   const myEvents = useAppSelector(selectMyEvents);
+  const myEventsPagination = useAppSelector(selectMyEventsPagination);
   const rsvps = useAppSelector(selectMyEventRsvps);
+  const rsvpPagination = useAppSelector(selectMyEventRsvpsPagination);
   const [activeTab, setActiveTab] = useState<MyEventsTab>("attending");
+  const [activeFilter, setActiveFilter] = useState<EventFilter>("all");
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(() => {
@@ -223,27 +226,72 @@ export default function MyEventsRoute() {
 
   const attendingEvents = useMemo(
     () =>
-      rsvps.length
-        ? rsvps.map((event) => toDisplayEvent(event, "attending"))
-        : fallbackAttending,
-    [rsvps]
+      applyFilter(rsvps, activeFilter).map((event) =>
+        toDisplayEvent(event, "attending")
+      ),
+    [activeFilter, rsvps]
   );
 
   const postedEvents = useMemo(
     () =>
-      myEvents.length
-        ? myEvents.map((event) => toDisplayEvent(event, "posted"))
-        : fallbackPosted,
-    [myEvents]
+      applyFilter(myEvents, activeFilter).map((event) =>
+        toDisplayEvent(event, "posted")
+      ),
+    [activeFilter, myEvents]
   );
 
   const visibleEvents = activeTab === "attending" ? attendingEvents : postedEvents;
+  const nextRsvpEvent = useMemo(() => getNextEvent(rsvps), [rsvps]);
+  const postedUpcomingCount = useMemo(
+    () => myEvents.filter((event) => !isPastEvent(event)).length,
+    [myEvents]
+  );
+  const rsvpUpcomingCount = useMemo(
+    () => rsvps.filter((event) => !isPastEvent(event)).length,
+    [rsvps]
+  );
+  const activePagination: EventPagination | null | undefined =
+    activeTab === "posted" ? myEventsPagination : rsvpPagination;
+  const canLoadMore = Boolean(
+    activePagination?.hasMore &&
+      activePagination.nextOffset != null &&
+      !loading
+  );
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData();
     setTimeout(() => setRefreshing(false), 700);
   }, [fetchData]);
+
+  useEffect(() => {
+    if (!loading && refreshing) {
+      setRefreshing(false);
+    }
+  }, [loading, refreshing]);
+
+  const handleLoadMore = useCallback(() => {
+    if (!canLoadMore) {
+      return;
+    }
+
+    const params = {
+      limit: activePagination?.limit || 20,
+      offset: activePagination?.nextOffset || 0,
+    };
+
+    dispatch(
+      activeTab === "posted"
+        ? fetchMyEventsRequest(params)
+        : fetchMyRsvpsRequest(params)
+    );
+  }, [
+    activePagination?.limit,
+    activePagination?.nextOffset,
+    activeTab,
+    canLoadMore,
+    dispatch,
+  ]);
 
   return (
     <View style={styles.container}>
@@ -252,8 +300,11 @@ export default function MyEventsRoute() {
           <ArrowLeft color="#1F2937" size={21} />
         </Pressable>
         <Text style={styles.headerTitle}>My Events</Text>
-        <Pressable style={styles.headerIcon}>
-          <MoreVertical color="#1F2937" size={20} />
+        <Pressable
+          onPress={() => router.push("/events/create" as any)}
+          style={styles.headerIcon}
+        >
+          <Plus color="#1F2937" size={20} />
         </Pressable>
       </View>
 
@@ -285,21 +336,40 @@ export default function MyEventsRoute() {
             <StatMini
               icon={<CalendarCheck color="#FFFFFF" size={14} />}
               label={activeTab === "attending" ? "Total Commitments" : "Total Events"}
-              value={activeTab === "attending" ? `${attendingEvents.length} Events` : `${postedEvents.length} Events`}
+              value={
+                activeTab === "attending"
+                  ? `${rsvps.length} Events`
+                  : `${myEvents.length} Events`
+              }
             />
             <StatMini
               icon={<Clock3 color="#FFFFFF" size={14} />}
               label={activeTab === "attending" ? "Upcoming" : "Total RSVPs"}
-              value={activeTab === "attending" ? "3 Soon" : "284 RSVPs"}
+              value={
+                activeTab === "attending"
+                  ? `${rsvpUpcomingCount} Soon`
+                  : `${sumRsvps(myEvents)} RSVPs`
+              }
             />
           </View>
         </View>
 
-        <FilterBar />
+        <FilterBar
+          activeFilter={activeFilter}
+          onChange={setActiveFilter}
+        />
 
         {!!error && <Text style={styles.errorText}>{error}</Text>}
 
-        {activeTab === "attending" ? <UrgentAlert /> : <PostedStats />}
+        {activeTab === "attending" ? (
+          nextRsvpEvent ? <UrgentAlert event={nextRsvpEvent} /> : null
+        ) : (
+          <PostedStats
+            events={myEvents.length}
+            rsvps={sumRsvps(myEvents)}
+            upcoming={postedUpcomingCount}
+          />
+        )}
 
         {loading && !refreshing ? (
           <View style={styles.loadingBox}>
@@ -315,6 +385,23 @@ export default function MyEventsRoute() {
               mode={activeTab}
             />
           ))}
+          {!loading && !visibleEvents.length && (
+            <EmptyState
+              text={
+                activeTab === "attending"
+                  ? "Your RSVP events from backend will appear here."
+                  : "Events created by you will appear here."
+              }
+            />
+          )}
+          {canLoadMore && (
+            <Pressable
+              onPress={handleLoadMore}
+              style={styles.loadMoreButton}
+            >
+              <Text style={styles.loadMoreText}>Load more</Text>
+            </Pressable>
+          )}
         </View>
 
         <QuickActions />
@@ -362,12 +449,18 @@ function StatMini({
   );
 }
 
-function FilterBar() {
+function FilterBar({
+  activeFilter,
+  onChange,
+}: {
+  activeFilter: EventFilter;
+  onChange: (filter: EventFilter) => void;
+}) {
   const filters = [
-    {icon: Filter, label: "All Events"},
-    {icon: Clock3, label: "Upcoming"},
-    {icon: History, label: "Past"},
-    {icon: MapPin, label: "Nearby"},
+    {icon: Filter, key: "all" as const, label: "All Events"},
+    {icon: Clock3, key: "upcoming" as const, label: "Upcoming"},
+    {icon: History, key: "past" as const, label: "Past"},
+    {icon: MapPin, key: "nearby" as const, label: "Nearby"},
   ];
 
   return (
@@ -377,13 +470,14 @@ function FilterBar() {
         horizontal
         showsHorizontalScrollIndicator={false}
       >
-        {filters.map((filter, index) => {
+        {filters.map((filter) => {
           const Icon = filter.icon;
-          const active = index === 0;
+          const active = activeFilter === filter.key;
 
           return (
             <Pressable
               key={filter.label}
+              onPress={() => onChange(filter.key)}
               style={[styles.filterChip, active && styles.filterChipActive]}
             >
               <Icon color={active ? "#FFFFFF" : "#6B7280"} size={13} />
@@ -398,7 +492,20 @@ function FilterBar() {
   );
 }
 
-function UrgentAlert() {
+function UrgentAlert({
+  event,
+}: {
+  event: SaiEvent;
+}) {
+  const openDirections = () => {
+    const destination =
+      event.latitude && event.longitude
+        ? `${event.latitude},${event.longitude}`
+        : encodeURIComponent(getEventLocation(event));
+
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${destination}`);
+  };
+
   return (
     <View style={styles.alertWrap}>
       <View style={styles.alertCard}>
@@ -408,17 +515,26 @@ function UrgentAlert() {
         <View style={styles.alertBody}>
           <View style={styles.alertMetaRow}>
             <Text style={styles.alertBadge}>HAPPENING SOON</Text>
-            <Text style={styles.alertTime}>In 3 hours</Text>
+            <Text style={styles.alertTime}>{getRelativeStart(event)}</Text>
           </View>
-          <Text style={styles.alertTitle}>Sai Bhajan Evening</Text>
-          <Text style={styles.alertText}>Today · 6:00 PM · Shirdi Temple</Text>
+          <Text style={styles.alertTitle}>{event.title}</Text>
+          <Text style={styles.alertText}>
+            {formatDate(event.startAt)} · {formatTime(event.startAt)} ·{" "}
+            {getEventLocation(event)}
+          </Text>
           <View style={styles.alertActions}>
-            <Pressable style={styles.alertPrimary}>
+            <Pressable
+              onPress={openDirections}
+              style={styles.alertPrimary}
+            >
               <Navigation color="#2B1308" size={14} />
               <Text style={styles.alertPrimaryText}>Get Directions</Text>
             </Pressable>
-            <Pressable style={styles.alertSecondary}>
-              <Share2 color="#FFFFFF" size={15} />
+            <Pressable
+              onPress={() => router.push(`/events/${event.id}` as any)}
+              style={styles.alertSecondary}
+            >
+              <CalendarCheck color="#FFFFFF" size={15} />
             </Pressable>
           </View>
         </View>
@@ -427,12 +543,20 @@ function UrgentAlert() {
   );
 }
 
-function PostedStats() {
+function PostedStats({
+  events,
+  rsvps,
+  upcoming,
+}: {
+  events: number;
+  rsvps: number;
+  upcoming: number;
+}) {
   return (
     <View style={styles.postedStats}>
-      <PostedStat icon={<CalendarCheck color="#F97316" size={19} />} label="Total Events" value="12" />
-      <PostedStat icon={<Users color="#F97316" size={19} />} label="Total RSVPs" value="284" />
-      <PostedStat icon={<Star color="#F97316" size={19} />} label="Avg Rating" value="4.8" />
+      <PostedStat icon={<CalendarCheck color="#F97316" size={19} />} label="Total Events" value={String(events)} />
+      <PostedStat icon={<Users color="#F97316" size={19} />} label="Total RSVPs" value={String(rsvps)} />
+      <PostedStat icon={<Star color="#F97316" size={19} />} label="Upcoming" value={String(upcoming)} />
     </View>
   );
 }
@@ -513,7 +637,14 @@ function MyEventCard({
         )}
 
         <View style={styles.cardActions}>
-          <Pressable style={[styles.primaryAction, event.muted && styles.pastAction]}>
+          <Pressable
+            onPress={() => {
+              if (event.id) {
+                router.push(`/events/${event.id}` as any);
+              }
+            }}
+            style={[styles.primaryAction, event.muted && styles.pastAction]}
+          >
             {mode === "posted" ? (
               <TrendingUp color={event.muted ? "#6B7280" : "#FFFFFF"} size={14} />
             ) : (
@@ -523,11 +654,18 @@ function MyEventCard({
               {event.primaryAction}
             </Text>
           </Pressable>
-          <Pressable style={styles.iconAction}>
-            <Share2 color="#1F2937" size={15} />
-          </Pressable>
-          <Pressable style={styles.iconAction}>
-            <Ellipsis color="#1F2937" size={16} />
+          <Pressable
+            onPress={() => {
+              const destination =
+                event.source.latitude && event.source.longitude
+                  ? `${event.source.latitude},${event.source.longitude}`
+                  : encodeURIComponent(event.location);
+
+              Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${destination}`);
+            }}
+            style={styles.iconAction}
+          >
+            <Navigation color="#1F2937" size={15} />
           </Pressable>
         </View>
       </View>
@@ -544,17 +682,8 @@ function AttendeeRow({
 }) {
   return (
     <View style={styles.attendeeRow}>
-      <View style={styles.avatarStack}>
-        {[1234, 5678, 9012].map((seed, index) => (
-          <Image
-            key={seed}
-            source={{uri: `https://api.dicebear.com/7.x/notionists/png?scale=200&seed=${seed}`}}
-            style={[styles.avatar, index > 0 && styles.avatarOverlap]}
-          />
-        ))}
-        <View style={[styles.avatar, styles.plusAvatar, muted && styles.plusAvatarMuted]}>
-          <Text style={styles.plusText}>+42</Text>
-        </View>
+      <View style={[styles.attendeeIcon, muted && styles.plusAvatarMuted]}>
+        <Users color="#FFFFFF" size={14} />
       </View>
       <Text style={styles.attendeeText}>{text}</Text>
     </View>
@@ -570,10 +699,9 @@ function HostRow({
 }) {
   return (
     <View style={styles.hostRow}>
-      <Image
-        source={{uri: "https://api.dicebear.com/7.x/notionists/png?scale=200&seed=org1"}}
-        style={styles.hostAvatar}
-      />
+      <View style={styles.hostAvatar}>
+        <Users color="#F97316" size={13} />
+      </View>
       <Text style={styles.hostText}>By {host}</Text>
       <View style={styles.hostDot} />
       <Text style={styles.hostMuted}>{official ? "Official Event" : "Verified Host"}</Text>
@@ -596,6 +724,19 @@ function MetricsLine({text}: {text: string}) {
           </View>
         );
       })}
+    </View>
+  );
+}
+
+function EmptyState({
+  text,
+}: {
+  text: string;
+}) {
+  return (
+    <View style={styles.emptyCard}>
+      <CalendarCheck color="#F97316" size={24} />
+      <Text style={styles.emptyText}>{text}</Text>
     </View>
   );
 }
@@ -723,6 +864,14 @@ const styles = StyleSheet.create({
     gap: 9,
     marginBottom: 12,
   },
+  attendeeIcon: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 14,
+    height: 28,
+    justifyContent: "center",
+    width: 28,
+  },
   attendeeText: {
     color: "#6B7280",
     flex: 1,
@@ -816,6 +965,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
   },
+  emptyCard: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F6EFD9",
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 8,
+    padding: 18,
+  },
+  emptyText: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "800",
+    textAlign: "center",
+  },
   eventCard: {
     backgroundColor: "#FFFFFF",
     borderColor: "#F6EFD9",
@@ -880,8 +1044,11 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   hostAvatar: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
     borderRadius: 12,
     height: 24,
+    justifyContent: "center",
     width: 24,
   },
   hostDot: {
@@ -926,6 +1093,18 @@ const styles = StyleSheet.create({
   loadingBox: {
     alignItems: "center",
     paddingTop: 20,
+  },
+  loadMoreButton: {
+    alignItems: "center",
+    backgroundColor: "#1F2937",
+    borderRadius: 14,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  loadMoreText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
   },
   locationRow: {
     alignItems: "center",
