@@ -8,6 +8,9 @@ import {
   EventCalendarResult,
   EventComment,
   EventCommentsResult,
+  EventDraft,
+  EventDraftPayload,
+  EventDraftPublishResult,
   EventListParams,
   EventListResult,
   EventHomeResult,
@@ -202,6 +205,79 @@ export const createEventFailure = (
   ({
     payload,
     type: EVENTS_ACTIONS.CREATE_FAILURE,
+  } as const);
+
+export const createEventDraftRequest = (
+  payload: EventDraftPayload
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.CREATE_DRAFT_REQUEST,
+  } as const);
+
+export const createEventDraftSuccess = (
+  payload: EventDraft
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.CREATE_DRAFT_SUCCESS,
+  } as const);
+
+export const createEventDraftFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.CREATE_DRAFT_FAILURE,
+  } as const);
+
+export const updateEventDraftRequest = (
+  id: string,
+  payload: EventDraftPayload
+) =>
+  ({
+    payload: { id, updates: payload },
+    type: EVENTS_ACTIONS.UPDATE_DRAFT_REQUEST,
+  } as const);
+
+export const updateEventDraftSuccess = (
+  payload: EventDraft
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.UPDATE_DRAFT_SUCCESS,
+  } as const);
+
+export const updateEventDraftFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.UPDATE_DRAFT_FAILURE,
+  } as const);
+
+export const publishEventDraftRequest = (
+  id: string
+) =>
+  ({
+    payload: { id },
+    type: EVENTS_ACTIONS.PUBLISH_DRAFT_REQUEST,
+  } as const);
+
+export const publishEventDraftSuccess = (
+  payload: EventDraftPublishResult
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.PUBLISH_DRAFT_SUCCESS,
+  } as const);
+
+export const publishEventDraftFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.PUBLISH_DRAFT_FAILURE,
   } as const);
 
 export const updateEventRequest = (

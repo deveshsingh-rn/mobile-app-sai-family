@@ -11,6 +11,7 @@ import {
   apiCancelEventRsvp,
   apiCheckInEventAttendee,
   apiCreateEvent,
+  apiCreateEventDraft,
   apiDeleteEvent,
   apiFetchEventAnalytics,
   apiFetchEventAttendees,
@@ -36,7 +37,9 @@ import {
   apiSubscribeCommunityCalendar,
   apiUnbookmarkEvent,
   apiUpdateEvent,
+  apiUpdateEventDraft,
   apiUpdateCalendarPreferences,
+  apiPublishEventDraft,
   apiUploadEventPhotos,
   apiUploadEventMedia,
   apiUnsubscribeCommunityCalendar,
@@ -55,6 +58,8 @@ import {
   checkInEventAttendeeSuccess,
   createEventFailure,
   createEventSuccess,
+  createEventDraftFailure,
+  createEventDraftSuccess,
   deleteEventFailure,
   deleteEventSuccess,
   fetchEventAnalyticsFailure,
@@ -93,6 +98,8 @@ import {
   fetchEventTitleSuggestionsSuccess,
   reportEventFailure,
   reportEventSuccess,
+  publishEventDraftFailure,
+  publishEventDraftSuccess,
   rsvpEventFailure,
   rsvpEventSuccess,
   shareEventFailure,
@@ -103,6 +110,8 @@ import {
   subscribeCommunityCalendarSuccess,
   updateEventFailure,
   updateEventSuccess,
+  updateEventDraftFailure,
+  updateEventDraftSuccess,
   updateCalendarPreferencesFailure,
   updateCalendarPreferencesSuccess,
   unbookmarkEventFailure,
@@ -852,6 +861,96 @@ function* createEventWorker(
   } catch (error) {
     yield put(
       createEventFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* createEventDraftWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiCreateEventDraft,
+      action.payload
+    );
+
+    yield put(
+      createEventDraftSuccess(
+        response?.draft ||
+          response?.data?.draft
+      )
+    );
+  } catch (error) {
+    yield put(
+      createEventDraftFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* updateEventDraftWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiUpdateEventDraft,
+      action.payload.id,
+      action.payload.updates
+    );
+
+    yield put(
+      updateEventDraftSuccess(
+        response?.draft ||
+          response?.data?.draft
+      )
+    );
+  } catch (error) {
+    yield put(
+      updateEventDraftFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* publishEventDraftWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiPublishEventDraft,
+      action.payload.id
+    );
+    const rawEvent =
+      response?.event ||
+      response?.data?.event;
+    const rawEvents =
+      response?.events ||
+      response?.data?.events ||
+      [];
+
+    yield put(
+      publishEventDraftSuccess({
+        draft:
+          response?.draft ||
+          response?.data?.draft,
+        event: rawEvent
+          ? normalizeEvent(rawEvent)
+          : undefined,
+        events: Array.isArray(rawEvents)
+          ? rawEvents.map(normalizeEvent)
+          : [],
+        series:
+          response?.series ||
+          response?.data?.series,
+      })
+    );
+  } catch (error) {
+    yield put(
+      publishEventDraftFailure(
         getErrorMessage(error)
       )
     );
@@ -1636,6 +1735,18 @@ export function* eventsSaga() {
   yield takeLatest(
     EVENTS_ACTIONS.CREATE_REQUEST,
     createEventWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.CREATE_DRAFT_REQUEST,
+    createEventDraftWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.UPDATE_DRAFT_REQUEST,
+    updateEventDraftWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.PUBLISH_DRAFT_REQUEST,
+    publishEventDraftWorker
   );
   yield takeLatest(
     EVENTS_ACTIONS.UPDATE_REQUEST,

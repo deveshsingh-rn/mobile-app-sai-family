@@ -24,7 +24,10 @@ export const initialEventsState: EventsState = {
   communityCalendars: [],
   communityCalendarsLoading: false,
   creating: false,
+  currentDraftId: null,
   detail: null,
+  draftSaving: false,
+  draftsById: {},
   error: null,
   feed: [],
   feedPagination: null,
@@ -50,6 +53,8 @@ export const initialEventsState: EventsState = {
   photosLoadingIds: {},
   places: [],
   placesLoading: false,
+  publishedDraftEvent: null,
+  publishingDraft: false,
   reviewsByEventId: {},
   reviewsLoadingIds: {},
   rsvpPendingIds: {},
@@ -192,6 +197,22 @@ export function eventsReducer(
         ...state,
         creating: true,
         error: null,
+      };
+
+    case EVENTS_ACTIONS.CREATE_DRAFT_REQUEST:
+    case EVENTS_ACTIONS.UPDATE_DRAFT_REQUEST:
+      return {
+        ...state,
+        draftSaving: true,
+        error: null,
+      };
+
+    case EVENTS_ACTIONS.PUBLISH_DRAFT_REQUEST:
+      return {
+        ...state,
+        error: null,
+        publishedDraftEvent: null,
+        publishingDraft: true,
       };
 
     case EVENTS_ACTIONS.DELETE_REQUEST:
@@ -1004,6 +1025,53 @@ export function eventsReducer(
         loading: false,
       };
 
+    case EVENTS_ACTIONS.CREATE_DRAFT_SUCCESS:
+    case EVENTS_ACTIONS.UPDATE_DRAFT_SUCCESS:
+      return {
+        ...state,
+        currentDraftId:
+          action.payload?.id ||
+          state.currentDraftId,
+        draftSaving: false,
+        draftsById: action.payload?.id
+          ? {
+              ...state.draftsById,
+              [action.payload.id]: action.payload,
+            }
+          : state.draftsById,
+      };
+
+    case EVENTS_ACTIONS.PUBLISH_DRAFT_SUCCESS: {
+      const draft = action.payload?.draft;
+      const event = action.payload?.event;
+      const events = action.payload?.events || [];
+      const publishedEvents = event
+        ? [event, ...events]
+        : events;
+
+      return {
+        ...state,
+        currentDraftId:
+          draft?.id || state.currentDraftId,
+        draftSaving: false,
+        draftsById: draft?.id
+          ? {
+              ...state.draftsById,
+              [draft.id]: draft,
+          }
+          : state.draftsById,
+        feed: publishedEvents.length
+          ? mergeById(publishedEvents, state.feed)
+          : state.feed,
+        myEvents: publishedEvents.length
+          ? mergeById(publishedEvents, state.myEvents)
+          : state.myEvents,
+        publishedDraftEvent:
+          event || events[0] || null,
+        publishingDraft: false,
+      };
+    }
+
     case EVENTS_ACTIONS.FETCH_RECOMMENDATIONS_FAILURE:
       return {
         ...state,
@@ -1067,6 +1135,21 @@ export function eventsReducer(
         ...state,
         creating: false,
         error: action.payload,
+      };
+
+    case EVENTS_ACTIONS.CREATE_DRAFT_FAILURE:
+    case EVENTS_ACTIONS.UPDATE_DRAFT_FAILURE:
+      return {
+        ...state,
+        draftSaving: false,
+        error: action.payload,
+      };
+
+    case EVENTS_ACTIONS.PUBLISH_DRAFT_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        publishingDraft: false,
       };
 
     case EVENTS_ACTIONS.RSVP_FAILURE:

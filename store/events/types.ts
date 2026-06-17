@@ -468,6 +468,24 @@ export type UpdateEventPayload =
     id: string;
   };
 
+export type EventDraftPayload =
+  Partial<CreateEventPayload>;
+
+export type EventDraft = EventDraftPayload & {
+  authorId?: string;
+  createdAt?: string;
+  id: string;
+  publishedAt?: string | null;
+  updatedAt?: string;
+};
+
+export type EventDraftPublishResult = {
+  draft?: EventDraft;
+  event?: SaiEvent;
+  events?: SaiEvent[];
+  series?: unknown;
+};
+
 export type EventPlace = {
   address?: string;
   city?: string;
@@ -518,7 +536,10 @@ export type EventsState = {
   communityCalendars: CommunityCalendar[];
   communityCalendarsLoading: boolean;
   creating: boolean;
+  currentDraftId: string | null;
   detail: SaiEvent | null;
+  draftSaving: boolean;
+  draftsById: Record<string, EventDraft>;
   error: string | null;
   feed: SaiEvent[];
   feedPagination: EventPagination | null;
@@ -544,6 +565,8 @@ export type EventsState = {
   photosLoadingIds: Record<string, boolean>;
   places: EventPlace[];
   placesLoading: boolean;
+  publishedDraftEvent: SaiEvent | null;
+  publishingDraft: boolean;
   reviewsByEventId: Record<string, EventReviewsResult>;
   reviewsLoadingIds: Record<string, boolean>;
   rsvpPendingIds: Record<string, boolean>;
@@ -578,6 +601,12 @@ export const EVENTS_ACTIONS = {
   CREATE_FAILURE: "events/createFailure",
   CREATE_REQUEST: "events/createRequest",
   CREATE_SUCCESS: "events/createSuccess",
+  CREATE_DRAFT_FAILURE:
+    "events/createDraftFailure",
+  CREATE_DRAFT_REQUEST:
+    "events/createDraftRequest",
+  CREATE_DRAFT_SUCCESS:
+    "events/createDraftSuccess",
   DELETE_FAILURE: "events/deleteFailure",
   DELETE_REQUEST: "events/deleteRequest",
   DELETE_SUCCESS: "events/deleteSuccess",
@@ -722,9 +751,21 @@ export const EVENTS_ACTIONS = {
     "events/fetchTitleSuggestionsRequest",
   FETCH_TITLE_SUGGESTIONS_SUCCESS:
     "events/fetchTitleSuggestionsSuccess",
+  PUBLISH_DRAFT_FAILURE:
+    "events/publishDraftFailure",
+  PUBLISH_DRAFT_REQUEST:
+    "events/publishDraftRequest",
+  PUBLISH_DRAFT_SUCCESS:
+    "events/publishDraftSuccess",
   UPDATE_FAILURE: "events/updateFailure",
   UPDATE_REQUEST: "events/updateRequest",
   UPDATE_SUCCESS: "events/updateSuccess",
+  UPDATE_DRAFT_FAILURE:
+    "events/updateDraftFailure",
+  UPDATE_DRAFT_REQUEST:
+    "events/updateDraftRequest",
+  UPDATE_DRAFT_SUCCESS:
+    "events/updateDraftSuccess",
   SUBSCRIBE_COMMUNITY_CALENDAR_FAILURE:
     "events/subscribeCommunityCalendarFailure",
   SUBSCRIBE_COMMUNITY_CALENDAR_REQUEST:

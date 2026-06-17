@@ -52,6 +52,29 @@ export const selectIsCreatingEvent = (
   state: RootState
 ) => selectEventsState(state).creating;
 
+export const selectIsSavingEventDraft = (
+  state: RootState
+) => selectEventsState(state).draftSaving;
+
+export const selectIsPublishingEventDraft = (
+  state: RootState
+) => selectEventsState(state).publishingDraft;
+
+export const selectCurrentEventDraft = (
+  state: RootState
+) => {
+  const eventsState = selectEventsState(state);
+  const draftId = eventsState.currentDraftId;
+
+  return draftId
+    ? eventsState.draftsById[draftId] || null
+    : null;
+};
+
+export const selectPublishedDraftEvent = (
+  state: RootState
+) => selectEventsState(state).publishedDraftEvent;
+
 export const selectIsAddingEventComment = (
   state: RootState
 ) => selectEventsState(state).addingComment;

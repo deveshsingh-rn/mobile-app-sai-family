@@ -756,9 +756,9 @@ Todo:
 - [x] Wire AI suggestion chips to backend suggestions.
 - [x] Add place search endpoint integration.
 - [x] Replace local placeholder venue card with selected backend place.
-- [ ] Add event draft types/actions/saga/reducer.
-- [ ] Autosave draft with debounce.
-- [ ] Add publish draft flow.
+- [x] Add event draft types/actions/saga/reducer.
+- [x] Autosave draft with debounce.
+- [x] Add publish draft flow.
 - [ ] Add recurrence type and validation.
 - [ ] Add recurrence payload to create/update if backend accepts it.
 - [x] Phase 1 payload mode decided: upload media first, then JSON create/update with `bannerUrl`.
@@ -859,7 +859,7 @@ Done when:
 
 - [x] Wire suggestions.
 - [x] Wire place search.
-- [ ] Wire drafts/autosave.
+- [x] Wire drafts/autosave.
 - [ ] Add recurrence payload support.
 - [ ] Keep basic create/edit working throughout.
 

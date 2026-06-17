@@ -12,6 +12,9 @@ import type {
   EventReviewPayload,
   EventReviewsResult,
   EventCheckInResult,
+  EventDraft,
+  EventDraftPayload,
+  EventDraftPublishResult,
   EventHomeResult,
   EventListResult,
   EventNearbyResult,
@@ -120,6 +123,39 @@ export async function apiUpdateEvent(
   const { data } = await apiClient.patch(
     `/api/events/${id}`,
     payload
+  );
+
+  return data;
+}
+
+export async function apiCreateEventDraft(
+  payload: EventDraftPayload
+): Promise<{ draft: EventDraft }> {
+  const { data } = await apiClient.post(
+    "/api/events/drafts",
+    payload
+  );
+
+  return data;
+}
+
+export async function apiUpdateEventDraft(
+  id: string,
+  payload: EventDraftPayload
+): Promise<{ draft: EventDraft }> {
+  const { data } = await apiClient.patch(
+    `/api/events/drafts/${id}`,
+    payload
+  );
+
+  return data;
+}
+
+export async function apiPublishEventDraft(
+  id: string
+): Promise<EventDraftPublishResult> {
+  const { data } = await apiClient.post(
+    `/api/events/drafts/${id}/publish`
   );
 
   return data;

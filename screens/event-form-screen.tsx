@@ -56,14 +56,18 @@ import {
 } from "lucide-react-native";
 
 import {
+  createEventDraftRequest,
   createEventRequest,
   fetchEventPlacesRequest,
   fetchEventDetailRequest,
   fetchEventTitleSuggestionsRequest,
+  publishEventDraftRequest,
+  updateEventDraftRequest,
   updateEventRequest,
   uploadEventMediaRequest,
 } from "@/store/events/actions";
 import {
+  selectCurrentEventDraft,
   selectEventDetail,
   selectEventPlaces,
   selectEventPlacesLoading,
@@ -71,11 +75,15 @@ import {
   selectEventTitleSuggestionsLoading,
   selectEventsError,
   selectIsCreatingEvent,
+  selectIsPublishingEventDraft,
+  selectIsSavingEventDraft,
   selectIsUploadingEventMedia,
+  selectPublishedDraftEvent,
   selectUploadedEventMedia,
 } from "@/store/events/selectors";
 import {
   CreateEventPayload,
+  EventDraftPayload,
   EventPlace,
   EventType,
   EventTitleSuggestion,
@@ -211,6 +219,70 @@ const toPayload = (form: EventFormState): CreateEventPayload => ({
   venueName: form.venueName.trim() || undefined,
 });
 
+const toDraftPayload = (form: EventFormState): EventDraftPayload => {
+  const latitude = form.latitude.trim()
+    ? Number(form.latitude)
+    : undefined;
+  const longitude = form.longitude.trim()
+    ? Number(form.longitude)
+    : undefined;
+
+  return {
+    address: form.address.trim() || undefined,
+    bannerUrl: form.bannerUrl.trim() || undefined,
+    city: form.city.trim() || undefined,
+    country: form.country.trim() || undefined,
+    description: form.description.trim() || undefined,
+    endAt: form.endAt.trim() || undefined,
+    faq: form.faq
+      .map((item) => ({
+        answer: item.answer.trim(),
+        question: item.question.trim(),
+      }))
+      .filter((item) => item.question && item.answer),
+    guidelines: form.guidelines
+      .map((item) => item.trim())
+      .filter(Boolean),
+    latitude:
+      latitude != null &&
+      Number.isFinite(latitude)
+        ? latitude
+        : undefined,
+    longitude:
+      longitude != null &&
+      Number.isFinite(longitude)
+        ? longitude
+        : undefined,
+    recurrence: form.recurrenceEnabled
+      ? {
+          count:
+            Number(form.recurrenceCount) || 1,
+          frequency: form.recurrenceFrequency,
+          interval: 1,
+        }
+      : undefined,
+    startAt: form.startAt.trim() || undefined,
+    state: form.state.trim() || undefined,
+    tags: form.tags
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean),
+    timezone:
+      form.timezone.trim() || "Asia/Kolkata",
+    title: form.title.trim() || undefined,
+    type: form.type,
+    venueName: form.venueName.trim() || undefined,
+  };
+};
+
+const hasDraftContent = (form: EventFormState) =>
+  Boolean(
+    form.title.trim() ||
+      form.description.trim() ||
+      form.venueName.trim() ||
+      form.address.trim() ||
+      form.bannerUrl.trim()
+  );
+
 const getInitialDate = () => {
   const date = new Date();
   date.setMinutes(0, 0, 0);
@@ -269,6 +341,10 @@ export default function EventFormScreen({
   const error = useAppSelector(selectEventsError);
   const uploadingMedia = useAppSelector(selectIsUploadingEventMedia);
   const uploadedMedia = useAppSelector(selectUploadedEventMedia);
+  const currentDraft = useAppSelector(selectCurrentEventDraft);
+  const draftSaving = useAppSelector(selectIsSavingEventDraft);
+  const publishingDraft = useAppSelector(selectIsPublishingEventDraft);
+  const publishedDraftEvent = useAppSelector(selectPublishedDraftEvent);
   const places = useAppSelector(selectEventPlaces);
   const placesLoading = useAppSelector(selectEventPlacesLoading);
   const titleSuggestions = useAppSelector(selectEventTitleSuggestions);
@@ -285,9 +361,13 @@ export default function EventFormScreen({
   const [faqQuestionDraft, setFaqQuestionDraft] = useState("");
   const [faqAnswerDraft, setFaqAnswerDraft] = useState("");
   const [reviewVisible, setReviewVisible] = useState(false);
+  const [draftPublishQueued, setDraftPublishQueued] = useState<string | null>(null);
+  const [publishDraftRequested, setPublishDraftRequested] = useState(false);
   const wasSaving = useRef(false);
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const eventId = Array.isArray(id) ? id[0] : id;
+  const draftId = currentDraft?.id || null;
 
   const setField = useCallback((key: keyof EventFormState, value: string) => {
     setForm((current) => ({
@@ -484,6 +564,79 @@ export default function EventFormScreen({
   }, [setField, uploadedMedia?.url, waitingForBannerUpload]);
 
   useEffect(() => {
+    if (
+      mode !== "create" ||
+      !hasDraftContent(form) ||
+      draftSaving ||
+      publishingDraft ||
+      uploadingMedia ||
+      reviewVisible
+    ) {
+      return;
+    }
+
+    if (autosaveTimer.current) {
+      clearTimeout(autosaveTimer.current);
+    }
+
+    autosaveTimer.current = setTimeout(() => {
+      const payload = toDraftPayload(form);
+
+      if (draftId) {
+        dispatch(updateEventDraftRequest(draftId, payload));
+      } else {
+        dispatch(createEventDraftRequest(payload));
+      }
+    }, 1500);
+
+    return () => {
+      if (autosaveTimer.current) {
+        clearTimeout(autosaveTimer.current);
+      }
+    };
+  }, [
+    dispatch,
+    draftId,
+    draftSaving,
+    form,
+    mode,
+    publishingDraft,
+    reviewVisible,
+    uploadingMedia,
+  ]);
+
+  useEffect(() => {
+    if (
+      publishDraftRequested &&
+      !publishingDraft &&
+      publishedDraftEvent?.id
+    ) {
+      setPublishDraftRequested(false);
+      router.replace(`/events/${publishedDraftEvent.id}`);
+    }
+  }, [
+    publishDraftRequested,
+    publishedDraftEvent?.id,
+    publishingDraft,
+  ]);
+
+  useEffect(() => {
+    if (!draftPublishQueued || draftSaving) {
+      return;
+    }
+
+    if (error) {
+      setDraftPublishQueued(null);
+      setPublishDraftRequested(false);
+      return;
+    }
+
+    setPublishDraftRequested(true);
+    dispatch(publishEventDraftRequest(draftPublishQueued));
+    setDraftPublishQueued(null);
+  }, [dispatch, draftPublishQueued, draftSaving, error]);
+
+  useEffect(() => {
     if (submitted && wasSaving.current && !saving && !error) {
       router.canGoBack() ? router.back() : router.replace("/(tabs)/events");
     }
@@ -660,6 +813,39 @@ export default function EventFormScreen({
     },
     [selectionKind, setField]
   );
+
+  const handleSaveDraft = useCallback(() => {
+    if (!hasDraftContent(form)) {
+      Alert.alert("Draft", "Add a title, description, venue, or banner before saving a draft.");
+      return;
+    }
+
+    const payload = toDraftPayload(form);
+
+    if (draftId) {
+      dispatch(updateEventDraftRequest(draftId, payload));
+    } else {
+      dispatch(createEventDraftRequest(payload));
+    }
+  }, [dispatch, draftId, form]);
+
+  const handlePublishDraft = useCallback(() => {
+    if (!draftId) {
+      Alert.alert("Draft", "Save this draft first, then publish it.");
+      return;
+    }
+
+    const payload = toPayload(form);
+    const validation = validateCreateEventPayload(payload);
+
+    if (!validation.isValid) {
+      Alert.alert("Event", getFirstValidationError(validation));
+      return;
+    }
+
+    dispatch(updateEventDraftRequest(draftId, toDraftPayload(form)));
+    setDraftPublishQueued(draftId);
+  }, [dispatch, draftId, form]);
 
   const handleSubmit = useCallback(() => {
     const payload = toPayload(form);
@@ -1030,11 +1216,65 @@ export default function EventFormScreen({
         />
         <PreviewSection form={form} />
 
+        {mode === "create" ? (
+          <View style={styles.autosaveInline}>
+            <View
+              style={[
+                styles.autosaveInlineDot,
+                draftSaving && styles.autosaveInlineDotActive,
+              ]}
+            />
+            <Text style={styles.autosaveInlineText}>
+              {draftSaving
+                ? "Saving draft..."
+                : draftId
+                  ? "Draft saved automatically"
+                  : "Draft autosaves after you start writing"}
+            </Text>
+          </View>
+        ) : null}
+
         <View style={styles.actionSection}>
+          {mode === "create" ? (
+            <Pressable
+              disabled={draftSaving || publishingDraft || uploadingMedia}
+              onPress={handleSaveDraft}
+              style={[
+                styles.draftButton,
+                (draftSaving || publishingDraft || uploadingMedia) && styles.disabled,
+              ]}
+            >
+              {draftSaving ? <ActivityIndicator color="#1F2937" /> : null}
+              <Text style={styles.draftText}>
+                {draftId ? "Update Draft" : "Save Draft"}
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {mode === "create" && draftId ? (
+            <Pressable
+              disabled={draftSaving || publishingDraft || uploadingMedia}
+              onPress={handlePublishDraft}
+              style={[
+                styles.submitButton,
+                (draftSaving || publishingDraft || uploadingMedia) && styles.disabled,
+              ]}
+            >
+              {publishingDraft || draftPublishQueued ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : null}
+              <Text style={styles.submitText}>
+                {publishingDraft || draftPublishQueued
+                  ? "Publishing Draft..."
+                  : "Publish Saved Draft"}
+              </Text>
+            </Pressable>
+          ) : null}
+
           <Pressable
-            disabled={saving || uploadingMedia}
+            disabled={saving || uploadingMedia || publishingDraft}
             onPress={handleSubmit}
-            style={[styles.submitButton, (saving || uploadingMedia) && styles.disabled]}
+            style={[styles.submitButton, (saving || uploadingMedia || publishingDraft) && styles.disabled]}
           >
             {saving ? <ActivityIndicator color="#FFFFFF" /> : null}
             <Text style={styles.submitText}>
@@ -1566,6 +1806,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
+  autosaveInline: {
+    alignItems: "center",
+    alignSelf: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F6EFD9",
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 4,
+    marginTop: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  autosaveInlineDot: {
+    backgroundColor: "#D1D5DB",
+    borderRadius: 4,
+    height: 8,
+    width: 8,
+  },
+  autosaveInlineDotActive: {
+    backgroundColor: "#F97316",
+  },
+  autosaveInlineText: {
+    color: "#4B5563",
+    fontSize: 12,
+    fontWeight: "800",
+  },
   bannerBox: {
     alignItems: "center",
     backgroundColor: "#FFF7ED",
@@ -1853,6 +2121,8 @@ const styles = StyleSheet.create({
     borderColor: "#F6EFD9",
     borderRadius: 16,
     borderWidth: 2,
+    flexDirection: "row",
+    gap: 8,
     minHeight: 48,
     justifyContent: "center",
   },
