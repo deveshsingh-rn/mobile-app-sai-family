@@ -12,7 +12,9 @@ import type {
   EventReviewPayload,
   EventReviewsResult,
   EventCheckInResult,
+  EventHomeResult,
   EventListResult,
+  EventNearbyResult,
   EventCalendarResult,
   EventRecommendationResult,
   EventRsvpPayload,
@@ -27,6 +29,32 @@ export async function apiFetchEvents(
 ): Promise<EventListResult> {
   const { data } = await apiClient.get(
     "/api/events",
+    {
+      params,
+    }
+  );
+
+  return data;
+}
+
+export async function apiFetchEventsHome(params: {
+  limit?: number;
+} = {}): Promise<EventHomeResult> {
+  const { data } = await apiClient.get(
+    "/api/events/home",
+    {
+      params,
+    }
+  );
+
+  return data;
+}
+
+export async function apiFetchNearbyEvents(
+  params: EventListParams = {}
+): Promise<EventNearbyResult> {
+  const { data } = await apiClient.get(
+    "/api/events/nearby",
     {
       params,
     }

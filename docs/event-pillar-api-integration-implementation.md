@@ -665,17 +665,17 @@ Done when:
 
 ### Phase 2: Events Hub API Replacement
 
-Status: Not started
+Status: In progress
 
 Todo:
 
-- [ ] Add `EventHomeResponse` and related types.
-- [ ] Add `apiFetchEventHome`.
-- [ ] Add `apiFetchNearbyEvents`.
-- [ ] Add actions/reducer/saga/selectors for home and nearby.
-- [ ] Wire `app/(tabs)/events.tsx` sections to `eventHome`.
-- [ ] Wire map/list nearby section to `nearby`.
-- [ ] Preserve static fallback if `eventHome` is empty.
+- [x] Add `EventHomeResponse` and related types.
+- [x] Add `apiFetchEventHome`.
+- [x] Add `apiFetchNearbyEvents`.
+- [x] Add actions/reducer/saga/selectors for home and nearby.
+- [x] Wire `app/(tabs)/events.tsx` sections to `eventHome`.
+- [x] Wire map/list nearby section to `nearby`.
+- [x] Preserve static fallback if `eventHome` is empty.
 - [ ] Add loading skeleton or compact loader per section.
 - [ ] Add section-level error handling.
 
@@ -841,10 +841,10 @@ Done when:
 
 ### `app/(tabs)/events.tsx`
 
-- [ ] Wire event home.
-- [ ] Wire nearby.
+- [x] Wire event home.
+- [x] Wire nearby.
 - [ ] Wire bookmark toggles.
-- [ ] Replace static sections progressively.
+- [x] Replace static sections progressively.
 
 ### `app/events/[id].tsx`
 

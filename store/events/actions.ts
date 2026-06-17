@@ -10,6 +10,8 @@ import {
   EventCommentsResult,
   EventListParams,
   EventListResult,
+  EventHomeResult,
+  EventNearbyResult,
   EventPhotosResult,
   EventRecommendationResult,
   EventReportPayload,
@@ -47,6 +49,56 @@ export const fetchEventsFailure = (
   ({
     payload,
     type: EVENTS_ACTIONS.FETCH_FEED_FAILURE,
+  } as const);
+
+export const fetchEventsHomeRequest = (
+  payload: {
+    limit?: number;
+  } = {}
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_HOME_REQUEST,
+  } as const);
+
+export const fetchEventsHomeSuccess = (
+  payload: EventHomeResult
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_HOME_SUCCESS,
+  } as const);
+
+export const fetchEventsHomeFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_HOME_FAILURE,
+  } as const);
+
+export const fetchNearbyEventsRequest = (
+  payload: EventListParams = {}
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_NEARBY_REQUEST,
+  } as const);
+
+export const fetchNearbyEventsSuccess = (
+  payload: EventNearbyResult
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_NEARBY_SUCCESS,
+  } as const);
+
+export const fetchNearbyEventsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_NEARBY_FAILURE,
   } as const);
 
 export const fetchEventDetailRequest = (

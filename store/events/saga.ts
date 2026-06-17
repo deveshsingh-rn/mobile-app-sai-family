@@ -21,10 +21,12 @@ import {
   apiFetchEventRecommendations,
   apiFetchEventReviews,
   apiFetchEvents,
+  apiFetchEventsHome,
   apiFetchCalendarPreferences,
   apiFetchCommunityCalendars,
   apiFetchMyEvents,
   apiFetchMyRsvps,
+  apiFetchNearbyEvents,
   apiExportCalendarIcs,
   apiReportEvent,
   apiRsvpEvent,
@@ -75,10 +77,14 @@ import {
   fetchEventReviewsSuccess,
   fetchEventsFailure,
   fetchEventsSuccess,
+  fetchEventsHomeFailure,
+  fetchEventsHomeSuccess,
   fetchMyEventsFailure,
   fetchMyEventsSuccess,
   fetchMyRsvpsFailure,
   fetchMyRsvpsSuccess,
+  fetchNearbyEventsFailure,
+  fetchNearbyEventsSuccess,
   reportEventFailure,
   reportEventSuccess,
   rsvpEventFailure,
@@ -286,6 +292,39 @@ function getEventListFromResponse(
         response?.pagination ||
           response?.data?.pagination
       ),
+  };
+}
+
+function getHomeFromResponse(response: any) {
+  return {
+    eventTypeGuide:
+      response?.eventTypeGuide ||
+      response?.data?.eventTypeGuide ||
+      [],
+    sections:
+      response?.sections ||
+      response?.data?.sections ||
+      {},
+    stats:
+      response?.stats ||
+      response?.data?.stats ||
+      null,
+    topOrganisers:
+      response?.topOrganisers ||
+      response?.data?.topOrganisers ||
+      [],
+    trendingSections:
+      response?.trendingSections ||
+      response?.data?.trendingSections ||
+      {},
+    trendingThisWeek:
+      response?.trendingThisWeek ||
+      response?.data?.trendingThisWeek ||
+      [],
+    weeklySchedule:
+      response?.weeklySchedule ||
+      response?.data?.weeklySchedule ||
+      [],
   };
 }
 
@@ -637,6 +676,62 @@ function* fetchEventsWorker(
   } catch (error) {
     yield put(
       fetchEventsFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* fetchEventsHomeWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchEventsHome,
+      action.payload || {}
+    );
+
+    yield put(
+      fetchEventsHomeSuccess(
+        getHomeFromResponse(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchEventsHomeFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* fetchNearbyEventsWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchNearbyEvents,
+      action.payload || {}
+    );
+
+    yield put(
+      fetchNearbyEventsSuccess({
+        center:
+          response?.center ||
+          response?.data?.center ||
+          null,
+        events:
+          response?.events ||
+          response?.data?.events ||
+          [],
+        radiusKm:
+          response?.radiusKm ||
+          response?.data?.radiusKm,
+      })
+    );
+  } catch (error) {
+    yield put(
+      fetchNearbyEventsFailure(
         getErrorMessage(error)
       )
     );
@@ -1459,6 +1554,14 @@ export function* eventsSaga() {
   yield takeLatest(
     EVENTS_ACTIONS.FETCH_FEED_REQUEST,
     fetchEventsWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_HOME_REQUEST,
+    fetchEventsHomeWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_NEARBY_REQUEST,
+    fetchNearbyEventsWorker
   );
   yield takeLatest(
     EVENTS_ACTIONS.FETCH_DETAIL_REQUEST,

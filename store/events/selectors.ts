@@ -12,6 +12,22 @@ export const selectEventsFeedPagination = (
   state: RootState
 ) => selectEventsState(state).feedPagination;
 
+export const selectEventsHome = (
+  state: RootState
+) => selectEventsState(state).home;
+
+export const selectEventsHomeLoading = (
+  state: RootState
+) => selectEventsState(state).homeLoading;
+
+export const selectNearbyEvents = (
+  state: RootState
+) => selectEventsState(state).nearby;
+
+export const selectNearbyEventsLoading = (
+  state: RootState
+) => selectEventsState(state).nearbyLoading;
+
 export const selectEventsLoading = (
   state: RootState
 ) => selectEventsState(state).loading;

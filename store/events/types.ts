@@ -225,6 +225,62 @@ export type EventListResult = {
   pagination?: EventPagination | null;
 };
 
+export type EventHomeSection = {
+  count?: number;
+  events: SaiEvent[];
+  title?: string;
+};
+
+export type EventTypeGuideItem = {
+  count?: number | string;
+  description?: string;
+  label?: string;
+  summary?: string;
+  type?: EventType | string;
+};
+
+export type EventOrganiserSummary = {
+  eventsOrganized?: number;
+  id?: string;
+  name: string;
+  rating?: number;
+  specialty?: string;
+};
+
+export type EventWeeklyScheduleItem = {
+  count?: number;
+  day?: string;
+  label?: string;
+  type?: EventType | string;
+};
+
+export type EventHomeStats = {
+  eventsAttended?: number;
+  savedEvents?: number;
+  sevaHours?: number;
+  totalEvents?: number;
+  totalRsvps?: number;
+};
+
+export type EventHomeResult = {
+  eventTypeGuide?: EventTypeGuideItem[];
+  sections?: Record<string, EventHomeSection>;
+  stats?: EventHomeStats | null;
+  topOrganisers?: EventOrganiserSummary[];
+  trendingSections?: Record<string, SaiEvent[]>;
+  trendingThisWeek?: SaiEvent[];
+  weeklySchedule?: EventWeeklyScheduleItem[];
+};
+
+export type EventNearbyResult = {
+  center?: {
+    lat?: number;
+    lng?: number;
+  } | null;
+  events: SaiEvent[];
+  radiusKm?: number;
+};
+
 export type EventCommentsResult = {
   comments: EventComment[];
   pagination?: EventPagination | null;
@@ -434,11 +490,15 @@ export type EventsState = {
   error: string | null;
   feed: SaiEvent[];
   feedPagination: EventPagination | null;
+  home: EventHomeResult | null;
+  homeLoading: boolean;
   loading: boolean;
   myEvents: SaiEvent[];
   myEventsPagination: EventPagination | null;
   myRsvps: SaiEvent[];
   myRsvpsPagination: EventPagination | null;
+  nearby: SaiEvent[];
+  nearbyLoading: boolean;
   calendarPreferences: CalendarPreferences | null;
   calendarPreferencesLoading: boolean;
   calendarExporting: boolean;
@@ -527,6 +587,18 @@ export const EVENTS_ACTIONS = {
     "events/fetchFeedRequest",
   FETCH_FEED_SUCCESS:
     "events/fetchFeedSuccess",
+  FETCH_HOME_FAILURE:
+    "events/fetchHomeFailure",
+  FETCH_HOME_REQUEST:
+    "events/fetchHomeRequest",
+  FETCH_HOME_SUCCESS:
+    "events/fetchHomeSuccess",
+  FETCH_NEARBY_FAILURE:
+    "events/fetchNearbyFailure",
+  FETCH_NEARBY_REQUEST:
+    "events/fetchNearbyRequest",
+  FETCH_NEARBY_SUCCESS:
+    "events/fetchNearbySuccess",
   FETCH_MY_EVENTS_FAILURE:
     "events/fetchMyEventsFailure",
   FETCH_MY_EVENTS_REQUEST:

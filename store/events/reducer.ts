@@ -28,11 +28,15 @@ export const initialEventsState: EventsState = {
   error: null,
   feed: [],
   feedPagination: null,
+  home: null,
+  homeLoading: false,
   loading: false,
   myEvents: [],
   myEventsPagination: null,
   myRsvps: [],
   myRsvpsPagination: null,
+  nearby: [],
+  nearbyLoading: false,
   calendarExportError: null,
   calendarExporting: false,
   calendarPreferences: null,
@@ -126,6 +130,20 @@ export function eventsReducer(
         ...state,
         error: null,
         recommendationsLoading: true,
+      };
+
+    case EVENTS_ACTIONS.FETCH_HOME_REQUEST:
+      return {
+        ...state,
+        error: null,
+        homeLoading: true,
+      };
+
+    case EVENTS_ACTIONS.FETCH_NEARBY_REQUEST:
+      return {
+        ...state,
+        error: null,
+        nearbyLoading: true,
       };
 
     case EVENTS_ACTIONS.FETCH_CALENDAR_PREFERENCES_REQUEST:
@@ -314,6 +332,23 @@ export function eventsReducer(
         feedPagination:
           action.payload?.pagination || null,
         loading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_HOME_SUCCESS:
+      return {
+        ...state,
+        home: action.payload || null,
+        homeLoading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_NEARBY_SUCCESS:
+      return {
+        ...state,
+        nearby:
+          action.payload?.events ||
+          action.payload?.data?.events ||
+          [],
+        nearbyLoading: false,
       };
 
     case EVENTS_ACTIONS.FETCH_DETAIL_SUCCESS:
@@ -936,6 +971,20 @@ export function eventsReducer(
         ...state,
         error: action.payload,
         recommendationsLoading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_HOME_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        homeLoading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_NEARBY_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        nearbyLoading: false,
       };
 
     case EVENTS_ACTIONS.FETCH_CALENDAR_PREFERENCES_FAILURE:
