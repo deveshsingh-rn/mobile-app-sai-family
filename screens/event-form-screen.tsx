@@ -43,18 +43,14 @@ import {
   Eye,
   Heart,
   ImagePlus,
-  Languages,
   LocateFixed,
-  MoreVertical,
   Music,
   Plus,
   Repeat2,
-  Search,
   Sparkles,
   Stethoscope,
   Users,
   Utensils,
-  WandSparkles,
   X,
 } from "lucide-react-native";
 
@@ -102,6 +98,9 @@ type EventFormState = {
   guidelines: string[];
   latitude: string;
   longitude: string;
+  recurrenceCount: string;
+  recurrenceEnabled: boolean;
+  recurrenceFrequency: "daily" | "weekly" | "monthly";
   startAt: string;
   state: string;
   tags: string[];
@@ -122,6 +121,9 @@ const initialForm: EventFormState = {
   guidelines: [],
   latitude: "",
   longitude: "",
+  recurrenceCount: "3",
+  recurrenceEnabled: false,
+  recurrenceFrequency: "weekly",
   startAt: "",
   state: "",
   tags: [],
@@ -182,6 +184,13 @@ const toPayload = (form: EventFormState): CreateEventPayload => ({
     .filter(Boolean),
   latitude: Number(form.latitude),
   longitude: Number(form.longitude),
+  recurrence: form.recurrenceEnabled
+    ? {
+        count: Number(form.recurrenceCount) || 1,
+        frequency: form.recurrenceFrequency,
+        interval: 1,
+      }
+    : undefined,
   startAt: form.startAt.trim(),
   state: form.state.trim() || undefined,
   tags: form.tags
@@ -262,6 +271,7 @@ export default function EventFormScreen({
   const [guidelineDraft, setGuidelineDraft] = useState("");
   const [faqQuestionDraft, setFaqQuestionDraft] = useState("");
   const [faqAnswerDraft, setFaqAnswerDraft] = useState("");
+  const [reviewVisible, setReviewVisible] = useState(false);
   const wasSaving = useRef(false);
 
   const eventId = Array.isArray(id) ? id[0] : id;
@@ -306,6 +316,14 @@ export default function EventFormScreen({
         guidelines: detail.guidelines || [],
         latitude: String(detail.latitude ?? ""),
         longitude: String(detail.longitude ?? ""),
+        recurrenceCount: String(detail.recurrence?.count || 3),
+        recurrenceEnabled: Boolean(detail.recurrence),
+        recurrenceFrequency:
+          detail.recurrence?.frequency === "daily" ||
+          detail.recurrence?.frequency === "monthly" ||
+          detail.recurrence?.frequency === "weekly"
+            ? detail.recurrence.frequency
+            : "weekly",
         startAt: detail.startAt || "",
         state: detail.state || "",
         tags: detail.tags || [],
@@ -461,9 +479,7 @@ export default function EventFormScreen({
 
   const handleDateChange = useCallback(
     (event: DateTimePickerEvent, selectedDate?: Date) => {
-      if (Platform.OS !== "ios" || event.type === "dismissed") {
-        setPickerTarget(null);
-      }
+      setPickerTarget(null);
 
       if (!pickerTarget || !selectedDate) {
         return;
@@ -586,8 +602,7 @@ export default function EventFormScreen({
         return;
       }
 
-      setSubmitted(true);
-      dispatch(createEventRequest(payload));
+      setReviewVisible(true);
       return;
     }
 
@@ -610,13 +625,23 @@ export default function EventFormScreen({
     }
 
     setSubmitted(true);
-    dispatch(
-      updateEventRequest({
-        ...payload,
-        id: eventId,
-      })
-    );
+    dispatch(updateEventRequest({...payload, id: eventId}));
   }, [detail, dispatch, eventId, form, mode]);
+
+  const confirmCreateEvent = useCallback(() => {
+    const payload = toPayload(form);
+    const validation = validateCreateEventPayload(payload);
+
+    if (!validation.isValid) {
+      setReviewVisible(false);
+      Alert.alert("Event", getFirstValidationError(validation));
+      return;
+    }
+
+    setReviewVisible(false);
+    setSubmitted(true);
+    dispatch(createEventRequest(payload));
+  }, [dispatch, form]);
 
   const selectionOptions =
     selectionKind === "country"
@@ -651,19 +676,7 @@ export default function EventFormScreen({
           <Text style={styles.headerTitle}>
             {mode === "create" ? "Create Sacred Gathering" : "Edit Sacred Gathering"}
           </Text>
-          <Pressable style={styles.headerIcon}>
-            <MoreVertical color="#1F2937" size={20} />
-          </Pressable>
-        </View>
-
-        <View style={styles.progressRow}>
-          {[0, 1, 2, 3].map((item) => (
-            <View key={item} style={[styles.progressTrack, item === 0 && styles.progressActive]} />
-          ))}
-        </View>
-        <View style={styles.progressMeta}>
-          <Text style={styles.progressText}>Step 1 of 4</Text>
-          <Text style={styles.progressMuted}>Draft saved 2m ago</Text>
+          <View style={styles.headerIcon} />
         </View>
       </View>
 
@@ -721,23 +734,6 @@ export default function EventFormScreen({
             />
             <Text style={styles.counter}>{form.title.length}/80</Text>
           </View>
-          <View style={styles.aiBox}>
-            <Sparkles color="#6B7280" size={15} />
-            <View style={styles.aiContent}>
-              <Text style={styles.aiTitle}>AI Suggestions</Text>
-              <View style={styles.suggestionRow}>
-                {["Sai Bhajan Evening", "Community Satsang", "Sacred Gathering"].map((item) => (
-                  <Pressable
-                    key={item}
-                    onPress={() => setField("title", item)}
-                    style={styles.suggestionChip}
-                  >
-                    <Text style={styles.suggestionText}>{item}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          </View>
         </FormSection>
 
         <FormSection
@@ -791,11 +787,18 @@ export default function EventFormScreen({
               value={formatTime(form.endAt)}
             />
           </View>
-          <InfoCallout
-            icon={<Repeat2 color="#6B7280" size={15} />}
-            title="Recurring Event"
-            text="Make this a regular gathering"
-            action="Set Recurrence"
+          <RecurrenceSection
+            count={form.recurrenceCount}
+            enabled={form.recurrenceEnabled}
+            frequency={form.recurrenceFrequency}
+            setCount={(value) => setForm((current) => ({...current, recurrenceCount: value}))}
+            setEnabled={(value) => setForm((current) => ({...current, recurrenceEnabled: value}))}
+            setFrequency={(value) =>
+              setForm((current) => ({
+                ...current,
+                recurrenceFrequency: value,
+              }))
+            }
           />
         </FormSection>
 
@@ -803,26 +806,21 @@ export default function EventFormScreen({
           subtitle="Where will the gathering take place?"
           title="Venue / Sacred Space"
         >
-          <IconInput
-            icon={<Search color="#9CA3AF" size={17} />}
+          <TextInput
             onChangeText={(value) => setField("venueName", value)}
-            placeholder="Search for a location..."
+            placeholder="Venue name, e.g., Sai Mandir Hall"
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
             value={form.venueName}
           />
-          <View style={styles.selectedLocation}>
-            <View style={styles.locationIcon}>
-              <LocateFixed color="#6B7280" size={18} />
-            </View>
-            <View style={styles.locationCopy}>
-              <Text style={styles.locationTitle}>{form.venueName || "Sai Mandir Community Hall"}</Text>
-              <Text style={styles.locationText}>
-                {form.address || "123 Temple Road, Mumbai, Maharashtra 400001"}
-              </Text>
-            </View>
-            <Pressable style={styles.clearCircle}>
-              <X color="#6B7280" size={16} />
-            </Pressable>
-          </View>
+          <TextInput
+            multiline
+            onChangeText={(value) => setField("address", value)}
+            placeholder="Full address or directions"
+            placeholderTextColor="#9CA3AF"
+            style={[styles.input, styles.smallArea]}
+            value={form.address}
+          />
           <Pressable
             disabled={loadingLocation}
             onPress={handleUseCurrentLocation}
@@ -835,14 +833,6 @@ export default function EventFormScreen({
             )}
             <Text style={styles.currentLocationText}>Use Current Location</Text>
           </Pressable>
-          <TextInput
-            multiline
-            onChangeText={(value) => setField("address", value)}
-            placeholder="Additional directions or full address..."
-            placeholderTextColor="#9CA3AF"
-            style={[styles.input, styles.smallArea]}
-            value={form.address}
-          />
           <View style={styles.twoColumns}>
             <SelectButton label="Country" onPress={() => setSelectionKind("country")} value={form.country} />
             <SelectButton label="State" onPress={() => setSelectionKind("state")} value={form.state || "Choose state"} />
@@ -886,10 +876,6 @@ export default function EventFormScreen({
             />
             <Text style={styles.descriptionCounter}>{form.description.length}/500</Text>
           </View>
-          <View style={styles.twoColumns}>
-            <SoftAction icon={<WandSparkles color="#6B7280" size={15} />} label="Enhance with AI" />
-            <SoftAction icon={<Languages color="#6B7280" size={15} />} label="Translate" />
-          </View>
         </FormSection>
 
         <TagsSection
@@ -925,7 +911,7 @@ export default function EventFormScreen({
           >
             {saving ? <ActivityIndicator color="#FFFFFF" /> : null}
             <Text style={styles.submitText}>
-              {mode === "create" ? "Create Event" : "Save Changes"}
+              {mode === "create" ? "Review Event" : "Save Changes"}
             </Text>
           </Pressable>
           <Pressable onPress={() => router.back()} style={styles.discardButton}>
@@ -933,11 +919,6 @@ export default function EventFormScreen({
           </Pressable>
         </View>
       </ScrollView>
-
-      <View style={styles.autosave}>
-        <View style={styles.autosaveDot} />
-        <Text style={styles.autosaveText}>Draft saved automatically</Text>
-      </View>
 
       {pickerTarget && (
         <DateTimePicker
@@ -947,6 +928,14 @@ export default function EventFormScreen({
           value={parseDate(form[pickerTarget.field])}
         />
       )}
+
+      <ReviewEventModal
+        form={form}
+        onClose={() => setReviewVisible(false)}
+        onConfirm={confirmCreateEvent}
+        saving={saving}
+        visible={reviewVisible}
+      />
 
       <Modal
         animationType="slide"
@@ -1027,31 +1016,6 @@ function DateField({
   );
 }
 
-function IconInput({
-  icon,
-  onChangeText,
-  placeholder,
-  value,
-}: {
-  icon: React.ReactNode;
-  onChangeText: (value: string) => void;
-  placeholder: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.iconInput}>
-      {icon}
-      <TextInput
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
-        style={styles.iconInputText}
-        value={value}
-      />
-    </View>
-  );
-}
-
 function SelectButton({
   label,
   onPress,
@@ -1072,35 +1036,138 @@ function SelectButton({
   );
 }
 
-function InfoCallout({
-  action,
-  icon,
-  text,
-  title,
+function RecurrenceSection({
+  count,
+  enabled,
+  frequency,
+  setCount,
+  setEnabled,
+  setFrequency,
 }: {
-  action: string;
-  icon: React.ReactNode;
-  text: string;
-  title: string;
+  count: string;
+  enabled: boolean;
+  frequency: "daily" | "weekly" | "monthly";
+  setCount: (value: string) => void;
+  setEnabled: (value: boolean) => void;
+  setFrequency: (value: "daily" | "weekly" | "monthly") => void;
 }) {
   return (
-    <View style={styles.callout}>
-      <View style={styles.calloutIcon}>{icon}</View>
-      <View style={styles.calloutCopy}>
-        <Text style={styles.calloutTitle}>{title}</Text>
-        <Text style={styles.calloutText}>{text}</Text>
-        <Text style={styles.calloutAction}>{action}</Text>
-      </View>
+    <View style={styles.recurrenceBox}>
+      <Pressable onPress={() => setEnabled(!enabled)} style={styles.recurrenceHeader}>
+        <View style={styles.recurrenceIcon}>
+          <Repeat2 color="#6B7280" size={16} />
+        </View>
+        <View style={styles.recurrenceCopy}>
+          <Text style={styles.recurrenceTitle}>Recurring Event</Text>
+          <Text style={styles.recurrenceText}>
+            {enabled ? `Repeats ${frequency} for ${count || "1"} occurrence(s)` : "Make this a regular gathering"}
+          </Text>
+        </View>
+        <View style={[styles.toggleTrack, enabled && styles.toggleTrackActive]}>
+          <View style={[styles.toggleThumb, enabled && styles.toggleThumbActive]} />
+        </View>
+      </Pressable>
+
+      {enabled ? (
+        <View style={styles.recurrenceControls}>
+          <View style={styles.segmentRow}>
+            {(["daily", "weekly", "monthly"] as const).map((item) => (
+              <Pressable
+                key={item}
+                onPress={() => setFrequency(item)}
+                style={[styles.segment, frequency === item && styles.segmentActive]}
+              >
+                <Text style={[styles.segmentText, frequency === item && styles.segmentTextActive]}>
+                  {item}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <TextInput
+            keyboardType="number-pad"
+            onChangeText={setCount}
+            placeholder="Number of occurrences"
+            placeholderTextColor="#9CA3AF"
+            style={styles.input}
+            value={count}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
 
-function SoftAction({icon, label}: {icon: React.ReactNode; label: string}) {
+function ReviewEventModal({
+  form,
+  onClose,
+  onConfirm,
+  saving,
+  visible,
+}: {
+  form: EventFormState;
+  onClose: () => void;
+  onConfirm: () => void;
+  saving: boolean;
+  visible: boolean;
+}) {
   return (
-    <Pressable style={styles.softAction}>
-      {icon}
-      <Text style={styles.softActionText}>{label}</Text>
-    </Pressable>
+    <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
+      <View style={styles.modalBackdrop}>
+        <View style={styles.reviewSheet}>
+          <View style={styles.selectionHeader}>
+            <Text style={styles.selectionTitle}>Review Event</Text>
+            <Pressable onPress={onClose} style={styles.selectionClose}>
+              <X color="#1F2937" size={19} />
+            </Pressable>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.reviewTitle}>{form.title || "Untitled event"}</Text>
+            <Text style={styles.reviewDescription}>
+              {form.description || "No description added yet."}
+            </Text>
+            <ReviewRow label="Type" value={form.type} />
+            <ReviewRow label="Date" value={formatDate(form.startAt)} />
+            <ReviewRow label="Time" value={`${formatTime(form.startAt)} - ${formatTime(form.endAt)}`} />
+            <ReviewRow label="Venue" value={form.venueName || "Not added"} />
+            <ReviewRow label="Address" value={form.address || "Not added"} />
+            <ReviewRow label="Location" value={[form.city, form.state, form.country].filter(Boolean).join(", ") || "Not added"} />
+            <ReviewRow
+              label="Recurrence"
+              value={
+                form.recurrenceEnabled
+                  ? `${form.recurrenceFrequency}, ${form.recurrenceCount || "1"} occurrence(s)`
+                  : "One-time event"
+              }
+            />
+            <ReviewRow label="Tags" value={form.tags.length ? form.tags.join(", ") : "None"} />
+            <ReviewRow
+              label="Guidelines"
+              value={form.guidelines.length ? form.guidelines.join("; ") : "None"}
+            />
+            <ReviewRow label="FAQ" value={form.faq.length ? `${form.faq.length} item(s)` : "None"} />
+          </ScrollView>
+
+          <Pressable
+            disabled={saving}
+            onPress={onConfirm}
+            style={[styles.submitButton, saving && styles.disabled]}
+          >
+            {saving ? <ActivityIndicator color="#FFFFFF" /> : null}
+            <Text style={styles.submitText}>Create Event</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function ReviewRow({label, value}: {label: string; value: string}) {
+  return (
+    <View style={styles.reviewRow}>
+      <Text style={styles.reviewLabel}>{label}</Text>
+      <Text style={styles.reviewValue}>{value}</Text>
+    </View>
   );
 }
 
@@ -2046,6 +2113,83 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "900",
   },
+  recurrenceBox: {
+    backgroundColor: "#FAFAF9",
+    borderColor: "#F6EFD9",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 12,
+    padding: 12,
+  },
+  recurrenceControls: {
+    gap: 10,
+    marginTop: 12,
+  },
+  recurrenceCopy: {
+    flex: 1,
+  },
+  recurrenceHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+  },
+  recurrenceIcon: {
+    alignItems: "center",
+    backgroundColor: "#F6EFD9",
+    borderRadius: 16,
+    height: 32,
+    justifyContent: "center",
+    width: 32,
+  },
+  recurrenceText: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 3,
+  },
+  recurrenceTitle: {
+    color: "#1F2937",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  reviewDescription: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+  reviewLabel: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  reviewRow: {
+    borderBottomColor: "#F6EFD9",
+    borderBottomWidth: 1,
+    paddingVertical: 10,
+  },
+  reviewSheet: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "86%",
+    paddingBottom: 22,
+    paddingHorizontal: 16,
+  },
+  reviewTitle: {
+    color: "#1F2937",
+    fontSize: 20,
+    fontWeight: "900",
+    marginTop: 14,
+  },
+  reviewValue: {
+    color: "#1F2937",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 20,
+  },
   segment: {
     alignItems: "center",
     backgroundColor: "#FAFAF9",
@@ -2170,6 +2314,24 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "900",
+  },
+  toggleThumb: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 9,
+    height: 18,
+    width: 18,
+  },
+  toggleThumbActive: {
+    transform: [{translateX: 18}],
+  },
+  toggleTrack: {
+    backgroundColor: "#D1D5DB",
+    borderRadius: 14,
+    padding: 3,
+    width: 42,
+  },
+  toggleTrackActive: {
+    backgroundColor: "#F97316",
   },
   suggestedTitle: {
     color: "#4B5563",

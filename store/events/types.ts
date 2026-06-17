@@ -105,6 +105,16 @@ export type SaiEvent = {
   permissions?: EventPermission;
   photos?: number;
   rating?: number;
+  recurrence?: {
+    count?: number;
+    frequency:
+      | "daily"
+      | "weekly"
+      | "monthly"
+      | string;
+    interval?: number;
+    until?: string;
+  } | null;
   reviews?: number;
   rsvpedByMe?: boolean;
   rsvps?: number;

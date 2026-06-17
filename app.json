@@ -9,7 +9,13 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.deveshrn.saifamily",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow Sai Family to recognize your speech for search.",
+        "NSMicrophoneUsageDescription": "Allow Sai Family to use the microphone for voice search.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +26,10 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ],
       "predictiveBackGestureEnabled": false
     },
