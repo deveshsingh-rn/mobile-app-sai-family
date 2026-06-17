@@ -676,6 +676,7 @@ Todo:
 - [x] Wire `app/(tabs)/events.tsx` sections to `eventHome`.
 - [x] Wire map/list nearby section to `nearby`.
 - [x] Preserve static fallback if `eventHome` is empty.
+- [x] Wire bookmark, RSVP, and share actions on Events hub cards.
 - [ ] Add loading skeleton or compact loader per section.
 - [ ] Add section-level error handling.
 
@@ -843,7 +844,8 @@ Done when:
 
 - [x] Wire event home.
 - [x] Wire nearby.
-- [ ] Wire bookmark toggles.
+- [x] Wire bookmark toggles.
+- [x] Wire RSVP/share card actions.
 - [x] Replace static sections progressively.
 
 ### `app/events/[id].tsx`

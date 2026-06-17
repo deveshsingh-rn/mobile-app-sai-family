@@ -10,6 +10,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -41,10 +42,15 @@ import {
 } from "lucide-react-native";
 
 import {
+  bookmarkEventRequest,
+  cancelEventRsvpRequest,
   fetchCommunityCalendarsRequest,
   fetchEventsHomeRequest,
   fetchEventsRequest,
   fetchNearbyEventsRequest,
+  rsvpEventRequest,
+  shareEventRequest,
+  unbookmarkEventRequest,
 } from "@/store/events/actions";
 import {
   selectCommunityCalendars,
@@ -54,6 +60,9 @@ import {
   selectEventsHome,
   selectEventsHomeLoading,
   selectEventsLoading,
+  selectIsEventBookmarkPending,
+  selectIsEventRsvpPending,
+  selectIsEventSharePending,
   selectNearbyEvents,
   selectNearbyEventsLoading,
 } from "@/store/events/selectors";
@@ -256,6 +265,54 @@ function EventsScreen() {
     setTimeout(() => setRefreshing(false), 700);
   }, [dispatch, fetchParams]);
 
+  const handleBookmark = useCallback(
+    (event: UiEvent) => {
+      if (!event.sourceId) {
+        return;
+      }
+
+      dispatch(
+        event.bookmarked
+          ? unbookmarkEventRequest(event.sourceId)
+          : bookmarkEventRequest(event.sourceId)
+      );
+    },
+    [dispatch]
+  );
+
+  const handleRsvp = useCallback(
+    (event: UiEvent) => {
+      if (!event.sourceId) {
+        return;
+      }
+
+      dispatch(
+        event.going
+          ? cancelEventRsvpRequest(event.sourceId)
+          : rsvpEventRequest(event.sourceId)
+      );
+    },
+    [dispatch]
+  );
+
+  const handleShare = useCallback(
+    async (event: UiEvent) => {
+      if (!event.sourceId) {
+        return;
+      }
+
+      const result = await Share.share({
+        message: `${event.title}\n${event.date} · ${event.time}\n${event.location}`,
+        title: event.title,
+      });
+
+      if (result.action !== Share.dismissedAction) {
+        dispatch(shareEventRequest(event.sourceId, "native_share"));
+      }
+    },
+    [dispatch]
+  );
+
   const futureEvents = useMemo(
     () => sortBySoonest(events.filter(isFutureEvent)),
     [events]
@@ -409,6 +466,9 @@ function EventsScreen() {
             background={section.background}
             count={section.count}
             events={[...section.events]}
+            onBookmark={handleBookmark}
+            onRsvp={handleRsvp}
+            onShare={handleShare}
             title={section.title}
           />
         ))}
@@ -615,12 +675,18 @@ function EventSection({
   count,
   events,
   moreLabel,
+  onBookmark,
+  onRsvp,
+  onShare,
   title,
 }: {
   background: string;
   count: string;
   events: UiEvent[];
   moreLabel?: string;
+  onBookmark: (event: UiEvent) => void;
+  onRsvp: (event: UiEvent) => void;
+  onShare: (event: UiEvent) => void;
   title: string;
 }) {
   return (
@@ -631,7 +697,13 @@ function EventSection({
       </View>
 
       {events.map((event) => (
-        <EventCard key={event.id} event={event} />
+        <EventCard
+          key={event.id}
+          event={event}
+          onBookmark={onBookmark}
+          onRsvp={onRsvp}
+          onShare={onShare}
+        />
       ))}
 
       {!events.length && (
@@ -653,7 +725,27 @@ function EventSection({
   );
 }
 
-function EventCard({ event }: { event: UiEvent }) {
+function EventCard({
+  event,
+  onBookmark,
+  onRsvp,
+  onShare,
+}: {
+  event: UiEvent;
+  onBookmark: (event: UiEvent) => void;
+  onRsvp: (event: UiEvent) => void;
+  onShare: (event: UiEvent) => void;
+}) {
+  const bookmarkPending = useAppSelector((state) =>
+    selectIsEventBookmarkPending(state, event.sourceId)
+  );
+  const rsvpPending = useAppSelector((state) =>
+    selectIsEventRsvpPending(state, event.sourceId)
+  );
+  const sharePending = useAppSelector((state) =>
+    selectIsEventSharePending(state, event.sourceId)
+  );
+
   return (
     <Pressable
       onPress={() => {
@@ -673,12 +765,23 @@ function EventCard({ event }: { event: UiEvent }) {
             <Text numberOfLines={1} style={styles.cardTitle}>
               {event.title}
             </Text>
-            <Pressable style={styles.bookmarkButton}>
-              <Bookmark
-                color="#6B7280"
-                fill={event.bookmarked ? "#1F2937" : "transparent"}
-                size={18}
-              />
+            <Pressable
+              disabled={bookmarkPending}
+              onPress={(pressEvent) => {
+                pressEvent.stopPropagation();
+                onBookmark(event);
+              }}
+              style={[styles.bookmarkButton, bookmarkPending && styles.disabledButton]}
+            >
+              {bookmarkPending ? (
+                <ActivityIndicator color="#6B7280" size="small" />
+              ) : (
+                <Bookmark
+                  color="#6B7280"
+                  fill={event.bookmarked ? "#1F2937" : "transparent"}
+                  size={18}
+                />
+              )}
             </Pressable>
           </View>
 
@@ -699,14 +802,40 @@ function EventCard({ event }: { event: UiEvent }) {
       </View>
 
       <View style={styles.cardActions}>
-        <Pressable style={[styles.rsvpButton, event.going && styles.rsvpButtonActive]}>
-          <CalendarCheck color={event.going ? "#FFFFFF" : "#4B5563"} size={16} />
+        <Pressable
+          disabled={rsvpPending}
+          onPress={(pressEvent) => {
+            pressEvent.stopPropagation();
+            onRsvp(event);
+          }}
+          style={[
+            styles.rsvpButton,
+            event.going && styles.rsvpButtonActive,
+            rsvpPending && styles.disabledButton,
+          ]}
+        >
+          {rsvpPending ? (
+            <ActivityIndicator color={event.going ? "#FFFFFF" : "#4B5563"} size="small" />
+          ) : (
+            <CalendarCheck color={event.going ? "#FFFFFF" : "#4B5563"} size={16} />
+          )}
           <Text style={[styles.rsvpButtonText, event.going && styles.rsvpButtonTextActive]}>
-            {event.going ? "Going" : "Interested"}
+            {rsvpPending ? "Updating" : event.going ? "Going" : "Interested"}
           </Text>
         </Pressable>
-        <Pressable style={styles.shareButton}>
-          <Share2 color="#4B5563" size={16} />
+        <Pressable
+          disabled={sharePending}
+          onPress={(pressEvent) => {
+            pressEvent.stopPropagation();
+            onShare(event);
+          }}
+          style={[styles.shareButton, sharePending && styles.disabledButton]}
+        >
+          {sharePending ? (
+            <ActivityIndicator color="#4B5563" size="small" />
+          ) : (
+            <Share2 color="#4B5563" size={16} />
+          )}
         </Pressable>
       </View>
     </Pressable>
@@ -1500,6 +1629,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     height: 4,
     width: 4,
+  },
+  disabledButton: {
+    opacity: 0.55,
   },
   activityFootnote: {
     color: "#6B7280",
