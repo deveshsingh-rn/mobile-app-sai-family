@@ -7,6 +7,8 @@ import {
 export const initialEventsState: EventsState = {
   addingComment: false,
   addingReviewIds: {},
+  analyticsByEventId: {},
+  analyticsLoadingIds: {},
   attendeesByEventId: {},
   attendeesLoadingIds: {},
   bookmarkPendingIds: {},
@@ -240,6 +242,16 @@ export function eventsReducer(
           ...state.attendeesLoadingIds,
           [action.payload?.id]: true,
         },
+      };
+
+    case EVENTS_ACTIONS.FETCH_ANALYTICS_REQUEST:
+      return {
+        ...state,
+        analyticsLoadingIds: {
+          ...state.analyticsLoadingIds,
+          [action.payload?.id]: true,
+        },
+        error: null,
       };
 
     case EVENTS_ACTIONS.SUBSCRIBE_COMMUNITY_CALENDAR_REQUEST:
@@ -679,6 +691,42 @@ export function eventsReducer(
       };
     }
 
+    case EVENTS_ACTIONS.FETCH_ANALYTICS_SUCCESS: {
+      const id = action.payload?.id;
+      const {
+        [id]: _,
+        ...remainingLoadingIds
+      } = state.analyticsLoadingIds;
+      const result = action.payload?.result || {};
+      const analytics =
+        result.analytics ||
+        result.data?.analytics ||
+        {};
+      const event = result.event || result.data?.event;
+
+      return {
+        ...state,
+        analyticsByEventId: {
+          ...state.analyticsByEventId,
+          [id]: analytics,
+        },
+        analyticsLoadingIds:
+          remainingLoadingIds,
+        detail:
+          state.detail?.id === id && event
+            ? {
+                ...state.detail,
+                ...event,
+              }
+            : state.detail,
+        myEvents: event
+          ? state.myEvents.map((item) =>
+              updateEventById(item, id, event)
+            )
+          : state.myEvents,
+      };
+    }
+
     case EVENTS_ACTIONS.CHECK_IN_SUCCESS: {
       const id = action.payload?.id;
       const userId = action.payload?.userId;
@@ -956,6 +1004,22 @@ export function eventsReducer(
           error:
             action.payload?.error ||
             "Unable to load attendees.",
+        };
+      }
+
+    case EVENTS_ACTIONS.FETCH_ANALYTICS_FAILURE: {
+        const {
+          [action.payload?.id]: _,
+          ...remainingLoadingIds
+        } = state.analyticsLoadingIds;
+
+        return {
+          ...state,
+          analyticsLoadingIds:
+            remainingLoadingIds,
+          error:
+            action.payload?.error ||
+            "Unable to load event analytics.",
         };
       }
 

@@ -38,10 +38,12 @@ import {
 } from "lucide-react-native";
 
 import {
+  fetchEventAnalyticsRequest,
   fetchMyEventsRequest,
   fetchMyRsvpsRequest,
 } from "@/store/events/actions";
 import {
+  selectEventAnalyticsMap,
   selectEventsError,
   selectEventsLoading,
   selectMyEventRsvps,
@@ -50,6 +52,7 @@ import {
   selectMyEventsPagination,
 } from "@/store/events/selectors";
 import {
+  EventAnalytics,
   EventPagination,
   SaiEvent,
 } from "@/store/events/types";
@@ -62,6 +65,7 @@ type MyEventsTab = "attending" | "posted";
 type EventFilter = "all" | "upcoming" | "past" | "nearby";
 
 type DisplayEvent = {
+  analytics?: EventAnalytics;
   attendees: string;
   badge: string;
   bookmarked?: boolean;
@@ -135,11 +139,15 @@ const getEventLocation = (event: SaiEvent) =>
 
 const toDisplayEvent = (
   event: SaiEvent,
-  mode: MyEventsTab
+  mode: MyEventsTab,
+  analytics?: EventAnalytics
 ): DisplayEvent => ({
+  analytics,
   attendees:
     mode === "posted"
-      ? `${event.rsvps || 0} RSVPs · ${event.comments || 0} comments`
+      ? `${analytics?.rsvps ?? event.rsvps ?? 0} RSVPs · ${
+          analytics?.checkIns ?? event.checkIns ?? 0
+        } check-ins · ${analytics?.views ?? event.views ?? 0} views`
       : `${event.rsvps || 0} devotees attending`,
   badge: getEventBadge(event, mode),
   bookmarked: event.bookmarkedByMe || event.rsvpedByMe,
@@ -174,9 +182,6 @@ const applyFilter = (
   return events;
 };
 
-const sumRsvps = (events: SaiEvent[]) =>
-  events.reduce((total, event) => total + (event.rsvps || 0), 0);
-
 const getNextEvent = (events: SaiEvent[]) =>
   [...events]
     .filter((event) => !isPastEvent(event))
@@ -209,6 +214,7 @@ export default function MyEventsRoute() {
   const error = useAppSelector(selectEventsError);
   const myEvents = useAppSelector(selectMyEvents);
   const myEventsPagination = useAppSelector(selectMyEventsPagination);
+  const analyticsByEventId = useAppSelector(selectEventAnalyticsMap);
   const rsvps = useAppSelector(selectMyEventRsvps);
   const rsvpPagination = useAppSelector(selectMyEventRsvpsPagination);
   const [activeTab, setActiveTab] = useState<MyEventsTab>("attending");
@@ -224,6 +230,14 @@ export default function MyEventsRoute() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    myEvents.forEach((event) => {
+      if (event.id && !analyticsByEventId[event.id]) {
+        dispatch(fetchEventAnalyticsRequest(event.id));
+      }
+    });
+  }, [analyticsByEventId, dispatch, myEvents]);
+
   const attendingEvents = useMemo(
     () =>
       applyFilter(rsvps, activeFilter).map((event) =>
@@ -235,9 +249,13 @@ export default function MyEventsRoute() {
   const postedEvents = useMemo(
     () =>
       applyFilter(myEvents, activeFilter).map((event) =>
-        toDisplayEvent(event, "posted")
+        toDisplayEvent(
+          event,
+          "posted",
+          analyticsByEventId[event.id]
+        )
       ),
-    [activeFilter, myEvents]
+    [activeFilter, analyticsByEventId, myEvents]
   );
 
   const visibleEvents = activeTab === "attending" ? attendingEvents : postedEvents;
@@ -249,6 +267,37 @@ export default function MyEventsRoute() {
   const rsvpUpcomingCount = useMemo(
     () => rsvps.filter((event) => !isPastEvent(event)).length,
     [rsvps]
+  );
+  const postedAnalytics = useMemo(
+    () =>
+      myEvents.reduce(
+        (totals, event) => {
+          const analytics =
+            analyticsByEventId[event.id] || {};
+
+          return {
+            checkIns:
+              totals.checkIns +
+              (analytics.checkIns ?? event.checkIns ?? 0),
+            rsvps:
+              totals.rsvps +
+              (analytics.rsvps ?? event.rsvps ?? 0),
+            shares:
+              totals.shares +
+              (analytics.shares ?? event.shares ?? 0),
+            views:
+              totals.views +
+              (analytics.views ?? event.views ?? 0),
+          };
+        },
+        {
+          checkIns: 0,
+          rsvps: 0,
+          shares: 0,
+          views: 0,
+        }
+      ),
+    [analyticsByEventId, myEvents]
   );
   const activePagination: EventPagination | null | undefined =
     activeTab === "posted" ? myEventsPagination : rsvpPagination;
@@ -348,7 +397,7 @@ export default function MyEventsRoute() {
               value={
                 activeTab === "attending"
                   ? `${rsvpUpcomingCount} Soon`
-                  : `${sumRsvps(myEvents)} RSVPs`
+                  : `${postedAnalytics.rsvps} RSVPs`
               }
             />
           </View>
@@ -365,8 +414,8 @@ export default function MyEventsRoute() {
           nextRsvpEvent ? <UrgentAlert event={nextRsvpEvent} /> : null
         ) : (
           <PostedStats
+            analytics={postedAnalytics}
             events={myEvents.length}
-            rsvps={sumRsvps(myEvents)}
             upcoming={postedUpcomingCount}
           />
         )}
@@ -544,19 +593,25 @@ function UrgentAlert({
 }
 
 function PostedStats({
+  analytics,
   events,
-  rsvps,
   upcoming,
 }: {
+  analytics: {
+    checkIns: number;
+    rsvps: number;
+    shares: number;
+    views: number;
+  };
   events: number;
-  rsvps: number;
   upcoming: number;
 }) {
   return (
     <View style={styles.postedStats}>
       <PostedStat icon={<CalendarCheck color="#F97316" size={19} />} label="Total Events" value={String(events)} />
-      <PostedStat icon={<Users color="#F97316" size={19} />} label="Total RSVPs" value={String(rsvps)} />
-      <PostedStat icon={<Star color="#F97316" size={19} />} label="Upcoming" value={String(upcoming)} />
+      <PostedStat icon={<Users color="#F97316" size={19} />} label="Total RSVPs" value={String(analytics.rsvps)} />
+      <PostedStat icon={<TrendingUp color="#F97316" size={19} />} label="Views" value={String(analytics.views)} />
+      <PostedStat icon={<Star color="#F97316" size={19} />} label="Check-ins" value={String(analytics.checkIns || upcoming)} />
     </View>
   );
 }

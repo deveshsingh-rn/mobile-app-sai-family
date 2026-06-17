@@ -12,6 +12,7 @@ import {
   apiCheckInEventAttendee,
   apiCreateEvent,
   apiDeleteEvent,
+  apiFetchEventAnalytics,
   apiFetchEventAttendees,
   apiFetchEventCalendar,
   apiFetchEventComments,
@@ -50,6 +51,8 @@ import {
   createEventSuccess,
   deleteEventFailure,
   deleteEventSuccess,
+  fetchEventAnalyticsFailure,
+  fetchEventAnalyticsSuccess,
   fetchEventCalendarFailure,
   fetchEventCalendarSuccess,
   fetchEventAttendeesFailure,
@@ -1156,6 +1159,39 @@ function* fetchEventAttendeesWorker(
   }
 }
 
+function* fetchEventAnalyticsWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchEventAnalytics,
+      action.payload.id
+    );
+
+    yield put(
+      fetchEventAnalyticsSuccess(
+        action.payload.id,
+        {
+          analytics:
+            response?.analytics ||
+            response?.data?.analytics ||
+            {},
+          event:
+            response?.event ||
+            response?.data?.event,
+        }
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchEventAnalyticsFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
 function* checkInEventAttendeeWorker(
   action: EventsAction
 ): Generator<any, void, any> {
@@ -1388,6 +1424,10 @@ export function* eventsSaga() {
   yield takeLatest(
     EVENTS_ACTIONS.FETCH_ATTENDEES_REQUEST,
     fetchEventAttendeesWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_ANALYTICS_REQUEST,
+    fetchEventAnalyticsWorker
   );
   yield takeLatest(
     EVENTS_ACTIONS.CHECK_IN_REQUEST,

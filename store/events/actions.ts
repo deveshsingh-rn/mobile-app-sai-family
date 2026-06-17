@@ -3,6 +3,7 @@ import {
   EVENTS_ACTIONS,
   CalendarPreferences,
   CommunityCalendar,
+  EventAnalyticsResult,
   EventAttendeesResult,
   EventCalendarResult,
   EventComment,
@@ -638,6 +639,32 @@ export const fetchEventAttendeesFailure = (
   ({
     payload: { error, id },
     type: EVENTS_ACTIONS.FETCH_ATTENDEES_FAILURE,
+  } as const);
+
+export const fetchEventAnalyticsRequest = (
+  id: string
+) =>
+  ({
+    payload: { id },
+    type: EVENTS_ACTIONS.FETCH_ANALYTICS_REQUEST,
+  } as const);
+
+export const fetchEventAnalyticsSuccess = (
+  id: string,
+  payload: EventAnalyticsResult
+) =>
+  ({
+    payload: { id, result: payload },
+    type: EVENTS_ACTIONS.FETCH_ANALYTICS_SUCCESS,
+  } as const);
+
+export const fetchEventAnalyticsFailure = (
+  id: string,
+  error: string
+) =>
+  ({
+    payload: { error, id },
+    type: EVENTS_ACTIONS.FETCH_ANALYTICS_FAILURE,
   } as const);
 
 export const checkInEventAttendeeRequest = (

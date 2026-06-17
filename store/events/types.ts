@@ -234,6 +234,34 @@ export type EventCalendarSummary = {
   totalEvents?: number;
 };
 
+export type EventAnalyticsDay = {
+  comments?: number;
+  date: string;
+  rsvps?: number;
+  shares?: number;
+  views?: number;
+};
+
+export type EventAnalytics = {
+  bookmarks?: number;
+  checkIns?: number;
+  comments?: number;
+  eventId?: string;
+  guestCount?: number;
+  rating?: number;
+  reports?: number;
+  reviews?: number;
+  rsvps?: number;
+  shares?: number;
+  trafficByDay?: EventAnalyticsDay[];
+  views?: number;
+};
+
+export type EventAnalyticsResult = {
+  analytics: EventAnalytics;
+  event?: SaiEvent;
+};
+
 export type EventCalendarResult = {
   days: EventCalendarDay[];
   events: SaiEvent[];
@@ -360,6 +388,8 @@ export type UpdateEventPayload =
 export type EventsState = {
   addingComment: boolean;
   addingReviewIds: Record<string, boolean>;
+  analyticsByEventId: Record<string, EventAnalytics>;
+  analyticsLoadingIds: Record<string, boolean>;
   attendeesByEventId: Record<string, EventAttendeesResult>;
   attendeesLoadingIds: Record<string, boolean>;
   bookmarkPendingIds: Record<string, boolean>;
@@ -449,6 +479,12 @@ export const EVENTS_ACTIONS = {
     "events/fetchAttendeesRequest",
   FETCH_ATTENDEES_SUCCESS:
     "events/fetchAttendeesSuccess",
+  FETCH_ANALYTICS_FAILURE:
+    "events/fetchAnalyticsFailure",
+  FETCH_ANALYTICS_REQUEST:
+    "events/fetchAnalyticsRequest",
+  FETCH_ANALYTICS_SUCCESS:
+    "events/fetchAnalyticsSuccess",
   FETCH_DETAIL_FAILURE:
     "events/fetchDetailFailure",
   FETCH_DETAIL_REQUEST:

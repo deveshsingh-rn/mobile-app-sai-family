@@ -129,6 +129,31 @@ export const selectEventAttendeesLoading = (
       )
     : false;
 
+export const selectEventAnalytics = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? selectEventsState(state).analyticsByEventId[
+        eventId
+      ] || null
+    : null;
+
+export const selectEventAnalyticsMap = (
+  state: RootState
+) => selectEventsState(state).analyticsByEventId;
+
+export const selectEventAnalyticsLoading = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? Boolean(
+        selectEventsState(state)
+          .analyticsLoadingIds[eventId]
+      )
+    : false;
+
 export const selectIsCheckingInEventAttendee = (
   state: RootState,
   eventId?: string,

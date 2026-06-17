@@ -728,18 +728,18 @@ Done when:
 
 ### Phase 5: My Events Organizer Tools
 
-Status: Not started
+Status: In progress
 
 Todo:
 
-- [ ] Add analytics type/service/actions/saga/selectors.
-- [ ] Load analytics for posted event cards or on-demand when user taps manage.
+- [x] Add analytics type/service/actions/saga/selectors.
+- [x] Load analytics for posted event cards.
 - [ ] Add attendees type/service/actions/saga/selectors.
 - [ ] Build or wire attendee management screen/modal.
-- [ ] Add check-in action.
-- [ ] Add event report action.
+- [x] Add check-in action.
+- [x] Add event report action.
 - [ ] Add post-event photos upload action.
-- [ ] Replace hardcoded posted stats with real analytics.
+- [x] Replace posted summary stats with real analytics when backend returns them.
 
 Done when:
 
@@ -871,9 +871,9 @@ Done when:
 
 ### `app/events/my-events.tsx`
 
-- [ ] Wire analytics.
+- [x] Wire analytics.
 - [ ] Wire attendees/check-in/report/photos.
-- [ ] Replace hardcoded stats.
+- [x] Replace posted stats with analytics-backed values.
 
 ## Testing Plan
 

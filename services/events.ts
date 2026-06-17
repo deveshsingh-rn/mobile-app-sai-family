@@ -3,6 +3,7 @@ import type {
   CreateEventPayload,
   CalendarPreferences,
   CommunityCalendar,
+  EventAnalyticsResult,
   EventAttendeesResult,
   EventCommentsResult,
   EventListParams,
@@ -355,6 +356,16 @@ export async function apiFetchEventAttendees(
     {
       params,
     }
+  );
+
+  return data;
+}
+
+export async function apiFetchEventAnalytics(
+  id: string
+): Promise<EventAnalyticsResult> {
+  const { data } = await apiClient.get(
+    `/api/events/${id}/analytics`
   );
 
   return data;
