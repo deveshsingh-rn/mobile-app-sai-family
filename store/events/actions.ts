@@ -12,6 +12,7 @@ import {
   EventListResult,
   EventHomeResult,
   EventNearbyResult,
+  EventPlacesResult,
   EventPhotosResult,
   EventRecommendationResult,
   EventReportPayload,
@@ -20,6 +21,8 @@ import {
   EventReviewsResult,
   EventRsvp,
   EventRsvpPayload,
+  EventTitleSuggestionsPayload,
+  EventTitleSuggestionsResult,
   SaiEvent,
   UpdateEventPayload,
   UploadEventMediaPayload,
@@ -99,6 +102,58 @@ export const fetchNearbyEventsFailure = (
   ({
     payload,
     type: EVENTS_ACTIONS.FETCH_NEARBY_FAILURE,
+  } as const);
+
+export const fetchEventPlacesRequest = (
+  payload: {
+    city?: string;
+    limit?: number;
+    q: string;
+  }
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_PLACES_REQUEST,
+  } as const);
+
+export const fetchEventPlacesSuccess = (
+  payload: EventPlacesResult
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_PLACES_SUCCESS,
+  } as const);
+
+export const fetchEventPlacesFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_PLACES_FAILURE,
+  } as const);
+
+export const fetchEventTitleSuggestionsRequest = (
+  payload: EventTitleSuggestionsPayload
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_TITLE_SUGGESTIONS_REQUEST,
+  } as const);
+
+export const fetchEventTitleSuggestionsSuccess = (
+  payload: EventTitleSuggestionsResult
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_TITLE_SUGGESTIONS_SUCCESS,
+  } as const);
+
+export const fetchEventTitleSuggestionsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_TITLE_SUGGESTIONS_FAILURE,
   } as const);
 
 export const fetchEventDetailRequest = (

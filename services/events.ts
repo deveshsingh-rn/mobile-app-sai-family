@@ -15,8 +15,11 @@ import type {
   EventHomeResult,
   EventListResult,
   EventNearbyResult,
+  EventPlacesResult,
   EventCalendarResult,
   EventRecommendationResult,
+  EventTitleSuggestionsPayload,
+  EventTitleSuggestionsResult,
   EventRsvpPayload,
   EventRsvpResult,
   SaiEvent,
@@ -58,6 +61,32 @@ export async function apiFetchNearbyEvents(
     {
       params,
     }
+  );
+
+  return data;
+}
+
+export async function apiSearchEventPlaces(params: {
+  city?: string;
+  limit?: number;
+  q: string;
+}): Promise<EventPlacesResult> {
+  const { data } = await apiClient.get(
+    "/api/places/search",
+    {
+      params,
+    }
+  );
+
+  return data;
+}
+
+export async function apiFetchEventTitleSuggestions(
+  payload: EventTitleSuggestionsPayload
+): Promise<EventTitleSuggestionsResult> {
+  const { data } = await apiClient.post(
+    "/api/events/suggestions/title",
+    payload
   );
 
   return data;

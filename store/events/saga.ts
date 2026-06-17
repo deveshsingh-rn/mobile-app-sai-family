@@ -27,6 +27,8 @@ import {
   apiFetchMyEvents,
   apiFetchMyRsvps,
   apiFetchNearbyEvents,
+  apiFetchEventTitleSuggestions,
+  apiSearchEventPlaces,
   apiExportCalendarIcs,
   apiReportEvent,
   apiRsvpEvent,
@@ -85,6 +87,10 @@ import {
   fetchMyRsvpsSuccess,
   fetchNearbyEventsFailure,
   fetchNearbyEventsSuccess,
+  fetchEventPlacesFailure,
+  fetchEventPlacesSuccess,
+  fetchEventTitleSuggestionsFailure,
+  fetchEventTitleSuggestionsSuccess,
   reportEventFailure,
   reportEventSuccess,
   rsvpEventFailure,
@@ -732,6 +738,58 @@ function* fetchNearbyEventsWorker(
   } catch (error) {
     yield put(
       fetchNearbyEventsFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* fetchEventPlacesWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiSearchEventPlaces,
+      action.payload || {}
+    );
+
+    yield put(
+      fetchEventPlacesSuccess({
+        places:
+          response?.places ||
+          response?.data?.places ||
+          [],
+      })
+    );
+  } catch (error) {
+    yield put(
+      fetchEventPlacesFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* fetchEventTitleSuggestionsWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchEventTitleSuggestions,
+      action.payload || {}
+    );
+
+    yield put(
+      fetchEventTitleSuggestionsSuccess({
+        suggestions:
+          response?.suggestions ||
+          response?.data?.suggestions ||
+          [],
+      })
+    );
+  } catch (error) {
+    yield put(
+      fetchEventTitleSuggestionsFailure(
         getErrorMessage(error)
       )
     );
@@ -1562,6 +1620,14 @@ export function* eventsSaga() {
   yield takeLatest(
     EVENTS_ACTIONS.FETCH_NEARBY_REQUEST,
     fetchNearbyEventsWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_PLACES_REQUEST,
+    fetchEventPlacesWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_TITLE_SUGGESTIONS_REQUEST,
+    fetchEventTitleSuggestionsWorker
   );
   yield takeLatest(
     EVENTS_ACTIONS.FETCH_DETAIL_REQUEST,

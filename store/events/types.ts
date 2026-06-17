@@ -468,6 +468,38 @@ export type UpdateEventPayload =
     id: string;
   };
 
+export type EventPlace = {
+  address?: string;
+  city?: string;
+  country?: string;
+  id: string;
+  latitude?: number;
+  longitude?: number;
+  name: string;
+  source?: string;
+  state?: string;
+};
+
+export type EventPlacesResult = {
+  places: EventPlace[];
+};
+
+export type EventTitleSuggestion = {
+  id?: string;
+  title: string;
+};
+
+export type EventTitleSuggestionsResult = {
+  suggestions: EventTitleSuggestion[];
+};
+
+export type EventTitleSuggestionsPayload = {
+  city?: string;
+  intention?: string;
+  type?: EventType;
+  venueName?: string;
+};
+
 export type EventsState = {
   addingComment: boolean;
   addingReviewIds: Record<string, boolean>;
@@ -510,10 +542,14 @@ export type EventsState = {
   photoUploadingIds: Record<string, boolean>;
   photosByEventId: Record<string, EventPhotosResult>;
   photosLoadingIds: Record<string, boolean>;
+  places: EventPlace[];
+  placesLoading: boolean;
   reviewsByEventId: Record<string, EventReviewsResult>;
   reviewsLoadingIds: Record<string, boolean>;
   rsvpPendingIds: Record<string, boolean>;
   sharePendingIds: Record<string, boolean>;
+  titleSuggestions: EventTitleSuggestion[];
+  titleSuggestionsLoading: boolean;
   calendarDays: EventCalendarDay[];
   calendarSummary: EventCalendarSummary | null;
   uploadedMedia: UploadEventMediaResult | null;
@@ -635,6 +671,12 @@ export const EVENTS_ACTIONS = {
     "events/fetchPhotosRequest",
   FETCH_PHOTOS_SUCCESS:
     "events/fetchPhotosSuccess",
+  FETCH_PLACES_FAILURE:
+    "events/fetchPlacesFailure",
+  FETCH_PLACES_REQUEST:
+    "events/fetchPlacesRequest",
+  FETCH_PLACES_SUCCESS:
+    "events/fetchPlacesSuccess",
   EXPORT_CALENDAR_FAILURE:
     "events/exportCalendarFailure",
   EXPORT_CALENDAR_REQUEST:
@@ -674,6 +716,12 @@ export const EVENTS_ACTIONS = {
     "events/shareRequest",
   SHARE_SUCCESS:
     "events/shareSuccess",
+  FETCH_TITLE_SUGGESTIONS_FAILURE:
+    "events/fetchTitleSuggestionsFailure",
+  FETCH_TITLE_SUGGESTIONS_REQUEST:
+    "events/fetchTitleSuggestionsRequest",
+  FETCH_TITLE_SUGGESTIONS_SUCCESS:
+    "events/fetchTitleSuggestionsSuccess",
   UPDATE_FAILURE: "events/updateFailure",
   UPDATE_REQUEST: "events/updateRequest",
   UPDATE_SUCCESS: "events/updateSuccess",

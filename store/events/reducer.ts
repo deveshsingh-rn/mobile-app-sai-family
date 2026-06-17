@@ -48,10 +48,14 @@ export const initialEventsState: EventsState = {
   photoUploadingIds: {},
   photosByEventId: {},
   photosLoadingIds: {},
+  places: [],
+  placesLoading: false,
   reviewsByEventId: {},
   reviewsLoadingIds: {},
   rsvpPendingIds: {},
   sharePendingIds: {},
+  titleSuggestions: [],
+  titleSuggestionsLoading: false,
   uploadedMedia: null,
   uploadingMedia: false,
 };
@@ -144,6 +148,20 @@ export function eventsReducer(
         ...state,
         error: null,
         nearbyLoading: true,
+      };
+
+    case EVENTS_ACTIONS.FETCH_PLACES_REQUEST:
+      return {
+        ...state,
+        error: null,
+        placesLoading: true,
+      };
+
+    case EVENTS_ACTIONS.FETCH_TITLE_SUGGESTIONS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        titleSuggestionsLoading: true,
       };
 
     case EVENTS_ACTIONS.FETCH_CALENDAR_PREFERENCES_REQUEST:
@@ -349,6 +367,26 @@ export function eventsReducer(
           action.payload?.data?.events ||
           [],
         nearbyLoading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_PLACES_SUCCESS:
+      return {
+        ...state,
+        places:
+          action.payload?.places ||
+          action.payload?.data?.places ||
+          [],
+        placesLoading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_TITLE_SUGGESTIONS_SUCCESS:
+      return {
+        ...state,
+        titleSuggestions:
+          action.payload?.suggestions ||
+          action.payload?.data?.suggestions ||
+          [],
+        titleSuggestionsLoading: false,
       };
 
     case EVENTS_ACTIONS.FETCH_DETAIL_SUCCESS:
@@ -985,6 +1023,20 @@ export function eventsReducer(
         ...state,
         error: action.payload,
         nearbyLoading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_PLACES_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        placesLoading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_TITLE_SUGGESTIONS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        titleSuggestionsLoading: false,
       };
 
     case EVENTS_ACTIONS.FETCH_CALENDAR_PREFERENCES_FAILURE:

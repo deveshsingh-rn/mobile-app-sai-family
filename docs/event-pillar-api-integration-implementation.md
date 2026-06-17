@@ -748,14 +748,14 @@ Done when:
 
 ### Phase 6: Create/Edit Enhancements
 
-Status: Not started
+Status: In progress
 
 Todo:
 
-- [ ] Add title suggestions endpoint integration.
-- [ ] Wire AI suggestion chips to backend suggestions.
-- [ ] Add place search endpoint integration.
-- [ ] Replace local placeholder venue card with selected backend place.
+- [x] Add title suggestions endpoint integration.
+- [x] Wire AI suggestion chips to backend suggestions.
+- [x] Add place search endpoint integration.
+- [x] Replace local placeholder venue card with selected backend place.
 - [ ] Add event draft types/actions/saga/reducer.
 - [ ] Autosave draft with debounce.
 - [ ] Add publish draft flow.
@@ -857,8 +857,8 @@ Done when:
 
 ### `screens/event-form-screen.tsx`
 
-- [ ] Wire suggestions.
-- [ ] Wire place search.
+- [x] Wire suggestions.
+- [x] Wire place search.
 - [ ] Wire drafts/autosave.
 - [ ] Add recurrence payload support.
 - [ ] Keep basic create/edit working throughout.

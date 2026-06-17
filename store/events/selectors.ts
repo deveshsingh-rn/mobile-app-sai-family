@@ -28,6 +28,22 @@ export const selectNearbyEventsLoading = (
   state: RootState
 ) => selectEventsState(state).nearbyLoading;
 
+export const selectEventPlaces = (
+  state: RootState
+) => selectEventsState(state).places;
+
+export const selectEventPlacesLoading = (
+  state: RootState
+) => selectEventsState(state).placesLoading;
+
+export const selectEventTitleSuggestions = (
+  state: RootState
+) => selectEventsState(state).titleSuggestions;
+
+export const selectEventTitleSuggestionsLoading = (
+  state: RootState
+) => selectEventsState(state).titleSuggestionsLoading;
+
 export const selectEventsLoading = (
   state: RootState
 ) => selectEventsState(state).loading;

@@ -47,6 +47,7 @@ import {
   Music,
   Plus,
   Repeat2,
+  Search,
   Sparkles,
   Stethoscope,
   Users,
@@ -56,12 +57,18 @@ import {
 
 import {
   createEventRequest,
+  fetchEventPlacesRequest,
   fetchEventDetailRequest,
+  fetchEventTitleSuggestionsRequest,
   updateEventRequest,
   uploadEventMediaRequest,
 } from "@/store/events/actions";
 import {
   selectEventDetail,
+  selectEventPlaces,
+  selectEventPlacesLoading,
+  selectEventTitleSuggestions,
+  selectEventTitleSuggestionsLoading,
   selectEventsError,
   selectIsCreatingEvent,
   selectIsUploadingEventMedia,
@@ -69,7 +76,9 @@ import {
 } from "@/store/events/selectors";
 import {
   CreateEventPayload,
+  EventPlace,
   EventType,
+  EventTitleSuggestion,
 } from "@/store/events/types";
 import {
   getFirstValidationError,
@@ -260,6 +269,10 @@ export default function EventFormScreen({
   const error = useAppSelector(selectEventsError);
   const uploadingMedia = useAppSelector(selectIsUploadingEventMedia);
   const uploadedMedia = useAppSelector(selectUploadedEventMedia);
+  const places = useAppSelector(selectEventPlaces);
+  const placesLoading = useAppSelector(selectEventPlacesLoading);
+  const titleSuggestions = useAppSelector(selectEventTitleSuggestions);
+  const titleSuggestionsLoading = useAppSelector(selectEventTitleSuggestionsLoading);
   const [form, setForm] = useState<EventFormState>(initialForm);
   const [localBannerUri, setLocalBannerUri] = useState<string | null>(null);
   const [waitingForBannerUpload, setWaitingForBannerUpload] = useState(false);
@@ -405,6 +418,63 @@ export default function EventFormScreen({
       faq: current.faq.filter((_, index) => index !== indexToRemove),
     }));
   }, []);
+
+  const handleFetchTitleSuggestions = useCallback(() => {
+    dispatch(
+      fetchEventTitleSuggestionsRequest({
+        city: form.city || undefined,
+        intention: form.description || form.title || undefined,
+        type: form.type,
+        venueName: form.venueName || undefined,
+      })
+    );
+  }, [dispatch, form.city, form.description, form.title, form.type, form.venueName]);
+
+  const handleApplyTitleSuggestion = useCallback(
+    (suggestion: EventTitleSuggestion) => {
+      setField("title", suggestion.title);
+    },
+    [setField]
+  );
+
+  const handleSearchPlaces = useCallback(() => {
+    const query = form.venueName.trim() || form.city.trim();
+
+    if (query.length < 2) {
+      Alert.alert("Venue", "Enter at least two characters to search places.");
+      return;
+    }
+
+    dispatch(
+      fetchEventPlacesRequest({
+        city: form.city || undefined,
+        limit: 8,
+        q: query,
+      })
+    );
+  }, [dispatch, form.city, form.venueName]);
+
+  const handleApplyPlace = useCallback(
+    (place: EventPlace) => {
+      setForm((current) => ({
+        ...current,
+        address: place.address || current.address,
+        city: place.city || current.city,
+        country: place.country || current.country,
+        latitude:
+          place.latitude != null
+            ? String(place.latitude)
+            : current.latitude,
+        longitude:
+          place.longitude != null
+            ? String(place.longitude)
+            : current.longitude,
+        state: place.state || current.state,
+        venueName: place.name || current.venueName,
+      }));
+    },
+    []
+  );
 
   useEffect(() => {
     if (waitingForBannerUpload && uploadedMedia?.url) {
@@ -734,6 +804,33 @@ export default function EventFormScreen({
             />
             <Text style={styles.counter}>{form.title.length}/80</Text>
           </View>
+          <Pressable
+            disabled={titleSuggestionsLoading}
+            onPress={handleFetchTitleSuggestions}
+            style={[styles.helperAction, titleSuggestionsLoading && styles.disabled]}
+          >
+            {titleSuggestionsLoading ? (
+              <ActivityIndicator color="#6B7280" size="small" />
+            ) : (
+              <Sparkles color="#6B7280" size={15} />
+            )}
+            <Text style={styles.helperActionText}>
+              {titleSuggestionsLoading ? "Finding titles..." : "Suggest event titles"}
+            </Text>
+          </Pressable>
+          {!!titleSuggestions.length && (
+            <View style={styles.suggestionList}>
+              {titleSuggestions.slice(0, 4).map((suggestion, index) => (
+                <Pressable
+                  key={suggestion.id || `${suggestion.title}-${index}`}
+                  onPress={() => handleApplyTitleSuggestion(suggestion)}
+                  style={styles.suggestionChip}
+                >
+                  <Text style={styles.suggestionText}>{suggestion.title}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
         </FormSection>
 
         <FormSection
@@ -813,6 +910,36 @@ export default function EventFormScreen({
             style={styles.input}
             value={form.venueName}
           />
+          <Pressable
+            disabled={placesLoading}
+            onPress={handleSearchPlaces}
+            style={[styles.helperAction, placesLoading && styles.disabled]}
+          >
+            {placesLoading ? (
+              <ActivityIndicator color="#6B7280" size="small" />
+            ) : (
+              <Search color="#6B7280" size={15} />
+            )}
+            <Text style={styles.helperActionText}>
+              {placesLoading ? "Searching venues..." : "Search backend venues"}
+            </Text>
+          </Pressable>
+          {!!places.length && (
+            <View style={styles.placeList}>
+              {places.slice(0, 5).map((place) => (
+                <Pressable
+                  key={place.id}
+                  onPress={() => handleApplyPlace(place)}
+                  style={styles.placeCard}
+                >
+                  <Text numberOfLines={1} style={styles.placeName}>{place.name}</Text>
+                  <Text numberOfLines={2} style={styles.placeAddress}>
+                    {place.address || [place.city, place.state].filter(Boolean).join(", ")}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
           <TextInput
             multiline
             onChangeText={(value) => setField("address", value)}
@@ -1857,6 +1984,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
+  helperAction: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F6EFD9",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 10,
+    minHeight: 42,
+  },
+  helperActionText: {
+    color: "#4B5563",
+    fontSize: 13,
+    fontWeight: "900",
+  },
   infoLine: {
     alignItems: "center",
     flexDirection: "row",
@@ -1883,6 +2027,30 @@ const styles = StyleSheet.create({
   },
   inputWrap: {
     position: "relative",
+  },
+  placeAddress: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 17,
+    marginTop: 4,
+  },
+  placeCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F6EFD9",
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 12,
+  },
+  placeList: {
+    gap: 8,
+    marginBottom: 12,
+    marginTop: 10,
+  },
+  placeName: {
+    color: "#1F2937",
+    fontSize: 14,
+    fontWeight: "900",
   },
   locationCopy: {
     flex: 1,
@@ -2347,6 +2515,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 11,
     paddingVertical: 7,
+  },
+  suggestionList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
   },
   suggestionRow: {
     flexDirection: "row",
