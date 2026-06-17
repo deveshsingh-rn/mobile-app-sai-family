@@ -6,21 +6,29 @@ import {
 
 import {
   apiAddEventComment,
+  apiAddEventReview,
+  apiBookmarkEvent,
   apiCancelEventRsvp,
+  apiCheckInEventAttendee,
   apiCreateEvent,
   apiDeleteEvent,
+  apiFetchEventAttendees,
   apiFetchEventCalendar,
   apiFetchEventComments,
   apiFetchEventDetail,
   apiFetchEventRecommendations,
+  apiFetchEventReviews,
   apiFetchEvents,
   apiFetchCalendarPreferences,
   apiFetchCommunityCalendars,
   apiFetchMyEvents,
   apiFetchMyRsvps,
   apiExportCalendarIcs,
+  apiReportEvent,
   apiRsvpEvent,
+  apiShareEvent,
   apiSubscribeCommunityCalendar,
+  apiUnbookmarkEvent,
   apiUpdateEvent,
   apiUpdateCalendarPreferences,
   apiUploadEventMedia,
@@ -30,14 +38,22 @@ import {
 import {
   addEventCommentFailure,
   addEventCommentSuccess,
+  addEventReviewFailure,
+  addEventReviewSuccess,
+  bookmarkEventFailure,
+  bookmarkEventSuccess,
   cancelEventRsvpFailure,
   cancelEventRsvpSuccess,
+  checkInEventAttendeeFailure,
+  checkInEventAttendeeSuccess,
   createEventFailure,
   createEventSuccess,
   deleteEventFailure,
   deleteEventSuccess,
   fetchEventCalendarFailure,
   fetchEventCalendarSuccess,
+  fetchEventAttendeesFailure,
+  fetchEventAttendeesSuccess,
   fetchCalendarPreferencesFailure,
   fetchCalendarPreferencesSuccess,
   fetchCommunityCalendarsFailure,
@@ -48,14 +64,20 @@ import {
   fetchEventDetailSuccess,
   fetchEventRecommendationsFailure,
   fetchEventRecommendationsSuccess,
+  fetchEventReviewsFailure,
+  fetchEventReviewsSuccess,
   fetchEventsFailure,
   fetchEventsSuccess,
   fetchMyEventsFailure,
   fetchMyEventsSuccess,
   fetchMyRsvpsFailure,
   fetchMyRsvpsSuccess,
+  reportEventFailure,
+  reportEventSuccess,
   rsvpEventFailure,
   rsvpEventSuccess,
+  shareEventFailure,
+  shareEventSuccess,
   exportCalendarFailure,
   exportCalendarSuccess,
   subscribeCommunityCalendarFailure,
@@ -64,6 +86,8 @@ import {
   updateEventSuccess,
   updateCalendarPreferencesFailure,
   updateCalendarPreferencesSuccess,
+  unbookmarkEventFailure,
+  unbookmarkEventSuccess,
   unsubscribeCommunityCalendarFailure,
   unsubscribeCommunityCalendarSuccess,
   uploadEventMediaFailure,
@@ -74,11 +98,14 @@ import {
   EVENTS_ACTIONS,
   EventCalendarDay,
   EventCalendarResult,
+  EventAttendeesResult,
   EventsAction,
   EventCommentsResult,
+  EventReview,
   EventListResult,
   EventPagination,
   EventRecommendationResult,
+  EventReviewsResult,
   SaiEvent,
 } from "./types";
 import {
@@ -355,6 +382,127 @@ function getCommentsFromResponse(
   };
 }
 
+function getReviewsFromResponse(
+  response: any
+): EventReviewsResult {
+  const source =
+    response?.reviews ||
+    response?.items ||
+    response?.results ||
+    response?.data?.reviews ||
+    response?.data?.items ||
+    response?.data?.results ||
+    [];
+
+  return {
+    pagination:
+      normalizePagination(
+        response?.pagination ||
+          response?.data?.pagination
+      ),
+    reviews: Array.isArray(source)
+      ? source.map((review: any) => ({
+          ...review,
+          author:
+            review?.author ||
+            review?.user ||
+            undefined,
+        }))
+      : [],
+    summary:
+      response?.summary ||
+      response?.data?.summary ||
+      null,
+  };
+}
+
+function normalizeReview(review: any): EventReview | undefined {
+  if (!review) {
+    return undefined;
+  }
+
+  return {
+    ...review,
+    author:
+      review?.author ||
+      review?.user ||
+      undefined,
+  };
+}
+
+function getAttendeesFromResponse(
+  response: any
+): EventAttendeesResult {
+  const source =
+    response?.attendees ||
+    response?.items ||
+    response?.results ||
+    response?.data?.attendees ||
+    response?.data?.items ||
+    response?.data?.results ||
+    [];
+
+  return {
+    attendees: Array.isArray(source)
+      ? source
+      : [],
+    pagination:
+      normalizePagination(
+        response?.pagination ||
+          response?.data?.pagination
+      ),
+    summary:
+      response?.summary ||
+      response?.data?.summary ||
+      null,
+  };
+}
+
+function getReviewCreatePayload(response: any) {
+  return {
+    review: normalizeReview(
+      response?.review ||
+        response?.data?.review
+    ),
+    summary:
+      response?.summary ||
+      response?.data?.summary ||
+      null,
+  };
+}
+
+function getCheckInPayload(response: any) {
+  return {
+    count:
+      response?._count ||
+      response?.count ||
+      response?.data?._count ||
+      response?.data?.count ||
+      null,
+    rsvp:
+      response?.rsvp ||
+      response?.data?.rsvp,
+  };
+}
+
+function getBookmarkPayload(response: any) {
+  const event =
+    response?.event ||
+    response?.data?.event;
+
+  return {
+    bookmarked:
+      response?.bookmarked ??
+      response?.data?.bookmarked ??
+      event?.bookmarkedByMe,
+    bookmarks:
+      response?._count?.bookmarks ??
+      response?.data?._count?.bookmarks ??
+      event?.bookmarks,
+    event: event ? normalizeEvent(event) : undefined,
+  };
+}
+
 function getRsvpCount(response: any, fallback = 0) {
   return (
     response?.rsvps ??
@@ -591,6 +739,82 @@ function* cancelEventRsvpWorker(
   } catch (error) {
     yield put(
       cancelEventRsvpFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* bookmarkEventWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiBookmarkEvent,
+      action.payload.id
+    );
+
+    yield put(
+      bookmarkEventSuccess(
+        action.payload.id,
+        getBookmarkPayload(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      bookmarkEventFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* unbookmarkEventWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiUnbookmarkEvent,
+      action.payload.id
+    );
+
+    yield put(
+      unbookmarkEventSuccess(
+        action.payload.id,
+        getBookmarkPayload(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      unbookmarkEventFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* shareEventWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiShareEvent,
+      action.payload.id,
+      action.payload.channel
+    );
+
+    yield put(
+      shareEventSuccess(
+        action.payload.id,
+        response?.shares
+      )
+    );
+  } catch (error) {
+    yield put(
+      shareEventFailure(
         action.payload.id,
         getErrorMessage(error)
       )
@@ -854,6 +1078,135 @@ function* fetchEventCommentsWorker(
   }
 }
 
+function* fetchEventReviewsWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchEventReviews,
+      action.payload.id,
+      action.payload.params || {}
+    );
+
+    yield put(
+      fetchEventReviewsSuccess(
+        action.payload.id,
+        getReviewsFromResponse(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchEventReviewsFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* addEventReviewWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiAddEventReview,
+      action.payload.id,
+      action.payload.review
+    );
+
+    yield put(
+      addEventReviewSuccess(
+        action.payload.id,
+        getReviewCreatePayload(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      addEventReviewFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* fetchEventAttendeesWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchEventAttendees,
+      action.payload.id,
+      action.payload.params || {}
+    );
+
+    yield put(
+      fetchEventAttendeesSuccess(
+        action.payload.id,
+        getAttendeesFromResponse(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchEventAttendeesFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* checkInEventAttendeeWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiCheckInEventAttendee,
+      action.payload.id,
+      action.payload.userId
+    );
+
+    yield put(
+      checkInEventAttendeeSuccess(
+        action.payload.id,
+        action.payload.userId,
+        getCheckInPayload(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      checkInEventAttendeeFailure(
+        action.payload.id,
+        action.payload.userId,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* reportEventWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    yield call(
+      apiReportEvent,
+      action.payload.id,
+      action.payload.report
+    );
+
+    yield put(
+      reportEventSuccess(action.payload.id)
+    );
+  } catch (error) {
+    yield put(
+      reportEventFailure(
+        action.payload.id,
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
 function* addEventCommentWorker(
   action: EventsAction
 ): Generator<any, void, any> {
@@ -969,6 +1322,18 @@ export function* eventsSaga() {
     cancelEventRsvpWorker
   );
   yield takeLatest(
+    EVENTS_ACTIONS.BOOKMARK_REQUEST,
+    bookmarkEventWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.UNBOOKMARK_REQUEST,
+    unbookmarkEventWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.SHARE_REQUEST,
+    shareEventWorker
+  );
+  yield takeLatest(
     EVENTS_ACTIONS.FETCH_MY_RSVPS_REQUEST,
     fetchMyRsvpsWorker
   );
@@ -1011,6 +1376,26 @@ export function* eventsSaga() {
   yield takeLatest(
     EVENTS_ACTIONS.FETCH_COMMENTS_REQUEST,
     fetchEventCommentsWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_REVIEWS_REQUEST,
+    fetchEventReviewsWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.ADD_REVIEW_REQUEST,
+    addEventReviewWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_ATTENDEES_REQUEST,
+    fetchEventAttendeesWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.CHECK_IN_REQUEST,
+    checkInEventAttendeeWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.REPORT_REQUEST,
+    reportEventWorker
   );
   yield takeLatest(
     EVENTS_ACTIONS.ADD_COMMENT_REQUEST,

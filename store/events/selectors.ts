@@ -43,6 +43,110 @@ export const selectIsEventRsvpPending = (
       )
     : false;
 
+export const selectIsEventBookmarkPending = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? Boolean(
+        selectEventsState(state)
+          .bookmarkPendingIds[eventId]
+      )
+    : false;
+
+export const selectIsEventSharePending = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? Boolean(
+        selectEventsState(state)
+          .sharePendingIds[eventId]
+      )
+    : false;
+
+export const selectIsEventReportPending = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? Boolean(
+        selectEventsState(state)
+          .reportPendingIds[eventId]
+      )
+    : false;
+
+export const selectEventReviews = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? selectEventsState(state).reviewsByEventId[
+        eventId
+      ] || null
+    : null;
+
+export const selectEventReviewsLoading = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? Boolean(
+        selectEventsState(state)
+          .reviewsLoadingIds[eventId]
+      )
+    : false;
+
+export const selectIsAddingEventReview = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? Boolean(
+        selectEventsState(state)
+          .addingReviewIds[eventId]
+      )
+    : false;
+
+export const selectEventAttendees = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? selectEventsState(state).attendeesByEventId[
+        eventId
+      ] || null
+    : null;
+
+export const selectEventAttendeesLoading = (
+  state: RootState,
+  eventId?: string
+) =>
+  eventId
+    ? Boolean(
+        selectEventsState(state)
+          .attendeesLoadingIds[eventId]
+      )
+    : false;
+
+export const selectIsCheckingInEventAttendee = (
+  state: RootState,
+  eventId?: string,
+  userId?: string
+) =>
+  eventId && userId
+    ? Boolean(
+        selectEventsState(state)
+          .checkInPendingIds[
+            `${eventId}:${userId}`
+          ]
+      )
+    : false;
+
+export const selectEventCheckInPendingIds = (
+  state: RootState
+) => selectEventsState(state).checkInPendingIds;
+
 export const selectIsUploadingEventMedia = (
   state: RootState
 ) => selectEventsState(state).uploadingMedia;

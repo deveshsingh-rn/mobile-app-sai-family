@@ -3,8 +3,13 @@ import type {
   CreateEventPayload,
   CalendarPreferences,
   CommunityCalendar,
+  EventAttendeesResult,
   EventCommentsResult,
   EventListParams,
+  EventReportPayload,
+  EventReviewPayload,
+  EventReviewsResult,
+  EventCheckInResult,
   EventListResult,
   EventCalendarResult,
   EventRecommendationResult,
@@ -259,6 +264,125 @@ export async function apiAddEventComment(
     {
       content,
     }
+  );
+
+  return data;
+}
+
+export async function apiBookmarkEvent(
+  id: string
+): Promise<{
+  _count?: { bookmarks?: number };
+  bookmarked?: boolean;
+  event?: SaiEvent;
+  eventId?: string;
+}> {
+  const { data } = await apiClient.post(
+    `/api/events/${id}/bookmark`
+  );
+
+  return data;
+}
+
+export async function apiUnbookmarkEvent(
+  id: string
+): Promise<{
+  _count?: { bookmarks?: number };
+  bookmarked?: boolean;
+  event?: SaiEvent;
+  eventId?: string;
+}> {
+  const { data } = await apiClient.delete(
+    `/api/events/${id}/bookmark`
+  );
+
+  return data;
+}
+
+export async function apiShareEvent(
+  id: string,
+  channel = "native_share"
+): Promise<{
+  eventId?: string;
+  shared?: boolean;
+  shares?: number;
+}> {
+  const { data } = await apiClient.post(
+    `/api/events/${id}/share`,
+    {
+      channel,
+    }
+  );
+
+  return data;
+}
+
+export async function apiFetchEventReviews(
+  id: string,
+  params: EventListParams = {}
+): Promise<EventReviewsResult> {
+  const { data } = await apiClient.get(
+    `/api/events/${id}/reviews`,
+    {
+      params,
+    }
+  );
+
+  return data;
+}
+
+export async function apiAddEventReview(
+  id: string,
+  payload: EventReviewPayload
+): Promise<{
+  review?: unknown;
+  summary?: EventReviewsResult["summary"];
+}> {
+  const { data } = await apiClient.post(
+    `/api/events/${id}/reviews`,
+    payload
+  );
+
+  return data;
+}
+
+export async function apiFetchEventAttendees(
+  id: string,
+  params: EventListParams = {}
+): Promise<EventAttendeesResult> {
+  const { data } = await apiClient.get(
+    `/api/events/${id}/attendees`,
+    {
+      params,
+    }
+  );
+
+  return data;
+}
+
+export async function apiCheckInEventAttendee(
+  id: string,
+  userId: string
+): Promise<EventCheckInResult> {
+  const { data } = await apiClient.post(
+    `/api/events/${id}/check-in`,
+    {
+      userId,
+    }
+  );
+
+  return data;
+}
+
+export async function apiReportEvent(
+  id: string,
+  payload: EventReportPayload
+): Promise<{
+  report?: unknown;
+}> {
+  const { data } = await apiClient.post(
+    `/api/events/${id}/report`,
+    payload
   );
 
   return data;

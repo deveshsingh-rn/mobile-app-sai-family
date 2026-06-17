@@ -144,6 +144,54 @@ export type EventComment = {
   id: string;
 };
 
+export type EventAttendee = {
+  checkedInAt?: string | null;
+  guestCount?: number;
+  id?: string;
+  reminderMinutesBefore?: number | null;
+  status?: string;
+  user?: EventUserSummary;
+  userId?: string;
+};
+
+export type EventAttendeesResult = {
+  attendees: EventAttendee[];
+  pagination?: EventPagination | null;
+  summary?: {
+    checkedIn?: number;
+    going?: number;
+    total?: number;
+  } | null;
+};
+
+export type EventReview = {
+  author?: EventUserSummary;
+  content?: string | null;
+  createdAt?: string;
+  id: string;
+  rating: number;
+};
+
+export type EventReviewsResult = {
+  pagination?: EventPagination | null;
+  reviews: EventReview[];
+  summary?: {
+    averageRating?: number;
+    count?: number;
+    total?: number;
+  } | null;
+};
+
+export type EventReportPayload = {
+  details?: string;
+  reason: string;
+};
+
+export type EventReviewPayload = {
+  content: string;
+  rating: number;
+};
+
 export type EventListParams = {
   dateFrom?: string;
   dateTo?: string;
@@ -242,6 +290,11 @@ export type EventRsvpResult = {
   rsvp?: EventRsvp;
 };
 
+export type EventCheckInResult = {
+  count?: EventCounts | null;
+  rsvp?: EventRsvp;
+};
+
 export type UploadEventMediaPayload = {
   files?: {
     fileSize?: number | null;
@@ -306,6 +359,11 @@ export type UpdateEventPayload =
 
 export type EventsState = {
   addingComment: boolean;
+  addingReviewIds: Record<string, boolean>;
+  attendeesByEventId: Record<string, EventAttendeesResult>;
+  attendeesLoadingIds: Record<string, boolean>;
+  bookmarkPendingIds: Record<string, boolean>;
+  checkInPendingIds: Record<string, boolean>;
   calendar: SaiEvent[];
   commentsError: string | null;
   commentsLoading: boolean;
@@ -331,7 +389,11 @@ export type EventsState = {
   recommendations: SaiEvent[];
   recommendationsBasis: EventRecommendationResult["basis"];
   recommendationsLoading: boolean;
+  reportPendingIds: Record<string, boolean>;
+  reviewsByEventId: Record<string, EventReviewsResult>;
+  reviewsLoadingIds: Record<string, boolean>;
   rsvpPendingIds: Record<string, boolean>;
+  sharePendingIds: Record<string, boolean>;
   calendarDays: EventCalendarDay[];
   calendarSummary: EventCalendarSummary | null;
   uploadedMedia: UploadEventMediaResult | null;
@@ -351,6 +413,12 @@ export const EVENTS_ACTIONS = {
     "events/cancelRsvpRequest",
   CANCEL_RSVP_SUCCESS:
     "events/cancelRsvpSuccess",
+  BOOKMARK_FAILURE:
+    "events/bookmarkFailure",
+  BOOKMARK_REQUEST:
+    "events/bookmarkRequest",
+  BOOKMARK_SUCCESS:
+    "events/bookmarkSuccess",
   CREATE_FAILURE: "events/createFailure",
   CREATE_REQUEST: "events/createRequest",
   CREATE_SUCCESS: "events/createSuccess",
@@ -375,6 +443,12 @@ export const EVENTS_ACTIONS = {
     "events/fetchCommentsRequest",
   FETCH_COMMENTS_SUCCESS:
     "events/fetchCommentsSuccess",
+  FETCH_ATTENDEES_FAILURE:
+    "events/fetchAttendeesFailure",
+  FETCH_ATTENDEES_REQUEST:
+    "events/fetchAttendeesRequest",
+  FETCH_ATTENDEES_SUCCESS:
+    "events/fetchAttendeesSuccess",
   FETCH_DETAIL_FAILURE:
     "events/fetchDetailFailure",
   FETCH_DETAIL_REQUEST:
@@ -411,6 +485,12 @@ export const EVENTS_ACTIONS = {
     "events/fetchRecommendationsRequest",
   FETCH_RECOMMENDATIONS_SUCCESS:
     "events/fetchRecommendationsSuccess",
+  FETCH_REVIEWS_FAILURE:
+    "events/fetchReviewsFailure",
+  FETCH_REVIEWS_REQUEST:
+    "events/fetchReviewsRequest",
+  FETCH_REVIEWS_SUCCESS:
+    "events/fetchReviewsSuccess",
   EXPORT_CALENDAR_FAILURE:
     "events/exportCalendarFailure",
   EXPORT_CALENDAR_REQUEST:
@@ -420,6 +500,30 @@ export const EVENTS_ACTIONS = {
   RSVP_FAILURE: "events/rsvpFailure",
   RSVP_REQUEST: "events/rsvpRequest",
   RSVP_SUCCESS: "events/rsvpSuccess",
+  REPORT_FAILURE:
+    "events/reportFailure",
+  REPORT_REQUEST:
+    "events/reportRequest",
+  REPORT_SUCCESS:
+    "events/reportSuccess",
+  ADD_REVIEW_FAILURE:
+    "events/addReviewFailure",
+  ADD_REVIEW_REQUEST:
+    "events/addReviewRequest",
+  ADD_REVIEW_SUCCESS:
+    "events/addReviewSuccess",
+  CHECK_IN_FAILURE:
+    "events/checkInFailure",
+  CHECK_IN_REQUEST:
+    "events/checkInRequest",
+  CHECK_IN_SUCCESS:
+    "events/checkInSuccess",
+  SHARE_FAILURE:
+    "events/shareFailure",
+  SHARE_REQUEST:
+    "events/shareRequest",
+  SHARE_SUCCESS:
+    "events/shareSuccess",
   UPDATE_FAILURE: "events/updateFailure",
   UPDATE_REQUEST: "events/updateRequest",
   UPDATE_SUCCESS: "events/updateSuccess",
@@ -441,6 +545,12 @@ export const EVENTS_ACTIONS = {
     "events/updateCalendarPreferencesRequest",
   UPDATE_CALENDAR_PREFERENCES_SUCCESS:
     "events/updateCalendarPreferencesSuccess",
+  UNBOOKMARK_FAILURE:
+    "events/unbookmarkFailure",
+  UNBOOKMARK_REQUEST:
+    "events/unbookmarkRequest",
+  UNBOOKMARK_SUCCESS:
+    "events/unbookmarkSuccess",
   UPLOAD_MEDIA_FAILURE:
     "events/uploadMediaFailure",
   UPLOAD_MEDIA_REQUEST:

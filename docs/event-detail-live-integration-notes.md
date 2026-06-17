@@ -1,6 +1,6 @@
 # Event Detail Live Integration Notes
 
-Status: `app/events/[id].tsx` now renders from live event detail, comments, RSVP, delete, and embedded detail fields. Static demo organizer, attendees, reviews, FAQ, similar events, and tag content were removed.
+Status: `app/events/[id].tsx` now renders from live event detail, comments, RSVP, delete, bookmark, share tracking, reviews, review submit, attendees, organizer check-in, report, and embedded detail fields. Static demo organizer, attendees, reviews, FAQ, similar events, and tag content were removed.
 
 ## Live APIs Used Now
 
@@ -22,20 +22,42 @@ Status: `app/events/[id].tsx` now renders from live event detail, comments, RSVP
 - `DELETE /api/events/:id`
   - Used by owners/admins to cancel an event when permission flags allow it.
 
+- `POST /api/events/:id/bookmark`
+  - Used by the bookmark button.
+
+- `DELETE /api/events/:id/bookmark`
+  - Used by the bookmark button when the event is already saved.
+
+- `GET /api/events/:id/reviews`
+  - Used for live event reviews.
+
+- `POST /api/events/:id/reviews`
+  - Used by the review composer. Backend requires an RSVP with `status: "going"`.
+
+- `GET /api/events/:id/attendees`
+  - Used for owner/admin attendee visibility when permission flags allow it.
+
+- `POST /api/events/:id/check-in`
+  - Used by owner/admin attendee check-in controls.
+
+- `POST /api/events/:id/share`
+  - Used after the native share sheet completes.
+
+- `POST /api/events/:id/report`
+  - Used by owner/admin report action.
+
 ## Backend APIs Already Present But Not Yet Wired In Redux
 
-No new backend API is required for the current detail page. The remaining live features need frontend service/action/reducer/saga/selectors wiring:
+All known event detail APIs from the current collection are now wired for the detail page.
 
-- `POST /api/events/:id/bookmark`
-- `DELETE /api/events/:id/bookmark`
-- `POST /api/events/:id/share`
-- `GET /api/events/:id/reviews`
-- `POST /api/events/:id/reviews`
-- `GET /api/events/:id/attendees`
-- `POST /api/events/:id/report`
+## Backend APIs To Confirm For Next Pass
+
+- Public attendee preview shape, if non-owner users should see more than aggregate RSVP count.
+- Review eligibility copy, if backend allows only RSVP users or only checked-in/attended users.
+- Attendee management drill-in screen, if organizers need search, filters, and bulk check-in beyond the compact detail-page list.
 
 ## Product Notes For Community Pillar
 
 - Community trust should come from real organizer profile, attendee preview, comments, reviews, and RSVP state.
 - Avoid showing social proof such as “friends attending”, rating, spots available, or recent join activity unless backend returns those exact values.
-- Reviews and attendee management should be the next detail-page integration if this pillar needs stronger community credibility.
+- A dedicated attendee management screen should be the next product layer if organizers need more than compact check-in from the detail page.

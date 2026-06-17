@@ -6,6 +6,11 @@ import {
 
 export const initialEventsState: EventsState = {
   addingComment: false,
+  addingReviewIds: {},
+  attendeesByEventId: {},
+  attendeesLoadingIds: {},
+  bookmarkPendingIds: {},
+  checkInPendingIds: {},
   calendar: [],
   calendarDays: [],
   calendarSummary: null,
@@ -33,7 +38,11 @@ export const initialEventsState: EventsState = {
   recommendations: [],
   recommendationsBasis: null,
   recommendationsLoading: false,
+  reportPendingIds: {},
+  reviewsByEventId: {},
+  reviewsLoadingIds: {},
   rsvpPendingIds: {},
+  sharePendingIds: {},
   uploadedMedia: null,
   uploadingMedia: false,
 };
@@ -65,6 +74,23 @@ function mergeById(
       return true;
     }
   );
+}
+
+function updateEventById(
+  event: any,
+  id: string,
+  changes: any
+) {
+  return event?.id === id
+    ? {
+        ...event,
+        ...changes,
+      }
+    : event;
+}
+
+function getCheckInKey(eventId?: string, userId?: string) {
+  return `${eventId || ""}:${userId || ""}`;
 }
 
 export function eventsReducer(
@@ -140,6 +166,78 @@ export function eventsReducer(
         error: null,
         rsvpPendingIds: {
           ...state.rsvpPendingIds,
+          [action.payload?.id]: true,
+        },
+      };
+
+    case EVENTS_ACTIONS.BOOKMARK_REQUEST:
+    case EVENTS_ACTIONS.UNBOOKMARK_REQUEST:
+      return {
+        ...state,
+        bookmarkPendingIds: {
+          ...state.bookmarkPendingIds,
+          [action.payload?.id]: true,
+        },
+        error: null,
+      };
+
+    case EVENTS_ACTIONS.SHARE_REQUEST:
+      return {
+        ...state,
+        error: null,
+        sharePendingIds: {
+          ...state.sharePendingIds,
+          [action.payload?.id]: true,
+        },
+      };
+
+    case EVENTS_ACTIONS.REPORT_REQUEST:
+      return {
+        ...state,
+        error: null,
+        reportPendingIds: {
+          ...state.reportPendingIds,
+          [action.payload?.id]: true,
+        },
+      };
+
+    case EVENTS_ACTIONS.ADD_REVIEW_REQUEST:
+      return {
+        ...state,
+        addingReviewIds: {
+          ...state.addingReviewIds,
+          [action.payload?.id]: true,
+        },
+        error: null,
+      };
+
+    case EVENTS_ACTIONS.CHECK_IN_REQUEST:
+      return {
+        ...state,
+        checkInPendingIds: {
+          ...state.checkInPendingIds,
+          [getCheckInKey(
+            action.payload?.id,
+            action.payload?.userId
+          )]: true,
+        },
+        error: null,
+      };
+
+    case EVENTS_ACTIONS.FETCH_REVIEWS_REQUEST:
+      return {
+        ...state,
+        reviewsLoadingIds: {
+          ...state.reviewsLoadingIds,
+          [action.payload?.id]: true,
+        },
+      };
+
+    case EVENTS_ACTIONS.FETCH_ATTENDEES_REQUEST:
+      return {
+        ...state,
+        attendeesLoadingIds: {
+          ...state.attendeesLoadingIds,
           [action.payload?.id]: true,
         },
       };
@@ -400,6 +498,253 @@ export function eventsReducer(
       };
     }
 
+    case EVENTS_ACTIONS.BOOKMARK_SUCCESS:
+    case EVENTS_ACTIONS.UNBOOKMARK_SUCCESS: {
+      const id = action.payload?.id;
+      const {
+        [id]: _,
+        ...remainingPendingIds
+      } = state.bookmarkPendingIds;
+      const changes =
+        action.payload?.event || {
+          bookmarkedByMe:
+            action.payload?.bookmarked,
+          bookmarks:
+            action.payload?.bookmarks,
+        };
+
+      return {
+        ...state,
+        bookmarkPendingIds:
+          remainingPendingIds,
+        detail:
+          state.detail?.id === id
+            ? {
+                ...state.detail,
+                ...changes,
+              }
+            : state.detail,
+        feed: state.feed.map((event) =>
+          updateEventById(event, id, changes)
+        ),
+        myEvents: state.myEvents.map((event) =>
+          updateEventById(event, id, changes)
+        ),
+        myRsvps: state.myRsvps.map((event) =>
+          updateEventById(event, id, changes)
+        ),
+      };
+    }
+
+    case EVENTS_ACTIONS.SHARE_SUCCESS: {
+      const id = action.payload?.id;
+      const {
+        [id]: _,
+        ...remainingPendingIds
+      } = state.sharePendingIds;
+      const currentShares =
+        state.detail &&
+        state.detail.id === id
+          ? state.detail.shares || 0
+          : 0;
+      const nextShares =
+        action.payload?.shares ??
+        currentShares + 1;
+      const changes = {
+        shares: nextShares,
+      };
+
+      return {
+        ...state,
+        sharePendingIds: remainingPendingIds,
+        detail:
+          state.detail &&
+          state.detail.id === id
+            ? {
+                ...state.detail,
+                ...changes,
+              }
+            : state.detail,
+        feed: state.feed.map((event) =>
+          updateEventById(event, id, changes)
+        ),
+      };
+    }
+
+    case EVENTS_ACTIONS.REPORT_SUCCESS: {
+      const {
+        [action.payload?.id]: _,
+        ...remainingPendingIds
+      } = state.reportPendingIds;
+
+      return {
+        ...state,
+        reportPendingIds:
+          remainingPendingIds,
+      };
+    }
+
+    case EVENTS_ACTIONS.FETCH_REVIEWS_SUCCESS: {
+      const {
+        [action.payload?.id]: _,
+        ...remainingLoadingIds
+      } = state.reviewsLoadingIds;
+
+      return {
+        ...state,
+        reviewsByEventId: {
+          ...state.reviewsByEventId,
+          [action.payload?.id]:
+            action.payload?.result || {
+              reviews: [],
+            },
+        },
+        reviewsLoadingIds:
+          remainingLoadingIds,
+      };
+    }
+
+    case EVENTS_ACTIONS.ADD_REVIEW_SUCCESS: {
+      const id = action.payload?.id;
+      const {
+        [id]: _,
+        ...remainingAddingIds
+      } = state.addingReviewIds;
+      const existing =
+        state.reviewsByEventId[id] || {
+          reviews: [],
+        };
+      const incomingReview =
+        action.payload?.review;
+      const nextReviews = incomingReview
+        ? mergeById(
+            [incomingReview],
+            existing.reviews || []
+          )
+        : existing.reviews || [];
+      const summary =
+        action.payload?.summary ||
+        existing.summary ||
+        null;
+      const nextReviewCount =
+        summary?.total ??
+        summary?.count ??
+        nextReviews.length;
+      const changes = {
+        reviews: nextReviewCount,
+      };
+
+      return {
+        ...state,
+        addingReviewIds: remainingAddingIds,
+        detail:
+          state.detail &&
+          state.detail.id === id
+            ? {
+                ...state.detail,
+                ...changes,
+              }
+            : state.detail,
+        feed: state.feed.map((event) =>
+          updateEventById(event, id, changes)
+        ),
+        reviewsByEventId: {
+          ...state.reviewsByEventId,
+          [id]: {
+            ...existing,
+            reviews: nextReviews,
+            summary,
+          },
+        },
+      };
+    }
+
+    case EVENTS_ACTIONS.FETCH_ATTENDEES_SUCCESS: {
+      const {
+        [action.payload?.id]: _,
+        ...remainingLoadingIds
+      } = state.attendeesLoadingIds;
+
+      return {
+        ...state,
+        attendeesByEventId: {
+          ...state.attendeesByEventId,
+          [action.payload?.id]:
+            action.payload?.result || {
+              attendees: [],
+            },
+        },
+        attendeesLoadingIds:
+          remainingLoadingIds,
+      };
+    }
+
+    case EVENTS_ACTIONS.CHECK_IN_SUCCESS: {
+      const id = action.payload?.id;
+      const userId = action.payload?.userId;
+      const checkInKey = getCheckInKey(id, userId);
+      const {
+        [checkInKey]: _,
+        ...remainingPendingIds
+      } = state.checkInPendingIds;
+      const existing =
+        state.attendeesByEventId[id] || {
+          attendees: [],
+        };
+      const checkedInAt =
+        action.payload?.rsvp?.checkedInAt ||
+        new Date().toISOString();
+      const attendees = (
+        existing.attendees || []
+      ).map((attendee) =>
+        attendee.userId === userId ||
+        attendee.user?.id === userId
+          ? {
+              ...attendee,
+              checkedInAt,
+            }
+          : attendee
+      );
+      const checkIns =
+        action.payload?.count?.checkIns;
+      const summary = {
+        ...existing.summary,
+        checkedIn:
+          checkIns ??
+          existing.summary?.checkedIn,
+      };
+      const changes = {
+        checkIns:
+          checkIns ??
+          state.detail?.checkIns,
+      };
+
+      return {
+        ...state,
+        attendeesByEventId: {
+          ...state.attendeesByEventId,
+          [id]: {
+            ...existing,
+            attendees,
+            summary,
+          },
+        },
+        checkInPendingIds:
+          remainingPendingIds,
+        detail:
+          state.detail &&
+          state.detail.id === id
+            ? {
+                ...state.detail,
+                ...changes,
+              }
+            : state.detail,
+        feed: state.feed.map((event) =>
+          updateEventById(event, id, changes)
+        ),
+      };
+    }
+
     case EVENTS_ACTIONS.ADD_COMMENT_SUCCESS:
       return {
         ...state,
@@ -494,6 +839,123 @@ export function eventsReducer(
             "Unable to update RSVP.",
           rsvpPendingIds:
             remainingPendingIds,
+        };
+      }
+
+    case EVENTS_ACTIONS.BOOKMARK_FAILURE:
+    case EVENTS_ACTIONS.UNBOOKMARK_FAILURE: {
+        const {
+          [action.payload?.id]: _,
+          ...remainingPendingIds
+        } = state.bookmarkPendingIds;
+
+        return {
+          ...state,
+          bookmarkPendingIds:
+            remainingPendingIds,
+          error:
+            action.payload?.error ||
+            "Unable to update bookmark.",
+        };
+      }
+
+    case EVENTS_ACTIONS.SHARE_FAILURE: {
+        const {
+          [action.payload?.id]: _,
+          ...remainingPendingIds
+        } = state.sharePendingIds;
+
+        return {
+          ...state,
+          error:
+            action.payload?.error ||
+            "Unable to track share.",
+          sharePendingIds:
+            remainingPendingIds,
+        };
+      }
+
+    case EVENTS_ACTIONS.REPORT_FAILURE: {
+        const {
+          [action.payload?.id]: _,
+          ...remainingPendingIds
+        } = state.reportPendingIds;
+
+        return {
+          ...state,
+          error:
+            action.payload?.error ||
+            "Unable to submit report.",
+          reportPendingIds:
+            remainingPendingIds,
+        };
+      }
+
+    case EVENTS_ACTIONS.ADD_REVIEW_FAILURE: {
+        const {
+          [action.payload?.id]: _,
+          ...remainingAddingIds
+        } = state.addingReviewIds;
+
+        return {
+          ...state,
+          addingReviewIds:
+            remainingAddingIds,
+          error:
+            action.payload?.error ||
+            "Unable to submit review.",
+        };
+      }
+
+    case EVENTS_ACTIONS.CHECK_IN_FAILURE: {
+        const checkInKey = getCheckInKey(
+          action.payload?.id,
+          action.payload?.userId
+        );
+        const {
+          [checkInKey]: _,
+          ...remainingPendingIds
+        } = state.checkInPendingIds;
+
+        return {
+          ...state,
+          checkInPendingIds:
+            remainingPendingIds,
+          error:
+            action.payload?.error ||
+            "Unable to check in attendee.",
+        };
+      }
+
+    case EVENTS_ACTIONS.FETCH_REVIEWS_FAILURE: {
+        const {
+          [action.payload?.id]: _,
+          ...remainingLoadingIds
+        } = state.reviewsLoadingIds;
+
+        return {
+          ...state,
+          error:
+            action.payload?.error ||
+            "Unable to load reviews.",
+          reviewsLoadingIds:
+            remainingLoadingIds,
+        };
+      }
+
+    case EVENTS_ACTIONS.FETCH_ATTENDEES_FAILURE: {
+        const {
+          [action.payload?.id]: _,
+          ...remainingLoadingIds
+        } = state.attendeesLoadingIds;
+
+        return {
+          ...state,
+          attendeesLoadingIds:
+            remainingLoadingIds,
+          error:
+            action.payload?.error ||
+            "Unable to load attendees.",
         };
       }
 

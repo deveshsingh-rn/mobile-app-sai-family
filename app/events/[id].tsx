@@ -28,6 +28,7 @@ import {
   Calendar,
   CalendarCheck,
   CalendarPlus,
+  CheckCircle2,
   Clock3,
   Flag,
   Image as ImageIcon,
@@ -37,32 +38,52 @@ import {
   Pencil,
   SendHorizonal,
   Share2,
+  Star,
   Trash2,
   Users,
 } from "lucide-react-native";
 
 import {
   addEventCommentRequest,
+  addEventReviewRequest,
+  bookmarkEventRequest,
   cancelEventRsvpRequest,
+  checkInEventAttendeeRequest,
   deleteEventRequest,
+  fetchEventAttendeesRequest,
   fetchEventCommentsRequest,
   fetchEventDetailRequest,
+  fetchEventReviewsRequest,
+  reportEventRequest,
   rsvpEventRequest,
+  shareEventRequest,
+  unbookmarkEventRequest,
 } from "@/store/events/actions";
 import {
+  selectEventCheckInPendingIds,
+  selectEventAttendees,
+  selectEventAttendeesLoading,
   selectEventComments,
   selectEventCommentsError,
   selectEventCommentsLoading,
   selectEventDetail,
+  selectEventReviews,
+  selectEventReviewsLoading,
   selectEventsError,
   selectEventsLoading,
   selectIsAddingEventComment,
+  selectIsAddingEventReview,
+  selectIsEventBookmarkPending,
+  selectIsEventReportPending,
   selectIsEventRsvpPending,
+  selectIsEventSharePending,
 } from "@/store/events/selectors";
 import { validateEventCommentContent } from "@/store/events/validation";
 import type {
   EventComment,
   EventFaq,
+  EventAttendee,
+  EventReview,
   EventUserSummary,
   SaiEvent,
 } from "@/store/events/types";
@@ -129,11 +150,38 @@ export default function EventDetailRoute() {
   const addingComment = useAppSelector(selectIsAddingEventComment);
   const error = useAppSelector(selectEventsError);
   const [comment, setComment] = useState("");
+  const [reviewContent, setReviewContent] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
 
   const eventId = Array.isArray(id) ? id[0] : id;
   const rsvpPending = useAppSelector((state) =>
     selectIsEventRsvpPending(state, eventId)
   );
+  const bookmarkPending = useAppSelector((state) =>
+    selectIsEventBookmarkPending(state, eventId)
+  );
+  const sharePending = useAppSelector((state) =>
+    selectIsEventSharePending(state, eventId)
+  );
+  const reportPending = useAppSelector((state) =>
+    selectIsEventReportPending(state, eventId)
+  );
+  const reviews = useAppSelector((state) =>
+    selectEventReviews(state, eventId)
+  );
+  const reviewsLoading = useAppSelector((state) =>
+    selectEventReviewsLoading(state, eventId)
+  );
+  const addingReview = useAppSelector((state) =>
+    selectIsAddingEventReview(state, eventId)
+  );
+  const attendees = useAppSelector((state) =>
+    selectEventAttendees(state, eventId)
+  );
+  const attendeesLoading = useAppSelector((state) =>
+    selectEventAttendeesLoading(state, eventId)
+  );
+  const checkInPendingIds = useAppSelector(selectEventCheckInPendingIds);
 
   useEffect(() => {
     if (eventId) {
@@ -144,8 +192,28 @@ export default function EventDetailRoute() {
           offset: 0,
         })
       );
+      dispatch(
+        fetchEventReviewsRequest(eventId, {
+          limit: 20,
+          offset: 0,
+        })
+      );
     }
   }, [dispatch, eventId]);
+
+  useEffect(() => {
+    if (
+      eventId &&
+      (detail?.permissions?.canManageAttendees || detail?.isOwner)
+    ) {
+      dispatch(
+        fetchEventAttendeesRequest(eventId, {
+          limit: 50,
+          offset: 0,
+        })
+      );
+    }
+  }, [detail?.isOwner, detail?.permissions?.canManageAttendees, dispatch, eventId]);
 
   const handleRsvp = useCallback(() => {
     if (!eventId || !detail) {
@@ -176,6 +244,44 @@ export default function EventDetailRoute() {
     setComment("");
   }, [comment, dispatch, eventId]);
 
+  const handleReview = useCallback(() => {
+    if (!eventId || addingReview) {
+      return;
+    }
+
+    const content = reviewContent.trim();
+
+    if (reviewRating < 1 || reviewRating > 5) {
+      Alert.alert("Review", "Select a rating from 1 to 5.");
+      return;
+    }
+
+    if (!content) {
+      Alert.alert("Review", "Write a short review before submitting.");
+      return;
+    }
+
+    dispatch(
+      addEventReviewRequest(eventId, {
+        content,
+        rating: reviewRating,
+      })
+    );
+    setReviewContent("");
+    setReviewRating(5);
+  }, [addingReview, dispatch, eventId, reviewContent, reviewRating]);
+
+  const handleCheckInAttendee = useCallback(
+    (userId?: string) => {
+      if (!eventId || !userId) {
+        return;
+      }
+
+      dispatch(checkInEventAttendeeRequest(eventId, userId));
+    },
+    [dispatch, eventId]
+  );
+
   const handleDelete = useCallback(() => {
     if (!eventId) {
       return;
@@ -194,16 +300,55 @@ export default function EventDetailRoute() {
     ]);
   }, [dispatch, eventId]);
 
-  const handleShare = useCallback(() => {
+  const handleBookmark = useCallback(() => {
+    if (!eventId || !detail || bookmarkPending) {
+      return;
+    }
+
+    dispatch(
+      detail.bookmarkedByMe
+        ? unbookmarkEventRequest(eventId)
+        : bookmarkEventRequest(eventId)
+    );
+  }, [bookmarkPending, detail, dispatch, eventId]);
+
+  const handleShare = useCallback(async () => {
     if (!detail) {
       return;
     }
 
-    Share.share({
+    const result = await Share.share({
       message: `${detail.title}\n${formatLongDate(detail.startAt)} · ${formatTime(detail.startAt)}\n${getEventLocation(detail)}`,
       title: detail.title,
     });
-  }, [detail]);
+
+    if (eventId && result.action !== Share.dismissedAction) {
+      dispatch(shareEventRequest(eventId, "native_share"));
+    }
+  }, [detail, dispatch, eventId]);
+
+  const handleReport = useCallback(() => {
+    if (!eventId || reportPending) {
+      return;
+    }
+
+    Alert.alert("Submit event report", "Send an organizer report for this event?", [
+      {
+        style: "cancel",
+        text: "Cancel",
+      },
+      {
+        onPress: () => {
+          dispatch(
+            reportEventRequest(eventId, {
+              reason: "organizer_report",
+            })
+          );
+        },
+        text: "Submit",
+      },
+    ]);
+  }, [dispatch, eventId, reportPending]);
 
   if (loading && !detail) {
     return (
@@ -292,19 +437,19 @@ export default function EventDetailRoute() {
           <View style={styles.titleRow}>
             <Text style={styles.title}>{detail.title}</Text>
             <Pressable
-              onPress={() =>
-                Alert.alert(
-                  "Bookmark",
-                  "Bookmark API exists in backend; frontend Redux wiring is the next integration step."
-                )
-              }
+              disabled={bookmarkPending}
+              onPress={handleBookmark}
               style={styles.bookmarkButton}
             >
-              <Bookmark
-                color="#1F2937"
-                fill={detail.bookmarkedByMe ? "#1F2937" : "transparent"}
-                size={22}
-              />
+              {bookmarkPending ? (
+                <ActivityIndicator color="#1F2937" size="small" />
+              ) : (
+                <Bookmark
+                  color="#1F2937"
+                  fill={detail.bookmarkedByMe ? "#1F2937" : "transparent"}
+                  size={22}
+                />
+              )}
             </Pressable>
           </View>
 
@@ -322,8 +467,15 @@ export default function EventDetailRoute() {
 
         <OrganizerSection event={detail} />
         <AttendeesSection
+          attendees={attendees?.attendees || []}
+          attendeesLoading={attendeesLoading}
+          canManage={Boolean(detail.permissions?.canManageAttendees || detail.isOwner)}
+          checkInPendingIds={checkInPendingIds}
           count={detail.rsvps || 0}
+          eventId={eventId}
+          onCheckIn={handleCheckInAttendee}
           preview={liveDetail.attendeesPreview || []}
+          summary={attendees?.summary}
         />
         <AboutSection description={detail.description} />
         {!!detail.guidelines?.length && (
@@ -340,6 +492,17 @@ export default function EventDetailRoute() {
           <SimilarEventsSection events={detail.similarEvents} />
         )}
         {!!tags.length && <TagsSection tags={tags} />}
+        <ReviewsSection
+          addingReview={addingReview}
+          onChangeReview={setReviewContent}
+          onChangeRating={setReviewRating}
+          onSubmitReview={handleReview}
+          reviewContent={reviewContent}
+          reviewRating={reviewRating}
+          reviews={reviews?.reviews || []}
+          reviewsLoading={reviewsLoading}
+          summary={reviews?.summary}
+        />
         <CommentsSection
           addingComment={addingComment}
           comment={comment}
@@ -351,6 +514,9 @@ export default function EventDetailRoute() {
         />
         <ShareReportSection
           canReport={Boolean(canEdit || detail.isOwner)}
+          reportPending={reportPending}
+          sharePending={sharePending}
+          onReport={handleReport}
           onShare={handleShare}
         />
       </ScrollView>
@@ -469,12 +635,39 @@ function OrganizerSection({event}: {event: SaiEvent}) {
 }
 
 function AttendeesSection({
+  attendees,
+  attendeesLoading,
+  canManage,
+  checkInPendingIds,
   count,
+  eventId,
+  onCheckIn,
   preview,
+  summary,
 }: {
+  attendees: EventAttendee[];
+  attendeesLoading: boolean;
+  canManage: boolean;
+  checkInPendingIds: Record<string, boolean>;
   count: number;
+  eventId?: string;
+  onCheckIn: (userId?: string) => void;
   preview: EventUserSummary[];
+  summary?: {
+    checkedIn?: number;
+    going?: number;
+    total?: number;
+  } | null;
 }) {
+  const names =
+    attendees.length > 0
+      ? attendees
+          .map((item) => item.user?.name)
+          .filter(Boolean)
+          .slice(0, 3)
+          .join(", ")
+      : preview.map((item) => item.name).slice(0, 3).join(", ");
+
   return (
     <Section>
       <SectionTitle title="Who's Attending" />
@@ -485,12 +678,70 @@ function AttendeesSection({
         <View>
           <Text style={styles.attendeeCount}>{count} attending</Text>
           <Text style={styles.attendeeSub}>
-            {preview.length
-              ? preview.map((item) => item.name).slice(0, 3).join(", ")
-              : "RSVP devotees will appear here when backend sends preview."}
+            {attendeesLoading
+              ? "Loading attendees..."
+              : names || "RSVP devotees will appear here."}
           </Text>
+          {!!summary?.checkedIn && (
+            <Text style={styles.attendeeSub}>
+              {summary.checkedIn} checked in
+            </Text>
+          )}
         </View>
       </View>
+      {canManage && attendees.length > 0 && (
+        <View style={styles.attendeeList}>
+          {attendees.slice(0, 6).map((attendee) => {
+            const userId = attendee.userId || attendee.user?.id;
+            const pending = Boolean(
+              eventId && userId && checkInPendingIds[`${eventId}:${userId}`]
+            );
+            const checkedIn = Boolean(attendee.checkedInAt);
+
+            return (
+              <View key={attendee.id || userId} style={styles.attendeeRow}>
+                <View style={styles.attendeePerson}>
+                  <Text style={styles.attendeeName}>
+                    {attendee.user?.name || "Devotee"}
+                  </Text>
+                  <Text style={styles.attendeeMeta}>
+                    {checkedIn
+                      ? "Checked in"
+                      : attendee.status || "Going"}
+                    {attendee.guestCount ? ` · ${attendee.guestCount} guests` : ""}
+                  </Text>
+                </View>
+                <Pressable
+                  disabled={pending || checkedIn || !userId}
+                  onPress={() => onCheckIn(userId)}
+                  style={[
+                    styles.checkInButton,
+                    checkedIn && styles.checkInButtonDone,
+                    (pending || !userId) && styles.disabled,
+                  ]}
+                >
+                  {pending ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <CheckCircle2
+                      color={checkedIn ? "#1F2937" : "#FFFFFF"}
+                      size={15}
+                    />
+                  )}
+                  <Text
+                    style={[
+                      styles.checkInText,
+                      checkedIn && styles.checkInTextDone,
+                    ]}
+                  >
+                    {checkedIn ? "Done" : "Check in"}
+                  </Text>
+                </Pressable>
+              </View>
+            );
+          })}
+        </View>
+      )}
     </Section>
   );
 }
@@ -620,6 +871,110 @@ function TagsSection({tags}: {tags: string[]}) {
   );
 }
 
+function ReviewsSection({
+  addingReview,
+  onChangeRating,
+  onChangeReview,
+  onSubmitReview,
+  reviewContent,
+  reviewRating,
+  reviews,
+  reviewsLoading,
+  summary,
+}: {
+  addingReview: boolean;
+  onChangeRating: (value: number) => void;
+  onChangeReview: (value: string) => void;
+  onSubmitReview: () => void;
+  reviewContent: string;
+  reviewRating: number;
+  reviews: EventReview[];
+  reviewsLoading: boolean;
+  summary?: {
+    averageRating?: number;
+    count?: number;
+    total?: number;
+  } | null;
+}) {
+  return (
+    <Section>
+      <SectionTitle
+        action={
+          summary?.averageRating
+            ? `${summary.averageRating.toFixed(1)} avg`
+            : undefined
+        }
+        title="Reviews"
+      />
+      <View style={styles.reviewComposer}>
+        <View style={styles.ratingStars}>
+          {[1, 2, 3, 4, 5].map((rating) => (
+            <Pressable
+              key={rating}
+              onPress={() => onChangeRating(rating)}
+              style={styles.starButton}
+            >
+              <Star
+                color="#F97316"
+                fill={rating <= reviewRating ? "#F97316" : "transparent"}
+                size={21}
+              />
+            </Pressable>
+          ))}
+        </View>
+        <TextInput
+          multiline
+          onChangeText={onChangeReview}
+          placeholder="Share your experience after attending..."
+          placeholderTextColor="#9CA3AF"
+          style={styles.reviewInput}
+          value={reviewContent}
+        />
+        <Pressable
+          disabled={addingReview || !reviewContent.trim()}
+          onPress={onSubmitReview}
+          style={[
+            styles.reviewSubmit,
+            (addingReview || !reviewContent.trim()) && styles.disabled,
+          ]}
+        >
+          {addingReview ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Star color="#FFFFFF" fill="#FFFFFF" size={15} />
+          )}
+          <Text style={styles.reviewSubmitText}>
+            {addingReview ? "Submitting" : "Submit Review"}
+          </Text>
+        </Pressable>
+      </View>
+      {reviewsLoading && !reviews.length ? (
+        <ActivityIndicator color="#1F2937" />
+      ) : !reviews.length ? (
+        <Text style={styles.emptyComments}>
+          No reviews yet. Reviews appear after attendees submit them.
+        </Text>
+      ) : (
+        reviews.map((review) => (
+          <View key={review.id} style={styles.reviewItem}>
+            <View style={styles.reviewTop}>
+              <Text style={styles.reviewName}>
+                {review.author?.name || "Devotee"}
+              </Text>
+              <Text style={styles.reviewRating}>
+                {review.rating}/5
+              </Text>
+            </View>
+            {!!review.content && (
+              <Text style={styles.reviewText}>{review.content}</Text>
+            )}
+          </View>
+        ))
+      )}
+    </Section>
+  );
+}
+
 function CommentsSection({
   addingComment,
   comment,
@@ -678,30 +1033,48 @@ function CommentsSection({
 
 function ShareReportSection({
   canReport,
+  reportPending,
+  sharePending,
+  onReport,
   onShare,
 }: {
   canReport: boolean;
+  reportPending: boolean;
+  sharePending: boolean;
+  onReport: () => void;
   onShare: () => void;
 }) {
   return (
     <Section style={styles.shareSection}>
       <View style={styles.twoButtons}>
-        <Pressable onPress={onShare} style={styles.secondarySmallButton}>
-          <Share2 color="#1F2937" size={16} />
-          <Text style={styles.secondarySmallText}>Share Event</Text>
+        <Pressable
+          disabled={sharePending}
+          onPress={onShare}
+          style={[styles.secondarySmallButton, sharePending && styles.disabled]}
+        >
+          {sharePending ? (
+            <ActivityIndicator color="#1F2937" size="small" />
+          ) : (
+            <Share2 color="#1F2937" size={16} />
+          )}
+          <Text style={styles.secondarySmallText}>
+            {sharePending ? "Sharing" : "Share Event"}
+          </Text>
         </Pressable>
         {canReport && (
           <Pressable
-            onPress={() =>
-              Alert.alert(
-                "Event report",
-                "Backend report API exists; frontend report form wiring is the next step."
-              )
-            }
-            style={styles.secondarySmallButton}
+            disabled={reportPending}
+            onPress={onReport}
+            style={[styles.secondarySmallButton, reportPending && styles.disabled]}
           >
-            <Flag color="#1F2937" size={16} />
-            <Text style={styles.secondarySmallText}>Report</Text>
+            {reportPending ? (
+              <ActivityIndicator color="#1F2937" size="small" />
+            ) : (
+              <Flag color="#1F2937" size={16} />
+            )}
+            <Text style={styles.secondarySmallText}>
+              {reportPending ? "Submitting" : "Report"}
+            </Text>
           </Pressable>
         )}
       </View>
@@ -762,6 +1135,37 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     fontSize: 16,
     fontWeight: "800",
+  },
+  attendeeList: {
+    borderTopColor: "#FFF7ED",
+    borderTopWidth: 1,
+    gap: 10,
+    marginTop: 16,
+    paddingTop: 14,
+  },
+  attendeeMeta: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  attendeeName: {
+    color: "#1F2937",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  attendeePerson: {
+    flex: 1,
+  },
+  attendeeRow: {
+    alignItems: "center",
+    backgroundColor: "#FAFAF9",
+    borderColor: "#F6EFD9",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    padding: 10,
   },
   attendeeSub: {
     color: "#6B7280",
@@ -827,6 +1231,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     lineHeight: 20,
+  },
+  checkInButton: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 6,
+    minHeight: 36,
+    paddingHorizontal: 10,
+  },
+  checkInButtonDone: {
+    backgroundColor: "#FFF7ED",
+  },
+  checkInText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  checkInTextDone: {
+    color: "#1F2937",
   },
   commentComposer: {
     alignItems: "flex-end",
@@ -1277,43 +1701,70 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "900",
   },
-  review: {
-    alignItems: "flex-start",
-    borderTopColor: "#FFF7ED",
-    borderTopWidth: 1,
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 16,
-    paddingTop: 16,
+  reviewItem: {
+    backgroundColor: "#FAFAF9",
+    borderColor: "#F6EFD9",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 10,
+    padding: 12,
   },
-  reviewAvatar: {
-    borderRadius: 20,
-    height: 40,
-    width: 40,
+  reviewComposer: {
+    backgroundColor: "#FAFAF9",
+    borderColor: "#F6EFD9",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 12,
+    padding: 12,
   },
-  reviewBody: {
-    flex: 1,
-  },
-  reviewDate: {
-    color: "#9CA3AF",
-    fontSize: 11,
-    fontWeight: "700",
+  reviewInput: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F6EFD9",
+    borderRadius: 12,
+    borderWidth: 1,
+    color: "#1F2937",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 10,
+    minHeight: 74,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   reviewName: {
     color: "#1F2937",
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  reviewRating: {
+    color: "#F97316",
+    fontSize: 12,
     fontWeight: "900",
   },
   reviewText: {
-    color: "#4B5563",
+    color: "#6B7280",
     fontSize: 13,
-    lineHeight: 20,
+    lineHeight: 19,
     marginTop: 7,
   },
   reviewTop: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  reviewSubmit: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 8,
+    height: 42,
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  reviewSubmitText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
   },
   secondarySmallButton: {
     alignItems: "center",
@@ -1329,6 +1780,10 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     fontSize: 13,
     fontWeight: "800",
+  },
+  ratingStars: {
+    flexDirection: "row",
+    gap: 6,
   },
   section: {
     backgroundColor: "#FFFFFF",
@@ -1348,6 +1803,12 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 0.8,
     textTransform: "uppercase",
+  },
+  starButton: {
+    alignItems: "center",
+    height: 30,
+    justifyContent: "center",
+    width: 30,
   },
   sectionTitleRow: {
     alignItems: "center",
