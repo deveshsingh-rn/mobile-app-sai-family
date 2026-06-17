@@ -38,7 +38,6 @@ import {
   ArrowLeft,
   BookOpen,
   CalendarDays,
-  Check,
   ChevronDown,
   Clock3,
   Eye,
@@ -46,17 +45,13 @@ import {
   ImagePlus,
   Languages,
   LocateFixed,
-  Mail,
-  Minus,
   MoreVertical,
   Music,
-  Phone,
   Plus,
   Repeat2,
   Search,
   Sparkles,
-  Trash2,
-  UserPlus,
+  Stethoscope,
   Users,
   Utensils,
   WandSparkles,
@@ -100,10 +95,16 @@ type EventFormState = {
   country: string;
   description: string;
   endAt: string;
+  faq: {
+    answer: string;
+    question: string;
+  }[];
+  guidelines: string[];
   latitude: string;
   longitude: string;
   startAt: string;
   state: string;
+  tags: string[];
   timezone: string;
   title: string;
   type: EventType;
@@ -117,10 +118,13 @@ const initialForm: EventFormState = {
   country: "India",
   description: "",
   endAt: "",
+  faq: [],
+  guidelines: [],
   latitude: "",
   longitude: "",
   startAt: "",
   state: "",
+  tags: [],
   timezone: "Asia/Kolkata",
   title: "",
   type: "bhajan",
@@ -143,11 +147,12 @@ const typeOptions: {
   value: EventType;
 }[] = [
   {icon: Music, label: "Bhajan", value: "bhajan"},
-  {icon: BookOpen, label: "Satsang", value: "satsang"},
-  {icon: Heart, label: "Puja", value: "pooja"},
-  {icon: Utensils, label: "Prasadam", value: "general"},
+  {icon: Heart, label: "Pooja", value: "pooja"},
   {icon: Users, label: "Seva", value: "seva"},
-  {icon: Heart, label: "Other", value: "general"},
+  {icon: Stethoscope, label: "Medical", value: "medical"},
+  {icon: BookOpen, label: "Satsang", value: "satsang"},
+  {icon: Sparkles, label: "Darshan", value: "darshan"},
+  {icon: Utensils, label: "General", value: "general"},
 ];
 
 const countryOptions = Country.getAllCountries();
@@ -166,10 +171,22 @@ const toPayload = (form: EventFormState): CreateEventPayload => ({
   country: form.country.trim() || undefined,
   description: form.description.trim(),
   endAt: form.endAt.trim(),
+  faq: form.faq
+    .map((item) => ({
+      answer: item.answer.trim(),
+      question: item.question.trim(),
+    }))
+    .filter((item) => item.question && item.answer),
+  guidelines: form.guidelines
+    .map((item) => item.trim())
+    .filter(Boolean),
   latitude: Number(form.latitude),
   longitude: Number(form.longitude),
   startAt: form.startAt.trim(),
   state: form.state.trim() || undefined,
+  tags: form.tags
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean),
   timezone: form.timezone.trim() || "Asia/Kolkata",
   title: form.title.trim(),
   type: form.type,
@@ -241,6 +258,10 @@ export default function EventFormScreen({
   const [pickerTarget, setPickerTarget] = useState<PickerTarget>(null);
   const [selectionKind, setSelectionKind] = useState<SelectionKind | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [tagDraft, setTagDraft] = useState("");
+  const [guidelineDraft, setGuidelineDraft] = useState("");
+  const [faqQuestionDraft, setFaqQuestionDraft] = useState("");
+  const [faqAnswerDraft, setFaqAnswerDraft] = useState("");
   const wasSaving = useRef(false);
 
   const eventId = Array.isArray(id) ? id[0] : id;
@@ -281,10 +302,13 @@ export default function EventFormScreen({
         country: detail.country || "India",
         description: detail.description || "",
         endAt: detail.endAt || "",
+        faq: detail.faq || [],
+        guidelines: detail.guidelines || [],
         latitude: String(detail.latitude ?? ""),
         longitude: String(detail.longitude ?? ""),
         startAt: detail.startAt || "",
         state: detail.state || "",
+        tags: detail.tags || [],
         timezone: detail.timezone || "Asia/Kolkata",
         title: detail.title || "",
         type: detail.type || "general",
@@ -292,6 +316,77 @@ export default function EventFormScreen({
       });
     }
   }, [detail, eventId, mode]);
+
+  const addTag = useCallback(
+    (value = tagDraft) => {
+      const nextTag = value.trim().toLowerCase();
+
+      if (!nextTag) {
+        return;
+      }
+
+      setForm((current) => ({
+        ...current,
+        tags: current.tags.includes(nextTag)
+          ? current.tags
+          : [...current.tags, nextTag],
+      }));
+      setTagDraft("");
+    },
+    [tagDraft]
+  );
+
+  const removeTag = useCallback((tag: string) => {
+    setForm((current) => ({
+      ...current,
+      tags: current.tags.filter((item) => item !== tag),
+    }));
+  }, []);
+
+  const addGuideline = useCallback(() => {
+    const nextGuideline = guidelineDraft.trim();
+
+    if (!nextGuideline) {
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      guidelines: [...current.guidelines, nextGuideline],
+    }));
+    setGuidelineDraft("");
+  }, [guidelineDraft]);
+
+  const removeGuideline = useCallback((indexToRemove: number) => {
+    setForm((current) => ({
+      ...current,
+      guidelines: current.guidelines.filter((_, index) => index !== indexToRemove),
+    }));
+  }, []);
+
+  const addFaq = useCallback(() => {
+    const question = faqQuestionDraft.trim();
+    const answer = faqAnswerDraft.trim();
+
+    if (!question || !answer) {
+      Alert.alert("FAQ", "Add both question and answer.");
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      faq: [...current.faq, {answer, question}],
+    }));
+    setFaqQuestionDraft("");
+    setFaqAnswerDraft("");
+  }, [faqAnswerDraft, faqQuestionDraft]);
+
+  const removeFaq = useCallback((indexToRemove: number) => {
+    setForm((current) => ({
+      ...current,
+      faq: current.faq.filter((_, index) => index !== indexToRemove),
+    }));
+  }, []);
 
   useEffect(() => {
     if (waitingForBannerUpload && uploadedMedia?.url) {
@@ -797,14 +892,30 @@ export default function EventFormScreen({
           </View>
         </FormSection>
 
-        <AdditionalDetails />
-        <OrganizerContact />
-        <TagsSection />
-        <VisibilitySection />
-        <MediaGallery />
-        <CoOrganizers />
-        <SpecialInstructions />
-        <PreviewSection />
+        <TagsSection
+          addTag={addTag}
+          removeTag={removeTag}
+          tagDraft={tagDraft}
+          tags={form.tags}
+          setTagDraft={setTagDraft}
+        />
+        <GuidelinesSection
+          addGuideline={addGuideline}
+          guidelineDraft={guidelineDraft}
+          guidelines={form.guidelines}
+          removeGuideline={removeGuideline}
+          setGuidelineDraft={setGuidelineDraft}
+        />
+        <FaqSection
+          addFaq={addFaq}
+          answerDraft={faqAnswerDraft}
+          faq={form.faq}
+          questionDraft={faqQuestionDraft}
+          removeFaq={removeFaq}
+          setAnswerDraft={setFaqAnswerDraft}
+          setQuestionDraft={setFaqQuestionDraft}
+        />
+        <PreviewSection form={form} />
 
         <View style={styles.actionSection}>
           <Pressable
@@ -814,11 +925,8 @@ export default function EventFormScreen({
           >
             {saving ? <ActivityIndicator color="#FFFFFF" /> : null}
             <Text style={styles.submitText}>
-              {mode === "create" ? "Continue to Step 2" : "Save Changes"}
+              {mode === "create" ? "Create Event" : "Save Changes"}
             </Text>
-          </Pressable>
-          <Pressable style={styles.draftButton}>
-            <Text style={styles.draftText}>Save as Draft</Text>
           </Pressable>
           <Pressable onPress={() => router.back()} style={styles.discardButton}>
             <Text style={styles.discardText}>Discard Changes</Text>
@@ -996,246 +1104,165 @@ function SoftAction({icon, label}: {icon: React.ReactNode; label: string}) {
   );
 }
 
-function AdditionalDetails() {
-  return (
-    <FormSection
-      subtitle="Help devotees prepare for the gathering"
-      title="Additional Details"
-    >
-      <Text style={styles.fieldLabel}>Expected Attendance</Text>
-      <View style={styles.capacityRow}>
-        <RoundButton icon={<Minus color="#6B7280" size={17} />} />
-        <View style={styles.capacityBox}>
-          <Text style={styles.capacityNumber}>50</Text>
-          <Text style={styles.capacityUnit}>devotees</Text>
-        </View>
-        <RoundButton icon={<Plus color="#6B7280" size={17} />} />
-      </View>
-      <ChecklistGroup
-        items={["Free Entry", "RSVP Required", "Contribution Welcome"]}
-        selected={[1]}
-        title="Entry Requirements"
-      />
-      <Text style={styles.fieldLabel}>What Should Devotees Bring?</Text>
-      {["Prayer mat or cushion", "Water bottle"].map((item) => (
-        <View key={item} style={styles.removableRow}>
-          <Text style={styles.removableText}>{item}</Text>
-          <RoundButton icon={<X color="#6B7280" size={15} />} small />
-        </View>
-      ))}
-      <Pressable style={styles.dashedButton}>
-        <Plus color="#9CA3AF" size={16} />
-        <Text style={styles.dashedText}>Add Item</Text>
-      </Pressable>
-      <Text style={styles.fieldLabel}>Dress Code (Optional)</Text>
-      <View style={styles.segmentRow}>
-        {["Traditional", "Casual", "Formal"].map((item, index) => (
-          <View key={item} style={[styles.segment, index === 0 && styles.segmentActive]}>
-            <Text style={[styles.segmentText, index === 0 && styles.segmentTextActive]}>{item}</Text>
-          </View>
-        ))}
-      </View>
-    </FormSection>
-  );
-}
-
-function ChecklistGroup({
-  items,
-  selected,
-  title,
+function TagsSection({
+  addTag,
+  removeTag,
+  setTagDraft,
+  tagDraft,
+  tags,
 }: {
-  items: string[];
-  selected: number[];
-  title: string;
+  addTag: (value?: string) => void;
+  removeTag: (tag: string) => void;
+  setTagDraft: (value: string) => void;
+  tagDraft: string;
+  tags: string[];
 }) {
-  return (
-    <View style={styles.checkGroup}>
-      <Text style={styles.fieldLabel}>{title}</Text>
-      {items.map((item, index) => (
-        <View key={item} style={styles.checkItem}>
-          <View style={[styles.checkbox, selected.includes(index) && styles.checkboxActive]}>
-            {selected.includes(index) ? <Check color="#FFFFFF" size={13} /> : null}
-          </View>
-          <Text style={styles.checkLabel}>{item}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
+  const suggestedTags = ["devotional", "music", "spiritual", "family", "seva"];
 
-function RoundButton({icon, small}: {icon: React.ReactNode; small?: boolean}) {
-  return <Pressable style={[styles.roundButton, small && styles.roundButtonSmall]}>{icon}</Pressable>;
-}
-
-function OrganizerContact() {
-  return (
-    <FormSection
-      subtitle="How can devotees reach you with questions?"
-      title="Organizer Contact"
-    >
-      <View style={styles.organizerCard}>
-        <View style={styles.organizerTop}>
-          <Image
-            source={{uri: "https://api.dicebear.com/7.x/notionists/png?scale=200&seed=12345"}}
-            style={styles.organizerAvatar}
-          />
-          <View style={styles.organizerCopy}>
-            <Text style={styles.organizerName}>Rajesh Kumar</Text>
-            <Text style={styles.organizerRole}>Community Organizer</Text>
-          </View>
-          <View style={styles.editPill}>
-            <Text style={styles.editPillText}>Edit</Text>
-          </View>
-        </View>
-        <InfoLine icon={<Phone color="#9CA3AF" size={15} />} text="+91 98765 43210" />
-        <InfoLine icon={<Mail color="#9CA3AF" size={15} />} text="rajesh@saifamily.com" />
-      </View>
-      <View style={styles.checkItem}>
-        <View style={styles.checkboxActive}>
-          <Check color="#FFFFFF" size={13} />
-        </View>
-        <Text style={styles.checkLabel}>Allow devotees to contact me directly</Text>
-      </View>
-    </FormSection>
-  );
-}
-
-function InfoLine({icon, text}: {icon: React.ReactNode; text: string}) {
-  return (
-    <View style={styles.infoLine}>
-      {icon}
-      <Text style={styles.infoLineText}>{text}</Text>
-    </View>
-  );
-}
-
-function TagsSection() {
   return (
     <FormSection subtitle="Help devotees discover your event" title="Event Tags">
       <View style={styles.tagsRow}>
-        {["Bhajan", "Evening", "Community"].map((tag) => (
+        {tags.length ? tags.map((tag) => (
           <View key={tag} style={styles.activeTag}>
             <Text style={styles.activeTagText}>{tag}</Text>
-            <View style={styles.tagClose}>
+            <Pressable onPress={() => removeTag(tag)} style={styles.tagClose}>
               <X color="#FFFFFF" size={10} />
-            </View>
+            </Pressable>
           </View>
-        ))}
+        )) : (
+          <Text style={styles.optionEmpty}>No tags added yet.</Text>
+        )}
       </View>
       <View style={styles.addTagWrap}>
         <TextInput
+          onChangeText={setTagDraft}
+          onSubmitEditing={() => addTag()}
           placeholder="Add tags..."
           placeholderTextColor="#9CA3AF"
           style={styles.addTagInput}
+          value={tagDraft}
         />
-        <View style={styles.addTagButton}>
+        <Pressable onPress={() => addTag()} style={styles.addTagButton}>
           <Plus color="#FFFFFF" size={14} />
-        </View>
+        </Pressable>
       </View>
       <Text style={styles.suggestedTitle}>Suggested Tags</Text>
       <View style={styles.suggestionRow}>
-        {["Devotional", "Music", "Spiritual", "Family Friendly", "Youth"].map((item) => (
-          <View key={item} style={styles.suggestionChip}>
+        {suggestedTags.map((item) => (
+          <Pressable key={item} onPress={() => addTag(item)} style={styles.suggestionChip}>
             <Text style={styles.suggestionText}>{item}</Text>
-          </View>
+          </Pressable>
         ))}
       </View>
     </FormSection>
   );
 }
 
-function VisibilitySection() {
+function GuidelinesSection({
+  addGuideline,
+  guidelineDraft,
+  guidelines,
+  removeGuideline,
+  setGuidelineDraft,
+}: {
+  addGuideline: () => void;
+  guidelineDraft: string;
+  guidelines: string[];
+  removeGuideline: (index: number) => void;
+  setGuidelineDraft: (value: string) => void;
+}) {
   return (
     <FormSection
-      subtitle="Who can see and join this gathering?"
-      title="Event Visibility"
+      subtitle="These are saved as the event guidelines"
+      title="Guidelines for Devotees"
     >
-      {[
-        ["Public Event", "Anyone can discover and join this gathering"],
-        ["Community Only", "Only Sai Family members can see this event"],
-        ["Private Event", "Only people with invitation link can join"],
-      ].map(([title, text], index) => (
-        <View key={title} style={[styles.visibilityCard, index === 0 && styles.visibilityActive]}>
-          <View style={[styles.radio, index === 0 && styles.radioActive]} />
-          <View style={styles.visibilityCopy}>
-            <Text style={[styles.visibilityTitle, index === 0 && styles.visibilityTitleActive]}>{title}</Text>
-            <Text style={[styles.visibilityText, index === 0 && styles.visibilityTextActive]}>{text}</Text>
-          </View>
+      {guidelines.map((item, index) => (
+        <View key={`${item}-${index}`} style={styles.removableRow}>
+          <Text style={styles.removableText}>{item}</Text>
+          <Pressable onPress={() => removeGuideline(index)} style={styles.roundButtonSmall}>
+            <X color="#6B7280" size={15} />
+          </Pressable>
         </View>
       ))}
-    </FormSection>
-  );
-}
-
-function MediaGallery() {
-  return (
-    <FormSection
-      subtitle="Add photos from previous gatherings to inspire devotees"
-      title="Event Gallery (Optional)"
-    >
-      <View style={styles.galleryGrid}>
-        <View style={styles.galleryItem}>
-          <ImagePlus color="#9CA3AF" size={20} />
-        </View>
-        <View style={styles.galleryItem}>
-          <ImagePlus color="#9CA3AF" size={20} />
-        </View>
-        <View style={[styles.galleryItem, styles.galleryAdd]}>
-          <Plus color="#9CA3AF" size={18} />
-          <Text style={styles.galleryAddText}>Add Photo</Text>
-        </View>
-      </View>
-    </FormSection>
-  );
-}
-
-function CoOrganizers() {
-  return (
-    <FormSection
-      subtitle="Invite others to help manage this event"
-      title="Co-Organizers (Optional)"
-    >
-      <View style={styles.coOrganizerRow}>
-        <Image
-          source={{uri: "https://api.dicebear.com/7.x/notionists/png?scale=200&seed=67890"}}
-          style={styles.coAvatar}
+      <View style={styles.addTagWrap}>
+        <TextInput
+          onChangeText={setGuidelineDraft}
+          onSubmitEditing={addGuideline}
+          placeholder="e.g., Arrive 10 minutes early"
+          placeholderTextColor="#9CA3AF"
+          style={styles.addTagInput}
+          value={guidelineDraft}
         />
-        <View style={styles.organizerCopy}>
-          <Text style={styles.organizerName}>Priya Sharma</Text>
-          <Text style={styles.organizerRole}>Can edit event details</Text>
-        </View>
-        <RoundButton icon={<X color="#6B7280" size={15} />} small />
+        <Pressable onPress={addGuideline} style={styles.addTagButton}>
+          <Plus color="#FFFFFF" size={14} />
+        </Pressable>
       </View>
-      <Pressable style={styles.dashedButton}>
-        <UserPlus color="#9CA3AF" size={16} />
-        <Text style={styles.dashedText}>Add Co-Organizer</Text>
+    </FormSection>
+  );
+}
+
+function FaqSection({
+  addFaq,
+  answerDraft,
+  faq,
+  questionDraft,
+  removeFaq,
+  setAnswerDraft,
+  setQuestionDraft,
+}: {
+  addFaq: () => void;
+  answerDraft: string;
+  faq: {answer: string; question: string}[];
+  questionDraft: string;
+  removeFaq: (index: number) => void;
+  setAnswerDraft: (value: string) => void;
+  setQuestionDraft: (value: string) => void;
+}) {
+  return (
+    <FormSection
+      subtitle="Questions and answers are saved with the event detail"
+      title="FAQ"
+    >
+      {faq.map((item, index) => (
+        <View key={`${item.question}-${index}`} style={styles.faqCard}>
+          <View style={styles.faqCopy}>
+            <Text style={styles.faqQuestion}>{item.question}</Text>
+            <Text style={styles.faqAnswer}>{item.answer}</Text>
+          </View>
+          <Pressable onPress={() => removeFaq(index)} style={styles.roundButtonSmall}>
+            <X color="#6B7280" size={15} />
+          </Pressable>
+        </View>
+      ))}
+      <TextInput
+        onChangeText={setQuestionDraft}
+        placeholder="Question"
+        placeholderTextColor="#9CA3AF"
+        style={styles.input}
+        value={questionDraft}
+      />
+      <TextInput
+        onChangeText={setAnswerDraft}
+        multiline
+        placeholder="Answer"
+        placeholderTextColor="#9CA3AF"
+        style={[styles.input, styles.smallArea]}
+        value={answerDraft}
+      />
+      <Pressable onPress={addFaq} style={styles.dashedButton}>
+        <Plus color="#9CA3AF" size={16} />
+        <Text style={styles.dashedText}>Add FAQ</Text>
       </Pressable>
     </FormSection>
   );
 }
 
-function SpecialInstructions() {
-  return (
-    <FormSection
-      subtitle="Any important guidelines or notes for attendees?"
-      title="Special Instructions"
-    >
-      <ChecklistGroup
-        items={["Photography allowed", "Children welcome", "Parking available", "Wheelchair accessible"]}
-        selected={[0, 1]}
-        title=""
-      />
-      <TextInput
-        multiline
-        placeholder="Add any other special notes or instructions..."
-        placeholderTextColor="#9CA3AF"
-        style={[styles.input, styles.smallArea]}
-      />
-    </FormSection>
-  );
-}
+function PreviewSection({form}: {form: EventFormState}) {
+  const previewTitle = form.title || "Untitled event";
+  const previewLocation = [form.venueName, form.city, form.state]
+    .filter(Boolean)
+    .join(", ");
 
-function PreviewSection() {
   return (
     <View style={styles.previewSection}>
       <View style={styles.previewCard}>
@@ -1244,13 +1271,15 @@ function PreviewSection() {
             <Eye color="#6B7280" size={18} />
           </View>
           <View style={styles.organizerCopy}>
-            <Text style={styles.previewTitle}>Preview Your Event</Text>
-            <Text style={styles.previewText}>See how devotees will experience your gathering before publishing</Text>
+            <Text style={styles.previewTitle}>{previewTitle}</Text>
+            <Text style={styles.previewText}>
+              {previewLocation || "Location will appear here"} · {formatDate(form.startAt)}
+            </Text>
           </View>
         </View>
-        <Pressable style={styles.previewButton}>
-          <Text style={styles.previewButtonText}>View Preview</Text>
-        </Pressable>
+        <Text numberOfLines={3} style={styles.previewDescription}>
+          {form.description || "Description preview will appear here."}
+        </Text>
       </View>
     </View>
   );
@@ -1658,6 +1687,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
   },
+  faqAnswer: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 19,
+    marginTop: 4,
+  },
+  faqCard: {
+    alignItems: "flex-start",
+    backgroundColor: "#FAFAF9",
+    borderColor: "#F6EFD9",
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    padding: 12,
+  },
+  faqCopy: {
+    flex: 1,
+  },
+  faqQuestion: {
+    color: "#1F2937",
+    fontSize: 14,
+    fontWeight: "900",
+  },
   fieldLabel: {
     color: "#4B5563",
     fontSize: 12,
@@ -1875,6 +1929,13 @@ const styles = StyleSheet.create({
   previewSection: {
     backgroundColor: "#FAFAF9",
     padding: 16,
+  },
+  previewDescription: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 19,
+    marginTop: 12,
   },
   previewText: {
     color: "#6B7280",

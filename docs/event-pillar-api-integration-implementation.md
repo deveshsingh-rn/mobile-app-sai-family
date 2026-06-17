@@ -645,6 +645,8 @@ Done when:
 
 Status: In progress
 
+Smoke test checklist: `docs/event-pillar-phase-1-smoke-test.md`
+
 Todo:
 
 - [x] Update `services/events.ts` with typed params for existing endpoints.
@@ -655,11 +657,11 @@ Todo:
 - [x] Preserve calendar `{ days, summary }` metadata while keeping existing flat calendar event selector.
 - [x] Improve saga mappers for real backend wrappers: `{ events, pagination }`, `{ comments, pagination }`, `{ days, summary }`, `{ media, url }`, and `{ event, rsvp }`.
 - [ ] Keep all existing UI fallback data until API coverage is verified.
-- [ ] Run create, edit, delete, RSVP, comments, calendar smoke test.
+- [ ] Run the device/manual smoke test in `docs/event-pillar-phase-1-smoke-test.md`.
 
 Done when:
 
-- Current Event CRUD, RSVP, comments, and calendar still work with no UI regressions.
+- Current Event CRUD, RSVP, comments, calendar, My Events, and RSVPs still work with no UI regressions.
 
 ### Phase 2: Events Hub API Replacement
 
