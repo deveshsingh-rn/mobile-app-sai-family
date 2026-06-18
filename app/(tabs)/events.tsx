@@ -1028,6 +1028,11 @@ function EventQuickActions() {
       label: "Calendar",
     },
     {
+      href: "/events/bookmarks",
+      icon: Bookmark,
+      label: "Saved",
+    },
+    {
       href: "/events/rsvps",
       icon: CalendarCheck,
       label: "My RSVPs",

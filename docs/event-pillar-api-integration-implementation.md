@@ -777,7 +777,8 @@ Todo:
 - [x] Add `apiFetchEventBookmarks`.
 - [x] Add bookmark list actions/reducer/saga/selectors.
 - [x] Add bookmark/unbookmark optimistic update.
-- [ ] Wire bookmark icons in hub cards, detail, calendar recommendations, and my events if shown.
+- [x] Wire bookmark icons in hub cards, detail, calendar recommendations, and my events if shown.
+- [x] Add saved events screen and hub shortcut.
 - [ ] Update stats cards to use bookmark count.
 
 Done when:

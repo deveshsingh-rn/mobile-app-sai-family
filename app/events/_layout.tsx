@@ -8,6 +8,7 @@ export default function EventsLayout() {
       }}
     >
       <Stack.Screen name="[id]" />
+      <Stack.Screen name="bookmarks" />
       <Stack.Screen name="calendar" />
       <Stack.Screen name="create" />
       <Stack.Screen name="edit" />
