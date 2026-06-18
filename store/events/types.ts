@@ -20,6 +20,18 @@ export type EventSort =
   | "nearby"
   | "latest";
 
+export type EventRecurrenceFrequency =
+  | "daily"
+  | "weekly"
+  | "monthly";
+
+export type EventRecurrence = {
+  count?: number;
+  frequency: EventRecurrenceFrequency;
+  interval?: number;
+  until?: string;
+};
+
 export type EventPagination = {
   hasMore?: boolean;
   limit: number;
@@ -105,16 +117,7 @@ export type SaiEvent = {
   permissions?: EventPermission;
   photos?: number;
   rating?: number;
-  recurrence?: {
-    count?: number;
-    frequency:
-      | "daily"
-      | "weekly"
-      | "monthly"
-      | string;
-    interval?: number;
-    until?: string;
-  } | null;
+  recurrence?: EventRecurrence | null;
   reviews?: number;
   rsvpedByMe?: boolean;
   rsvps?: number;
@@ -444,16 +447,7 @@ export type CreateEventPayload = {
   guidelines?: string[];
   latitude: number;
   longitude: number;
-  recurrence?: {
-    count?: number;
-    frequency:
-      | "daily"
-      | "weekly"
-      | "monthly"
-      | string;
-    interval?: number;
-    until?: string;
-  };
+  recurrence?: EventRecurrence;
   startAt: string;
   state?: string;
   tags?: string[];

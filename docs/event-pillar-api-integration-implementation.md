@@ -759,8 +759,8 @@ Todo:
 - [x] Add event draft types/actions/saga/reducer.
 - [x] Autosave draft with debounce.
 - [x] Add publish draft flow.
-- [ ] Add recurrence type and validation.
-- [ ] Add recurrence payload to create/update if backend accepts it.
+- [x] Add recurrence type and validation.
+- [x] Add recurrence payload to create/update if backend accepts it.
 - [x] Phase 1 payload mode decided: upload media first, then JSON create/update with `bannerUrl`.
 - [ ] Add optional multipart create/update only if product later chooses a one-request upload flow.
 
@@ -860,7 +860,7 @@ Done when:
 - [x] Wire suggestions.
 - [x] Wire place search.
 - [x] Wire drafts/autosave.
-- [ ] Add recurrence payload support.
+- [x] Add recurrence payload support.
 - [ ] Keep basic create/edit working throughout.
 
 ### `app/events/calendar.tsx`

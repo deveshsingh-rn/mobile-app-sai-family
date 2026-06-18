@@ -1,5 +1,6 @@
 import {
   CreateEventPayload,
+  EventRecurrenceFrequency,
   EventType,
   SaiEvent,
   UpdateEventPayload,
@@ -14,6 +15,9 @@ export const EVENT_TYPES: EventType[] = [
   "darshan",
   "general",
 ];
+
+export const EVENT_RECURRENCE_FREQUENCIES: EventRecurrenceFrequency[] =
+  ["daily", "weekly", "monthly"];
 
 export const EVENT_MEDIA_MIME_TYPES = [
   "image/jpeg",
@@ -85,6 +89,79 @@ export const isEventType = (
 ): value is EventType =>
   typeof value === "string" &&
   EVENT_TYPES.includes(value as EventType);
+
+export const isEventRecurrenceFrequency = (
+  value: unknown
+): value is EventRecurrenceFrequency =>
+  typeof value === "string" &&
+  EVENT_RECURRENCE_FREQUENCIES.includes(
+    value as EventRecurrenceFrequency
+  );
+
+const isPositiveInteger = (value: unknown) =>
+  typeof value === "number" &&
+  Number.isInteger(value) &&
+  value >= 1;
+
+const validateRecurrence = (
+  payload: Partial<CreateEventPayload>,
+  errors: Record<string, string>
+) => {
+  const recurrence = payload.recurrence;
+
+  if (recurrence === undefined) {
+    return;
+  }
+
+  if (!recurrence || typeof recurrence !== "object") {
+    errors.recurrence =
+      "Recurring event details are invalid.";
+    return;
+  }
+
+  if (
+    !isEventRecurrenceFrequency(
+      recurrence.frequency
+    )
+  ) {
+    errors.recurrenceFrequency =
+      "Choose daily, weekly, or monthly recurrence.";
+  }
+
+  if (
+    recurrence.interval !== undefined &&
+    !isPositiveInteger(recurrence.interval)
+  ) {
+    errors.recurrenceInterval =
+      "Recurring interval must be at least 1.";
+  }
+
+  if (
+    recurrence.count !== undefined &&
+    !isPositiveInteger(recurrence.count)
+  ) {
+    errors.recurrenceCount =
+      "Recurring count must be at least 1.";
+  }
+
+  if (
+    recurrence.until !== undefined &&
+    !isValidDateTime(recurrence.until)
+  ) {
+    errors.recurrenceUntil =
+      "Recurring end date must be valid.";
+  }
+
+  if (
+    isValidDateTime(payload.startAt) &&
+    isValidDateTime(recurrence.until) &&
+    Date.parse(recurrence.until as string) <=
+      Date.parse(payload.startAt as string)
+  ) {
+    errors.recurrenceUntil =
+      "Recurring end date must be after the start date.";
+  }
+};
 
 const validateSharedEventFields = (
   payload: Partial<CreateEventPayload>,
@@ -211,6 +288,8 @@ const validateSharedEventFields = (
         `${field} must be at least 2 characters.`;
     }
   });
+
+  validateRecurrence(payload, errors);
 };
 
 export function validateCreateEventPayload(
