@@ -156,45 +156,6 @@ const toUiEvent = (event: SaiEvent): UiEvent => ({
   title: event.title,
 });
 
-const startOfToday = () => {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  return date;
-};
-
-const endOfToday = () => {
-  const date = startOfToday();
-  date.setDate(date.getDate() + 1);
-  return date;
-};
-
-const endOfWeek = () => {
-  const date = startOfToday();
-  date.setDate(date.getDate() + 7);
-  return date;
-};
-
-const endOfMonth = () => {
-  const date = startOfToday();
-  date.setMonth(date.getMonth() + 1);
-  return date;
-};
-
-const isBetween = (event: SaiEvent, start: Date, end: Date) => {
-  const time = new Date(event.startAt).getTime();
-  return time >= start.getTime() && time < end.getTime();
-};
-
-const isFutureEvent = (event: SaiEvent) =>
-  new Date(event.startAt).getTime() >= Date.now();
-
-const sortBySoonest = (items: SaiEvent[]) =>
-  [...items].sort(
-    (a, b) =>
-      new Date(a.startAt).getTime() -
-      new Date(b.startAt).getTime()
-  );
-
 const getTypeIcon = (type?: string) => {
   if (type === "seva") {
     return HandHeart;
@@ -218,9 +179,8 @@ const sectionEventsFromHome = (
 
 const sectionCountFromHome = (
   home: EventHomeResult | null,
-  key: string,
-  fallback: number
-) => home?.sections?.[key]?.count ?? fallback;
+  key: string
+) => home?.sections?.[key]?.count ?? 0;
 
 function EventsScreen() {
   const dispatch = useAppDispatch();
@@ -347,40 +307,13 @@ function EventsScreen() {
     [dispatch]
   );
 
-  const futureEvents = useMemo(
-    () => sortBySoonest(events.filter(isFutureEvent)),
-    [events]
-  );
-  const today = useMemo(() => {
-    const start = startOfToday();
-    const end = endOfToday();
-    return sortBySoonest(events.filter((event) => isBetween(event, start, end)));
-  }, [events]);
-  const week = useMemo(() => {
-    const start = endOfToday();
-    const end = endOfWeek();
-    return sortBySoonest(events.filter((event) => isBetween(event, start, end)));
-  }, [events]);
-  const month = useMemo(() => {
-    const start = endOfWeek();
-    const end = endOfMonth();
-    return sortBySoonest(events.filter((event) => isBetween(event, start, end)));
-  }, [events]);
-  const later = useMemo(() => {
-    const start = endOfMonth();
-    return sortBySoonest(
-      events.filter(
-        (event) => new Date(event.startAt).getTime() >= start.getTime()
-      )
-    );
-  }, [events]);
   const nearbyLiveEvents = useMemo(
     () =>
-      (nearbyEvents.length ? nearbyEvents : futureEvents)
+      nearbyEvents
         .slice()
         .sort((a, b) => (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999))
         .slice(0, 8),
-    [futureEvents, nearbyEvents]
+    [nearbyEvents]
   );
 
   const todayEvents = sectionEventsFromHome(home, "happeningToday");
@@ -391,26 +324,26 @@ function EventsScreen() {
   const sections = [
     {
       background: "#FFFFFF",
-      count: `${sectionCountFromHome(home, "happeningToday", today.length)} events`,
-      events: (todayEvents.length ? todayEvents : today).slice(0, 4).map(toUiEvent),
+      count: `${sectionCountFromHome(home, "happeningToday")} events`,
+      events: todayEvents.slice(0, 4).map(toUiEvent),
       title: "Happening Today",
     },
     {
       background: "#FAFAF9",
-      count: `${sectionCountFromHome(home, "thisWeek", week.length)} events`,
-      events: (weekEvents.length ? weekEvents : week).slice(0, 4).map(toUiEvent),
+      count: `${sectionCountFromHome(home, "thisWeek")} events`,
+      events: weekEvents.slice(0, 4).map(toUiEvent),
       title: "This Week",
     },
     {
       background: "#FFFFFF",
-      count: `${sectionCountFromHome(home, "thisMonth", month.length)} events`,
-      events: (monthEvents.length ? monthEvents : month).slice(0, 4).map(toUiEvent),
+      count: `${sectionCountFromHome(home, "thisMonth")} events`,
+      events: monthEvents.slice(0, 4).map(toUiEvent),
       title: "This Month",
     },
     {
       background: "#FAFAF9",
-      count: `${sectionCountFromHome(home, "comingSoon", later.length)} events`,
-      events: (laterEvents.length ? laterEvents : later).slice(0, 4).map(toUiEvent),
+      count: `${sectionCountFromHome(home, "comingSoon")} events`,
+      events: laterEvents.slice(0, 4).map(toUiEvent),
       title: "Coming Soon",
     },
   ];
@@ -475,7 +408,7 @@ function EventsScreen() {
       </View>
 
       {viewMode === "map" ? (
-        <MapOverview events={nearbyLiveEvents} loading={nearbyLoading} />
+        <MapOverview events={nearbyLiveEvents} home={home} loading={nearbyLoading} />
       ) : (
       <ScrollView
         refreshControl={
@@ -509,11 +442,7 @@ function EventsScreen() {
           />
         ))}
 
-        <EventProductSections
-          events={futureEvents}
-          home={home}
-          loading={homeLoading}
-        />
+        <EventProductSections home={home} loading={homeLoading} />
         <CreateEventCta />
         <ActivityStats
           events={events}
@@ -535,9 +464,11 @@ function EventsScreen() {
 
 function MapOverview({
   events,
+  home,
   loading,
 }: {
   events: SaiEvent[];
+  home?: EventHomeResult | null;
   loading: boolean;
 }) {
   return (
@@ -626,11 +557,7 @@ function MapOverview({
         </ScrollView>
       </View>
 
-      <EventProductSections
-        compact
-        events={events}
-        loading={loading}
-      />
+      <EventProductSections compact home={home} loading={loading} />
     </ScrollView>
   );
 }
@@ -944,67 +871,49 @@ function MetaRow({
 
 function EventProductSections({
   compact = false,
-  events,
   home,
   loading,
 }: {
   compact?: boolean;
-  events: SaiEvent[];
   home?: EventHomeResult | null;
   loading?: boolean;
 }) {
   return (
     <View style={[styles.productWrap, compact && styles.productWrapCompact]}>
-      <EventTypeGuide events={events} home={home} loading={loading} />
-      <TrendingThisWeek events={events} home={home} loading={loading} />
+      <EventTypeGuide home={home} loading={loading} />
+      <TrendingThisWeek home={home} loading={loading} />
       <EventQuickActions />
-      <WeekScheduler events={events} home={home} loading={loading} />
+      <WeekScheduler home={home} loading={loading} />
       <TopOrganisers home={home} loading={loading} />
     </View>
   );
 }
 
 function EventTypeGuide({
-  events,
   home,
   loading,
 }: {
-  events: SaiEvent[];
   home?: EventHomeResult | null;
   loading?: boolean;
 }) {
-  const guide =
-    home?.eventTypeGuide?.length
-      ? home.eventTypeGuide.map((item) => {
-          const type = item.type || "general";
-          const Icon = getTypeIcon(type);
+  const guide = (home?.eventTypeGuide || []).map((item) => {
+    const type = item.type || "general";
+    const Icon = getTypeIcon(type);
 
-          return {
-            count:
-              typeof item.count === "number"
-                ? `${item.count} live`
-                : item.count || "Live",
-            icon: Icon,
-            label: item.label || eventTypeLabel(type),
-            summary:
-              item.summary ||
-              item.description ||
-              `Live ${eventTypeLabel(type).toLowerCase()} gatherings from backend.`,
-            type,
-          };
-        })
-      : EVENT_FILTERS.filter((item) => item.value !== "all").map((item) => {
-      const Icon = getTypeIcon(item.value);
-      const count = events.filter((event) => event.type === item.value).length;
-
-      return {
-        count: `${count} live`,
-        icon: Icon,
-        label: item.label,
-        summary: `Live ${item.label.toLowerCase()} gatherings from backend.`,
-        type: item.value,
-      };
-    });
+    return {
+      count:
+        typeof item.count === "number"
+          ? `${item.count} live`
+          : item.count || "Live",
+      icon: Icon,
+      label: item.label || eventTypeLabel(type),
+      summary:
+        item.summary ||
+        item.description ||
+        `Live ${eventTypeLabel(type).toLowerCase()} gatherings from backend.`,
+      type,
+    };
+  });
 
   return (
     <View style={styles.productSection}>
@@ -1012,7 +921,7 @@ function EventTypeGuide({
         subtitle="Choose the right gathering faster"
         title="Event Type Guide"
       />
-      {loading && !home?.eventTypeGuide?.length && !events.length ? (
+      {loading && !guide.length ? (
         <InlineProductLoader />
       ) : null}
       <ScrollView
@@ -1046,24 +955,23 @@ function EventTypeGuide({
           );
         })}
       </ScrollView>
+      {!loading && !guide.length && (
+        <Text style={styles.emptySectionText}>
+          Event type guide will appear when backend returns guide data.
+        </Text>
+      )}
     </View>
   );
 }
 
 function TrendingThisWeek({
-  events,
   home,
   loading,
 }: {
-  events: SaiEvent[];
   home?: EventHomeResult | null;
   loading?: boolean;
 }) {
-  const trending = (
-    home?.trendingThisWeek?.length
-      ? home.trendingThisWeek
-      : [...events].sort((a, b) => (b.rsvps || 0) - (a.rsvps || 0))
-  ).slice(0, 5);
+  const trending = (home?.trendingThisWeek || []).slice(0, 5);
 
   return (
     <View style={styles.productSection}>
@@ -1158,39 +1066,20 @@ function EventQuickActions() {
 }
 
 function WeekScheduler({
-  events,
   home,
   loading,
 }: {
-  events: SaiEvent[];
   home?: EventHomeResult | null;
   loading?: boolean;
 }) {
-  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const todayIndex = new Date().getDay();
-  const schedule =
-    home?.weeklySchedule?.length
-      ? home.weeklySchedule.map((item) => ({
-          count: item.count || 0,
-          day: item.day || "",
-          label:
-            item.label ||
-            (item.type ? eventTypeLabel(item.type) : "Open"),
-        }))
-      : weekdays.map((day, index) => {
-          const count = events.filter(
-            (event) => new Date(event.startAt).getDay() === index
-          ).length;
-          const firstType = events.find(
-            (event) => new Date(event.startAt).getDay() === index
-          )?.type;
-
-          return {
-            count,
-            day,
-            label: firstType ? eventTypeLabel(firstType) : "Open",
-          };
-        });
+  const schedule = (home?.weeklySchedule || []).map((item) => ({
+    count: item.count || 0,
+    day: item.day || "",
+    label:
+      item.label ||
+      (item.type ? eventTypeLabel(item.type) : "Open"),
+  }));
 
   return (
     <View style={styles.productSectionAlt}>
@@ -1198,7 +1087,7 @@ function WeekScheduler({
         subtitle="Scan event density across the current week"
         title="This Week Scheduler"
       />
-      {loading && !events.length && !home?.weeklySchedule?.length ? (
+      {loading && !schedule.length ? (
         <InlineProductLoader />
       ) : null}
       <ScrollView
@@ -1226,6 +1115,11 @@ function WeekScheduler({
           </View>
         ))}
       </ScrollView>
+      {!loading && !schedule.length && (
+        <Text style={styles.emptySectionText}>
+          Weekly schedule will appear when backend returns calendar density.
+        </Text>
+      )}
     </View>
   );
 }

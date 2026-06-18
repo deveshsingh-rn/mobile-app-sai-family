@@ -788,14 +788,14 @@ Done when:
 
 ### Phase 8: Hardcoded Data Removal
 
-Status: Not started
+Status: Complete
 
 Todo:
 
-- [ ] Audit every `fallback`, `static`, `nearbyEvents`, `topOrganisers`, `trendingEvents`, `communities`, `weeklySchedule`, `communityStories` array in Events files.
-- [ ] Remove fallback only after the matching backend selector is stable.
-- [ ] Keep empty states where backend returns no data.
-- [ ] Keep sample fallback only for development mode if useful.
+- [x] Audit every `fallback`, `static`, `nearbyEvents`, `topOrganisers`, `trendingEvents`, `communities`, `weeklySchedule`, `communityStories` array in Events files.
+- [x] Remove fallback only after the matching backend selector is stable.
+- [x] Keep empty states where backend returns no data.
+- [x] Keep sample fallback only for development mode if useful.
 
 Done when:
 
