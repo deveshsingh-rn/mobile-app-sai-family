@@ -28,6 +28,7 @@ import {
   Edit3,
   Filter,
   History,
+  Image,
   MapPin,
   Navigation,
   Plus,
@@ -720,6 +721,11 @@ function MyEventCard({
           </Pressable>
           <Pressable
             onPress={() => {
+              if (mode === "posted" && event.id) {
+                router.push(`/events/${event.id}` as any);
+                return;
+              }
+
               const destination =
                 event.source.latitude && event.source.longitude
                   ? `${event.source.latitude},${event.source.longitude}`
@@ -729,7 +735,14 @@ function MyEventCard({
             }}
             style={styles.iconAction}
           >
-            <Navigation color="#1F2937" size={15} />
+            {mode === "posted" ? (
+              <Image color="#1F2937" size={15} />
+            ) : (
+              <Navigation color="#1F2937" size={15} />
+            )}
+            <Text style={styles.iconActionText}>
+              {mode === "posted" ? "Photos" : "Map"}
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -1144,9 +1157,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFF7ED",
     borderRadius: 12,
+    gap: 2,
     height: 42,
     justifyContent: "center",
-    width: 44,
+    width: 54,
+  },
+  iconActionText: {
+    color: "#1F2937",
+    fontSize: 9,
+    fontWeight: "900",
   },
   liveDot: {
     backgroundColor: "#FFFFFF",

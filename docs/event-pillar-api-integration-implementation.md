@@ -740,7 +740,7 @@ Todo:
 - [x] Build or wire attendee management screen/modal.
 - [x] Add check-in action.
 - [x] Add event report action.
-- [ ] Add post-event photos upload action.
+- [x] Add post-event photos upload action.
 - [x] Replace posted summary stats with real analytics when backend returns them.
 
 Done when:
