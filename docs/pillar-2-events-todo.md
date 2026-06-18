@@ -4,7 +4,8 @@
 
 - Current pillar: Events
 - Parent UI entry: `app/(tabs)/events.tsx`
-- Current next step: Todo 8 completed, ready for Pillar 2 manual polish
+- Current next step: Pillar 2 frontend bind-up complete, manual device/backend smoke test pending
+- Closeout: `docs/pillar-2-events-closeout.md`
 
 ## Todo List
 
@@ -117,6 +118,27 @@ Status: Completed
 - [x] Test calendar endpoint
 - [x] Test comments
 - [x] Test media upload
+
+### 9. Frontend Bind-Up
+
+Status: Completed
+
+- [x] Expand Events pillar API integration plan through Phase 9
+- [x] Remove user-facing hardcoded Event business data
+- [x] Add saved/bookmarked events screen
+- [x] Add attendee management screen
+- [x] Wire organizer analytics, reviews, photos, reports, share, drafts, recommendations, preferences, community calendars, and calendar export
+- [x] Run `npx tsc --noEmit`
+- [x] Run `npm run lint`
+- [x] Create closeout handoff document
+
+### 10. Manual Device QA
+
+Status: Pending
+
+- [ ] Run `docs/event-pillar-phase-1-smoke-test.md` on device or simulator with backend running
+- [ ] Verify create, edit, delete, RSVP, comments, calendar, My Events, RSVPs, bookmarks, reviews, photos, attendees, and empty states
+- [ ] Record any backend validation or permission issues found during QA
 
 ## Backend Validation Notes
 
