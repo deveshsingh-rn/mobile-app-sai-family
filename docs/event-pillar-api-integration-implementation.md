@@ -678,8 +678,8 @@ Todo:
 - [x] Guard nearby requests so `GET /api/events/nearby` is called only with required `lat` and `lng`.
 - [x] Preserve static fallback if `eventHome` is empty.
 - [x] Wire bookmark, RSVP, and share actions on Events hub cards.
-- [ ] Add loading skeleton or compact loader per section.
-- [ ] Add section-level error handling.
+- [x] Add loading skeleton or compact loader per section.
+- [x] Add section-level error handling.
 
 Done when:
 

@@ -13,7 +13,6 @@ import {
   Share,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 
@@ -31,11 +30,9 @@ import {
   List,
   Map,
   MapPin,
-  Mic,
   Minus,
   Music,
   Plus,
-  Search,
   Share2,
   SlidersHorizontal,
   Stethoscope,
@@ -502,7 +499,9 @@ function EventsScreen() {
             key={section.title}
             background={section.background}
             count={section.count}
+            error={error}
             events={[...section.events]}
+            loading={loading || homeLoading}
             onBookmark={handleBookmark}
             onRsvp={handleRsvp}
             onShare={handleShare}
@@ -510,7 +509,11 @@ function EventsScreen() {
           />
         ))}
 
-        <EventProductSections events={futureEvents} home={home} />
+        <EventProductSections
+          events={futureEvents}
+          home={home}
+          loading={homeLoading}
+        />
         <CreateEventCta />
         <ActivityStats
           events={events}
@@ -623,7 +626,11 @@ function MapOverview({
         </ScrollView>
       </View>
 
-      <EventProductSections compact events={events} />
+      <EventProductSections
+        compact
+        events={events}
+        loading={loading}
+      />
     </ScrollView>
   );
 }
@@ -689,7 +696,9 @@ function NearbyEventCard({
 function EventSection({
   background,
   count,
+  error,
   events,
+  loading,
   moreLabel,
   onBookmark,
   onRsvp,
@@ -698,7 +707,9 @@ function EventSection({
 }: {
   background: string;
   count: string;
+  error?: string | null;
   events: UiEvent[];
+  loading?: boolean;
   moreLabel?: string;
   onBookmark: (event: UiEvent) => void;
   onRsvp: (event: UiEvent) => void;
@@ -712,6 +723,14 @@ function EventSection({
         <Text style={styles.sectionCount}>{count}</Text>
       </View>
 
+      {loading && !events.length ? (
+        <SectionLoader />
+      ) : null}
+
+      {!!error && !events.length && !loading ? (
+        <SectionError text="Could not load this event section. Pull down to refresh." />
+      ) : null}
+
       {events.map((event) => (
         <EventCard
           key={event.id}
@@ -722,7 +741,7 @@ function EventSection({
         />
       ))}
 
-      {!events.length && (
+      {!events.length && !loading && !error && (
         <View style={styles.emptySectionCard}>
           <Calendar color="#9CA3AF" size={18} />
           <Text style={styles.emptySectionText}>
@@ -858,6 +877,44 @@ function EventCard({
   );
 }
 
+function SectionLoader() {
+  return (
+    <View style={styles.sectionLoader}>
+      {[0, 1].map((item) => (
+        <View key={item} style={styles.skeletonCard}>
+          <View style={styles.skeletonThumb} />
+          <View style={styles.skeletonBody}>
+            <View style={styles.skeletonLineWide} />
+            <View style={styles.skeletonLine} />
+            <View style={styles.skeletonPill} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function InlineProductLoader() {
+  return (
+    <View style={styles.inlineLoader}>
+      <ActivityIndicator color="#F97316" size="small" />
+      <Text style={styles.inlineLoaderText}>Loading live data...</Text>
+    </View>
+  );
+}
+
+function SectionError({
+  text,
+}: {
+  text: string;
+}) {
+  return (
+    <View style={styles.sectionError}>
+      <Text style={styles.sectionErrorText}>{text}</Text>
+    </View>
+  );
+}
+
 function MetaRow({
   icon,
   label,
@@ -889,18 +946,20 @@ function EventProductSections({
   compact = false,
   events,
   home,
+  loading,
 }: {
   compact?: boolean;
   events: SaiEvent[];
   home?: EventHomeResult | null;
+  loading?: boolean;
 }) {
   return (
     <View style={[styles.productWrap, compact && styles.productWrapCompact]}>
-      <EventTypeGuide events={events} home={home} />
-      <TrendingThisWeek events={events} home={home} />
+      <EventTypeGuide events={events} home={home} loading={loading} />
+      <TrendingThisWeek events={events} home={home} loading={loading} />
       <EventQuickActions />
-      <WeekScheduler events={events} home={home} />
-      <TopOrganisers home={home} />
+      <WeekScheduler events={events} home={home} loading={loading} />
+      <TopOrganisers home={home} loading={loading} />
     </View>
   );
 }
@@ -908,9 +967,11 @@ function EventProductSections({
 function EventTypeGuide({
   events,
   home,
+  loading,
 }: {
   events: SaiEvent[];
   home?: EventHomeResult | null;
+  loading?: boolean;
 }) {
   const guide =
     home?.eventTypeGuide?.length
@@ -951,6 +1012,9 @@ function EventTypeGuide({
         subtitle="Choose the right gathering faster"
         title="Event Type Guide"
       />
+      {loading && !home?.eventTypeGuide?.length && !events.length ? (
+        <InlineProductLoader />
+      ) : null}
       <ScrollView
         contentContainerStyle={styles.typeGuideContent}
         horizontal
@@ -989,9 +1053,11 @@ function EventTypeGuide({
 function TrendingThisWeek({
   events,
   home,
+  loading,
 }: {
   events: SaiEvent[];
   home?: EventHomeResult | null;
+  loading?: boolean;
 }) {
   const trending = (
     home?.trendingThisWeek?.length
@@ -1006,6 +1072,9 @@ function TrendingThisWeek({
         subtitle="Most saved and most RSVP activity"
         title="Trending This Week"
       />
+      {loading && !trending.length ? (
+        <InlineProductLoader />
+      ) : null}
       {trending.map((event, index) => (
         <Pressable
           key={event.id}
@@ -1024,7 +1093,7 @@ function TrendingThisWeek({
           <Text style={styles.trendingValue}>{event.rsvps || 0} going</Text>
         </Pressable>
       ))}
-      {!trending.length && (
+      {!trending.length && !loading && (
         <Text style={styles.emptySectionText}>No trending events yet.</Text>
       )}
     </View>
@@ -1091,9 +1160,11 @@ function EventQuickActions() {
 function WeekScheduler({
   events,
   home,
+  loading,
 }: {
   events: SaiEvent[];
   home?: EventHomeResult | null;
+  loading?: boolean;
 }) {
   const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const todayIndex = new Date().getDay();
@@ -1127,6 +1198,9 @@ function WeekScheduler({
         subtitle="Scan event density across the current week"
         title="This Week Scheduler"
       />
+      {loading && !events.length && !home?.weeklySchedule?.length ? (
+        <InlineProductLoader />
+      ) : null}
       <ScrollView
         contentContainerStyle={styles.schedulerContent}
         horizontal
@@ -1158,10 +1232,24 @@ function WeekScheduler({
 
 function TopOrganisers({
   home,
+  loading,
 }: {
   home?: EventHomeResult | null;
+  loading?: boolean;
 }) {
   const organisers = home?.topOrganisers || [];
+
+  if (loading && !organisers.length) {
+    return (
+      <View style={styles.productSection}>
+        <SectionHeading
+          subtitle="Trusted organizers from the live events network"
+          title="Top Event Organisers"
+        />
+        <InlineProductLoader />
+      </View>
+    );
+  }
 
   if (!organisers.length) {
     return null;
@@ -1678,6 +1766,23 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: "700",
+  },
+  inlineLoader: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#F6EFD9",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  inlineLoaderText: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "800",
   },
   errorText: {
     color: "#B42318",
@@ -2213,6 +2318,24 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 14,
   },
+  sectionError: {
+    backgroundColor: "#FFF1F2",
+    borderColor: "#FFE4E6",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 12,
+    padding: 12,
+  },
+  sectionErrorText: {
+    color: "#B42318",
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 17,
+  },
+  sectionLoader: {
+    gap: 10,
+    marginBottom: 12,
+  },
   sectionTitle: {
     color: "#1F2937",
     fontSize: 20,
@@ -2226,6 +2349,44 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     width: 40,
+  },
+  skeletonBody: {
+    flex: 1,
+    gap: 8,
+  },
+  skeletonCard: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F6EFD9",
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    padding: 12,
+  },
+  skeletonLine: {
+    backgroundColor: "#F6EFD9",
+    borderRadius: 6,
+    height: 10,
+    width: "58%",
+  },
+  skeletonLineWide: {
+    backgroundColor: "#F1E8DA",
+    borderRadius: 6,
+    height: 12,
+    width: "82%",
+  },
+  skeletonPill: {
+    backgroundColor: "#FFF7ED",
+    borderRadius: 12,
+    height: 24,
+    width: 104,
+  },
+  skeletonThumb: {
+    backgroundColor: "#F6EFD9",
+    borderRadius: 14,
+    height: 62,
+    width: 62,
   },
   smallSectionTitle: {
     color: "#1F2937",
