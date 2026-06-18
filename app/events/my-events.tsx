@@ -695,7 +695,16 @@ function MyEventCard({
           <Pressable
             onPress={() => {
               if (event.id) {
-                router.push(`/events/${event.id}` as any);
+                router.push(
+                  mode === "posted"
+                    ? ({
+                        pathname: "/events/attendees",
+                        params: {
+                          id: event.id,
+                        },
+                      } as any)
+                    : (`/events/${event.id}` as any)
+                );
               }
             }}
             style={[styles.primaryAction, event.muted && styles.pastAction]}

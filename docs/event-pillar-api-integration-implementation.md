@@ -709,20 +709,20 @@ Done when:
 
 ### Phase 4: Calendar Product Integration
 
-Status: Not started
+Status: Complete
 
 Todo:
 
-- [ ] Extend calendar response type to support `days` and `summary`.
-- [ ] Update calendar saga mapper to preserve summary.
-- [ ] Wire monthly overview and event type breakdown to backend summary.
-- [ ] Add recommendations actions/saga/selectors.
-- [ ] Wire recommended events.
-- [ ] Add calendar preferences actions/saga/selectors.
-- [ ] Wire notification preference toggles.
-- [ ] Add community calendar actions/saga/selectors.
-- [ ] Wire subscribe/unsubscribe buttons.
-- [ ] Add calendar export helper for `GET /api/users/me/calendar.ics`.
+- [x] Extend calendar response type to support `days` and `summary`.
+- [x] Update calendar saga mapper to preserve summary.
+- [x] Wire monthly overview and event type breakdown to backend summary.
+- [x] Add recommendations actions/saga/selectors.
+- [x] Wire recommended events.
+- [x] Add calendar preferences actions/saga/selectors.
+- [x] Wire notification preference toggles.
+- [x] Add community calendar actions/saga/selectors.
+- [x] Wire subscribe/unsubscribe buttons.
+- [x] Add calendar export helper for `GET /api/users/me/calendar.ics`.
 
 Done when:
 
@@ -736,8 +736,8 @@ Todo:
 
 - [x] Add analytics type/service/actions/saga/selectors.
 - [x] Load analytics for posted event cards.
-- [ ] Add attendees type/service/actions/saga/selectors.
-- [ ] Build or wire attendee management screen/modal.
+- [x] Add attendees type/service/actions/saga/selectors.
+- [x] Build or wire attendee management screen/modal.
 - [x] Add check-in action.
 - [x] Add event report action.
 - [ ] Add post-event photos upload action.
@@ -876,7 +876,7 @@ Done when:
 ### `app/events/my-events.tsx`
 
 - [x] Wire analytics.
-- [ ] Add dedicated attendee/photo management drill-in from posted event cards.
+- [x] Add dedicated attendee/photo management drill-in from posted event cards.
 - [x] Replace posted stats with analytics-backed values.
 
 ## Testing Plan
