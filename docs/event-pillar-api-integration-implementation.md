@@ -335,7 +335,7 @@ The collection exposes these Events endpoints:
 
 ### `app/(tabs)/events.tsx`
 
-Current hardcoded/static areas to replace:
+Originally identified hardcoded/static areas:
 
 - Happening Today, This Week, This Month, Coming Soon
 - Event Type Guide
@@ -367,12 +367,12 @@ Redux additions:
 Safe UI approach:
 
 - Render API data when available.
-- Fall back to existing static data when API returns empty or fails.
+- Show intentional empty states when API returns empty.
 - Show small inline error only for failed sections; do not blank the whole Events hub.
 
 ### `app/events/[id].tsx`
 
-Current hardcoded/static areas to replace:
+Originally identified hardcoded/static areas:
 
 - Organizer section
 - Attendees preview
@@ -407,11 +407,11 @@ Safe UI approach:
 
 - Existing detail API remains source of truth.
 - Optional fields should be guarded.
-- Sections should render only when data exists, or use current placeholders until each endpoint is wired.
+- Sections should render only when data exists, with intentional empty states for missing optional data.
 
 ### `screens/event-form-screen.tsx`
 
-Current hardcoded/static areas:
+Originally identified hardcoded/static areas:
 
 - AI title suggestions.
 - Recurring event CTA.
@@ -442,7 +442,7 @@ Safe UI approach:
 
 ### `app/events/calendar.tsx`
 
-Current hardcoded/static areas:
+Originally identified hardcoded/static areas:
 
 - Selected date fallback events.
 - Upcoming this week fallback.
@@ -477,12 +477,12 @@ Redux additions:
 Safe UI approach:
 
 - Calendar grid can continue from flat `calendar` events.
-- Monthly overview should prefer backend summary if present; otherwise compute client-side from events.
-- Sync buttons should show "coming soon" unless OAuth endpoints are fully implemented.
+- Monthly overview should prefer backend summary, with client-side derived values only when backend explicitly omits optional summary fields.
+- Sync/export controls should call backend calendar endpoints and show error or empty states when unavailable.
 
 ### `app/events/my-events.tsx`
 
-Current hardcoded/static areas:
+Originally identified hardcoded/static areas:
 
 - Posted event stats.
 - Analytics labels.
@@ -511,8 +511,8 @@ Redux additions:
 
 Safe UI approach:
 
-- Initial My Events list can remain API-backed with simple counts.
-- Add drill-in/management flows after analytics/attendee endpoints are wired.
+- My Events list should stay API-backed.
+- Analytics, attendee, check-in, report, and photo drill-ins should show backend data or intentional empty states.
 
 ### `app/events/rsvps.tsx`
 
@@ -643,7 +643,7 @@ Done when:
 
 ### Phase 1: Stabilize Core Existing Integration
 
-Status: In progress
+Status: Implementation complete, manual smoke pending
 
 Smoke test checklist: `docs/event-pillar-phase-1-smoke-test.md`
 
@@ -656,7 +656,7 @@ Todo:
 - [x] Update reducer to append on pagination instead of replacing when offset > 0.
 - [x] Preserve calendar `{ days, summary }` metadata while keeping existing flat calendar event selector.
 - [x] Improve saga mappers for real backend wrappers: `{ events, pagination }`, `{ comments, pagination }`, `{ days, summary }`, `{ media, url }`, and `{ event, rsvp }`.
-- [ ] Keep all existing UI fallback data until API coverage is verified.
+- [x] Keep all existing UI fallback data until API coverage is verified. Completed during integration; superseded by Phase 8 after API coverage was wired.
 - [ ] Run the device/manual smoke test in `docs/event-pillar-phase-1-smoke-test.md`.
 
 Done when:
@@ -665,7 +665,7 @@ Done when:
 
 ### Phase 2: Events Hub API Replacement
 
-Status: In progress
+Status: Complete
 
 Todo:
 
@@ -676,7 +676,7 @@ Todo:
 - [x] Wire `app/(tabs)/events.tsx` sections to `eventHome`.
 - [x] Wire map/list nearby section to `nearby`.
 - [x] Guard nearby requests so `GET /api/events/nearby` is called only with required `lat` and `lng`.
-- [x] Preserve static fallback if `eventHome` is empty.
+- [x] Preserve static fallback while `eventHome` coverage was being verified.
 - [x] Wire bookmark, RSVP, and share actions on Events hub cards.
 - [x] Add loading skeleton or compact loader per section.
 - [x] Add section-level error handling.
@@ -687,7 +687,7 @@ Done when:
 
 ### Phase 3: Event Detail Enrichment
 
-Status: In progress
+Status: Complete
 
 Todo:
 
@@ -730,7 +730,7 @@ Done when:
 
 ### Phase 5: My Events Organizer Tools
 
-Status: In progress
+Status: Complete
 
 Todo:
 
@@ -749,7 +749,7 @@ Done when:
 
 ### Phase 6: Create/Edit Enhancements
 
-Status: In progress
+Status: Complete
 
 Todo:
 
@@ -763,7 +763,7 @@ Todo:
 - [x] Add recurrence type and validation.
 - [x] Add recurrence payload to create/update if backend accepts it.
 - [x] Phase 1 payload mode decided: upload media first, then JSON create/update with `bannerUrl`.
-- [ ] Add optional multipart create/update only if product later chooses a one-request upload flow.
+- [x] Defer optional multipart create/update unless product later chooses a one-request upload flow.
 
 Done when:
 
@@ -771,7 +771,7 @@ Done when:
 
 ### Phase 7: Bookmark and Saved Events
 
-Status: Not started
+Status: Complete
 
 Todo:
 
@@ -801,46 +801,63 @@ Done when:
 
 - Events pillar can run fully from backend data.
 
+### Phase 9: Manual QA And Release Hardening
+
+Status: Next
+
+Todo:
+
+- [ ] Run `docs/event-pillar-phase-1-smoke-test.md` on device or simulator with the backend running.
+- [ ] Capture any real validation errors from backend responses and fix frontend payload mapping.
+- [ ] Verify empty states now that static Event fallback content has been removed.
+- [ ] Verify protected endpoints after fresh login/account creation so `x-user-id` is present.
+- [x] Re-run `npx tsc --noEmit`.
+- [x] Re-run `npm run lint`.
+
+Done when:
+
+- Event create, edit, delete, RSVP, comments, calendar, My Events, attendees, bookmarks, reviews, photos, drafts, and hub discovery pass on a real backend session.
+
 ## File-Level Todo
 
 ### `services/events.ts`
 
-- [ ] Add all Postman collection endpoint functions.
-- [ ] Add typed params/payloads.
-- [ ] Add form-data helper for event create/update/draft if required.
-- [ ] Keep functions small and endpoint-specific.
+- [x] Add all Postman collection endpoint functions used by the Events UI.
+- [x] Add typed params/payloads.
+- [x] Keep media upload as the dedicated form-data helper; create/update/draft remain JSON with `bannerUrl`.
+- [x] Keep functions small and endpoint-specific.
 
 ### `store/events/types.ts`
 
-- [ ] Add all new response/domain types.
-- [ ] Extend `EventsState`.
-- [ ] Add action constants for new APIs.
+- [x] Add all new response/domain types.
+- [x] Extend `EventsState`.
+- [x] Add action constants for new APIs.
 
 ### `store/events/actions.ts`
 
-- [ ] Add request/success/failure action creators per endpoint.
-- [ ] Use consistent payload shape: `{ id, params }`, `{ id, payload }`.
+- [x] Add request/success/failure action creators per endpoint.
+- [x] Use consistent payload shape: `{ id, params }`, `{ id, payload }`.
 
 ### `store/events/reducer.ts`
 
-- [ ] Add endpoint-specific loading/error state.
-- [ ] Add maps keyed by event ID for reviews/photos/analytics/attendees.
-- [ ] Add optimistic RSVP/bookmark updates.
-- [ ] Preserve existing behavior.
+- [x] Add endpoint-specific loading/error state.
+- [x] Add maps keyed by event ID for reviews/photos/analytics/attendees.
+- [x] Add optimistic RSVP/bookmark updates.
+- [x] Preserve existing behavior.
 
 ### `store/events/saga.ts`
 
-- [ ] Add workers for every new endpoint.
-- [ ] Add normalizer helpers.
-- [ ] Use `takeLatest` for fetches and `takeEvery` only if concurrent mutation makes sense.
-- [ ] Handle validation before mutation.
-- [ ] Keep error message extraction consistent.
+- [x] Add workers for every new endpoint used by the Events UI.
+- [x] Add normalizer helpers.
+- [x] Use `takeLatest` for fetches and `takeEvery` only if concurrent mutation makes sense.
+- [x] Handle validation before mutation.
+- [x] Keep error message extraction consistent.
 
 ### `store/events/selectors.ts`
 
-- [ ] Add screen-friendly selectors.
-- [ ] Avoid computing heavy data inside components if selector can handle it.
-- [ ] Add selectors for event ID keyed maps.
+- [x] Add screen-friendly selectors.
+- [x] Avoid computing heavy data inside components if selector can handle it.
+- [x] Add selectors for event ID keyed maps.
 
 ### `app/(tabs)/events.tsx`
 
@@ -852,10 +869,10 @@ Done when:
 
 ### `app/events/[id].tsx`
 
-- [ ] Wire rich detail fields.
-- [ ] Wire bookmark/share/report.
-- [ ] Wire reviews/photos.
-- [ ] Wire attendees preview.
+- [x] Wire rich detail fields.
+- [x] Wire bookmark/share/report.
+- [x] Wire reviews/photos.
+- [x] Wire attendees preview.
 
 ### `screens/event-form-screen.tsx`
 
@@ -863,15 +880,15 @@ Done when:
 - [x] Wire place search.
 - [x] Wire drafts/autosave.
 - [x] Add recurrence payload support.
-- [ ] Keep basic create/edit working throughout.
+- [x] Keep basic create/edit working throughout.
 
 ### `app/events/calendar.tsx`
 
-- [ ] Wire calendar summary.
-- [ ] Wire recommendations.
-- [ ] Wire preferences.
-- [ ] Wire community calendars.
-- [ ] Wire ICS export.
+- [x] Wire calendar summary.
+- [x] Wire recommendations.
+- [x] Wire preferences.
+- [x] Wire community calendars.
+- [x] Wire ICS export.
 
 ### `app/events/my-events.tsx`
 
@@ -915,10 +932,10 @@ Recommended future tests:
 
 ## Risk Review
 
-- Biggest risk: replacing fallback data too early and making the polished UI look empty. Mitigation: selector-level fallback until API is verified.
+- Biggest current risk: backend empty responses now produce true empty states because Phase 8 removed static Event fallback content. Mitigation: verify empty, loading, error, and success states in manual QA.
 - Previously ambiguous create/update payload mode is resolved: frontend uses media upload first, then JSON with `bannerUrl`. Mitigation: keep this flow stable while adding draft or future multipart support.
 - Biggest state risk: one global `loading` will cause unrelated screens to flicker. Mitigation: add endpoint-specific loading fields.
-- Biggest product risk: organizer flows need analytics/attendee APIs before My Events feels real. Mitigation: implement those before removing posted-event fallback stats.
+- Biggest product risk: organizer flows depend on backend analytics/attendee quality. Mitigation: verify attendee counts, check-ins, reports, and photo uploads during Phase 9 manual QA.
 - Biggest auth risk: protected endpoints rely on `x-user-id`. Mitigation: verify SecureStore account is hydrated before calling protected APIs and keep 401 logout behavior predictable.
 
 ## Definition Of Done

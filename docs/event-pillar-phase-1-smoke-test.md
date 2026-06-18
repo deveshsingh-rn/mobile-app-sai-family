@@ -1,6 +1,6 @@
 # Event Pillar Phase 1 Smoke Test
 
-Purpose: verify the stabilized Event Redux/Saga/API integration on a device or simulator before starting Phase 2.
+Purpose: verify the stabilized Event Redux/Saga/API integration on a device or simulator before release hardening.
 
 Phase 1 source plan: `docs/event-pillar-api-integration-implementation.md`
 Real backend contract: `event-api-real-record.md`
@@ -17,7 +17,8 @@ Real backend contract: `event-api-real-record.md`
 - No red screen.
 - No repeated 401 for logged-in user flows.
 - No `[API Response Error]` for the expected happy path.
-- Existing polished Event UI remains visible when API data is empty.
+- Existing polished Event UI remains stable when API data is empty.
+- Empty backend responses show intentional empty states instead of static sample events.
 - API-backed data appears when backend returns events.
 - Create/edit still use the two-step media flow:
   1. `POST /api/media/upload`
@@ -40,7 +41,8 @@ Expected:
 - `GET /api/events` fires with params such as `limit`, `type`, `lat`, `lng`, `radius`, or `sort` when applicable.
 - Backend wrapper `{ events, pagination }` is handled.
 - Feed cards render API events when available.
-- Static/fallback sections still keep the page useful if API returns an empty list.
+- Empty sections show intentional empty states if the backend returns no data.
+- No static/sample event cards appear after Phase 8 hardcoded data removal.
 - Loading state clears after request success/failure.
 
 Record:
@@ -261,9 +263,9 @@ Record:
 - [ ] Fail
 - Notes:
 
-## Phase 1 Completion
+## Phase 9 Release-Hardening Completion
 
-Mark Phase 1 complete only after:
+Mark the Events API integration release-ready only after:
 
 - [ ] Events hub/feed smoke passes.
 - [ ] Create event smoke passes.
@@ -275,6 +277,5 @@ Mark Phase 1 complete only after:
 - [ ] RSVPs smoke passes.
 - [ ] Calendar smoke passes.
 - [ ] Delete/cancel smoke passes.
-- [ ] `npx tsc --noEmit` passes.
-- [ ] `npm run lint` passes.
-
+- [x] `npx tsc --noEmit` passes.
+- [x] `npm run lint` passes.
