@@ -675,6 +675,7 @@ Todo:
 - [x] Add actions/reducer/saga/selectors for home and nearby.
 - [x] Wire `app/(tabs)/events.tsx` sections to `eventHome`.
 - [x] Wire map/list nearby section to `nearby`.
+- [x] Guard nearby requests so `GET /api/events/nearby` is called only with required `lat` and `lng`.
 - [x] Preserve static fallback if `eventHome` is empty.
 - [x] Wire bookmark, RSVP, and share actions on Events hub cards.
 - [ ] Add loading skeleton or compact loader per section.
@@ -779,7 +780,7 @@ Todo:
 - [x] Add bookmark/unbookmark optimistic update.
 - [x] Wire bookmark icons in hub cards, detail, calendar recommendations, and my events if shown.
 - [x] Add saved events screen and hub shortcut.
-- [ ] Update stats cards to use bookmark count.
+- [x] Update stats cards to use bookmark count.
 
 Done when:
 

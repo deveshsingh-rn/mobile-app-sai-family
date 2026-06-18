@@ -18,6 +18,7 @@ import {
 } from "react-native";
 
 import { router } from "expo-router";
+import * as Location from "expo-location";
 import {
   Bookmark,
   Calendar,
@@ -45,6 +46,7 @@ import {
   bookmarkEventRequest,
   cancelEventRsvpRequest,
   fetchCommunityCalendarsRequest,
+  fetchEventBookmarksRequest,
   fetchEventsHomeRequest,
   fetchEventsRequest,
   fetchNearbyEventsRequest,
@@ -55,6 +57,8 @@ import {
 import {
   selectCommunityCalendars,
   selectCommunityCalendarsLoading,
+  selectEventBookmarks,
+  selectEventBookmarksPagination,
   selectEventsError,
   selectEventsFeed,
   selectEventsHome,
@@ -230,6 +234,8 @@ function EventsScreen() {
   const nearbyLoading = useAppSelector(selectNearbyEventsLoading);
   const communityCalendars = useAppSelector(selectCommunityCalendars);
   const communityCalendarsLoading = useAppSelector(selectCommunityCalendarsLoading);
+  const eventBookmarks = useAppSelector(selectEventBookmarks);
+  const eventBookmarksPagination = useAppSelector(selectEventBookmarksPagination);
   const loading = useAppSelector(selectEventsLoading);
   const error = useAppSelector(selectEventsError);
 
@@ -249,21 +255,52 @@ function EventsScreen() {
     [selectedType]
   );
 
+  const fetchNearbyFromLocation = useCallback(async () => {
+    try {
+      const permission =
+        await Location.requestForegroundPermissionsAsync();
+
+      if (!permission.granted) {
+        return;
+      }
+
+      const current =
+        await Location.getCurrentPositionAsync({});
+
+      dispatch(
+        fetchNearbyEventsRequest({
+          lat: current.coords.latitude,
+          limit: 20,
+          lng: current.coords.longitude,
+          radius: 25,
+          type:
+            selectedType === "all"
+              ? undefined
+              : selectedType,
+        })
+      );
+    } catch {
+      // Nearby is an enhancement; the screen falls back to upcoming events.
+    }
+  }, [dispatch, selectedType]);
+
   useEffect(() => {
     dispatch(fetchEventsRequest(fetchParams));
     dispatch(fetchEventsHomeRequest({limit: 5}));
-    dispatch(fetchNearbyEventsRequest({limit: 20, radius: 25}));
+    dispatch(fetchEventBookmarksRequest({limit: 20, offset: 0}));
+    fetchNearbyFromLocation();
     dispatch(fetchCommunityCalendarsRequest());
-  }, [dispatch, fetchParams]);
+  }, [dispatch, fetchNearbyFromLocation, fetchParams]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     dispatch(fetchEventsRequest(fetchParams));
     dispatch(fetchEventsHomeRequest({limit: 5}));
-    dispatch(fetchNearbyEventsRequest({limit: 20, radius: 25}));
+    dispatch(fetchEventBookmarksRequest({limit: 20, offset: 0}));
+    fetchNearbyFromLocation();
     dispatch(fetchCommunityCalendarsRequest());
     setTimeout(() => setRefreshing(false), 700);
-  }, [dispatch, fetchParams]);
+  }, [dispatch, fetchNearbyFromLocation, fetchParams]);
 
   const handleBookmark = useCallback(
     (event: UiEvent) => {
@@ -475,7 +512,14 @@ function EventsScreen() {
 
         <EventProductSections events={futureEvents} home={home} />
         <CreateEventCta />
-        <ActivityStats events={events} home={home} />
+        <ActivityStats
+          events={events}
+          home={home}
+          savedEventsCount={
+            eventBookmarksPagination?.total ??
+            eventBookmarks.length
+          }
+        />
         <SuggestedCommunities
           calendars={communityCalendars}
           loading={communityCalendarsLoading}
@@ -498,37 +542,9 @@ function MapOverview({
       contentContainerStyle={styles.mapScrollContent}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.mapSearchCard}>
-        <Search color="#9CA3AF" size={16} />
-        <TextInput
-          placeholder="Search events, places..."
-          placeholderTextColor="#9CA3AF"
-          style={styles.mapSearchInput}
-        />
-        <Pressable style={styles.micButton}>
-          <Mic color="#6B7280" size={14} />
-        </Pressable>
-      </View>
+      
 
-      <ScrollView
-        contentContainerStyle={styles.mapFilterContent}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      >
-        {["All Events", "Bhajan", "Pooja", "Seva", "Medical", "Today", "This Week"].map(
-          (item, index) => (
-            <Pressable
-              key={item}
-              style={[styles.mapFilterChip, index === 0 && styles.mapFilterChipActive]}
-            >
-              {index > 0 && index < 5 ? <View style={styles.mapChipDot} /> : null}
-              <Text style={[styles.mapFilterText, index === 0 && styles.mapFilterTextActive]}>
-                {item}
-              </Text>
-            </Pressable>
-          )
-        )}
-      </ScrollView>
+      
 
       <View style={styles.mapCanvas}>
         <View style={styles.mapGradient} />
@@ -559,7 +575,7 @@ function MapOverview({
 
         <View style={styles.distanceBadge}>
           <MapPin color="#6B7280" size={13} />
-          <Text style={styles.distanceText}>Within 10 km</Text>
+          <Text style={styles.distanceText}>Within 25 km</Text>
         </View>
 
         <View style={styles.eventCountBadge}>
@@ -1228,9 +1244,11 @@ function CreateEventCta() {
 function ActivityStats({
   events,
   home,
+  savedEventsCount,
 }: {
   events: SaiEvent[];
   home: EventHomeResult | null;
+  savedEventsCount?: number;
 }) {
   const totalRsvps = events.reduce((total, event) => total + (event.rsvps || 0), 0);
   const totalComments = events.reduce((total, event) => total + (event.comments || 0), 0);
@@ -1244,7 +1262,7 @@ function ActivityStats({
       <View style={styles.statsGrid}>
         <StatCard icon={<CalendarCheck color="#1F2937" size={19} />} label="Events Listed" value={String(stats?.totalEvents ?? events.length)} />
         <StatCard icon={<Users color="#1F2937" size={19} />} label="Total RSVPs" value={String(stats?.totalRsvps ?? totalRsvps)} />
-        <StatCard icon={<Bookmark color="#1F2937" size={19} />} label="Bookmarked" value={String(stats?.savedEvents ?? bookmarked)} />
+        <StatCard icon={<Bookmark color="#1F2937" size={19} />} label="Bookmarked" value={String(stats?.savedEvents ?? savedEventsCount ?? bookmarked)} />
         <StatCard icon={<MapPin color="#1F2937" size={19} />} label="Cities" value={String(cities)} />
       </View>
       {!!totalComments && (
@@ -1845,7 +1863,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   mapScrollContent: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255,255,255,0.94)",
     paddingBottom: 110,
   },
   mapSearchCard: {
