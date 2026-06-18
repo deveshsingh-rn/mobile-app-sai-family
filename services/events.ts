@@ -6,6 +6,7 @@ import type {
   EventAnalyticsResult,
   EventAttendeesResult,
   EventCommentsResult,
+  EventBookmarksResult,
   EventListParams,
   EventPhotosResult,
   EventReportPayload,
@@ -217,6 +218,19 @@ export async function apiFetchMyEvents(
 ): Promise<EventListResult> {
   const { data } = await apiClient.get(
     "/api/users/me/events",
+    {
+      params,
+    }
+  );
+
+  return data;
+}
+
+export async function apiFetchEventBookmarks(
+  params: EventListParams = {}
+): Promise<EventBookmarksResult> {
+  const { data } = await apiClient.get(
+    "/api/users/me/event-bookmarks",
     {
       params,
     }

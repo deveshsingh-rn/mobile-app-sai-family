@@ -15,6 +15,7 @@ import {
   apiDeleteEvent,
   apiFetchEventAnalytics,
   apiFetchEventAttendees,
+  apiFetchEventBookmarks,
   apiFetchEventCalendar,
   apiFetchEventComments,
   apiFetchEventDetail,
@@ -68,6 +69,8 @@ import {
   fetchEventCalendarSuccess,
   fetchEventAttendeesFailure,
   fetchEventAttendeesSuccess,
+  fetchEventBookmarksFailure,
+  fetchEventBookmarksSuccess,
   fetchCalendarPreferencesFailure,
   fetchCalendarPreferencesSuccess,
   fetchCommunityCalendarsFailure,
@@ -747,6 +750,29 @@ function* fetchNearbyEventsWorker(
   } catch (error) {
     yield put(
       fetchNearbyEventsFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
+function* fetchEventBookmarksWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchEventBookmarks,
+      action.payload || {}
+    );
+
+    yield put(
+      fetchEventBookmarksSuccess(
+        getEventListFromResponse(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchEventBookmarksFailure(
         getErrorMessage(error)
       )
     );
@@ -1719,6 +1745,10 @@ export function* eventsSaga() {
   yield takeLatest(
     EVENTS_ACTIONS.FETCH_NEARBY_REQUEST,
     fetchNearbyEventsWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_BOOKMARKS_REQUEST,
+    fetchEventBookmarksWorker
   );
   yield takeLatest(
     EVENTS_ACTIONS.FETCH_PLACES_REQUEST,

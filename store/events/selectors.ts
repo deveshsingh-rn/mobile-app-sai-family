@@ -12,6 +12,18 @@ export const selectEventsFeedPagination = (
   state: RootState
 ) => selectEventsState(state).feedPagination;
 
+export const selectEventBookmarks = (
+  state: RootState
+) => selectEventsState(state).eventBookmarks;
+
+export const selectEventBookmarksLoading = (
+  state: RootState
+) => selectEventsState(state).eventBookmarksLoading;
+
+export const selectEventBookmarksPagination = (
+  state: RootState
+) => selectEventsState(state).eventBookmarksPagination;
+
 export const selectEventsHome = (
   state: RootState
 ) => selectEventsState(state).home;

@@ -8,6 +8,7 @@ import {
   EventCalendarResult,
   EventComment,
   EventCommentsResult,
+  EventBookmarksResult,
   EventDraft,
   EventDraftPayload,
   EventDraftPublishResult,
@@ -55,6 +56,30 @@ export const fetchEventsFailure = (
   ({
     payload,
     type: EVENTS_ACTIONS.FETCH_FEED_FAILURE,
+  } as const);
+
+export const fetchEventBookmarksRequest = (
+  payload: EventListParams = {}
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_BOOKMARKS_REQUEST,
+  } as const);
+
+export const fetchEventBookmarksSuccess = (
+  payload: EventBookmarksResult
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_BOOKMARKS_SUCCESS,
+  } as const);
+
+export const fetchEventBookmarksFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_BOOKMARKS_FAILURE,
   } as const);
 
 export const fetchEventsHomeRequest = (

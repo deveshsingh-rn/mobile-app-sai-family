@@ -228,6 +228,17 @@ export type EventListResult = {
   pagination?: EventPagination | null;
 };
 
+export type EventBookmarksResult =
+  EventListResult & {
+    bookmarks?: {
+      createdAt?: string;
+      event?: SaiEvent;
+      eventId?: string;
+      id?: string;
+      userId?: string;
+    }[];
+  };
+
 export type EventHomeSection = {
   count?: number;
   events: SaiEvent[];
@@ -535,6 +546,9 @@ export type EventsState = {
   draftSaving: boolean;
   draftsById: Record<string, EventDraft>;
   error: string | null;
+  eventBookmarks: SaiEvent[];
+  eventBookmarksLoading: boolean;
+  eventBookmarksPagination: EventPagination | null;
   feed: SaiEvent[];
   feedPagination: EventPagination | null;
   home: EventHomeResult | null;
@@ -646,6 +660,12 @@ export const EVENTS_ACTIONS = {
     "events/fetchFeedRequest",
   FETCH_FEED_SUCCESS:
     "events/fetchFeedSuccess",
+  FETCH_BOOKMARKS_FAILURE:
+    "events/fetchBookmarksFailure",
+  FETCH_BOOKMARKS_REQUEST:
+    "events/fetchBookmarksRequest",
+  FETCH_BOOKMARKS_SUCCESS:
+    "events/fetchBookmarksSuccess",
   FETCH_HOME_FAILURE:
     "events/fetchHomeFailure",
   FETCH_HOME_REQUEST:

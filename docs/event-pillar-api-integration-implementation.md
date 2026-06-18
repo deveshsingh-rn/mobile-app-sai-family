@@ -774,9 +774,9 @@ Status: Not started
 
 Todo:
 
-- [ ] Add `apiFetchEventBookmarks`.
-- [ ] Add bookmark list actions/reducer/saga/selectors.
-- [ ] Add bookmark/unbookmark optimistic update.
+- [x] Add `apiFetchEventBookmarks`.
+- [x] Add bookmark list actions/reducer/saga/selectors.
+- [x] Add bookmark/unbookmark optimistic update.
 - [ ] Wire bookmark icons in hub cards, detail, calendar recommendations, and my events if shown.
 - [ ] Update stats cards to use bookmark count.
 

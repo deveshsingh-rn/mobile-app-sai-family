@@ -29,6 +29,9 @@ export const initialEventsState: EventsState = {
   draftSaving: false,
   draftsById: {},
   error: null,
+  eventBookmarks: [],
+  eventBookmarksLoading: false,
+  eventBookmarksPagination: null,
   feed: [],
   feedPagination: null,
   home: null,
@@ -153,6 +156,13 @@ export function eventsReducer(
         ...state,
         error: null,
         nearbyLoading: true,
+      };
+
+    case EVENTS_ACTIONS.FETCH_BOOKMARKS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        eventBookmarksLoading: true,
       };
 
     case EVENTS_ACTIONS.FETCH_PLACES_REQUEST:
@@ -371,6 +381,20 @@ export function eventsReducer(
         feedPagination:
           action.payload?.pagination || null,
         loading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_BOOKMARKS_SUCCESS:
+      return {
+        ...state,
+        eventBookmarks: shouldAppend(action.payload)
+          ? mergeById(
+              state.eventBookmarks,
+              action.payload?.events || []
+            )
+          : action.payload?.events || [],
+        eventBookmarksLoading: false,
+        eventBookmarksPagination:
+          action.payload?.pagination || null,
       };
 
     case EVENTS_ACTIONS.FETCH_HOME_SUCCESS:
@@ -655,6 +679,28 @@ export function eventsReducer(
         feed: state.feed.map((event) =>
           updateEventById(event, id, changes)
         ),
+        eventBookmarks:
+          action.type ===
+          EVENTS_ACTIONS.UNBOOKMARK_SUCCESS
+            ? state.eventBookmarks.filter(
+                (event) => event.id !== id
+              )
+            : state.eventBookmarks.some(
+                  (event) => event.id === id
+                )
+              ? state.eventBookmarks.map((event) =>
+                  updateEventById(
+                    event,
+                    id,
+                    changes
+                  )
+                )
+              : action.payload?.event
+                ? [
+                    action.payload.event,
+                    ...state.eventBookmarks,
+                  ]
+                : state.eventBookmarks,
         myEvents: state.myEvents.map((event) =>
           updateEventById(event, id, changes)
         ),
@@ -1091,6 +1137,13 @@ export function eventsReducer(
         ...state,
         error: action.payload,
         nearbyLoading: false,
+      };
+
+    case EVENTS_ACTIONS.FETCH_BOOKMARKS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        eventBookmarksLoading: false,
       };
 
     case EVENTS_ACTIONS.FETCH_PLACES_FAILURE:
