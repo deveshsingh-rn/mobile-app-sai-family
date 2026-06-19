@@ -93,13 +93,13 @@ Status: Completed
 
 ### Phase 2: Directory Home
 
-- [ ] Fetch categories on Directory home.
-- [ ] Fetch home aggregation.
-- [ ] Replace static category grid.
-- [ ] Replace featured businesses.
-- [ ] Replace devotees near you.
-- [ ] Add pull-to-refresh.
-- [ ] Keep empty states when backend returns empty.
+- [x] Fetch categories on Directory home.
+- [x] Fetch home aggregation.
+- [x] Replace static category grid.
+- [x] Replace featured businesses.
+- [x] Replace devotees near you.
+- [x] Add pull-to-refresh.
+- [x] Keep empty states when backend returns empty.
 - [ ] Remove static fallback only after API is stable.
 
 ### Phase 3: Category And Search
