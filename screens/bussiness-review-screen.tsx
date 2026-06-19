@@ -1,55 +1,961 @@
-import React from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
-  StatusBar,
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
+  ActivityIndicator,
+  Alert,
   Image,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
-
-
+import { Ionicons } from '@expo/vector-icons';
 import {
-  Ionicons,
-} from '@expo/vector-icons';
-import { router } from 'expo-router';
+  router,
+  useLocalSearchParams,
+} from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const ratingData = [
+import {
+  fetchDirectoryReviewsRequest,
+  submitDirectoryReviewRequest,
+  voteDirectoryReviewRequest,
+} from '@/store/directory/actions';
+import {
+  selectDirectoryError,
+  selectDirectoryReviews,
+  selectDirectoryReviewsLoading,
+} from '@/store/directory/selectors';
+import {
+  DirectoryReview,
+  DirectoryReviewSummary,
+} from '@/store/directory/types';
+import { validateDirectoryReviewPayload } from '@/store/directory/validation';
+import {
+  useAppDispatch,
+  useAppSelector,
+} from '@/store/hooks';
+
+type ReviewSort = 'newest' | 'highest' | 'lowest';
+
+const filters: Array<{
+  label: string;
+  sort: ReviewSort;
+}> = [
   {
-    star: 5,
-    count: 28,
-    width: '85%',
+    label: 'All',
+    sort: 'newest',
   },
   {
-    star: 4,
-    count: 4,
-    width: '12%',
+    label: 'Highest Rated',
+    sort: 'highest',
   },
   {
-    star: 3,
-    count: 2,
-    width: '3%',
+    label: 'Lowest Rated',
+    sort: 'lowest',
   },
-  {
-    star: 2,
-    count: 0,
-    width: '0%',
-  },
-  {
-    star: 1,
-    count: 0,
-    width: '0%',
-  },
-] as const;
+];
+
+function getParam(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function formatDate(value?: string) {
+  if (!value) {
+    return 'Recently';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Recently';
+  }
+
+  return date.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function initials(name?: string | null) {
+  return (
+    name
+      ?.split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('') || 'SD'
+  );
+}
+
+function averageRating(summary?: DirectoryReviewSummary | null) {
+  return Number(summary?.averageRating || 0);
+}
+
+function reviewCount(summary?: DirectoryReviewSummary | null) {
+  return Number(summary?.reviewCount || 0);
+}
+
+function distributionCount(
+  summary: DirectoryReviewSummary | null | undefined,
+  star: number
+) {
+  return Number(
+    summary?.distribution?.[String(star)] || 0
+  );
+}
+
+function RatingStars({
+  rating,
+  size = 18,
+}: {
+  rating: number;
+  size?: number;
+}) {
+  return (
+    <View style={{ flexDirection: 'row' }}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Ionicons
+          color={star <= rating ? '#FACC15' : '#D1D5DB'}
+          key={star}
+          name={star <= rating ? 'star' : 'star-outline'}
+          size={size}
+          style={{ marginRight: 4 }}
+        />
+      ))}
+    </View>
+  );
+}
+
+function RatingSummaryCard({
+  loading,
+  summary,
+}: {
+  loading: boolean;
+  summary?: DirectoryReviewSummary | null;
+}) {
+  const total = reviewCount(summary);
+  const maxBar = Math.max(
+    1,
+    ...[5, 4, 3, 2, 1].map((star) =>
+      distributionCount(summary, star)
+    )
+  );
+  const average = averageRating(summary);
+
+  return (
+    <View
+      style={{
+        backgroundColor: '#FFFFFF',
+        borderRadius: 22,
+        elevation: 2,
+        marginHorizontal: 18,
+        marginTop: 22,
+        paddingBottom: 20,
+        paddingHorizontal: 22,
+        paddingTop: 24,
+        shadowColor: '#000',
+        shadowOffset: { height: 4, width: 0 },
+        shadowOpacity: 0.03,
+        shadowRadius: 10,
+      }}>
+      <Text
+        style={{
+          color: '#111111',
+          fontSize: 54,
+          fontWeight: '900',
+          letterSpacing: -2,
+          lineHeight: 58,
+          textAlign: 'center',
+        }}>
+        {loading && !total ? '--' : average.toFixed(1)}
+      </Text>
+
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'center',
+          marginTop: 10,
+        }}>
+        <RatingStars
+          rating={Math.round(average)}
+          size={25}
+        />
+      </View>
+
+      <Text
+        style={{
+          color: '#475569',
+          fontSize: 15,
+          fontWeight: '600',
+          marginTop: 10,
+          textAlign: 'center',
+        }}>
+        Based on {total} {total === 1 ? 'review' : 'reviews'}
+      </Text>
+
+      <View style={{ marginTop: 22 }}>
+        {[5, 4, 3, 2, 1].map((star) => {
+          const count = distributionCount(summary, star);
+          const width = `${Math.round(
+            (count / maxBar) * 100
+          )}%` as `${number}%`;
+
+          return (
+            <View
+              key={star}
+              style={{
+                alignItems: 'center',
+                flexDirection: 'row',
+                marginBottom: 14,
+              }}>
+              <Text
+                style={{
+                  color: '#111111',
+                  fontSize: 14,
+                  fontWeight: '600',
+                  width: 28,
+                }}>
+                {star}
+              </Text>
+
+              <View
+                style={{
+                  backgroundColor: '#F1F2F4',
+                  borderRadius: 100,
+                  flex: 1,
+                  height: 8,
+                  marginHorizontal: 14,
+                  overflow: 'hidden',
+                }}>
+                <View
+                  style={{
+                    backgroundColor: '#EE9B52',
+                    borderRadius: 100,
+                    height: '100%',
+                    width,
+                  }}
+                />
+              </View>
+
+              <Text
+                style={{
+                  color: '#475569',
+                  fontSize: 14,
+                  fontWeight: '500',
+                  textAlign: 'right',
+                  width: 36,
+                }}>
+                {count}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function ReviewGateCard({
+  canReview,
+  content,
+  error,
+  loading,
+  onChangeContent,
+  onChangeRating,
+  onSubmit,
+  rating,
+  reason,
+}: {
+  canReview: boolean;
+  content: string;
+  error?: string;
+  loading: boolean;
+  onChangeContent: (value: string) => void;
+  onChangeRating: (value: number) => void;
+  onSubmit: () => void;
+  rating: number;
+  reason?: string | null;
+}) {
+  if (!canReview) {
+    return (
+      <View
+        style={{
+          backgroundColor: '#FFF8F1',
+          borderColor: '#F8DFC4',
+          borderRadius: 22,
+          borderWidth: 1.5,
+          marginHorizontal: 18,
+          marginTop: 22,
+          paddingHorizontal: 22,
+          paddingVertical: 24,
+        }}>
+        <View style={{ alignItems: 'center' }}>
+          <View
+            style={{
+              alignItems: 'center',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 27,
+              elevation: 2,
+              height: 54,
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { height: 4, width: 0 },
+              shadowOpacity: 0.03,
+              shadowRadius: 8,
+              width: 54,
+            }}>
+            <Ionicons
+              color="#EE9B52"
+              name="lock-closed"
+              size={23}
+            />
+          </View>
+        </View>
+
+        <Text
+          style={{
+            color: '#111827',
+            fontSize: 20,
+            fontWeight: '800',
+            letterSpacing: -0.4,
+            lineHeight: 26,
+            marginTop: 18,
+            textAlign: 'center',
+          }}>
+          Verified Reviews Only
+        </Text>
+
+        <Text
+          style={{
+            color: '#475569',
+            fontSize: 15,
+            fontWeight: '500',
+            lineHeight: 24,
+            marginTop: 12,
+            textAlign: 'center',
+          }}>
+          {reason ||
+            'You can review this business after a verified community interaction.'}
+        </Text>
+
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={() => router.back()}
+          style={{
+            alignItems: 'center',
+            backgroundColor: '#EE9B52',
+            borderRadius: 16,
+            elevation: 6,
+            height: 54,
+            justifyContent: 'center',
+            marginTop: 22,
+            shadowColor: '#EE9B52',
+            shadowOffset: { height: 6, width: 0 },
+            shadowOpacity: 0.24,
+            shadowRadius: 14,
+          }}>
+          <Text
+            style={{
+              color: '#FFFFFF',
+              fontSize: 16,
+              fontWeight: '800',
+            }}>
+            View Business Details
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View
+      style={{
+        backgroundColor: '#FFF8F1',
+        borderColor: '#F8DFC4',
+        borderRadius: 22,
+        borderWidth: 1.5,
+        marginHorizontal: 18,
+        marginTop: 22,
+        padding: 18,
+      }}>
+      <Text
+        style={{
+          color: '#111827',
+          fontSize: 18,
+          fontWeight: '900',
+        }}>
+        Share Your Experience
+      </Text>
+      <Text
+        style={{
+          color: '#64748B',
+          fontSize: 13,
+          fontWeight: '600',
+          lineHeight: 20,
+          marginTop: 6,
+        }}>
+        Help other devotees choose with confidence.
+      </Text>
+
+      <View
+        style={{
+          flexDirection: 'row',
+          marginTop: 16,
+        }}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <TouchableOpacity
+            activeOpacity={0.8}
+            key={star}
+            onPress={() => onChangeRating(star)}
+            style={{
+              marginRight: 8,
+              padding: 2,
+            }}>
+            <Ionicons
+              color={star <= rating ? '#FACC15' : '#CBD5E1'}
+              name={star <= rating ? 'star' : 'star-outline'}
+              size={30}
+            />
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <TextInput
+        multiline
+        onChangeText={onChangeContent}
+        placeholder="Write what went well, service quality, communication, and community trust..."
+        placeholderTextColor="#94A3B8"
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderColor: error ? '#FCA5A5' : '#FED7AA',
+          borderRadius: 16,
+          borderWidth: 1,
+          color: '#111827',
+          fontSize: 14,
+          fontWeight: '600',
+          lineHeight: 21,
+          marginTop: 16,
+          minHeight: 108,
+          paddingHorizontal: 14,
+          paddingTop: 12,
+          textAlignVertical: 'top',
+        }}
+        value={content}
+      />
+
+      {error ? (
+        <Text
+          style={{
+            color: '#DC2626',
+            fontSize: 12,
+            fontWeight: '700',
+            marginTop: 8,
+          }}>
+          {error}
+        </Text>
+      ) : null}
+
+      <TouchableOpacity
+        activeOpacity={0.88}
+        disabled={loading}
+        onPress={onSubmit}
+        style={{
+          alignItems: 'center',
+          backgroundColor: loading ? '#FDBA74' : '#EE9B52',
+          borderRadius: 16,
+          flexDirection: 'row',
+          height: 52,
+          justifyContent: 'center',
+          marginTop: 16,
+        }}>
+        {loading ? (
+          <ActivityIndicator
+            color="#FFFFFF"
+            size="small"
+          />
+        ) : (
+          <Ionicons
+            color="#FFFFFF"
+            name="send"
+            size={17}
+          />
+        )}
+        <Text
+          style={{
+            color: '#FFFFFF',
+            fontSize: 15,
+            fontWeight: '900',
+            marginLeft: 8,
+          }}>
+          {loading ? 'Submitting Review' : 'Submit Review'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function ReviewCard({
+  onVote,
+  review,
+}: {
+  onVote: (
+    reviewId: string,
+    vote: 'helpful' | 'not_helpful'
+  ) => void;
+  review: DirectoryReview;
+}) {
+  const name = review.reviewerName || 'Sai Devotee';
+  const badge =
+    review.reviewerBadge ||
+    review.reviewerMemberSince ||
+    (review.verifiedInteraction
+      ? 'Verified community member'
+      : null);
+
+  return (
+    <View
+      style={{
+        backgroundColor: '#FFFFFF',
+        borderColor: '#F1F1F1',
+        borderRadius: 22,
+        borderWidth: 1,
+        elevation: 2,
+        marginBottom: 18,
+        padding: 18,
+        shadowColor: '#000',
+        shadowOffset: { height: 4, width: 0 },
+        shadowOpacity: 0.03,
+        shadowRadius: 10,
+      }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+        }}>
+        <View
+          style={{
+            flex: 1,
+            flexDirection: 'row',
+          }}>
+          {review.reviewerAvatarUrl ? (
+            <Image
+              source={{ uri: review.reviewerAvatarUrl }}
+              style={{
+                borderRadius: 23,
+                height: 46,
+                width: 46,
+              }}
+            />
+          ) : (
+            <View
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#FFF3E8',
+                borderRadius: 23,
+                height: 46,
+                justifyContent: 'center',
+                width: 46,
+              }}>
+              <Text
+                style={{
+                  color: '#F97316',
+                  fontSize: 14,
+                  fontWeight: '900',
+                }}>
+                {initials(name)}
+              </Text>
+            </View>
+          )}
+
+          <View
+            style={{
+              flex: 1,
+              marginLeft: 12,
+            }}>
+            <Text
+              style={{
+                color: '#111827',
+                fontSize: 16,
+                fontWeight: '800',
+              }}>
+              {name}
+            </Text>
+
+            {badge ? (
+              <View
+                style={{
+                  alignSelf: 'flex-start',
+                  backgroundColor: '#FFF3E8',
+                  borderRadius: 10,
+                  marginTop: 5,
+                  paddingHorizontal: 9,
+                  paddingVertical: 4,
+                }}>
+                <Text
+                  style={{
+                    color: '#E67E22',
+                    fontSize: 11,
+                    fontWeight: '700',
+                  }}>
+                  {badge}
+                </Text>
+              </View>
+            ) : null}
+
+            {review.reviewerCity ? (
+              <View
+                style={{
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                  marginTop: 7,
+                }}>
+                <Ionicons
+                  color="#475569"
+                  name="location-sharp"
+                  size={13}
+                />
+                <Text
+                  style={{
+                    color: '#475569',
+                    fontSize: 13,
+                    fontWeight: '500',
+                    marginLeft: 5,
+                  }}>
+                  {review.reviewerCity}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+
+        <Text
+          style={{
+            color: '#475569',
+            fontSize: 12,
+            fontWeight: '500',
+          }}>
+          {formatDate(review.createdAt)}
+        </Text>
+      </View>
+
+      <View style={{ marginTop: 18 }}>
+        <RatingStars rating={review.rating} />
+      </View>
+
+      <Text
+        style={{
+          color: '#475569',
+          fontSize: 14,
+          fontWeight: '500',
+          lineHeight: 23,
+          marginTop: 14,
+        }}>
+        {review.content}
+      </Text>
+
+      <View
+        style={{
+          backgroundColor: '#F3F4F6',
+          height: 1,
+          marginVertical: 18,
+        }}
+      />
+
+      <View
+        style={{
+          alignItems: 'center',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+        }}>
+        <Text
+          style={{
+            color: '#475569',
+            fontSize: 13,
+            fontWeight: '700',
+          }}>
+          Was this helpful?
+        </Text>
+
+        <View style={{ flexDirection: 'row' }}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => onVote(review.id, 'helpful')}
+            style={{
+              alignItems: 'center',
+              backgroundColor:
+                review.myVote === 'helpful'
+                  ? '#FFF3E8'
+                  : '#F8FAFC',
+              borderColor:
+                review.myVote === 'helpful'
+                  ? '#FED7AA'
+                  : 'transparent',
+              borderRadius: 17,
+              borderWidth: 1,
+              flexDirection: 'row',
+              height: 34,
+              marginRight: 12,
+              paddingHorizontal: 13,
+            }}>
+            <Ionicons
+              color={
+                review.myVote === 'helpful'
+                  ? '#F97316'
+                  : '#475569'
+              }
+              name={
+                review.myVote === 'helpful'
+                  ? 'thumbs-up'
+                  : 'thumbs-up-outline'
+              }
+              size={15}
+            />
+            <Text
+              style={{
+                color:
+                  review.myVote === 'helpful'
+                    ? '#F97316'
+                    : '#475569',
+                fontSize: 13,
+                fontWeight:
+                  review.myVote === 'helpful'
+                    ? '800'
+                    : '500',
+                marginLeft: 8,
+              }}>
+              {review.helpfulCount || 0}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => onVote(review.id, 'not_helpful')}
+            style={{
+              alignItems: 'center',
+              backgroundColor:
+                review.myVote === 'not_helpful'
+                  ? '#FEE2E2'
+                  : '#F8FAFC',
+              borderColor:
+                review.myVote === 'not_helpful'
+                  ? '#FECACA'
+                  : 'transparent',
+              borderRadius: 17,
+              borderWidth: 1,
+              flexDirection: 'row',
+              height: 34,
+              paddingHorizontal: 13,
+            }}>
+            <Ionicons
+              color={
+                review.myVote === 'not_helpful'
+                  ? '#DC2626'
+                  : '#475569'
+              }
+              name={
+                review.myVote === 'not_helpful'
+                  ? 'thumbs-down'
+                  : 'thumbs-down-outline'
+              }
+              size={15}
+            />
+            <Text
+              style={{
+                color:
+                  review.myVote === 'not_helpful'
+                    ? '#DC2626'
+                    : '#475569',
+                fontSize: 13,
+                fontWeight:
+                  review.myVote === 'not_helpful'
+                    ? '800'
+                    : '500',
+                marginLeft: 8,
+              }}>
+              {review.notHelpfulCount || 0}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 const ReviewsScreen = () => {
+  const dispatch = useAppDispatch();
+  const params = useLocalSearchParams<{
+    id?: string | string[];
+  }>();
+  const listingId = getParam(params.id);
+  const [sort, setSort] = useState<ReviewSort>('newest');
+  const [rating, setRating] = useState(5);
+  const [content, setContent] = useState('');
+  const [formError, setFormError] = useState('');
+  const submittedRef = useRef(false);
+
+  const reviewsResult = useAppSelector((state) =>
+    selectDirectoryReviews(state, listingId)
+  );
+  const loading = useAppSelector((state) =>
+    selectDirectoryReviewsLoading(state, listingId)
+  );
+  const requestError = useAppSelector(selectDirectoryError);
+
+  const summary = reviewsResult?.summary || null;
+  const reviews = useMemo(
+    () => reviewsResult?.reviews || [],
+    [reviewsResult?.reviews]
+  );
+  const canReview = summary?.canReview ?? true;
+  const totalReviews =
+    reviewCount(summary) || reviews.length || 0;
+
+  useEffect(() => {
+    if (!listingId) {
+      return;
+    }
+
+    dispatch(
+      fetchDirectoryReviewsRequest(listingId, {
+        limit: 20,
+        offset: 0,
+        sort,
+      })
+    );
+  }, [dispatch, listingId, sort]);
+
+  useEffect(() => {
+    if (!submittedRef.current || loading) {
+      return;
+    }
+
+    if (requestError) {
+      Alert.alert('Review not submitted', requestError);
+      submittedRef.current = false;
+      return;
+    }
+
+    setContent('');
+    setRating(5);
+    setFormError('');
+    submittedRef.current = false;
+  }, [loading, requestError]);
+
+  const handleRefresh = () => {
+    if (!listingId) {
+      return;
+    }
+
+    dispatch(
+      fetchDirectoryReviewsRequest(listingId, {
+        limit: 20,
+        offset: 0,
+        sort,
+      })
+    );
+  };
+
+  const handleSubmit = () => {
+    if (!listingId) {
+      return;
+    }
+
+    const validation = validateDirectoryReviewPayload({
+      content,
+      rating,
+    });
+
+    if (!validation.isValid) {
+      setFormError(
+        validation.errors.content ||
+          validation.errors.rating ||
+          'Please check your review.'
+      );
+      return;
+    }
+
+    setFormError('');
+    submittedRef.current = true;
+    dispatch(
+      submitDirectoryReviewRequest(listingId, {
+        content: content.trim(),
+        rating,
+      })
+    );
+  };
+
+  const handleVote = (
+    reviewId: string,
+    vote: 'helpful' | 'not_helpful'
+  ) => {
+    if (!listingId) {
+      return;
+    }
+
+    dispatch(
+      voteDirectoryReviewRequest(reviewId, { vote }, listingId)
+    );
+  };
+
+  if (!listingId) {
+    return (
+      <SafeAreaView
+        style={{
+          alignItems: 'center',
+          backgroundColor: '#FAFAFA',
+          flex: 1,
+          justifyContent: 'center',
+          paddingHorizontal: 24,
+        }}>
+        <Text
+          style={{
+            color: '#111827',
+            fontSize: 20,
+            fontWeight: '900',
+            textAlign: 'center',
+          }}>
+          Business review not found
+        </Text>
+        <TouchableOpacity
+          activeOpacity={0.86}
+          onPress={() => router.back()}
+          style={{
+            alignItems: 'center',
+            backgroundColor: '#EE9B52',
+            borderRadius: 16,
+            height: 50,
+            justifyContent: 'center',
+            marginTop: 18,
+            paddingHorizontal: 22,
+          }}>
+          <Text
+            style={{
+              color: '#FFFFFF',
+              fontSize: 15,
+              fontWeight: '900',
+            }}>
+            Go Back
+          </Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView
       style={{
-        flex: 1,
         backgroundColor: '#FAFAFA',
+        flex: 1,
       }}>
       <StatusBar
         backgroundColor="#FAFAFA"
@@ -57,907 +963,257 @@ const ReviewsScreen = () => {
       />
 
       <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: 28,
-        }}>
-        {/* Header */}
+        contentContainerStyle={{ paddingBottom: 28 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            tintColor="#EE9B52"
+            onRefresh={handleRefresh}
+          />
+        }
+        showsVerticalScrollIndicator={false}>
         <View
           style={{
-            height: 82,
-            backgroundColor: '#FFFFFF',
-            borderBottomWidth: 1,
-            borderBottomColor: '#F1F1F1',
-            flexDirection: 'row',
             alignItems: 'center',
+            backgroundColor: '#FFFFFF',
+            borderBottomColor: '#F1F1F1',
+            borderBottomWidth: 1,
+            flexDirection: 'row',
+            height: 82,
             justifyContent: 'space-between',
             paddingHorizontal: 18,
           }}>
-          {/* Left */}
           <View
             style={{
-              flexDirection: 'row',
               alignItems: 'center',
+              flexDirection: 'row',
+              flex: 1,
             }}>
-            {/* Back */}
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => router.back()}
               style={{
-                width: 64,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: '#F7F7F7',
-                justifyContent: 'center',
                 alignItems: 'center',
+                backgroundColor: '#F7F7F7',
+                borderRadius: 22,
+                height: 44,
+                justifyContent: 'center',
+                width: 54,
               }}>
               <Ionicons
+                color="#4B5563"
                 name="arrow-back"
                 size={22}
-                color="#4B5563"
               />
             </TouchableOpacity>
 
-            {/* Title */}
             <Text
+              numberOfLines={1}
               style={{
-                marginLeft: 14,
+                color: '#111827',
+                flex: 1,
                 fontSize: 20,
                 fontWeight: '800',
-                color: '#111827',
                 letterSpacing: -0.4,
+                marginLeft: 14,
               }}>
               Reviews & Ratings
             </Text>
           </View>
 
-          {/* Menu */}
           <TouchableOpacity
             activeOpacity={0.85}
+            onPress={handleRefresh}
             style={{
-              width: 64,
-              height: 44,
-              borderRadius: 22,
-              backgroundColor: '#F7F7F7',
-              justifyContent: 'center',
               alignItems: 'center',
+              backgroundColor: '#F7F7F7',
+              borderRadius: 22,
+              height: 44,
+              justifyContent: 'center',
+              width: 54,
             }}>
-            <Ionicons
-              name="ellipsis-vertical"
-              size={20}
-              color="#4B5563"
-            />
+            {loading ? (
+              <ActivityIndicator
+                color="#EE9B52"
+                size="small"
+              />
+            ) : (
+              <Ionicons
+                color="#4B5563"
+                name="refresh"
+                size={20}
+              />
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* Rating Card */}
-        <View
-          style={{
-            marginTop: 22,
-            marginHorizontal: 18,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 22,
-            paddingHorizontal: 22,
-            paddingTop: 24,
-            paddingBottom: 20,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: 4,
-            },
-            shadowOpacity: 0.03,
-            shadowRadius: 10,
-            elevation: 2,
-          }}>
-          {/* Rating Number */}
-          <Text
-            style={{
-              textAlign: 'center',
-              fontSize: 54,
-              lineHeight: 58,
-              fontWeight: '900',
-              color: '#111111',
-              letterSpacing: -2,
-            }}>
-            4.8
-          </Text>
+        <RatingSummaryCard
+          loading={loading}
+          summary={summary}
+        />
 
-          {/* Stars */}
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'center',
-              marginTop: 10,
-            }}>
-            {[1, 2, 3, 4].map(item => (
-              <Ionicons
-                key={item}
-                name="star"
-                size={25}
-                color="#FACC15"
-                style={{
-                  marginHorizontal: 2,
-                }}
-              />
-            ))}
+        <ReviewGateCard
+          canReview={canReview}
+          content={content}
+          error={formError}
+          loading={loading && submittedRef.current}
+          onChangeContent={setContent}
+          onChangeRating={setRating}
+          onSubmit={handleSubmit}
+          rating={rating}
+          reason={summary?.reviewGateReason}
+        />
 
-            <Ionicons
-              name="star-half-outline"
-              size={25}
-              color="#FACC15"
-              style={{
-                marginHorizontal: 2,
-              }}
-            />
-          </View>
+        <View style={{ marginTop: 24 }}>
+          <ScrollView
+            contentContainerStyle={{ paddingHorizontal: 18 }}
+            horizontal
+            showsHorizontalScrollIndicator={false}>
+            {filters.map((filter) => {
+              const active = sort === filter.sort;
+              const label =
+                filter.sort === 'newest'
+                  ? `${filter.label} (${totalReviews})`
+                  : filter.label;
 
-          {/* Review Count */}
-          <Text
-            style={{
-              marginTop: 10,
-              textAlign: 'center',
-              fontSize: 15,
-              color: '#475569',
-              fontWeight: '600',
-            }}>
-            Based on 34 reviews
-          </Text>
-
-          {/* Rating Bars */}
-          <View
-            style={{
-              marginTop: 22,
-            }}>
-            {ratingData.map((item, index) => (
-              <View
-                key={index}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginBottom: 14,
-                }}>
-                {/* Number */}
-                <Text
+              return (
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  key={filter.sort}
+                  onPress={() => setSort(filter.sort)}
                   style={{
-                    width: 28,
-                    fontSize: 14,
-                    color: '#111111',
-                    fontWeight: '600',
+                    alignItems: 'center',
+                    backgroundColor: active
+                      ? '#111111'
+                      : '#FFFFFF',
+                    borderColor: active
+                      ? '#111111'
+                      : '#E5E7EB',
+                    borderRadius: 20,
+                    borderWidth: active ? 0 : 1.5,
+                    elevation: active ? 6 : 0,
+                    height: 40,
+                    justifyContent: 'center',
+                    marginRight: 12,
+                    paddingHorizontal: 18,
+                    shadowColor: '#000',
+                    shadowOffset: { height: 5, width: 0 },
+                    shadowOpacity: active ? 0.14 : 0,
+                    shadowRadius: 12,
                   }}>
-                  {item.star}
-                </Text>
-
-                {/* Bar */}
-                <View
-                  style={{
-                    flex: 1,
-                    height: 8,
-                    borderRadius: 100,
-                    backgroundColor: '#F1F2F4',
-                    marginHorizontal: 14,
-                    overflow: 'hidden',
-                  }}>
-                  <View
+                  <Text
                     style={{
-                      width: item.width,
-                      height: '100%',
-                      borderRadius: 100,
-                      backgroundColor: '#EE9B52',
-                    }}
-                  />
-                </View>
-
-                {/* Count */}
-                <Text
-                  style={{
-                    width: 36,
-                    textAlign: 'right',
-                    fontSize: 14,
-                    color: '#475569',
-                    fontWeight: '500',
-                  }}>
-                  {item.count}
-                </Text>
-              </View>
-            ))}
-          </View>
+                      color: active ? '#FFFFFF' : '#111827',
+                      fontSize: 14,
+                      fontWeight: active ? '800' : '600',
+                    }}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
 
-        {/* Verified Reviews Card */}
         <View
           style={{
             marginTop: 22,
-            marginHorizontal: 18,
-            backgroundColor: '#FFF8F1',
-            borderRadius: 22,
-            borderWidth: 1.5,
-            borderColor: '#F8DFC4',
-            paddingHorizontal: 22,
-            paddingVertical: 24,
+            paddingHorizontal: 18,
           }}>
-          {/* Lock Circle */}
-          <View
-            style={{
-              alignItems: 'center',
-            }}>
+          {loading && !reviews.length ? (
             <View
               style={{
-                width: 54,
-                height: 54,
-                borderRadius: 27,
-                backgroundColor: '#FFFFFF',
-                justifyContent: 'center',
                 alignItems: 'center',
-                shadowColor: '#000',
-                shadowOffset: {
-                  width: 0,
-                  height: 4,
-                },
-                shadowOpacity: 0.03,
-                shadowRadius: 8,
-                elevation: 2,
+                backgroundColor: '#FFFFFF',
+                borderRadius: 20,
+                paddingVertical: 34,
+              }}>
+              <ActivityIndicator
+                color="#EE9B52"
+                size="small"
+              />
+              <Text
+                style={{
+                  color: '#64748B',
+                  fontSize: 13,
+                  fontWeight: '700',
+                  marginTop: 10,
+                }}>
+                Loading community reviews
+              </Text>
+            </View>
+          ) : null}
+
+          {!loading && requestError ? (
+            <View
+              style={{
+                backgroundColor: '#FEF2F2',
+                borderColor: '#FECACA',
+                borderRadius: 18,
+                borderWidth: 1,
+                marginBottom: 18,
+                padding: 16,
+              }}>
+              <Text
+                style={{
+                  color: '#B91C1C',
+                  fontSize: 13,
+                  fontWeight: '800',
+                  lineHeight: 20,
+                }}>
+                {requestError}
+              </Text>
+            </View>
+          ) : null}
+
+          {!loading && !reviews.length ? (
+            <View
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#FFFFFF',
+                borderColor: '#F1F5F9',
+                borderRadius: 22,
+                borderWidth: 1,
+                paddingHorizontal: 22,
+                paddingVertical: 34,
               }}>
               <Ionicons
-                name="lock-closed"
-                size={23}
                 color="#EE9B52"
+                name="chatbubbles-outline"
+                size={30}
               />
+              <Text
+                style={{
+                  color: '#111827',
+                  fontSize: 17,
+                  fontWeight: '900',
+                  marginTop: 12,
+                  textAlign: 'center',
+                }}>
+                No reviews yet
+              </Text>
+              <Text
+                style={{
+                  color: '#64748B',
+                  fontSize: 13,
+                  fontWeight: '600',
+                  lineHeight: 20,
+                  marginTop: 6,
+                  textAlign: 'center',
+                }}>
+                The first verified review will appear here.
+              </Text>
             </View>
-          </View>
+          ) : null}
 
-          {/* Title */}
-          <Text
-            style={{
-              marginTop: 18,
-              textAlign: 'center',
-              fontSize: 20,
-              lineHeight: 26,
-              color: '#111827',
-              fontWeight: '800',
-              letterSpacing: -0.4,
-            }}>
-            Verified Reviews Only
-          </Text>
-
-          {/* Description */}
-          <Text
-            style={{
-              marginTop: 12,
-              textAlign: 'center',
-              fontSize: 15,
-              lineHeight: 24,
-              color: '#475569',
-              fontWeight: '500',
-            }}>
-            You can review this business after
-            sending an enquiry. We ensure all
-            reviews are from genuine community
-            members.
-          </Text>
-
-          {/* Button */}
-          <TouchableOpacity
-            activeOpacity={0.88}
-            style={{
-              marginTop: 22,
-              height: 54,
-              borderRadius: 16,
-              backgroundColor: '#EE9B52',
-              justifyContent: 'center',
-              alignItems: 'center',
-              shadowColor: '#EE9B52',
-              shadowOffset: {
-                width: 0,
-                height: 6,
-              },
-              shadowOpacity: 0.24,
-              shadowRadius: 14,
-              elevation: 6,
-            }}>
-            <Text
-              style={{
-                fontSize: 16,
-                color: '#FFFFFF',
-                fontWeight: '800',
-              }}>
-              Send an Enquiry First
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ===================================================== */}
-
-
-        {/* Reviews Filter */}
-<View
-  style={{
-    marginTop: 24,
-  }}>
-  <ScrollView
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={{
-      paddingHorizontal: 18,
-    }}>
-    {/* Active */}
-    <TouchableOpacity
-      activeOpacity={0.85}
-      style={{
-        height: 40,
-        paddingHorizontal: 18,
-        borderRadius: 20,
-        backgroundColor: '#111111',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
-        shadowColor: '#000',
-        shadowOffset: {
-          width: 0,
-          height: 5,
-        },
-        shadowOpacity: 0.14,
-        shadowRadius: 12,
-        elevation: 6,
-      }}>
-      <Text
-        style={{
-          fontSize: 14,
-          color: '#FFFFFF',
-          fontWeight: '700',
-        }}>
-        All (34)
-      </Text>
-    </TouchableOpacity>
-
-    {/* Filter */}
-    <TouchableOpacity
-      activeOpacity={0.85}
-      style={{
-        height: 40,
-        paddingHorizontal: 18,
-        borderRadius: 20,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1.5,
-        borderColor: '#E5E7EB',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 16,
-      }}>
-      <Text
-        style={{
-          fontSize: 14,
-          color: '#111827',
-          fontWeight: '500',
-        }}>
-        Highest Rated
-      </Text>
-    </TouchableOpacity>
-
-    {/* Filter */}
-    <TouchableOpacity
-      activeOpacity={0.85}
-      style={{
-        height: 40,
-        paddingHorizontal: 18,
-        borderRadius: 20,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1.5,
-        borderColor: '#E5E7EB',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-      <Text
-        style={{
-          fontSize: 14,
-          color: '#111827',
-          fontWeight: '500',
-        }}>
-        Lowest Rated
-      </Text>
-    </TouchableOpacity>
-  </ScrollView>
-</View>
-
-{/* Reviews List */}
-<View
-  style={{
-    marginTop: 22,
-    paddingHorizontal: 18,
-  }}>
-  {/* Review Card 1 */}
-  <View
-    style={{
-      backgroundColor: '#FFFFFF',
-      borderRadius: 22,
-      borderWidth: 1,
-      borderColor: '#F1F1F1',
-      padding: 18,
-      marginBottom: 18,
-      shadowColor: '#000',
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-      shadowOpacity: 0.03,
-      shadowRadius: 10,
-      elevation: 2,
-    }}>
-    {/* Top */}
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-      }}>
-      {/* User */}
-      <View
-        style={{
-          flexDirection: 'row',
-          flex: 1,
-        }}>
-        <Image
-          source={{
-            uri: 'https://randomuser.me/api/portraits/women/44.jpg',
-          }}
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: 23,
-          }}
-        />
-
-        <View
-          style={{
-            marginLeft: 12,
-            flex: 1,
-          }}>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: '800',
-              color: '#111827',
-            }}>
-            Priya M.
-          </Text>
-
-          {/* Badge */}
-          <View
-            style={{
-              alignSelf: 'flex-start',
-              marginTop: 5,
-              backgroundColor: '#FFF3E8',
-              borderRadius: 10,
-              paddingHorizontal: 9,
-              paddingVertical: 4,
-            }}>
-            <Text
-              style={{
-                fontSize: 11,
-                color: '#E67E22',
-                fontWeight: '600',
-              }}>
-              ॐ Shirdi Sai Devotee
-            </Text>
-          </View>
-
-          {/* Location */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginTop: 7,
-            }}>
-            <Ionicons
-              name="location-sharp"
-              size={13}
-              color="#475569"
+          {reviews.map((review) => (
+            <ReviewCard
+              key={review.id}
+              onVote={handleVote}
+              review={review}
             />
-
-            <Text
-              style={{
-                marginLeft: 5,
-                fontSize: 13,
-                color: '#475569',
-                fontWeight: '500',
-              }}>
-              Mumbai
-            </Text>
-          </View>
+          ))}
         </View>
-      </View>
-
-      {/* Time */}
-      <Text
-        style={{
-          fontSize: 12,
-          color: '#475569',
-          fontWeight: '500',
-        }}>
-        2 days ago
-      </Text>
-    </View>
-
-    {/* Stars */}
-    <View
-      style={{
-        flexDirection: 'row',
-        marginTop: 18,
-      }}>
-      {[1, 2, 3, 4, 5].map(item => (
-        <Ionicons
-          key={item}
-          name="star"
-          size={18}
-          color="#FACC15"
-          style={{
-            marginRight: 4,
-          }}
-        />
-      ))}
-    </View>
-
-    {/* Review */}
-    <Text
-      style={{
-        marginTop: 14,
-        fontSize: 14,
-        lineHeight: 23,
-        color: '#475569',
-        fontWeight: '500',
-      }}>
-      Exceptional service and deep
-      understanding of our spiritual
-      needs. The arrangement was flawless,
-      and the entire team handled
-      everything with utmost devotion and
-      care. Highly recommended for any
-      community event.
-    </Text>
-
-    {/* Divider */}
-    <View
-      style={{
-        height: 1,
-        backgroundColor: '#F3F4F6',
-        marginVertical: 18,
-      }}
-    />
-
-    {/* Bottom */}
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}>
-      <Text
-        style={{
-          fontSize: 13,
-          color: '#475569',
-          fontWeight: '700',
-        }}>
-        Was this helpful?
-      </Text>
-
-      <View
-        style={{
-          flexDirection: 'row',
-        }}>
-        {/* Like */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={{
-            height: 34,
-            paddingHorizontal: 13,
-            borderRadius: 17,
-            backgroundColor: '#F8FAFC',
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginRight: 12,
-          }}>
-          <Ionicons
-            name="thumbs-up-outline"
-            size={15}
-            color="#475569"
-          />
-
-          <Text
-            style={{
-              marginLeft: 8,
-              fontSize: 13,
-              color: '#475569',
-              fontWeight: '500',
-            }}>
-            12
-          </Text>
-        </TouchableOpacity>
-
-        {/* Dislike */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 17,
-            backgroundColor: '#F8FAFC',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Ionicons
-            name="thumbs-down-outline"
-            size={15}
-            color="#475569"
-          />
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-
-  {/* Review Card 2 */}
-  <View
-    style={{
-      backgroundColor: '#FFFFFF',
-      borderRadius: 22,
-      borderWidth: 1,
-      borderColor: '#F1F1F1',
-      padding: 18,
-      shadowColor: '#000',
-      shadowOffset: {
-        width: 0,
-        height: 4,
-      },
-      shadowOpacity: 0.03,
-      shadowRadius: 10,
-      elevation: 2,
-    }}>
-    {/* Top */}
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-      }}>
-      <View
-        style={{
-          flexDirection: 'row',
-          flex: 1,
-        }}>
-        <Image
-          source={{
-            uri: 'https://randomuser.me/api/portraits/men/32.jpg',
-          }}
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: 23,
-          }}
-        />
-
-        <View
-          style={{
-            marginLeft: 12,
-            flex: 1,
-          }}>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: '800',
-              color: '#111827',
-            }}>
-            Rahul Sharma
-          </Text>
-
-          {/* Badge */}
-          <View
-            style={{
-              alignSelf: 'flex-start',
-              marginTop: 5,
-              backgroundColor: '#F3F4F6',
-              borderRadius: 10,
-              paddingHorizontal: 9,
-              paddingVertical: 4,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-            <Ionicons
-              name="people"
-              size={12}
-              color="#475569"
-            />
-
-            <Text
-              style={{
-                marginLeft: 6,
-                fontSize: 11,
-                color: '#475569',
-                fontWeight: '600',
-              }}>
-              Member since '22
-            </Text>
-          </View>
-
-          {/* Location */}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginTop: 7,
-            }}>
-            <Ionicons
-              name="location-sharp"
-              size={13}
-              color="#475569"
-            />
-
-            <Text
-              style={{
-                marginLeft: 5,
-                fontSize: 13,
-                color: '#475569',
-                fontWeight: '500',
-              }}>
-              Delhi
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Time */}
-      <Text
-        style={{
-          fontSize: 12,
-          color: '#475569',
-          fontWeight: '500',
-        }}>
-        1 week ago
-      </Text>
-    </View>
-
-    {/* Stars */}
-    <View
-      style={{
-        flexDirection: 'row',
-        marginTop: 18,
-      }}>
-      {[1, 2, 3, 4].map(item => (
-        <Ionicons
-          key={item}
-          name="star"
-          size={18}
-          color="#FACC15"
-          style={{
-            marginRight: 4,
-          }}
-        />
-      ))}
-
-      <Ionicons
-        name="star-outline"
-        size={18}
-        color="#D1D5DB"
-      />
-    </View>
-
-    {/* Review */}
-    <Text
-      style={{
-        marginTop: 14,
-        fontSize: 14,
-        lineHeight: 23,
-        color: '#475569',
-        fontWeight: '500',
-      }}>
-      Very professional approach. The
-      quality of materials provided for the
-      puja was authentic and pure. Only
-      giving 4 stars because delivery was
-      slightly delayed, but otherwise a
-      great experience.
-    </Text>
-
-    {/* Divider */}
-    <View
-      style={{
-        height: 1,
-        backgroundColor: '#F3F4F6',
-        marginVertical: 18,
-      }}
-    />
-
-    {/* Bottom */}
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}>
-      <Text
-        style={{
-          fontSize: 13,
-          color: '#475569',
-          fontWeight: '700',
-        }}>
-        Was this helpful?
-      </Text>
-
-      <View
-        style={{
-          flexDirection: 'row',
-        }}>
-        {/* Like */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={{
-            height: 34,
-            paddingHorizontal: 13,
-            borderRadius: 17,
-            backgroundColor: '#FFF3E8',
-            borderWidth: 1,
-            borderColor: '#FED7AA',
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginRight: 12,
-          }}>
-          <Ionicons
-            name="thumbs-up"
-            size={15}
-            color="#F97316"
-          />
-
-          <Text
-            style={{
-              marginLeft: 8,
-              fontSize: 13,
-              color: '#F97316',
-              fontWeight: '700',
-            }}>
-            8
-          </Text>
-        </TouchableOpacity>
-
-        {/* Dislike */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={{
-            height: 34,
-            paddingHorizontal: 13,
-            borderRadius: 17,
-            backgroundColor: '#F8FAFC',
-            flexDirection: 'row',
-            alignItems: 'center',
-          }}>
-          <Ionicons
-            name="thumbs-down-outline"
-            size={15}
-            color="#475569"
-          />
-
-          <Text
-            style={{
-              marginLeft: 8,
-              fontSize: 13,
-              color: '#475569',
-              fontWeight: '500',
-            }}>
-            1
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-
-  {/* Loader */}
-  <View
-    style={{
-      alignItems: 'center',
-      marginTop: 28,
-      marginBottom: 10,
-    }}>
-    <Ionicons
-      name="reload"
-      size={24}
-      color="#EE9B52"
-    />
-  </View>
-</View>
       </ScrollView>
     </SafeAreaView>
   );

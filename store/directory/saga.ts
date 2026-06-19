@@ -831,6 +831,25 @@ function* handleVoteReview(
       action.payload.payload
     );
 
+    if (action.payload.listingId) {
+      const response = yield call(
+        apiFetchDirectoryReviews,
+        action.payload.listingId,
+        {
+          limit: 20,
+          offset: 0,
+          sort: "newest",
+        }
+      );
+
+      yield put(
+        fetchDirectoryReviewsSuccess(
+          action.payload.listingId,
+          normalizeReviewsResult(response)
+        )
+      );
+    }
+
     yield put(voteDirectoryReviewSuccess());
   } catch (error) {
     yield put(

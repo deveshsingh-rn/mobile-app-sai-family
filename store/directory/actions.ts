@@ -712,10 +712,11 @@ export const submitDirectoryReviewFailure = (
 
 export const voteDirectoryReviewRequest = (
   id: string,
-  payload: DirectoryReviewVotePayload
+  payload: DirectoryReviewVotePayload,
+  listingId?: string
 ) =>
   ({
-    payload: { id, payload },
+    payload: { id, listingId, payload },
     type: DIRECTORY_ACTIONS.REVIEW_VOTE_REQUEST,
   } as const);
 

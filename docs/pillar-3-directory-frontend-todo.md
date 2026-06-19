@@ -135,11 +135,11 @@ Status: Completed
 
 ### Phase 6: Reviews
 
-- [ ] Fetch review summary and list.
-- [ ] Wire filters: all, highest, lowest.
-- [ ] Show `canReview` and `reviewGateReason`.
-- [ ] Create review when backend allows.
-- [ ] Wire helpful/not helpful vote.
+- [x] Fetch review summary and list.
+- [x] Wire filters: all, highest, lowest.
+- [x] Show `canReview` and `reviewGateReason`.
+- [x] Create review when backend allows.
+- [x] Wire helpful/not helpful vote.
 - [ ] Add edit/delete own review later if product exposes it.
 
 ### Phase 7: Saved And My Listings
