@@ -36,6 +36,7 @@ export const initialDirectoryState: DirectoryState = {
   searchLoading: false,
   searchPagination: null,
   searchResults: [],
+  similarListings: [],
   suggestions: [],
   suggestionsLoading: false,
   uploadedMedia: null,
@@ -250,6 +251,8 @@ export function directoryReducer(
 
     case DIRECTORY_ACTIONS.FETCH_REVIEWS_REQUEST:
     case DIRECTORY_ACTIONS.SUBMIT_REVIEW_REQUEST:
+    case DIRECTORY_ACTIONS.REVIEW_UPDATE_REQUEST:
+    case DIRECTORY_ACTIONS.REVIEW_DELETE_REQUEST:
       return {
         ...state,
         error: null,
@@ -296,6 +299,8 @@ export function directoryReducer(
           action.payload?.recentReviews || [],
         reviewSummary:
           action.payload?.reviewSummary || null,
+        similarListings:
+          action.payload?.similarListings || [],
       };
 
     case DIRECTORY_ACTIONS.SEARCH_SUCCESS: {
@@ -469,6 +474,8 @@ export function directoryReducer(
 
     case DIRECTORY_ACTIONS.FETCH_REVIEWS_SUCCESS:
     case DIRECTORY_ACTIONS.SUBMIT_REVIEW_SUCCESS:
+    case DIRECTORY_ACTIONS.REVIEW_UPDATE_SUCCESS:
+    case DIRECTORY_ACTIONS.REVIEW_DELETE_SUCCESS:
       return {
         ...state,
         reviewsByListingId: {
@@ -483,6 +490,7 @@ export function directoryReducer(
 
     case DIRECTORY_ACTIONS.VIEW_SUCCESS:
     case DIRECTORY_ACTIONS.REVIEW_VOTE_SUCCESS:
+    case DIRECTORY_ACTIONS.REVIEW_VOTE_CLEAR_SUCCESS:
       return state;
 
     case DIRECTORY_ACTIONS.FETCH_CATEGORIES_FAILURE:
@@ -513,7 +521,10 @@ export function directoryReducer(
     case DIRECTORY_ACTIONS.REPORT_FAILURE:
     case DIRECTORY_ACTIONS.FETCH_REVIEWS_FAILURE:
     case DIRECTORY_ACTIONS.SUBMIT_REVIEW_FAILURE:
+    case DIRECTORY_ACTIONS.REVIEW_UPDATE_FAILURE:
+    case DIRECTORY_ACTIONS.REVIEW_DELETE_FAILURE:
     case DIRECTORY_ACTIONS.REVIEW_VOTE_FAILURE:
+    case DIRECTORY_ACTIONS.REVIEW_VOTE_CLEAR_FAILURE:
       return {
         ...state,
         bookmarksLoading: false,

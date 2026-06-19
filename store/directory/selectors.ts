@@ -44,6 +44,10 @@ export const selectDirectoryDetailRecentReviews = (
   state: RootState
 ) => selectDirectoryState(state).recentReviews;
 
+export const selectDirectoryDetailSimilarListings = (
+  state: RootState
+) => selectDirectoryState(state).similarListings;
+
 export const selectDirectorySearchResults = (
   state: RootState
 ) => selectDirectoryState(state).searchResults;
@@ -51,6 +55,10 @@ export const selectDirectorySearchResults = (
 export const selectDirectorySearchLoading = (
   state: RootState
 ) => selectDirectoryState(state).searchLoading;
+
+export const selectDirectorySearchPagination = (
+  state: RootState
+) => selectDirectoryState(state).searchPagination;
 
 export const selectDirectorySearchSuggestions = (
   state: RootState

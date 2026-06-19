@@ -9,10 +9,12 @@ import {
   apiAddDirectoryRecentSearch,
   apiBookmarkDirectoryListing,
   apiClearDirectoryRecentSearches,
+  apiClearDirectoryReviewVote,
   apiContactDirectoryListing,
   apiCreateDirectoryDraft,
   apiCreateDirectoryListing,
   apiCreateDirectoryReview,
+  apiDeleteDirectoryReview,
   apiDeleteDirectoryListing,
   apiFetchDirectoryBookmarks,
   apiFetchDirectoryCategories,
@@ -33,6 +35,7 @@ import {
   apiUnrecommendDirectoryListing,
   apiUpdateDirectoryDraft,
   apiUpdateDirectoryListing,
+  apiUpdateDirectoryReview,
   apiUploadDirectoryMedia,
   apiVoteDirectoryReview,
 } from "@/services/directory";
@@ -44,6 +47,8 @@ import {
   bookmarkDirectoryListingSuccess,
   clearDirectoryRecentSearchesFailure,
   clearDirectoryRecentSearchesSuccess,
+  clearDirectoryReviewVoteFailure,
+  clearDirectoryReviewVoteSuccess,
   contactDirectoryListingFailure,
   contactDirectoryListingSuccess,
   createDirectoryDraftFailure,
@@ -52,6 +57,8 @@ import {
   createDirectoryListingSuccess,
   deleteDirectoryListingFailure,
   deleteDirectoryListingSuccess,
+  deleteDirectoryReviewFailure,
+  deleteDirectoryReviewSuccess,
   fetchDirectoryBookmarksFailure,
   fetchDirectoryBookmarksSuccess,
   fetchDirectoryCategoriesFailure,
@@ -90,6 +97,8 @@ import {
   updateDirectoryDraftSuccess,
   updateDirectoryListingFailure,
   updateDirectoryListingSuccess,
+  updateDirectoryReviewFailure,
+  updateDirectoryReviewSuccess,
   uploadDirectoryMediaFailure,
   uploadDirectoryMediaSuccess,
   viewDirectoryListingFailure,
@@ -863,6 +872,129 @@ function* handleVoteReview(
   }
 }
 
+function* handleClearReviewVote(
+  action: any
+): Generator<any, void, any> {
+  try {
+    yield call(
+      apiClearDirectoryReviewVote,
+      action.payload.id
+    );
+
+    if (action.payload.listingId) {
+      const response = yield call(
+        apiFetchDirectoryReviews,
+        action.payload.listingId,
+        {
+          limit: 20,
+          offset: 0,
+          sort: "newest",
+        }
+      );
+
+      yield put(
+        fetchDirectoryReviewsSuccess(
+          action.payload.listingId,
+          normalizeReviewsResult(response)
+        )
+      );
+    }
+
+    yield put(clearDirectoryReviewVoteSuccess());
+  } catch (error) {
+    yield put(
+      clearDirectoryReviewVoteFailure(
+        getErrorMessage(
+          error,
+          "Failed to clear review vote."
+        )
+      )
+    );
+  }
+}
+
+function* refetchReviews(
+  listingId: string
+): Generator<any, DirectoryReviewsResult, any> {
+  const response = yield call(
+    apiFetchDirectoryReviews,
+    listingId,
+    {
+      limit: 20,
+      offset: 0,
+      sort: "newest",
+    }
+  );
+
+  return normalizeReviewsResult(response);
+}
+
+function* handleUpdateReview(
+  action: any
+): Generator<any, void, any> {
+  try {
+    yield call(
+      apiUpdateDirectoryReview,
+      action.payload.id,
+      action.payload.payload
+    );
+
+    if (action.payload.listingId) {
+      const result = yield call(
+        refetchReviews,
+        action.payload.listingId
+      );
+
+      yield put(
+        updateDirectoryReviewSuccess(
+          action.payload.listingId,
+          result
+        )
+      );
+    }
+  } catch (error) {
+    yield put(
+      updateDirectoryReviewFailure(
+        getErrorMessage(
+          error,
+          "Failed to update review."
+        )
+      )
+    );
+  }
+}
+
+function* handleDeleteReview(
+  action: any
+): Generator<any, void, any> {
+  try {
+    yield call(apiDeleteDirectoryReview, action.payload.id);
+
+    if (action.payload.listingId) {
+      const result = yield call(
+        refetchReviews,
+        action.payload.listingId
+      );
+
+      yield put(
+        deleteDirectoryReviewSuccess(
+          action.payload.listingId,
+          result
+        )
+      );
+    }
+  } catch (error) {
+    yield put(
+      deleteDirectoryReviewFailure(
+        getErrorMessage(
+          error,
+          "Failed to delete review."
+        )
+      )
+    );
+  }
+}
+
 export function* directorySaga() {
   yield takeLatest(
     DIRECTORY_ACTIONS.FETCH_CATEGORIES_REQUEST,
@@ -979,5 +1111,17 @@ export function* directorySaga() {
   yield takeEvery(
     DIRECTORY_ACTIONS.REVIEW_VOTE_REQUEST,
     handleVoteReview
+  );
+  yield takeEvery(
+    DIRECTORY_ACTIONS.REVIEW_VOTE_CLEAR_REQUEST,
+    handleClearReviewVote
+  );
+  yield takeLatest(
+    DIRECTORY_ACTIONS.REVIEW_UPDATE_REQUEST,
+    handleUpdateReview
+  );
+  yield takeLatest(
+    DIRECTORY_ACTIONS.REVIEW_DELETE_REQUEST,
+    handleDeleteReview
   );
 }

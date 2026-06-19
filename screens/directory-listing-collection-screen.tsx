@@ -430,40 +430,77 @@ function ListingCard({
             )}
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity
-            activeOpacity={0.86}
-            disabled={pending || item.canDelete === false}
-            onPress={() => onDelete(item)}
-            style={{
-              alignItems: 'center',
-              backgroundColor:
-                item.canDelete === false
-                  ? '#F3F4F6'
-                  : '#FEF2F2',
-              borderRadius: 16,
-              flexDirection: 'row',
-              height: 44,
-              justifyContent: 'center',
-              marginLeft: 10,
-              paddingHorizontal: 16,
-            }}>
-            {pending ? (
-              <ActivityIndicator
-                color="#DC2626"
-                size="small"
-              />
-            ) : (
+          <>
+            <TouchableOpacity
+              activeOpacity={0.86}
+              disabled={item.canEdit === false}
+              onPress={() =>
+                router.push({
+                  pathname: '/directory/create-listing',
+                  params: {
+                    id: item.id,
+                  },
+                })
+              }
+              style={{
+                alignItems: 'center',
+                backgroundColor:
+                  item.canEdit === false
+                    ? '#F3F4F6'
+                    : '#EFF6FF',
+                borderRadius: 16,
+                flexDirection: 'row',
+                height: 44,
+                justifyContent: 'center',
+                marginLeft: 10,
+                paddingHorizontal: 16,
+              }}>
               <Ionicons
                 color={
-                  item.canDelete === false
+                  item.canEdit === false
                     ? '#9CA3AF'
-                    : '#DC2626'
+                    : '#2563EB'
                 }
-                name="trash-outline"
+                name="create-outline"
                 size={17}
               />
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.86}
+              disabled={pending || item.canDelete === false}
+              onPress={() => onDelete(item)}
+              style={{
+                alignItems: 'center',
+                backgroundColor:
+                  item.canDelete === false
+                    ? '#F3F4F6'
+                    : '#FEF2F2',
+                borderRadius: 16,
+                flexDirection: 'row',
+                height: 44,
+                justifyContent: 'center',
+                marginLeft: 10,
+                paddingHorizontal: 16,
+              }}>
+              {pending ? (
+                <ActivityIndicator
+                  color="#DC2626"
+                  size="small"
+                />
+              ) : (
+                <Ionicons
+                  color={
+                    item.canDelete === false
+                      ? '#9CA3AF'
+                      : '#DC2626'
+                  }
+                  name="trash-outline"
+                  size={17}
+                />
+              )}
+            </TouchableOpacity>
+          </>
         )}
       </View>
     </TouchableOpacity>

@@ -34,6 +34,7 @@ import {
   recommendDirectoryListingRequest,
   reportDirectoryListingRequest,
   selectDirectoryDetail,
+  selectDirectoryDetailSimilarListings,
   selectDirectoryDetailReviewSummary,
   selectDirectoryError,
   selectDirectoryListingsLoading,
@@ -182,6 +183,9 @@ const BusinessDetailsScreen = () => {
   const listing = useAppSelector(selectDirectoryDetail);
   const reviewSummary = useAppSelector(
     selectDirectoryDetailReviewSummary
+  );
+  const similarListings = useAppSelector(
+    selectDirectoryDetailSimilarListings
   );
   const loading = useAppSelector(selectDirectoryListingsLoading);
   const error = useAppSelector(selectDirectoryError);
@@ -1020,6 +1024,123 @@ const BusinessDetailsScreen = () => {
               </View>
             </View>
           </View>
+
+          {similarListings.length > 0 ? (
+            <View
+              style={{
+                borderTopColor: '#F5F5F5',
+                borderTopWidth: 10,
+                marginTop: 30,
+                paddingHorizontal: 14,
+                paddingTop: 26,
+              }}>
+              <Text
+                style={{
+                  color: '#111827',
+                  fontSize: 20,
+                  fontWeight: '900',
+                }}>
+                Similar Community Listings
+              </Text>
+
+              <ScrollView
+                contentContainerStyle={{
+                  paddingTop: 16,
+                }}
+                horizontal
+                showsHorizontalScrollIndicator={false}>
+                {similarListings.map((item) => {
+                  const image = listingLogo(item);
+
+                  return (
+                    <TouchableOpacity
+                      activeOpacity={0.88}
+                      key={item.id}
+                      onPress={() =>
+                        router.push({
+                          pathname:
+                            '/directory/business-details',
+                          params: {
+                            id: item.id,
+                          },
+                        })
+                      }
+                      style={{
+                        backgroundColor: '#FFF7ED',
+                        borderColor: '#FED7AA',
+                        borderRadius: 22,
+                        borderWidth: 1,
+                        marginRight: 14,
+                        padding: 14,
+                        width: 220,
+                      }}>
+                      <View
+                        style={{
+                          alignItems: 'center',
+                          flexDirection: 'row',
+                        }}>
+                        {image ? (
+                          <Image
+                            source={{ uri: image }}
+                            style={{
+                              borderRadius: 18,
+                              height: 52,
+                              width: 52,
+                            }}
+                          />
+                        ) : (
+                          <View
+                            style={{
+                              alignItems: 'center',
+                              backgroundColor: '#FFFFFF',
+                              borderRadius: 18,
+                              height: 52,
+                              justifyContent: 'center',
+                              width: 52,
+                            }}>
+                            <MaterialCommunityIcons
+                              color="#F97316"
+                              name="storefront"
+                              size={25}
+                            />
+                          </View>
+                        )}
+
+                        <View
+                          style={{
+                            flex: 1,
+                            marginLeft: 12,
+                          }}>
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              color: '#111827',
+                              fontSize: 15,
+                              fontWeight: '900',
+                            }}>
+                            {item.businessName}
+                          </Text>
+
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              color: '#6B7280',
+                              fontSize: 12,
+                              fontWeight: '700',
+                              marginTop: 5,
+                            }}>
+                            {item.categoryName ||
+                              item.city ||
+                              'Community listing'}
+                          </Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          ) : null}
 
           <View
             style={{

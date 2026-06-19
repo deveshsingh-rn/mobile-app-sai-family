@@ -25,8 +25,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
+  clearDirectoryReviewVoteRequest,
+  deleteDirectoryReviewRequest,
   fetchDirectoryReviewsRequest,
   submitDirectoryReviewRequest,
+  updateDirectoryReviewRequest,
   voteDirectoryReviewRequest,
 } from '@/store/directory/actions';
 import {
@@ -505,15 +508,30 @@ function ReviewGateCard({
 }
 
 function ReviewCard({
+  onDelete,
+  onUpdate,
   onVote,
   review,
 }: {
+  onDelete: (reviewId: string) => void;
+  onUpdate: (
+    reviewId: string,
+    payload: { content: string; rating: number }
+  ) => void;
   onVote: (
     reviewId: string,
-    vote: 'helpful' | 'not_helpful'
+    vote: 'helpful' | 'not_helpful',
+    currentVote?: 'helpful' | 'not_helpful' | null
   ) => void;
   review: DirectoryReview;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draftContent, setDraftContent] = useState(
+    review.content
+  );
+  const [draftRating, setDraftRating] = useState(
+    review.rating
+  );
   const name = review.reviewerName || 'Sai Devotee';
   const badge =
     review.reviewerBadge ||
@@ -649,19 +667,211 @@ function ReviewCard({
       </View>
 
       <View style={{ marginTop: 18 }}>
-        <RatingStars rating={review.rating} />
+        {editing ? (
+          <View style={{ flexDirection: 'row' }}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                key={star}
+                onPress={() => setDraftRating(star)}
+                style={{ marginRight: 6 }}>
+                <Ionicons
+                  color={
+                    star <= draftRating
+                      ? '#FACC15'
+                      : '#CBD5E1'
+                  }
+                  name={
+                    star <= draftRating
+                      ? 'star'
+                      : 'star-outline'
+                  }
+                  size={22}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <RatingStars rating={review.rating} />
+        )}
       </View>
 
-      <Text
-        style={{
-          color: '#475569',
-          fontSize: 14,
-          fontWeight: '500',
-          lineHeight: 23,
-          marginTop: 14,
-        }}>
-        {review.content}
-      </Text>
+      {editing ? (
+        <>
+          <TextInput
+            multiline
+            onChangeText={setDraftContent}
+            style={{
+              backgroundColor: '#F8FAFC',
+              borderColor: '#E2E8F0',
+              borderRadius: 16,
+              borderWidth: 1,
+              color: '#111827',
+              fontSize: 14,
+              fontWeight: '600',
+              lineHeight: 22,
+              marginTop: 14,
+              minHeight: 96,
+              padding: 12,
+              textAlignVertical: 'top',
+            }}
+            value={draftContent}
+          />
+
+          <View
+            style={{
+              flexDirection: 'row',
+              marginTop: 12,
+            }}>
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={() => {
+                const validation =
+                  validateDirectoryReviewPayload({
+                    content: draftContent,
+                    rating: draftRating,
+                  });
+
+                if (!validation.isValid) {
+                  Alert.alert(
+                    'Check review',
+                    validation.errors.content ||
+                      validation.errors.rating ||
+                      'Please check your review.'
+                  );
+                  return;
+                }
+
+                onUpdate(review.id, {
+                  content: draftContent.trim(),
+                  rating: draftRating,
+                });
+                setEditing(false);
+              }}
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#EE9B52',
+                borderRadius: 14,
+                flex: 1,
+                height: 42,
+                justifyContent: 'center',
+              }}>
+              <Text
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 13,
+                  fontWeight: '900',
+                }}>
+                Save Changes
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={() => setEditing(false)}
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#F1F5F9',
+                borderRadius: 14,
+                height: 42,
+                justifyContent: 'center',
+                marginLeft: 10,
+                paddingHorizontal: 16,
+              }}>
+              <Text
+                style={{
+                  color: '#475569',
+                  fontSize: 13,
+                  fontWeight: '900',
+                }}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : (
+        <Text
+          style={{
+            color: '#475569',
+            fontSize: 14,
+            fontWeight: '500',
+            lineHeight: 23,
+            marginTop: 14,
+          }}>
+          {review.content}
+        </Text>
+      )}
+
+      {!editing && (review.canEdit || review.canDelete) ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            marginTop: 14,
+          }}>
+          {review.canEdit ? (
+            <TouchableOpacity
+              activeOpacity={0.82}
+              onPress={() => {
+                setDraftContent(review.content);
+                setDraftRating(review.rating);
+                setEditing(true);
+              }}
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#EFF6FF',
+                borderRadius: 14,
+                flexDirection: 'row',
+                height: 34,
+                paddingHorizontal: 12,
+              }}>
+              <Ionicons
+                color="#2563EB"
+                name="create-outline"
+                size={14}
+              />
+              <Text
+                style={{
+                  color: '#2563EB',
+                  fontSize: 12,
+                  fontWeight: '900',
+                  marginLeft: 6,
+                }}>
+                Edit
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {review.canDelete ? (
+            <TouchableOpacity
+              activeOpacity={0.82}
+              onPress={() => onDelete(review.id)}
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#FEF2F2',
+                borderRadius: 14,
+                flexDirection: 'row',
+                height: 34,
+                marginLeft: review.canEdit ? 10 : 0,
+                paddingHorizontal: 12,
+              }}>
+              <Ionicons
+                color="#DC2626"
+                name="trash-outline"
+                size={14}
+              />
+              <Text
+                style={{
+                  color: '#DC2626',
+                  fontSize: 12,
+                  fontWeight: '900',
+                  marginLeft: 6,
+                }}>
+                Delete
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      ) : null}
 
       <View
         style={{
@@ -689,7 +899,9 @@ function ReviewCard({
         <View style={{ flexDirection: 'row' }}>
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => onVote(review.id, 'helpful')}
+            onPress={() =>
+              onVote(review.id, 'helpful', review.myVote)
+            }
             style={{
               alignItems: 'center',
               backgroundColor:
@@ -739,7 +951,13 @@ function ReviewCard({
 
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => onVote(review.id, 'not_helpful')}
+            onPress={() =>
+              onVote(
+                review.id,
+                'not_helpful',
+                review.myVote
+              )
+            }
             style={{
               alignItems: 'center',
               backgroundColor:
@@ -896,14 +1114,67 @@ const ReviewsScreen = () => {
 
   const handleVote = (
     reviewId: string,
-    vote: 'helpful' | 'not_helpful'
+    vote: 'helpful' | 'not_helpful',
+    currentVote?: 'helpful' | 'not_helpful' | null
+  ) => {
+    if (!listingId) {
+      return;
+    }
+
+    if (currentVote === vote) {
+      dispatch(
+        clearDirectoryReviewVoteRequest(reviewId, listingId)
+      );
+      return;
+    }
+
+    dispatch(
+      voteDirectoryReviewRequest(reviewId, { vote }, listingId)
+    );
+  };
+
+  const handleUpdateReview = (
+    reviewId: string,
+    payload: { content: string; rating: number }
   ) => {
     if (!listingId) {
       return;
     }
 
     dispatch(
-      voteDirectoryReviewRequest(reviewId, { vote }, listingId)
+      updateDirectoryReviewRequest(
+        reviewId,
+        payload,
+        listingId
+      )
+    );
+  };
+
+  const handleDeleteReview = (reviewId: string) => {
+    if (!listingId) {
+      return;
+    }
+
+    Alert.alert(
+      'Delete review?',
+      'This review will be removed from the listing.',
+      [
+        {
+          style: 'cancel',
+          text: 'Cancel',
+        },
+        {
+          onPress: () =>
+            dispatch(
+              deleteDirectoryReviewRequest(
+                reviewId,
+                listingId
+              )
+            ),
+          style: 'destructive',
+          text: 'Delete',
+        },
+      ]
     );
   };
 
@@ -1209,6 +1480,8 @@ const ReviewsScreen = () => {
           {reviews.map((review) => (
             <ReviewCard
               key={review.id}
+              onDelete={handleDeleteReview}
+              onUpdate={handleUpdateReview}
               onVote={handleVote}
               review={review}
             />

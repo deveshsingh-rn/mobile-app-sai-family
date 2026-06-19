@@ -35,6 +35,7 @@ import {
   selectDirectoryRecentSearches,
   selectDirectoryRecentSearchesLoading,
   selectDirectorySearchLoading,
+  selectDirectorySearchPagination,
   selectDirectorySearchResults,
   selectDirectorySearchSuggestions,
 } from '@/store/directory';
@@ -322,6 +323,9 @@ const SearchScreen = () => {
   const results = useAppSelector(
     selectDirectorySearchResults
   );
+  const searchPagination = useAppSelector(
+    selectDirectorySearchPagination
+  );
   const searchLoading = useAppSelector(
     selectDirectorySearchLoading
   );
@@ -399,6 +403,27 @@ const SearchScreen = () => {
     },
     [dispatch, query]
   );
+
+  const loadMoreResults = useCallback(() => {
+    if (
+      !query ||
+      !searchPagination?.hasMore ||
+      searchLoading
+    ) {
+      return;
+    }
+
+    dispatch(
+      searchDirectoryRequest({
+        limit: searchPagination.limit || 20,
+        offset:
+          searchPagination.nextOffset ??
+          (searchPagination.offset || 0) +
+            (searchPagination.limit || 20),
+        q: query,
+      })
+    );
+  }, [dispatch, query, searchLoading, searchPagination]);
 
   const openCategory = (category: DirectoryCategory) => {
     router.push({
@@ -572,6 +597,39 @@ const SearchScreen = () => {
                 />
               ))}
             </View>
+
+            {searchPagination?.hasMore ? (
+              <TouchableOpacity
+                activeOpacity={0.86}
+                disabled={searchLoading}
+                onPress={loadMoreResults}
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#ECECEC',
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  height: 54,
+                  justifyContent: 'center',
+                  marginTop: 6,
+                }}>
+                {searchLoading ? (
+                  <ActivityIndicator
+                    color="#F97316"
+                    size="small"
+                  />
+                ) : (
+                  <Text
+                    style={{
+                      color: '#4B5563',
+                      fontSize: 15,
+                      fontWeight: '900',
+                    }}>
+                    Load more results
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ) : null}
 
             {!searchLoading && results.length === 0 ? (
               <View

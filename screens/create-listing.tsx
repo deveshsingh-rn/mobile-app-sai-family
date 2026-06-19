@@ -22,20 +22,26 @@ import {
   MaterialCommunityIcons,
   Feather,
 } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import {
+  router,
+  useLocalSearchParams,
+} from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   createDirectoryDraftRequest,
   createDirectoryListingRequest,
+  fetchDirectoryDetailRequest,
   fetchDirectoryCategoriesRequest,
   selectCurrentDirectoryDraft,
   selectDirectoryCategories,
+  selectDirectoryDetail,
   selectDirectoryError,
   selectDirectoryUploadedMedia,
   selectIsCreatingDirectoryListing,
   selectIsSavingDirectoryDraft,
   selectIsUploadingDirectoryMedia,
+  updateDirectoryListingRequest,
   updateDirectoryDraftRequest,
   uploadDirectoryMediaRequest,
 } from '@/store/directory';
@@ -56,7 +62,13 @@ type SelectedImage = {
 
 const CreateListingScreen = () => {
   const dispatch = useAppDispatch();
+  const { id } = useLocalSearchParams<{
+    id?: string;
+  }>();
+  const listingId = Array.isArray(id) ? id[0] : id;
+  const isEditMode = Boolean(listingId);
   const categories = useAppSelector(selectDirectoryCategories);
+  const detail = useAppSelector(selectDirectoryDetail);
   const draft = useAppSelector(selectCurrentDirectoryDraft);
   const draftSaving = useAppSelector(selectIsSavingDirectoryDraft);
   const creating = useAppSelector(selectIsCreatingDirectoryListing);
@@ -82,10 +94,54 @@ const CreateListingScreen = () => {
     useState<DirectoryCreateListingPayload | null>(null);
   const [submitStartedAt, setSubmitStartedAt] = useState<number | null>(null);
   const [submitObservedBusy, setSubmitObservedBusy] = useState(false);
+  const [hydratedListingId, setHydratedListingId] =
+    useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchDirectoryCategoriesRequest({ includeCounts: true }));
   }, [dispatch]);
+
+  useEffect(() => {
+    if (listingId) {
+      dispatch(fetchDirectoryDetailRequest(listingId));
+    }
+  }, [dispatch, listingId]);
+
+  useEffect(() => {
+    if (
+      !isEditMode ||
+      !listingId ||
+      !detail ||
+      detail.id !== listingId ||
+      hydratedListingId === listingId
+    ) {
+      return;
+    }
+
+    setBusinessName(detail.businessName || '');
+    setTagline(detail.tagline || '');
+    setSelectedCategoryId(detail.categoryId || '');
+    setDescription(detail.description || '');
+    setExperience(
+      detail.yearsOfExperience
+        ? String(detail.yearsOfExperience)
+        : ''
+    );
+    setHomeService(Boolean(detail.homeServiceAvailable));
+    setPhone(detail.phoneNumber || '');
+    setWhatsapp(detail.whatsappNumber || '');
+    setAddress(detail.address || '');
+    setCity(detail.city || '');
+    setRecommended(
+      detail.communityRecommendationEnabled !== false
+    );
+    setHydratedListingId(listingId);
+  }, [
+    detail,
+    hydratedListingId,
+    isEditMode,
+    listingId,
+  ]);
 
   useEffect(() => {
     if (!selectedCategoryId && categories.length) {
@@ -153,6 +209,10 @@ const CreateListingScreen = () => {
   );
 
   const saveDraft = useCallback(() => {
+    if (isEditMode) {
+      return;
+    }
+
     const payload = toPayload(true);
 
     if (!Object.keys(payload).length || draftSaving) {
@@ -164,7 +224,7 @@ const CreateListingScreen = () => {
     } else {
       dispatch(createDirectoryDraftRequest(payload));
     }
-  }, [dispatch, draft?.id, draftSaving, toPayload]);
+  }, [dispatch, draft?.id, draftSaving, isEditMode, toPayload]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -332,20 +392,31 @@ const CreateListingScreen = () => {
       return;
     }
 
-    dispatch(
-      createDirectoryListingRequest({
-        ...pendingSubmitPayload,
-        bannerUrl: urls[0],
-        galleryUrls: urls,
-        logoUrl: urls[0],
-      })
-    );
+    const mediaPayload = {
+      ...pendingSubmitPayload,
+      bannerUrl: urls[0],
+      galleryUrls: urls,
+      logoUrl: urls[0],
+    };
+
+    if (isEditMode && listingId) {
+      dispatch(
+        updateDirectoryListingRequest(
+          listingId,
+          mediaPayload
+        )
+      );
+    } else {
+      dispatch(createDirectoryListingRequest(mediaPayload));
+    }
+
     setPendingSubmitPayload(null);
-    setSubmitStartedAt(null);
   }, [
     dispatch,
     extractUploadedUrls,
     images.length,
+    isEditMode,
+    listingId,
     pendingSubmitPayload,
     submitStartedAt,
     uploadingMedia,
@@ -368,8 +439,10 @@ const CreateListingScreen = () => {
 
     if (!error) {
       Alert.alert(
-        'Listing submitted',
-        'Your listing has been submitted for review.',
+        isEditMode ? 'Listing updated' : 'Listing submitted',
+        isEditMode
+          ? 'Your listing changes have been saved.'
+          : 'Your listing has been submitted for review.',
         [
           {
             text: 'OK',
@@ -383,6 +456,7 @@ const CreateListingScreen = () => {
   }, [
     creating,
     error,
+    isEditMode,
     pendingSubmitPayload,
     submitObservedBusy,
     submitStartedAt,
@@ -414,6 +488,11 @@ const CreateListingScreen = () => {
 
       setPendingSubmitPayload(payload);
       dispatch(uploadDirectoryMediaRequest({ files }));
+      return;
+    }
+
+    if (isEditMode && listingId) {
+      dispatch(updateDirectoryListingRequest(listingId, payload));
       return;
     }
 
@@ -479,7 +558,7 @@ const CreateListingScreen = () => {
               fontWeight: '800',
               textAlign: 'center',
             }}>
-            Create Listing
+            {isEditMode ? 'Edit Listing' : 'Create Listing'}
           </Text>
           <Text
             style={{
@@ -489,7 +568,13 @@ const CreateListingScreen = () => {
               marginTop: 4,
               textAlign: 'center',
             }}>
-            {draftSaving ? 'Saving draft...' : draft?.id ? 'Draft saved' : 'Auto-save enabled'}
+            {isEditMode
+              ? 'Update your community listing'
+              : draftSaving
+              ? 'Saving draft...'
+              : draft?.id
+              ? 'Draft saved'
+              : 'Auto-save enabled'}
           </Text>
         </View>
       </View>

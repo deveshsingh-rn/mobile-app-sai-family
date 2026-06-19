@@ -32,7 +32,7 @@ Directory routes: `app/directory/*`
 ### Listing Management
 
 - [x] `POST /api/directory/listings`
-- [ ] `PATCH /api/directory/listings/:id`
+- [x] `PATCH /api/directory/listings/:id`
 - [x] `DELETE /api/directory/listings/:id`
 - [x] `GET /api/users/me/directory/listings`
 - [x] `POST /api/directory/listing-drafts`
@@ -56,10 +56,10 @@ Directory routes: `app/directory/*`
 
 - [x] `GET /api/directory/listings/:id/reviews`
 - [x] `POST /api/directory/listings/:id/reviews`
-- [ ] `PATCH /api/directory/reviews/:id`
-- [ ] `DELETE /api/directory/reviews/:id`
+- [x] `PATCH /api/directory/reviews/:id`
+- [x] `DELETE /api/directory/reviews/:id`
 - [x] `POST /api/directory/reviews/:id/vote`
-- [ ] `DELETE /api/directory/reviews/:id/vote`
+- [x] `DELETE /api/directory/reviews/:id/vote`
 
 ## Frontend Phases
 
@@ -100,7 +100,7 @@ Status: Completed
 - [x] Replace devotees near you.
 - [x] Add pull-to-refresh.
 - [x] Keep empty states when backend returns empty.
-- [ ] Remove static fallback only after API is stable.
+- [x] Remove static fallback only after API is stable.
 
 ### Phase 3: Category And Search
 
@@ -110,7 +110,7 @@ Status: Completed
 - [x] Wire clear recent searches.
 - [x] Wire popular categories.
 - [x] Wire trending listings.
-- [ ] Add pagination.
+- [x] Add pagination.
 
 ### Phase 4: Business Detail
 
@@ -123,7 +123,7 @@ Status: Completed
 - [x] Wire report listing CTA.
 - [x] Wire recent work gallery.
 - [x] Wire owner summary.
-- [ ] Wire similar listings if exposed.
+- [x] Wire similar listings if exposed.
 
 ### Phase 5: Create Listing
 
@@ -141,14 +141,14 @@ Status: Completed
 - [x] Show `canReview` and `reviewGateReason`.
 - [x] Create review when backend allows.
 - [x] Wire helpful/not helpful vote.
-- [ ] Add edit/delete own review later if product exposes it.
+- [x] Add edit/delete own review later if product exposes it.
 
 ### Phase 7: Saved And My Listings
 
 - [x] Create saved listings route/screen if needed.
 - [x] Create my listings route/screen if needed.
 - [x] Wire owner listing statuses: pending, published, rejected, suspended.
-- [ ] Add edit owner action after create listing supports edit-mode hydration.
+- [x] Add edit owner action after create listing supports edit-mode hydration.
 - [x] Add delete owner action.
 
 ### Phase 8: Hardcoded Data Removal
@@ -175,8 +175,8 @@ Audit notes:
 - [ ] Bookmark/recommend/contact/share/view/report work.
 - [ ] Reviews load and vote works.
 - [ ] Empty, loading, error states look polished.
-- [ ] `npx tsc --noEmit` passes.
-- [ ] `npm run lint` passes.
+- [x] `npx tsc --noEmit` passes.
+- [x] `npm run lint` passes.
 
 ## Immediate Next Step
 

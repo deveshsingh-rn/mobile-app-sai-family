@@ -123,6 +123,8 @@ export type DirectoryReviewSummary = {
 };
 
 export type DirectoryReview = {
+  canDelete?: boolean;
+  canEdit?: boolean;
   content: string;
   createdAt?: string;
   helpfulCount?: number;
@@ -328,6 +330,7 @@ export type DirectoryState = {
   searchLoading: boolean;
   searchPagination: DirectoryPagination | null;
   searchResults: DirectoryListing[];
+  similarListings: DirectoryListing[];
   suggestions: DirectorySearchSuggestion[];
   suggestionsLoading: boolean;
   uploadedMedia: DirectoryUploadMediaResult | null;
@@ -399,6 +402,24 @@ export const DIRECTORY_ACTIONS = {
   REPORT_REQUEST: "directory/REPORT_REQUEST",
   REPORT_SUCCESS: "directory/REPORT_SUCCESS",
   REVIEW_VOTE_FAILURE: "directory/REVIEW_VOTE_FAILURE",
+  REVIEW_VOTE_CLEAR_FAILURE:
+    "directory/REVIEW_VOTE_CLEAR_FAILURE",
+  REVIEW_VOTE_CLEAR_REQUEST:
+    "directory/REVIEW_VOTE_CLEAR_REQUEST",
+  REVIEW_VOTE_CLEAR_SUCCESS:
+    "directory/REVIEW_VOTE_CLEAR_SUCCESS",
+  REVIEW_DELETE_FAILURE:
+    "directory/REVIEW_DELETE_FAILURE",
+  REVIEW_DELETE_REQUEST:
+    "directory/REVIEW_DELETE_REQUEST",
+  REVIEW_DELETE_SUCCESS:
+    "directory/REVIEW_DELETE_SUCCESS",
+  REVIEW_UPDATE_FAILURE:
+    "directory/REVIEW_UPDATE_FAILURE",
+  REVIEW_UPDATE_REQUEST:
+    "directory/REVIEW_UPDATE_REQUEST",
+  REVIEW_UPDATE_SUCCESS:
+    "directory/REVIEW_UPDATE_SUCCESS",
   REVIEW_VOTE_REQUEST: "directory/REVIEW_VOTE_REQUEST",
   REVIEW_VOTE_SUCCESS: "directory/REVIEW_VOTE_SUCCESS",
   SEARCH_FAILURE: "directory/SEARCH_FAILURE",

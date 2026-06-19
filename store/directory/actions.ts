@@ -732,3 +732,78 @@ export const voteDirectoryReviewFailure = (
     payload,
     type: DIRECTORY_ACTIONS.REVIEW_VOTE_FAILURE,
   } as const);
+
+export const clearDirectoryReviewVoteRequest = (
+  id: string,
+  listingId?: string
+) =>
+  ({
+    payload: { id, listingId },
+    type: DIRECTORY_ACTIONS.REVIEW_VOTE_CLEAR_REQUEST,
+  } as const);
+
+export const clearDirectoryReviewVoteSuccess = () =>
+  ({
+    type: DIRECTORY_ACTIONS.REVIEW_VOTE_CLEAR_SUCCESS,
+  } as const);
+
+export const clearDirectoryReviewVoteFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: DIRECTORY_ACTIONS.REVIEW_VOTE_CLEAR_FAILURE,
+  } as const);
+
+export const updateDirectoryReviewRequest = (
+  id: string,
+  payload: Partial<DirectoryReviewPayload>,
+  listingId?: string
+) =>
+  ({
+    payload: { id, listingId, payload },
+    type: DIRECTORY_ACTIONS.REVIEW_UPDATE_REQUEST,
+  } as const);
+
+export const updateDirectoryReviewSuccess = (
+  id: string,
+  payload: DirectoryReviewsResult
+) =>
+  ({
+    payload: { id, result: payload },
+    type: DIRECTORY_ACTIONS.REVIEW_UPDATE_SUCCESS,
+  } as const);
+
+export const updateDirectoryReviewFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: DIRECTORY_ACTIONS.REVIEW_UPDATE_FAILURE,
+  } as const);
+
+export const deleteDirectoryReviewRequest = (
+  id: string,
+  listingId?: string
+) =>
+  ({
+    payload: { id, listingId },
+    type: DIRECTORY_ACTIONS.REVIEW_DELETE_REQUEST,
+  } as const);
+
+export const deleteDirectoryReviewSuccess = (
+  id: string,
+  payload: DirectoryReviewsResult
+) =>
+  ({
+    payload: { id, result: payload },
+    type: DIRECTORY_ACTIONS.REVIEW_DELETE_SUCCESS,
+  } as const);
+
+export const deleteDirectoryReviewFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: DIRECTORY_ACTIONS.REVIEW_DELETE_FAILURE,
+  } as const);

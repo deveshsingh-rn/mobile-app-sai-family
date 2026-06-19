@@ -389,6 +389,22 @@ export default function BusinessCategoryScreen() {
     dispatch(fetchDirectoryListingsRequest(requestParams));
   }, [dispatch, requestParams]);
 
+  const loadMoreListings = useCallback(() => {
+    if (!pagination?.hasMore || loading) {
+      return;
+    }
+
+    dispatch(
+      fetchDirectoryListingsRequest({
+        ...requestParams,
+        offset:
+          pagination.nextOffset ??
+          (pagination.offset || 0) +
+            (pagination.limit || 20),
+      })
+    );
+  }, [dispatch, loading, pagination, requestParams]);
+
   useEffect(() => {
     loadListings();
   }, [loadListings]);
@@ -530,6 +546,39 @@ export default function BusinessCategoryScreen() {
             item={item}
           />
         ))}
+
+        {pagination?.hasMore ? (
+          <TouchableOpacity
+            activeOpacity={0.86}
+            disabled={loading}
+            onPress={loadMoreListings}
+            style={{
+              alignItems: 'center',
+              backgroundColor: '#FFFFFF',
+              borderColor: '#E7DDCD',
+              borderRadius: 20,
+              borderWidth: 1.5,
+              height: 58,
+              justifyContent: 'center',
+              marginTop: 4,
+            }}>
+            {loading ? (
+              <ActivityIndicator
+                color="#F97316"
+                size="small"
+              />
+            ) : (
+              <Text
+                style={{
+                  color: '#4B5563',
+                  fontSize: 16,
+                  fontWeight: '900',
+                }}>
+                Load more listings
+              </Text>
+            )}
+          </TouchableOpacity>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
