@@ -80,6 +80,21 @@ export const selectIsUploadingDirectoryMedia = (
   state: RootState
 ) => selectDirectoryState(state).uploadingMedia;
 
+export const selectIsSavingDirectoryDraft = (
+  state: RootState
+) => selectDirectoryState(state).draftSaving;
+
+export const selectCurrentDirectoryDraft = (
+  state: RootState
+) => {
+  const directoryState = selectDirectoryState(state);
+  const draftId = directoryState.currentDraftId;
+
+  return draftId
+    ? directoryState.draftsById[draftId] || null
+    : null;
+};
+
 export const selectMyDirectoryListings = (
   state: RootState
 ) => selectDirectoryState(state).myListings;

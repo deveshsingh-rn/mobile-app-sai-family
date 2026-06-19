@@ -126,12 +126,12 @@ Status: Completed
 
 ### Phase 5: Create Listing
 
-- [ ] Validate multi-step form locally.
-- [ ] Upload images through `POST /api/media/upload` with `context=directory`.
-- [ ] Submit listing JSON with `logoUrl`, `bannerUrl`, `galleryUrls`.
-- [ ] Add draft create/update autosave.
-- [ ] Add draft publish flow.
-- [ ] Add success screen or navigate to My Listings/detail.
+- [x] Validate multi-step form locally.
+- [x] Upload images through `POST /api/media/upload` with `context=directory`.
+- [x] Submit listing JSON with `logoUrl`, `bannerUrl`, `galleryUrls`.
+- [x] Add draft create/update autosave.
+- [ ] Add draft publish flow if product wants publish-from-draft instead of direct submit.
+- [x] Add success screen or navigate to My Listings/detail.
 
 ### Phase 6: Reviews
 
