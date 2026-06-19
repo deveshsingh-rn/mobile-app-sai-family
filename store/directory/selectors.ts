@@ -36,6 +36,14 @@ export const selectDirectoryDetail = (
   state: RootState
 ) => selectDirectoryState(state).detail;
 
+export const selectDirectoryDetailReviewSummary = (
+  state: RootState
+) => selectDirectoryState(state).reviewSummary;
+
+export const selectDirectoryDetailRecentReviews = (
+  state: RootState
+) => selectDirectoryState(state).recentReviews;
+
 export const selectDirectorySearchResults = (
   state: RootState
 ) => selectDirectoryState(state).searchResults;

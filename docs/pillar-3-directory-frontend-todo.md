@@ -114,14 +114,14 @@ Status: Completed
 
 ### Phase 4: Business Detail
 
-- [ ] Fetch listing detail by ID.
-- [ ] Track view on open.
-- [ ] Wire bookmark button.
-- [ ] Wire share button.
-- [ ] Wire call/WhatsApp/enquiry contact tracking.
-- [ ] Wire recommend CTA.
-- [ ] Wire recent work gallery.
-- [ ] Wire owner summary.
+- [x] Fetch listing detail by ID.
+- [x] Track view on open.
+- [x] Wire bookmark button.
+- [x] Wire share button.
+- [x] Wire call/WhatsApp/enquiry contact tracking.
+- [x] Wire recommend CTA.
+- [x] Wire recent work gallery.
+- [x] Wire owner summary.
 - [ ] Wire similar listings if exposed.
 
 ### Phase 5: Create Listing
