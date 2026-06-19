@@ -16,49 +16,49 @@ Directory routes: `app/directory/*`
 
 ### Public Discovery
 
-- [ ] `GET /api/directory/categories`
-- [ ] `GET /api/directory/home`
-- [ ] `GET /api/directory/listings`
-- [ ] `GET /api/directory/listings/:id`
-- [ ] `GET /api/directory/search`
-- [ ] `GET /api/directory/search/suggestions`
+- [x] `GET /api/directory/categories`
+- [x] `GET /api/directory/home`
+- [x] `GET /api/directory/listings`
+- [x] `GET /api/directory/listings/:id`
+- [x] `GET /api/directory/search`
+- [x] `GET /api/directory/search/suggestions`
 
 ### User Search
 
-- [ ] `GET /api/users/me/directory/recent-searches`
-- [ ] `POST /api/users/me/directory/recent-searches`
-- [ ] `DELETE /api/users/me/directory/recent-searches`
+- [x] `GET /api/users/me/directory/recent-searches`
+- [x] `POST /api/users/me/directory/recent-searches`
+- [x] `DELETE /api/users/me/directory/recent-searches`
 
 ### Listing Management
 
-- [ ] `POST /api/directory/listings`
+- [x] `POST /api/directory/listings`
 - [ ] `PATCH /api/directory/listings/:id`
-- [ ] `DELETE /api/directory/listings/:id`
-- [ ] `GET /api/users/me/directory/listings`
-- [ ] `POST /api/directory/listing-drafts`
-- [ ] `PATCH /api/directory/listing-drafts/:id`
+- [x] `DELETE /api/directory/listings/:id`
+- [x] `GET /api/users/me/directory/listings`
+- [x] `POST /api/directory/listing-drafts`
+- [x] `PATCH /api/directory/listing-drafts/:id`
 - [ ] `POST /api/directory/listing-drafts/:id/publish`
-- [ ] `POST /api/media/upload` with `context=directory`
+- [x] `POST /api/media/upload` with `context=directory`
 
 ### Trust And Actions
 
-- [ ] `POST /api/directory/listings/:id/bookmark`
-- [ ] `DELETE /api/directory/listings/:id/bookmark`
-- [ ] `GET /api/users/me/directory/bookmarks`
-- [ ] `POST /api/directory/listings/:id/recommend`
-- [ ] `DELETE /api/directory/listings/:id/recommend`
-- [ ] `POST /api/directory/listings/:id/contact`
-- [ ] `POST /api/directory/listings/:id/share`
-- [ ] `POST /api/directory/listings/:id/view`
+- [x] `POST /api/directory/listings/:id/bookmark`
+- [x] `DELETE /api/directory/listings/:id/bookmark`
+- [x] `GET /api/users/me/directory/bookmarks`
+- [x] `POST /api/directory/listings/:id/recommend`
+- [x] `DELETE /api/directory/listings/:id/recommend`
+- [x] `POST /api/directory/listings/:id/contact`
+- [x] `POST /api/directory/listings/:id/share`
+- [x] `POST /api/directory/listings/:id/view`
 - [ ] `POST /api/directory/listings/:id/report`
 
 ### Reviews
 
-- [ ] `GET /api/directory/listings/:id/reviews`
-- [ ] `POST /api/directory/listings/:id/reviews`
+- [x] `GET /api/directory/listings/:id/reviews`
+- [x] `POST /api/directory/listings/:id/reviews`
 - [ ] `PATCH /api/directory/reviews/:id`
 - [ ] `DELETE /api/directory/reviews/:id`
-- [ ] `POST /api/directory/reviews/:id/vote`
+- [x] `POST /api/directory/reviews/:id/vote`
 - [ ] `DELETE /api/directory/reviews/:id/vote`
 
 ## Frontend Phases
@@ -152,10 +152,16 @@ Status: Completed
 
 ### Phase 8: Hardcoded Data Removal
 
-- [ ] Audit static arrays in Directory files.
-- [ ] Replace static arrays with selectors.
-- [ ] Keep only intentional empty states.
-- [ ] Verify no production user flow depends on sample data.
+- [x] Audit static arrays in Directory files.
+- [x] Replace static arrays with selectors.
+- [x] Keep only intentional empty states.
+- [x] Verify no production user flow depends on sample data.
+
+Audit notes:
+
+- No sample business, category, review, or listing arrays are currently driving Directory production UI.
+- Remaining constants are UI-only: icon/color mappings, form step labels, filter labels, contact action labels, and empty-state copy.
+- Directory data flows now come from Redux selectors backed by Directory APIs, with intentional fallbacks only for missing fields or empty states.
 
 ### Phase 9: Manual QA
 
