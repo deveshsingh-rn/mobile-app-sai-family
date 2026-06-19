@@ -50,7 +50,7 @@ Directory routes: `app/directory/*`
 - [x] `POST /api/directory/listings/:id/contact`
 - [x] `POST /api/directory/listings/:id/share`
 - [x] `POST /api/directory/listings/:id/view`
-- [ ] `POST /api/directory/listings/:id/report`
+- [x] `POST /api/directory/listings/:id/report`
 
 ### Reviews
 
@@ -120,6 +120,7 @@ Status: Completed
 - [x] Wire share button.
 - [x] Wire call/WhatsApp/enquiry contact tracking.
 - [x] Wire recommend CTA.
+- [x] Wire report listing CTA.
 - [x] Wire recent work gallery.
 - [x] Wire owner summary.
 - [ ] Wire similar listings if exposed.

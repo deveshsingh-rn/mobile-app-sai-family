@@ -5,6 +5,7 @@ import React, {
 } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Linking,
   ScrollView,
@@ -31,6 +32,7 @@ import {
   contactDirectoryListingRequest,
   fetchDirectoryDetailRequest,
   recommendDirectoryListingRequest,
+  reportDirectoryListingRequest,
   selectDirectoryDetail,
   selectDirectoryDetailReviewSummary,
   selectDirectoryError,
@@ -287,6 +289,33 @@ const BusinessDetailsScreen = () => {
     });
   };
 
+  const handleReport = () => {
+    if (!listingId || !listing || actionPending) {
+      return;
+    }
+
+    Alert.alert(
+      'Report listing?',
+      'Send this listing to the Sai Family team for review if the details look incorrect or unsafe.',
+      [
+        {
+          style: 'cancel',
+          text: 'Cancel',
+        },
+        {
+          onPress: () =>
+            dispatch(
+              reportDirectoryListingRequest(listingId, {
+                reason: 'incorrect_information',
+              })
+            ),
+          style: 'destructive',
+          text: 'Report',
+        },
+      ]
+    );
+  };
+
   const handleContact = async (
     channel: DirectoryContactPayload['channel']
   ) => {
@@ -495,6 +524,26 @@ const BusinessDetailsScreen = () => {
                 <Ionicons
                   name="share-social-outline"
                   size={21}
+                  color="#374151"
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                disabled={actionPending}
+                onPress={handleReport}
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(255,255,255,0.92)',
+                  borderRadius: 21,
+                  height: 42,
+                  justifyContent: 'center',
+                  marginLeft: 10,
+                  width: 42,
+                }}>
+                <Ionicons
+                  name="flag-outline"
+                  size={20}
                   color="#374151"
                 />
               </TouchableOpacity>
