@@ -104,7 +104,7 @@ Status: Completed
 
 ### Phase 3: Category And Search
 
-- [ ] Wire category screen to `GET /api/directory/listings`.
+- [x] Wire category screen to `GET /api/directory/listings`.
 - [ ] Wire search input to search and suggestions.
 - [ ] Wire recent searches.
 - [ ] Wire clear recent searches.
