@@ -144,10 +144,11 @@ Status: Completed
 
 ### Phase 7: Saved And My Listings
 
-- [ ] Create saved listings route/screen if needed.
-- [ ] Create my listings route/screen if needed.
-- [ ] Wire owner listing statuses: pending, published, rejected, suspended.
-- [ ] Add edit/delete owner actions.
+- [x] Create saved listings route/screen if needed.
+- [x] Create my listings route/screen if needed.
+- [x] Wire owner listing statuses: pending, published, rejected, suspended.
+- [ ] Add edit owner action after create listing supports edit-mode hydration.
+- [x] Add delete owner action.
 
 ### Phase 8: Hardcoded Data Removal
 

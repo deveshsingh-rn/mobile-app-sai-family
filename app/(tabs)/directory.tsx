@@ -913,6 +913,78 @@ export default function DirectoryScreen() {
               />
             </TouchableOpacity>
           </TouchableOpacity>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              marginTop: 18,
+            }}>
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={() =>
+                router.push('/directory/saved-listings')
+              }
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#FFF7ED',
+                borderColor: '#FED7AA',
+                borderRadius: 22,
+                borderWidth: 1,
+                flex: 1,
+                flexDirection: 'row',
+                height: 58,
+                justifyContent: 'center',
+                marginRight: 10,
+              }}>
+              <Ionicons
+                color="#F97316"
+                name="bookmark-outline"
+                size={20}
+              />
+              <Text
+                style={{
+                  color: '#9A3412',
+                  fontSize: 15,
+                  fontWeight: '900',
+                  marginLeft: 8,
+                }}>
+                Saved
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={() =>
+                router.push('/directory/my-listings')
+              }
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#FFFFFF',
+                borderColor: '#E7DDCD',
+                borderRadius: 22,
+                borderWidth: 1,
+                flex: 1,
+                flexDirection: 'row',
+                height: 58,
+                justifyContent: 'center',
+                marginLeft: 10,
+              }}>
+              <MaterialCommunityIcons
+                color="#F97316"
+                name="store-edit-outline"
+                size={21}
+              />
+              <Text
+                style={{
+                  color: '#374151',
+                  fontSize: 15,
+                  fontWeight: '900',
+                  marginLeft: 8,
+                }}>
+                My Listings
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View

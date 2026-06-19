@@ -12,6 +12,8 @@ export default function DirectoryLayout() {
       <Stack.Screen name="business-search" />
       <Stack.Screen name="category" />
       <Stack.Screen name="create-listing" />
+      <Stack.Screen name="my-listings" />
+      <Stack.Screen name="saved-listings" />
     </Stack>
   );
 }
