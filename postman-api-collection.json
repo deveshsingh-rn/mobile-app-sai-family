@@ -1070,6 +1070,812 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "GET /api/admin/directory/reviews",
+          "description": "Admin review moderation queue. Query: status, rating, listingId, q, limit, offset.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin reviews response ok\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "const first = (json.reviews || [])[0];",
+                  "if (first && first.id) pm.environment.set(\"directoryReviewId\", first.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/reviews?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/admin/directory/analytics",
+          "description": "Admin Directory dashboard metrics. Query: days, default 30.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/analytics?days=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/admin/directory/audit-logs",
+          "description": "Admin Directory audit trail. Query: actorId, entity, entityId, action, limit, offset.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/audit-logs?limit=50&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "entity",
+                  "value": "business_listing",
+                  "disabled": true
+                },
+                {
+                  "key": "action",
+                  "value": "DIRECTORY_LISTING_APPROVED",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/categories",
+          "description": "Admin creates a Directory category. Body: name required; optional slug, description, icon, iconFamily, color, sortOrder, isActive.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Directory category created\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "if (json.category && json.category.id) pm.environment.set(\"directoryCategoryId\", json.category.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin Test Category\",\n  \"slug\": \"admin-test-category\",\n  \"description\": \"Temporary category for admin testing.\",\n  \"icon\": \"briefcase-business\",\n  \"iconFamily\": \"lucide\",\n  \"color\": \"#B86B00\",\n  \"sortOrder\": 999,\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/admin/directory/categories/:id",
+          "description": "Admin updates a Directory category. Partial JSON body allowed.",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin Test Category Updated\",\n  \"description\": \"Updated temporary category for admin testing.\",\n  \"sortOrder\": 998\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/categories/{{directoryCategoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "categories",
+                "{{directoryCategoryId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/admin/directory/categories/:id",
+          "description": "Admin deactivates a Directory category. This is a soft delete: isActive becomes false, preserving listings/drafts references.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/categories/{{directoryCategoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "categories",
+                "{{directoryCategoryId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/reviews/:id/approve",
+          "description": "Admin publishes/approves a Directory review.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Review approved after moderation.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/reviews/{{directoryReviewId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "reviews",
+                "{{directoryReviewId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/reviews/:id/reject",
+          "description": "Admin rejects a Directory review.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Rejected by admin moderation.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/reviews/{{directoryReviewId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "reviews",
+                "{{directoryReviewId}}",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/reviews/:id/hide",
+          "description": "Admin hides a Directory review.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Hidden due to policy issue.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/reviews/{{directoryReviewId}}/hide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "reviews",
+                "{{directoryReviewId}}",
+                "hide"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/reviews/:id/restore",
+          "description": "Admin restores a Directory review back to published.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Restored by admin.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/reviews/{{directoryReviewId}}/restore",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "reviews",
+                "{{directoryReviewId}}",
+                "restore"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/admin/directory/reports",
+          "description": "Admin listing report queue. Query: status=pending|resolved|dismissed, reason, listingId, limit, offset.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin reports response ok\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "const first = (json.reports || [])[0];",
+                  "if (first && first.id) pm.environment.set(\"directoryReportId\", first.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/reports?status=pending&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "reports"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/reports/:id/resolve",
+          "description": "Admin resolves or dismisses a Directory listing report. status must be resolved or dismissed.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"resolved\",\n  \"note\": \"Checked and resolved by admin.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/reports/{{directoryReportId}}/resolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "reports",
+                "{{directoryReportId}}",
+                "resolve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/admin/directory/listings",
+          "description": "Admin Directory listing moderation queue. Filters: status, verificationStatus, categoryId, q, city, limit, offset.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin directory listings response ok\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "const first = (json.listings || [])[0];",
+                  "if (first && first.id) pm.environment.set(\"directoryListingId\", first.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/listings?status=pending_review&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "listings"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending_review"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/listings/:id/approve",
+          "description": "Admin approves a pending Directory listing and publishes it.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Approved from Postman.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/listings/{{directoryListingId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/listings/:id/reject",
+          "description": "Admin rejects a Directory listing.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Incomplete business details\",\n  \"note\": \"Please add complete contact and address details.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/listings/{{directoryListingId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/listings/:id/suspend",
+          "description": "Admin suspends a published Directory listing.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Policy issue under review\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/listings/{{directoryListingId}}/suspend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "suspend"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/listings/:id/restore",
+          "description": "Admin restores listing to pending_review.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Restored for another review.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/listings/{{directoryListingId}}/restore",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "restore"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/listings/:id/verify",
+          "description": "Admin updates Directory listing verification status, usually to verified.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verificationStatus\": \"verified\",\n  \"note\": \"Verified from admin review.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/listings/{{directoryListingId}}/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/directory/listings/:id/unverify",
+          "description": "Admin removes Directory listing verification.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Verification removed.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/directory/listings/{{directoryListingId}}/unverify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "unverify"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -2533,6 +3339,44 @@
           "response": []
         },
         {
+          "name": "POST /api/notifications/directory-listing-status (Admin)",
+          "description": "Admin only. Manually trigger a Directory listing owner notification. status enum: submitted, approved, rejected, verified, suspended, report_resolved.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listingId\": \"{{directoryListingId}}\",\n  \"status\": \"approved\",\n  \"message\": \"Your Directory listing status notification test was sent.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/directory-listing-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "directory-listing-status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "DELETE /api/events/:id - Cancel Event",
           "description": "Owner/admin only. Soft cancels the event. Response: {\"success\":true,\"id\":\"...\",\"status\":\"cancelled\"}.",
           "request": {
@@ -2552,6 +3396,1166 @@
                 "api",
                 "events",
                 "{{eventId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Directory API",
+      "item": [
+        {
+          "name": "GET /api/directory/categories",
+          "description": "List active Directory categories. Optional includeCounts=true.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/categories?includeCounts=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "includeCounts",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/directory/home - Directory Home",
+          "description": "Directory home aggregation for frontend home screen. Query: city, lat, lng, limit. Returns categories, featuredListings, nearbyListings, popularCategories, trendingListings, and stats.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/home?city=Pune&lat=18.5204&lng=73.8567&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "home"
+              ],
+              "query": [
+                {
+                  "key": "city",
+                  "value": "Pune"
+                },
+                {
+                  "key": "lat",
+                  "value": "18.5204"
+                },
+                {
+                  "key": "lng",
+                  "value": "73.8567"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/directory/search - Search Listings",
+          "description": "Search published Directory listings. Query: q required; optional categoryId, city, lat, lng, radiusKm, limit, offset. Returns results/listings, suggestions, and pagination.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Search response ok\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "const first = (json.results || json.listings || [])[0];",
+                  "if (first && first.id) {",
+                  "  pm.environment.set(\"directoryListingId\", first.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/search?q=service&city=Pune&lat=18.5204&lng=73.8567&radiusKm=25&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "service"
+                },
+                {
+                  "key": "city",
+                  "value": "Pune"
+                },
+                {
+                  "key": "lat",
+                  "value": "18.5204"
+                },
+                {
+                  "key": "lng",
+                  "value": "73.8567"
+                },
+                {
+                  "key": "radiusKm",
+                  "value": "25"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/directory/search/suggestions - Search Suggestions",
+          "description": "Autocomplete suggestions for listings, categories, and tags. Query: q required; optional limit.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/search/suggestions?q=serv&limit=8",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "search",
+                "suggestions"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "serv"
+                },
+                {
+                  "key": "limit",
+                  "value": "8"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/directory/recent-searches",
+          "description": "Authenticated user recent Directory searches. Header: x-user-id required. Query: limit optional.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/directory/recent-searches?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "directory",
+                "recent-searches"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/users/me/directory/recent-searches",
+          "description": "Save or refresh a recent Directory search for the authenticated user. Body: query required; optional city, categoryId.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"service\",\n  \"city\": \"Pune\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/directory/recent-searches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "directory",
+                "recent-searches"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/users/me/directory/recent-searches",
+          "description": "Clear authenticated user's Directory recent searches.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/directory/recent-searches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "directory",
+                "recent-searches"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/directory/listings/:id/report",
+          "description": "Authenticated user reports a published business listing. Owner cannot report own listing. reason enum: spam, inappropriate, scam, duplicate, wrong_info, other. details optional min 5 max 1000.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"wrong_info\",\n  \"details\": \"The phone number or business information looks incorrect.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "report"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/directory/listings",
+          "description": "Public Directory listing discovery. Supports q/category/city/location/radius/sort/pagination filters.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Directory listings response ok\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "const first = (json.listings || [])[0];",
+                  "if (first && first.id) pm.environment.set(\"directoryListingId\", first.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings?q=service&city=Pune&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "service"
+                },
+                {
+                  "key": "city",
+                  "value": "Pune"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/directory/listings/:id",
+          "description": "Directory listing detail with reviewSummary, recentReviews, similarListings, gallery, owner and current-user flags.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/directory/listings",
+          "description": "Create Directory listing as pending_review. JSON metadata; upload images first via /api/media/upload and pass logoUrl/bannerUrl/galleryUrls.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Directory listing created\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "if (json.listing && json.listing.id) pm.environment.set(\"directoryListingId\", json.listing.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessName\": \"Sai Family Test Service\",\n  \"categoryId\": \"directory_category_education\",\n  \"tagline\": \"Trusted service from Sai community\",\n  \"description\": \"This is a test business listing created from Postman for Sai Directory testing.\",\n  \"yearsOfExperience\": 5,\n  \"homeServiceAvailable\": true,\n  \"communityRecommendationEnabled\": true,\n  \"phoneNumber\": \"+919876543210\",\n  \"whatsappNumber\": \"+919876543210\",\n  \"email\": \"directory-test@example.com\",\n  \"websiteUrl\": \"https://example.com\",\n  \"address\": \"MG Road, Pune\",\n  \"city\": \"Pune\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"pincode\": \"411001\",\n  \"latitude\": 18.5204,\n  \"longitude\": 73.8567,\n  \"specialties\": [\"Tutoring\"],\n  \"tags\": [\"education\", \"service\"],\n  \"serviceAreas\": [\"Pune\"],\n  \"bannerUrl\": \"{{directoryUploadedMediaUrl}}\",\n  \"galleryUrls\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/directory/listings/:id",
+          "description": "Update own Directory listing. Owner/admin only. Partial JSON body.",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tagline\": \"Updated trusted service from Sai community\",\n  \"homeServiceAvailable\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/directory/listings/:id",
+          "description": "Archive own Directory listing. Owner/admin only.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/directory/listing-drafts",
+          "description": "Create partial Directory listing draft.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Directory draft created\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "if (json.draft && json.draft.id) pm.environment.set(\"directoryDraftId\", json.draft.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessName\": \"Sai Draft Business\",\n  \"categoryId\": \"directory_category_education\",\n  \"city\": \"Pune\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listing-drafts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listing-drafts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/directory/listing-drafts/:id",
+          "description": "Update partial Directory listing draft.",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Draft description with enough content for publish validation later.\",\n  \"phoneNumber\": \"+919876543210\",\n  \"address\": \"MG Road, Pune\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listing-drafts/{{directoryDraftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listing-drafts",
+                "{{directoryDraftId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/directory/listing-drafts/:id/publish",
+          "description": "Publish Directory draft into pending_review listing after full validation.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.listing && json.listing.id) pm.environment.set(\"directoryListingId\", json.listing.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listing-drafts/{{directoryDraftId}}/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listing-drafts",
+                "{{directoryDraftId}}",
+                "publish"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/directory/listings",
+          "description": "My Directory listings dashboard.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/directory/listings?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "directory",
+                "listings"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/directory/listings/:id/bookmark",
+          "description": "Bookmark listing.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}/bookmark",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "bookmark"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/directory/listings/:id/bookmark",
+          "description": "Remove listing bookmark.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}/bookmark",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "bookmark"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/directory/bookmarks",
+          "description": "My bookmarked Directory listings.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/directory/bookmarks?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "directory",
+                "bookmarks"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/directory/listings/:id/recommend",
+          "description": "Recommend listing. Owner cannot recommend own listing.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}/recommend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "recommend"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/directory/listings/:id/recommend",
+          "description": "Remove recommendation.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}/recommend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "recommend"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/directory/listings/:id/contact",
+          "description": "Create contact/enquiry record. Rate limited.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"channel\": \"in_app\",\n  \"message\": \"I would like to know more about your service.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}/contact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "contact"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/directory/listings/:id/share",
+          "description": "Track listing share.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"channel\": \"whatsapp\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}/share",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "share"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/directory/listings/:id/view",
+          "description": "Track listing view.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}/view",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "view"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/directory/listings/:id/reviews",
+          "description": "List listing reviews with summary.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}/reviews?sort=newest&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "reviews"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "newest"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/directory/listings/:id/reviews",
+          "description": "Create review after contact/enquiry. Rate limited.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.review && json.review.id) pm.environment.set(\"directoryReviewId\", json.review.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"content\": \"This is a helpful review with enough content for validation.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/listings/{{directoryListingId}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "listings",
+                "{{directoryListingId}}",
+                "reviews"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/directory/reviews/:id",
+          "description": "Update own review.",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"content\": \"Updated review content with enough length for validation.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/reviews/{{directoryReviewId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "reviews",
+                "{{directoryReviewId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/directory/reviews/:id",
+          "description": "Soft delete/hide own review.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/reviews/{{directoryReviewId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "reviews",
+                "{{directoryReviewId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/directory/reviews/:id/vote",
+          "description": "Vote helpful/not_helpful on review.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vote\": \"helpful\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/reviews/{{directoryReviewId}}/vote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "reviews",
+                "{{directoryReviewId}}",
+                "vote"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/directory/reviews/:id/vote",
+          "description": "Remove my review vote.",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/directory/reviews/{{directoryReviewId}}/vote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "directory",
+                "reviews",
+                "{{directoryReviewId}}",
+                "vote"
               ]
             }
           },
@@ -2599,6 +4603,36 @@
     {
       "key": "eventId",
       "value": "create-event-first",
+      "type": "string"
+    },
+    {
+      "key": "directoryListingId",
+      "value": "search-directory-first",
+      "type": "string"
+    },
+    {
+      "key": "directoryCategoryId",
+      "value": "create-directory-category-first",
+      "type": "string"
+    },
+    {
+      "key": "directoryReviewId",
+      "value": "list-admin-directory-reviews-first",
+      "type": "string"
+    },
+    {
+      "key": "directoryReportId",
+      "value": "list-admin-directory-reports-first",
+      "type": "string"
+    },
+    {
+      "key": "directoryDraftId",
+      "value": "create-directory-draft-first",
+      "type": "string"
+    },
+    {
+      "key": "directoryUploadedMediaUrl",
+      "value": "upload-directory-media-first",
       "type": "string"
     },
     {
