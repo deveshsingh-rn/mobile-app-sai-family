@@ -105,11 +105,11 @@ Status: Completed
 ### Phase 3: Category And Search
 
 - [x] Wire category screen to `GET /api/directory/listings`.
-- [ ] Wire search input to search and suggestions.
-- [ ] Wire recent searches.
-- [ ] Wire clear recent searches.
-- [ ] Wire popular categories.
-- [ ] Wire trending listings.
+- [x] Wire search input to search and suggestions.
+- [x] Wire recent searches.
+- [x] Wire clear recent searches.
+- [x] Wire popular categories.
+- [x] Wire trending listings.
 - [ ] Add pagination.
 
 ### Phase 4: Business Detail
