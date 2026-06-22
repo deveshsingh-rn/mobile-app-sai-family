@@ -1876,6 +1876,641 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "GET /api/admin/sangha/groups - List Groups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/groups?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "groups"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/admin/sangha/groups/:id - Group Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/groups/{{sanghaGroupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "groups",
+                "%7B%7BsanghaGroupId%7D%7D"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/sangha/groups - Create Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ownerUserId\": \"{{authorId}}\",\n  \"name\": \"Admin Created Sangha Group\",\n  \"purpose\": \"satsang\",\n  \"privacy\": \"public\",\n  \"description\": \"Created by admin for testing.\",\n  \"city\": \"Pune\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"isOfficial\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/groups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "groups"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/admin/sangha/groups/:id - Update Group",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Admin updated Sangha group description.\",\n  \"activityStatus\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/groups/{{sanghaGroupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "groups",
+                "%7B%7BsanghaGroupId%7D%7D"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/admin/sangha/groups/:id - Archive Group",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/groups/{{sanghaGroupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "groups",
+                "%7B%7BsanghaGroupId%7D%7D"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/sangha/groups/:id/verify - Verify Official",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/groups/{{sanghaGroupId}}/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "groups",
+                "%7B%7BsanghaGroupId%7D%7D",
+                "verify"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/sangha/groups/:id/unverify - Remove Official",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/groups/{{sanghaGroupId}}/unverify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "groups",
+                "%7B%7BsanghaGroupId%7D%7D",
+                "unverify"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/admin/sangha/groups/:id/members/:memberId - Update Member Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"moderator\",\n  \"note\": \"Promoted from admin panel.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/groups/{{sanghaGroupId}}/members/{{sanghaMemberId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "groups",
+                "%7B%7BsanghaGroupId%7D%7D",
+                "members",
+                "%7B%7BsanghaMemberId%7D%7D"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/admin/sangha/groups/:id/members/:memberId - Remove Member",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/groups/{{sanghaGroupId}}/members/{{sanghaMemberId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "groups",
+                "%7B%7BsanghaGroupId%7D%7D",
+                "members",
+                "%7B%7BsanghaMemberId%7D%7D"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/admin/sangha/reports - List Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/reports?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "reports"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/sangha/reports/:id/resolve - Resolve Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"resolved\",\n  \"note\": \"Reviewed by admin.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/reports/{{sanghaReportId}}/resolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "reports",
+                "%7B%7BsanghaReportId%7D%7D",
+                "resolve"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/sangha/announcements - Send Announcement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"{{sanghaGroupId}}\",\n  \"title\": \"Sai Ram Sangha\",\n  \"body\": \"This is an admin announcement for the group.\",\n  \"data\": { \"source\": \"postman\" }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/announcements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "announcements"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/admin/sangha/live-streams - List Streams",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/live-streams?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "live-streams"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/admin/sangha/live-streams/:id/end - End Stream",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/live-streams/{{sanghaLiveStreamId}}/end",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "end"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/admin/sangha/live-streams/:id/recording - Remove Recording",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/live-streams/{{sanghaLiveStreamId}}/recording",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "recording"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/admin/sangha/live-streams/:id/chat/:messageId - Delete Chat",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/live-streams/{{sanghaLiveStreamId}}/chat/{{sanghaLiveChatMessageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "chat",
+                "%7B%7BsanghaLiveChatMessageId%7D%7D"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/admin/sangha/analytics - Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/analytics?days=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/admin/sangha/audit-logs - Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{adminId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/sangha/audit-logs?limit=50&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "sangha",
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -4557,6 +5192,2398 @@
                 "{{directoryReviewId}}",
                 "vote"
               ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sangha API",
+      "description": "Pillar 4 Phase 2: privacy-safe devotee discovery and connection lifecycle. Protected requests require `x-user-id: {{authorId}}`.",
+      "item": [
+        {
+          "name": "PATCH /api/users/me/sangha-discovery - Update Discovery Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nearMeEnabled\": true,\n  \"tradition\": \"Shirdi Sai\",\n  \"purposeTags\": [\n    \"seva\",\n    \"bhajan\"\n  ],\n  \"interests\": [\n    \"aarti\",\n    \"satsang\"\n  ],\n  \"bio\": \"Jai Sai Ram. Happy to connect with nearby devotees.\",\n  \"quote\": \"Shraddha and Saburi\",\n  \"profileVisibility\": \"members_only\",\n  \"city\": \"Pune\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"latitude\": 18.5204,\n  \"longitude\": 73.8567\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/sangha-discovery",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "sangha-discovery"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/home - Discovery Home",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sangha home loaded\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "const first = (json.nearYou && json.nearYou[0]) || (json.suggestedForYou && json.suggestedForYou[0]);",
+                  "if (first && first.userId) { pm.environment.set(\"sanghaDevoteeId\", first.userId); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/home?distance=nearby&purpose=seva&lat=18.5204&lng=73.8567&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "home"
+              ],
+              "query": [
+                {
+                  "key": "distance",
+                  "value": "nearby"
+                },
+                {
+                  "key": "purpose",
+                  "value": "seva"
+                },
+                {
+                  "key": "lat",
+                  "value": "18.5204"
+                },
+                {
+                  "key": "lng",
+                  "value": "73.8567"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/devotees - Devotee List",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Devotee list loaded\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json.devotees && json.devotees[0] && json.devotees[0].userId) { pm.environment.set(\"sanghaDevoteeId\", json.devotees[0].userId); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/devotees?type=near&distance=nearby&purpose=seva&lat=18.5204&lng=73.8567&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "devotees"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "near"
+                },
+                {
+                  "key": "distance",
+                  "value": "nearby"
+                },
+                {
+                  "key": "purpose",
+                  "value": "seva"
+                },
+                {
+                  "key": "lat",
+                  "value": "18.5204"
+                },
+                {
+                  "key": "lng",
+                  "value": "73.8567"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/devotees/:id - Devotee Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/devotees/{{sanghaDevoteeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "devotees",
+                "{{sanghaDevoteeId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/devotees/:id/connect - Request Connection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Connection request handled\", function () { pm.expect([200, 201]).to.include(pm.response.code); });",
+                  "const json = pm.response.json();",
+                  "if (json.connectionId) { pm.environment.set(\"sanghaConnectionId\", json.connectionId); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/devotees/{{sanghaDevoteeId}}/connect",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "devotees",
+                "{{sanghaDevoteeId}}",
+                "connect"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/connections/:id/accept - Accept Connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/connections/{{sanghaConnectionId}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "connections",
+                "{{sanghaConnectionId}}",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/connections/:id/decline - Decline Connection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/connections/{{sanghaConnectionId}}/decline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "connections",
+                "{{sanghaConnectionId}}",
+                "decline"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/sangha/devotees/:id/connect - Disconnect Or Cancel",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/devotees/{{sanghaDevoteeId}}/connect",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "devotees",
+                "{{sanghaDevoteeId}}",
+                "connect"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/devotees/:id/block - Block Devotee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Testing block flow\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/devotees/{{sanghaDevoteeId}}/block",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "devotees",
+                "{{sanghaDevoteeId}}",
+                "block"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/groups/home - Hub Home",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sangha group home loaded\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "const first = (json.myGroups && json.myGroups[0]) || (json.suggestedGroups && json.suggestedGroups[0]);",
+                  "if (first && first.id) { pm.environment.set(\"sanghaGroupId\", first.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/home?purpose=all&privacy=any&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "home"
+              ],
+              "query": [
+                {
+                  "key": "purpose",
+                  "value": "all"
+                },
+                {
+                  "key": "privacy",
+                  "value": "any"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/groups/search - Search Groups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sangha group search loaded\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json.groups && json.groups[0] && json.groups[0].id) { pm.environment.set(\"sanghaGroupId\", json.groups[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/search?q=seva&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "seva"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/groups - Group List",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sangha groups loaded\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json.groups && json.groups[0] && json.groups[0].id) { pm.environment.set(\"sanghaGroupId\", json.groups[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups?type=recommended&purpose=seva&privacy=any&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "recommended"
+                },
+                {
+                  "key": "purpose",
+                  "value": "seva"
+                },
+                {
+                  "key": "privacy",
+                  "value": "any"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/sangha/recent-searches - Recent Searches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/sangha/recent-searches?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "sangha",
+                "recent-searches"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/users/me/sangha/recent-searches - Save Recent Search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Pune Seva Group\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/sangha/recent-searches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "sangha",
+                "recent-searches"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/users/me/sangha/recent-searches - Clear Recent Searches",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/sangha/recent-searches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "sangha",
+                "recent-searches"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/sangha/invitations - My Invitations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sangha invitations loaded\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json.invitations && json.invitations[0] && json.invitations[0].id) { pm.environment.set(\"sanghaInvitationId\", json.invitations[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/sangha/invitations?status=pending&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "sangha",
+                "invitations"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/groups/:id/invitations - Invite User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sangha invitation created\", function () { pm.expect([200, 201, 409]).to.include(pm.response.code); });",
+                  "const json = pm.response.json();",
+                  "if (json.invitationId) { pm.environment.set(\"sanghaInvitationId\", json.invitationId); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{sanghaDevoteeId}}\",\n  \"message\": \"Join our Thursday seva circle.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/invitations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "invitations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/users/me/sangha/invitations/:id/accept - Accept Invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/sangha/invitations/{{sanghaInvitationId}}/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "sangha",
+                "invitations",
+                "{{sanghaInvitationId}}",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/users/me/sangha/invitations/:id/decline - Decline Invitation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/sangha/invitations/{{sanghaInvitationId}}/decline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "sangha",
+                "invitations",
+                "{{sanghaInvitationId}}",
+                "decline"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/groups - Create Group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Group created\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "if (json.group && json.group.id) { pm.environment.set(\"sanghaGroupId\", json.group.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Pune Thursday Seva Circle\",\n  \"purpose\": \"seva\",\n  \"privacy\": \"public\",\n  \"description\": \"Weekly seva planning and Sai family support group in Pune.\",\n  \"guidelines\": \"Be kind, respectful, and service-minded.\",\n  \"purposeText\": \"Local seva coordination for Sai devotees.\",\n  \"city\": \"Pune\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"bannerUrl\": \"https://saifamily21219878.blob.core.windows.net/sai-media/sangha/banner-placeholder.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/groups/:id - Group Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/sangha/groups/:id - Update Group",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated Sangha group description from Postman.\",\n  \"guidelines\": \"Updated guidelines: be kind and respectful.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/groups/:id/join - Join Or Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/join",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "join"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/sangha/groups/:id/membership - Leave Group",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/membership",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "membership"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/groups/:id/members - Group Members",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Members loaded\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "const member = json.members && json.members.find(function (m) { return m.role !== \"owner\"; });",
+                  "if (member && member.id) { pm.environment.set(\"sanghaMemberId\", member.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/members?status=active&role=all&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "members"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active"
+                },
+                {
+                  "key": "role",
+                  "value": "all"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/sangha/groups/:id/members/:memberId - Update Member Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"moderator\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/members/{{sanghaMemberId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "members",
+                "{{sanghaMemberId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/sangha/groups/:id/members/:memberId - Remove Member",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/members/{{sanghaMemberId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "members",
+                "{{sanghaMemberId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/groups/:id/join-requests/:requestId/approve - Approve Join Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/join-requests/{{sanghaJoinRequestId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "join-requests",
+                "{{sanghaJoinRequestId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/groups/:id/join-requests/:requestId/decline - Decline Join Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/join-requests/{{sanghaJoinRequestId}}/decline",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "join-requests",
+                "{{sanghaJoinRequestId}}",
+                "decline"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/sangha/groups/:id - Archive Group",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/groups/:id/posts - Group Posts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Group posts loaded\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json.posts && json.posts[0] && json.posts[0].id) { pm.environment.set(\"sanghaPostId\", json.posts[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/posts?limit=20&offset=0&pinnedFirst=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "posts"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "pinnedFirst",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/groups/:id/posts - Create Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Group post created\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "if (json.post && json.post.id) { pm.environment.set(\"sanghaPostId\", json.post.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"text\",\n  \"content\": \"Jai Sai Ram family. Sharing a seva update from Postman.\",\n  \"mediaUrls\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "posts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/sangha/groups/:id/posts/:postId - Update Post",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated Sangha post text from Postman.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/posts/{{sanghaPostId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "posts",
+                "{{sanghaPostId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/groups/:id/posts/:postId/like - Like Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/posts/{{sanghaPostId}}/like",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "posts",
+                "{{sanghaPostId}}",
+                "like"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/sangha/groups/:id/posts/:postId/like - Unlike Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/posts/{{sanghaPostId}}/like",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "posts",
+                "{{sanghaPostId}}",
+                "like"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/groups/:id/posts/:postId/comments - Post Comments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/posts/{{sanghaPostId}}/comments?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "posts",
+                "{{sanghaPostId}}",
+                "comments"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/groups/:id/posts/:postId/comments - Add Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Jai Sai Ram. Beautiful update.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/posts/{{sanghaPostId}}/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "posts",
+                "{{sanghaPostId}}",
+                "comments"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/groups/:id/posts/:postId/pin - Pin Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/posts/{{sanghaPostId}}/pin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "posts",
+                "{{sanghaPostId}}",
+                "pin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/sangha/groups/:id/posts/:postId/pin - Unpin Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/posts/{{sanghaPostId}}/pin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "posts",
+                "{{sanghaPostId}}",
+                "pin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/sangha/groups/:id/posts/:postId - Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/posts/{{sanghaPostId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "posts",
+                "{{sanghaPostId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/groups/:id/events - Group Events",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Group events loaded\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json.events && json.events[0] && json.events[0].id) { pm.environment.set(\"sanghaGroupEventId\", json.events[0].id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/events?status=upcoming&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "events"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "upcoming"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/groups/:id/events - Create Group Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Group event created\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "if (json.event && json.event.id) { pm.environment.set(\"sanghaGroupEventId\", json.event.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Thursday Sai Bhajan\",\n  \"type\": \"bhajan\",\n  \"startAt\": \"2026-07-02T14:00:00.000Z\",\n  \"endAt\": \"2026-07-02T16:00:00.000Z\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"venueName\": \"Sai Community Hall\",\n  \"address\": \"MG Road, Pune\",\n  \"isOnline\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/groups/:id/events/:eventId/rsvp - RSVP Group Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/events/{{sanghaGroupEventId}}/rsvp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "events",
+                "{{sanghaGroupEventId}}",
+                "rsvp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/sangha/groups/:id/events/:eventId/rsvp - Cancel Group Event RSVP",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/events/{{sanghaGroupEventId}}/rsvp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "{{sanghaGroupId}}",
+                "events",
+                "{{sanghaGroupEventId}}",
+                "rsvp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/sangha/notifications - My Sangha Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sangha notifications loaded\", function () { pm.response.to.have.status(200); });",
+                  "",
+                  "const json = pm.response.json();",
+                  "if (json.notifications && json.notifications[0]) {",
+                  "  pm.environment.set(\"sanghaNotificationId\", json.notifications[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/sangha/notifications?limit=20&offset=0&unreadOnly=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "sangha",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "unreadOnly",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/users/me/sangha/notifications/read - Mark Notifications Read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sangha notifications marked read\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notificationIds\": [\"{{sanghaNotificationId}}\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/sangha/notifications/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "sangha",
+                "notifications",
+                "read"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/live-streams - Schedule Live Stream",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live stream scheduled\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "if (json.stream && json.stream.id) pm.environment.set(\"sanghaLiveStreamId\", json.stream.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"groupId\": \"{{sanghaGroupId}}\",\n  \"title\": \"Thursday Sai Satsang Live\",\n  \"description\": \"Live satsang for the Sangha group.\",\n  \"type\": \"satsang\",\n  \"visibility\": \"group_members\",\n  \"scheduledAt\": \"2026-06-25T13:30:00.000Z\",\n  \"thumbnailUrl\": \"https://example.com/sangha-live-thumb.jpg\",\n  \"chatEnabled\": true,\n  \"reactionsEnabled\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/live-streams - List Live Streams",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live streams loaded\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/live-streams/:id - Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live stream detail loaded\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams/{{sanghaLiveStreamId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/live-streams/:id/start - Start Stream",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live stream started\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams/{{sanghaLiveStreamId}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "start"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/live-streams/:id/join - Join Stream",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live stream joined\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams/{{sanghaLiveStreamId}}/join",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "join"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/live-streams/:id/heartbeat - Heartbeat",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live heartbeat accepted\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams/{{sanghaLiveStreamId}}/heartbeat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "heartbeat"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/live-streams/:id/chat - Chat List",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live chat loaded\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams/{{sanghaLiveStreamId}}/chat?limit=50&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "chat"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/live-streams/:id/chat - Send Chat",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live chat sent\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "if (json.message && json.message.id) pm.environment.set(\"sanghaLiveChatMessageId\", json.message.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Sai Ram everyone, joining the satsang.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams/{{sanghaLiveStreamId}}/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "chat"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/live-streams/:id/reactions - React",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live reaction sent\", function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reaction\": \"namaste\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams/{{sanghaLiveStreamId}}/reactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "reactions"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/sangha/live-streams/:id/chat/:messageId - Delete Chat",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live chat deleted\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams/{{sanghaLiveStreamId}}/chat/{{sanghaLiveChatMessageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "chat",
+                "%7B%7BsanghaLiveChatMessageId%7D%7D"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/live-streams/:id/recording - Recording",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live recording loaded\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams/{{sanghaLiveStreamId}}/recording",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "recording"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/live-streams/:id/report - Report Stream",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live stream report created\", function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"test_report\",\n  \"details\": \"Smoke test report from Postman.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams/{{sanghaLiveStreamId}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "report"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/live-streams/:id/end - End Stream",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Live stream ended\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/live-streams/{{sanghaLiveStreamId}}/end",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "live-streams",
+                "%7B%7BsanghaLiveStreamId%7D%7D",
+                "end"
+              ],
+              "query": []
             }
           },
           "response": []
