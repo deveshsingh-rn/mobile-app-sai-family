@@ -54,6 +54,16 @@ import { validateDirectoryListingPayload } from '@/store/directory/validation';
 
 const steps = ['Identity', 'Details', 'Contact', 'Media'];
 
+const theme = {
+  accent: '#F97316',
+  accentDark: '#C2410C',
+  background: '#F6F1E8',
+  border: '#E7DDCD',
+  card: '#FFFFFF',
+  muted: '#6B7280',
+  text: '#111827',
+};
+
 type SelectedImage = {
   mimeType?: string;
   name: string;
@@ -512,16 +522,68 @@ const CreateListingScreen = () => {
       </Text>
     ) : null;
 
+  const renderStepIntro = (
+    icon: React.ReactNode,
+    title: string,
+    subtitle: string
+  ) => (
+    <View
+      style={{
+        alignItems: 'center',
+        marginBottom: 8,
+        marginTop: 4,
+      }}>
+      <View
+        style={{
+          alignItems: 'center',
+          backgroundColor: '#FFF7ED',
+          borderColor: '#FED7AA',
+          borderRadius: 24,
+          borderWidth: 1,
+          height: 72,
+          justifyContent: 'center',
+          width: 72,
+        }}>
+        {icon}
+      </View>
+
+      <Text
+        style={{
+          color: theme.text,
+          fontSize: 24,
+          fontWeight: '900',
+          letterSpacing: -0.2,
+          marginTop: 18,
+          textAlign: 'center',
+        }}>
+        {title}
+      </Text>
+
+      <Text
+        style={{
+          color: theme.muted,
+          fontSize: 14,
+          fontWeight: '600',
+          lineHeight: 21,
+          marginTop: 8,
+          paddingHorizontal: 8,
+          textAlign: 'center',
+        }}>
+        {subtitle}
+      </Text>
+    </View>
+  );
+
   const renderHeader = () => (
     <View
       style={{
-        backgroundColor: '#FF9A2F',
-        borderBottomLeftRadius: 28,
-        borderBottomRightRadius: 28,
+        backgroundColor: theme.accent,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
         overflow: 'hidden',
-        paddingBottom: 42,
+        paddingBottom: 34,
         paddingHorizontal: 22,
-        paddingTop: 18,
+        paddingTop: 16,
       }}>
       <View
         style={{
@@ -535,17 +597,19 @@ const CreateListingScreen = () => {
           onPress={prevStep}
           style={{
             alignItems: 'center',
-            backgroundColor: 'rgba(255,255,255,0.22)',
-            borderRadius: 27,
-            height: 54,
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            borderColor: 'rgba(255,255,255,0.3)',
+            borderRadius: 22,
+            borderWidth: 1,
+            height: 44,
             justifyContent: 'center',
             left: 0,
             position: 'absolute',
-            width: 54,
+            width: 44,
           }}>
           <Ionicons
             name={step === 1 ? 'close' : 'arrow-back'}
-            size={30}
+            size={23}
             color="#FFFFFF"
           />
         </TouchableOpacity>
@@ -554,8 +618,9 @@ const CreateListingScreen = () => {
           <Text
             style={{
               color: '#FFFFFF',
-              fontSize: 24,
-              fontWeight: '800',
+              fontSize: 22,
+              fontWeight: '900',
+              letterSpacing: -0.2,
               textAlign: 'center',
             }}>
             {isEditMode ? 'Edit Listing' : 'Create Listing'}
@@ -563,8 +628,8 @@ const CreateListingScreen = () => {
           <Text
             style={{
               color: 'rgba(255,255,255,0.78)',
-              fontSize: 12,
-              fontWeight: '700',
+              fontSize: 11,
+              fontWeight: '800',
               marginTop: 4,
               textAlign: 'center',
             }}>
@@ -581,29 +646,28 @@ const CreateListingScreen = () => {
 
       <View
         style={{
-          marginTop: 34,
+          marginTop: 28,
         }}>
         <View
           style={{
             backgroundColor: 'rgba(255,255,255,0.35)',
             borderRadius: 100,
-            height: 20,
+            height: 12,
             justifyContent: 'center',
             overflow: 'hidden',
-            paddingHorizontal: 4,
           }}>
           <View
             style={{
               backgroundColor: '#FFFFFF',
               borderRadius: 100,
-              height: 12,
+              height: '100%',
               width:
                 step === 1
-                  ? '24%'
+                  ? '25%'
                   : step === 2
-                  ? '49%'
+                  ? '50%'
                   : step === 3
-                  ? '74%'
+                  ? '75%'
                   : '100%',
             }}
           />
@@ -616,42 +680,59 @@ const CreateListingScreen = () => {
             marginTop: 16,
           }}>
           {steps.map((item, index) => (
-            <Text
+            <TouchableOpacity
               key={item}
+              activeOpacity={0.8}
+              onPress={() => {
+                if (index + 1 <= step) {
+                  setStep(index + 1);
+                }
+              }}
               style={{
-                color:
-                  step === index + 1
-                    ? '#FFFFFF'
-                    : 'rgba(255,255,255,0.72)',
-                fontSize: 15,
-                fontWeight: step === index + 1 ? '700' : '500',
+                alignItems: 'center',
+                flex: 1,
               }}>
-              {item}
-            </Text>
+              <View
+                style={{
+                  alignItems: 'center',
+                  backgroundColor:
+                    step === index + 1
+                      ? '#FFFFFF'
+                      : 'rgba(255,255,255,0.2)',
+                  borderRadius: 14,
+                  height: 28,
+                  justifyContent: 'center',
+                  width: 28,
+                }}>
+                <Text
+                  style={{
+                    color:
+                      step === index + 1
+                        ? theme.accent
+                        : '#FFFFFF',
+                    fontSize: 12,
+                    fontWeight: '900',
+                  }}>
+                  {index + 1}
+                </Text>
+              </View>
+              <Text
+                numberOfLines={1}
+                style={{
+                  color:
+                    step === index + 1
+                      ? '#FFFFFF'
+                      : 'rgba(255,255,255,0.72)',
+                  fontSize: 11,
+                  fontWeight:
+                    step === index + 1 ? '900' : '700',
+                  marginTop: 7,
+                }}>
+                {item}
+              </Text>
+            </TouchableOpacity>
           ))}
         </View>
-      </View>
-
-      <View
-        style={{
-          bottom: -18,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          left: 0,
-          position: 'absolute',
-          right: 0,
-        }}>
-        {Array.from({ length: 15 }).map((_, index) => (
-          <View
-            key={index}
-            style={{
-              backgroundColor: '#F7F7F7',
-              borderRadius: 17,
-              height: 34,
-              width: 34,
-            }}
-          />
-        ))}
       </View>
     </View>
   );
@@ -666,29 +747,31 @@ const CreateListingScreen = () => {
   ) => (
     <View
       style={{
-        marginTop: 22,
+        marginTop: 18,
       }}>
       <Text
         style={{
-          color: '#374151',
-          fontSize: 14,
+          color: '#4B5563',
+          fontSize: 12,
           fontWeight: '800',
-          letterSpacing: 0.8,
-          marginBottom: 14,
+          letterSpacing: 0.6,
+          marginBottom: 9,
         }}>
         {label}
       </Text>
 
       <View
         style={{
-          backgroundColor: '#FFFFFF',
-          borderColor: validationErrors[field] ? '#FCA5A5' : '#E5E7EB',
-          borderRadius: 16,
-          borderWidth: 1.5,
+          backgroundColor: '#FFFCF8',
+          borderColor: validationErrors[field]
+            ? '#FCA5A5'
+            : theme.border,
+          borderRadius: 14,
+          borderWidth: 1,
           justifyContent: multiline ? 'flex-start' : 'center',
-          minHeight: multiline ? 118 : 58,
-          paddingHorizontal: 18,
-          paddingTop: multiline ? 16 : 0,
+          minHeight: multiline ? 108 : 52,
+          paddingHorizontal: 14,
+          paddingTop: multiline ? 12 : 0,
         }}>
         <TextInput
           value={value}
@@ -698,8 +781,9 @@ const CreateListingScreen = () => {
           multiline={multiline}
           style={{
             color: '#111827',
-            fontSize: 16,
-            fontWeight: '500',
+            fontSize: 15,
+            fontWeight: '600',
+            lineHeight: multiline ? 22 : undefined,
             textAlignVertical: multiline ? 'top' : 'center',
           }}
         />
@@ -710,53 +794,15 @@ const CreateListingScreen = () => {
 
   const renderIdentity = () => (
     <>
-      <View
-        style={{
-          alignItems: 'center',
-          marginTop: 10,
-        }}>
-        <View
-          style={{
-            alignItems: 'center',
-            backgroundColor: '#FFF5EB',
-            borderColor: '#FFD7B0',
-            borderRadius: 30,
-            borderWidth: 1.5,
-            height: 106,
-            justifyContent: 'center',
-            width: 106,
-          }}>
-          <MaterialCommunityIcons
-            name="storefront"
-            size={46}
-            color="#FF9A2F"
-          />
-        </View>
-      </View>
-
-      <Text
-        style={{
-          color: '#111827',
-          fontSize: 26,
-          fontWeight: '800',
-          marginTop: 28,
-          textAlign: 'center',
-        }}>
-        Who are you?
-      </Text>
-
-      <Text
-        style={{
-          color: '#6B7280',
-          fontSize: 17,
-          fontWeight: '500',
-          lineHeight: 31,
-          marginTop: 14,
-          paddingHorizontal: 20,
-          textAlign: 'center',
-        }}>
-        Introduce your business to the Sai family community.
-      </Text>
+      {renderStepIntro(
+        <MaterialCommunityIcons
+          name="storefront-outline"
+          size={34}
+          color={theme.accent}
+        />,
+        'Business Identity',
+        'Set the name and category devotees will see in Directory.'
+      )}
 
       {renderInput(
         'BUSINESS NAME',
@@ -768,15 +814,15 @@ const CreateListingScreen = () => {
 
       <View
         style={{
-          marginTop: 30,
+          marginTop: 22,
         }}>
         <Text
           style={{
-            color: '#374151',
-            fontSize: 14,
+            color: '#4B5563',
+            fontSize: 12,
             fontWeight: '800',
-            letterSpacing: 0.8,
-            marginBottom: 14,
+            letterSpacing: 0.6,
+            marginBottom: 10,
           }}>
           CATEGORY
         </Text>
@@ -794,20 +840,24 @@ const CreateListingScreen = () => {
                 onPress={() => setSelectedCategoryId(item.id)}
                 style={{
                   alignItems: 'center',
-                  backgroundColor: active ? '#FF9A2F' : '#FFFFFF',
-                  borderColor: active ? '#FF9A2F' : '#E5E7EB',
-                  borderRadius: 18,
-                  borderWidth: 1.5,
-                  height: 46,
+                  backgroundColor: active
+                    ? theme.accent
+                    : '#FFFCF8',
+                  borderColor: active
+                    ? theme.accent
+                    : theme.border,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  height: 42,
                   justifyContent: 'center',
-                  marginRight: 12,
-                  paddingHorizontal: 22,
+                  marginRight: 10,
+                  paddingHorizontal: 16,
                 }}>
                 <Text
                   style={{
                     color: active ? '#FFFFFF' : '#374151',
-                    fontSize: 16,
-                    fontWeight: '700',
+                    fontSize: 14,
+                    fontWeight: '800',
                   }}>
                   {item.name}
                 </Text>
@@ -841,49 +891,15 @@ const CreateListingScreen = () => {
 
   const renderDetails = () => (
     <>
-      <View
-        style={{
-          alignItems: 'center',
-          marginTop: 10,
-        }}>
-        <View
-          style={{
-            alignItems: 'center',
-            backgroundColor: '#EEF4FF',
-            borderColor: '#CFE0FF',
-            borderRadius: 30,
-            borderWidth: 1.5,
-            height: 106,
-            justifyContent: 'center',
-            width: 106,
-          }}>
-          <Feather name="file-text" size={42} color="#2563EB" />
-        </View>
-      </View>
-
-      <Text
-        style={{
-          color: '#111827',
-          fontSize: 26,
-          fontWeight: '800',
-          marginTop: 28,
-          textAlign: 'center',
-        }}>
-        Business Details
-      </Text>
-
-      <Text
-        style={{
-          color: '#6B7280',
-          fontSize: 17,
-          fontWeight: '500',
-          lineHeight: 31,
-          marginTop: 14,
-          paddingHorizontal: 20,
-          textAlign: 'center',
-        }}>
-        Tell devotees more about your services and experience.
-      </Text>
+      {renderStepIntro(
+        <Feather
+          name="file-text"
+          size={31}
+          color="#2563EB"
+        />,
+        'Business Details',
+        'Describe your services, experience, and what makes your work trustworthy.'
+      )}
 
       {renderInput(
         'DESCRIPTION',
@@ -908,19 +924,19 @@ const CreateListingScreen = () => {
           backgroundColor: '#FFFFFF',
           borderColor: '#E5E7EB',
           borderRadius: 16,
-          borderWidth: 1.5,
+          borderWidth: 1,
           flexDirection: 'row',
           justifyContent: 'space-between',
-          marginTop: 32,
-          minHeight: 64,
-          paddingHorizontal: 18,
+          marginTop: 24,
+          minHeight: 62,
+          paddingHorizontal: 16,
         }}>
         <View>
           <Text
             style={{
               color: '#111827',
-              fontSize: 18,
-              fontWeight: '700',
+              fontSize: 16,
+              fontWeight: '800',
             }}>
             Home Service Available
           </Text>
@@ -928,9 +944,9 @@ const CreateListingScreen = () => {
           <Text
             style={{
               color: '#6B7280',
-              fontSize: 14,
-              fontWeight: '500',
-              marginTop: 6,
+              fontSize: 12,
+              fontWeight: '600',
+              marginTop: 5,
             }}>
             Offer service at customer location
           </Text>
@@ -943,7 +959,7 @@ const CreateListingScreen = () => {
             false: '#D1D5DB',
             true: '#FDBA74',
           }}
-          thumbColor={homeService ? '#FF9A2F' : '#FFFFFF'}
+          thumbColor={homeService ? theme.accent : '#FFFFFF'}
         />
       </View>
     </>
@@ -951,49 +967,11 @@ const CreateListingScreen = () => {
 
   const renderContact = () => (
     <>
-      <View
-        style={{
-          alignItems: 'center',
-          marginTop: 10,
-        }}>
-        <View
-          style={{
-            alignItems: 'center',
-            backgroundColor: '#ECFDF5',
-            borderColor: '#BBF7D0',
-            borderRadius: 30,
-            borderWidth: 1.5,
-            height: 106,
-            justifyContent: 'center',
-            width: 106,
-          }}>
-          <Ionicons name="call" size={42} color="#22C55E" />
-        </View>
-      </View>
-
-      <Text
-        style={{
-          color: '#111827',
-          fontSize: 26,
-          fontWeight: '800',
-          marginTop: 28,
-          textAlign: 'center',
-        }}>
-        Contact Details
-      </Text>
-
-      <Text
-        style={{
-          color: '#6B7280',
-          fontSize: 17,
-          fontWeight: '500',
-          lineHeight: 31,
-          marginTop: 14,
-          paddingHorizontal: 20,
-          textAlign: 'center',
-        }}>
-        Help devotees connect with your business easily.
-      </Text>
+      {renderStepIntro(
+        <Ionicons name="call-outline" size={32} color="#16A34A" />,
+        'Contact Details',
+        'Add the best ways for devotees to reach your business.'
+      )}
 
       {renderInput('PHONE NUMBER', '+91 9876543210', phone, setPhone, 'phoneNumber')}
       {renderInput('WHATSAPP NUMBER', '+91 9876543210', whatsapp, setWhatsapp, 'whatsappNumber')}
@@ -1004,56 +982,18 @@ const CreateListingScreen = () => {
 
   const renderMedia = () => (
     <>
-      <View
-        style={{
-          alignItems: 'center',
-          marginTop: 10,
-        }}>
-        <View
-          style={{
-            alignItems: 'center',
-            backgroundColor: '#F3E8FF',
-            borderColor: '#E9D5FF',
-            borderRadius: 30,
-            borderWidth: 1.5,
-            height: 106,
-            justifyContent: 'center',
-            width: 106,
-          }}>
-          <Ionicons name="images" size={42} color="#9333EA" />
-        </View>
-      </View>
-
-      <Text
-        style={{
-          color: '#111827',
-          fontSize: 26,
-          fontWeight: '800',
-          marginTop: 28,
-          textAlign: 'center',
-        }}>
-        Add Media
-      </Text>
-
-      <Text
-        style={{
-          color: '#6B7280',
-          fontSize: 17,
-          fontWeight: '500',
-          lineHeight: 31,
-          marginTop: 14,
-          paddingHorizontal: 20,
-          textAlign: 'center',
-        }}>
-        Upload photos to build trust and showcase your work.
-      </Text>
+      {renderStepIntro(
+        <Ionicons name="images-outline" size={32} color="#9333EA" />,
+        'Add Media',
+        'Upload photos that help devotees recognize your work and quality.'
+      )}
 
       <View
         style={{
           flexDirection: 'row',
           flexWrap: 'wrap',
           justifyContent: 'space-between',
-          marginTop: 40,
+          marginTop: 26,
         }}>
         {[0, 1, 2, 3].map((index) => {
           const image = images[index];
@@ -1067,12 +1007,12 @@ const CreateListingScreen = () => {
                 alignItems: 'center',
                 backgroundColor: '#FFFFFF',
                 borderColor: image ? '#FDBA74' : '#E5E7EB',
-                borderRadius: 24,
+                borderRadius: 20,
                 borderStyle: image ? 'solid' : 'dashed',
-                borderWidth: 2,
-                height: 170,
+                borderWidth: 1.5,
+                height: 142,
                 justifyContent: 'center',
-                marginBottom: 16,
+                marginBottom: 12,
                 overflow: 'hidden',
                 width: '48%',
               }}>
@@ -1108,15 +1048,19 @@ const CreateListingScreen = () => {
                 </>
               ) : (
                 <>
-                  <Ionicons name="cloud-upload-outline" size={40} color="#9CA3AF" />
+                  <Ionicons
+                    name="cloud-upload-outline"
+                    size={32}
+                    color="#9CA3AF"
+                  />
                   <Text
                     style={{
                       color: '#4B5563',
-                      fontSize: 16,
-                      fontWeight: '700',
-                      marginTop: 12,
+                      fontSize: 13,
+                      fontWeight: '800',
+                      marginTop: 8,
                     }}>
-                    Upload Image
+                    Add Photo
                   </Text>
                 </>
               )}
@@ -1131,12 +1075,12 @@ const CreateListingScreen = () => {
           backgroundColor: '#FFFFFF',
           borderColor: '#E5E7EB',
           borderRadius: 16,
-          borderWidth: 1.5,
+          borderWidth: 1,
           flexDirection: 'row',
           justifyContent: 'space-between',
-          marginTop: 10,
+          marginTop: 8,
           minHeight: 68,
-          paddingHorizontal: 18,
+          paddingHorizontal: 16,
         }}>
         <View
           style={{
@@ -1146,8 +1090,8 @@ const CreateListingScreen = () => {
           <Text
             style={{
               color: '#111827',
-              fontSize: 18,
-              fontWeight: '700',
+              fontSize: 16,
+              fontWeight: '800',
             }}>
             Enable Community Recommendation
           </Text>
@@ -1155,8 +1099,8 @@ const CreateListingScreen = () => {
           <Text
             style={{
               color: '#6B7280',
-              fontSize: 14,
-              fontWeight: '500',
+              fontSize: 12,
+              fontWeight: '600',
               marginTop: 6,
             }}>
             Allow devotees to recommend your business publicly
@@ -1181,36 +1125,68 @@ const CreateListingScreen = () => {
   return (
     <SafeAreaView
       style={{
-        backgroundColor: '#F7F7F7',
+        backgroundColor: theme.background,
         flex: 1,
       }}>
-      <StatusBar barStyle="light-content" backgroundColor="#FF9A2F" />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.accent}
+      />
 
       {renderHeader()}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 40,
-          paddingHorizontal: 22,
-          paddingTop: 24,
+          paddingBottom: 30,
+          paddingHorizontal: 16,
+          paddingTop: 18,
         }}>
-        {step === 1 && renderIdentity()}
-        {step === 2 && renderDetails()}
-        {step === 3 && renderContact()}
-        {step === 4 && renderMedia()}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderColor: '#EFE4D3',
+            borderRadius: 24,
+            borderWidth: 1,
+            elevation: 2,
+            paddingBottom: 22,
+            paddingHorizontal: 18,
+            paddingTop: 20,
+            shadowColor: '#000',
+            shadowOffset: {
+              height: 4,
+              width: 0,
+            },
+            shadowOpacity: 0.04,
+            shadowRadius: 10,
+          }}>
+          {step === 1 && renderIdentity()}
+          {step === 2 && renderDetails()}
+          {step === 3 && renderContact()}
+          {step === 4 && renderMedia()}
+        </View>
 
         {error ? (
-          <Text
+          <View
             style={{
-              color: '#DC2626',
-              fontSize: 13,
-              fontWeight: '700',
+              backgroundColor: '#FEF2F2',
+              borderColor: '#FECACA',
+              borderRadius: 16,
+              borderWidth: 1,
               marginTop: 22,
-              textAlign: 'center',
+              padding: 14,
             }}>
-            {error}
-          </Text>
+            <Text
+              style={{
+                color: '#DC2626',
+                fontSize: 13,
+                fontWeight: '800',
+                lineHeight: 20,
+                textAlign: 'center',
+              }}>
+              {error}
+            </Text>
+          </View>
         ) : null}
 
         <TouchableOpacity
@@ -1219,27 +1195,29 @@ const CreateListingScreen = () => {
           onPress={nextStep}
           style={{
             alignItems: 'center',
-            backgroundColor: busy ? '#FDBA74' : '#FF9A2F',
-            borderRadius: 24,
-            elevation: 8,
+            backgroundColor: busy ? '#FDBA74' : theme.accent,
+            borderRadius: 20,
+            elevation: 5,
             flexDirection: 'row',
-            height: 78,
+            height: 58,
             justifyContent: 'center',
-            marginTop: 42,
-            shadowColor: '#E85D04',
+            marginTop: 20,
+            shadowColor: theme.accentDark,
             shadowOffset: {
-              height: 10,
+              height: 7,
               width: 0,
             },
-            shadowOpacity: 0.32,
-            shadowRadius: 12,
+            shadowOpacity: 0.22,
+            shadowRadius: 10,
           }}>
-          {busy ? <ActivityIndicator color="#FFFFFF" /> : null}
+          {busy ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : null}
           <Text
             style={{
               color: '#FFFFFF',
-              fontSize: 22,
-              fontWeight: '800',
+              fontSize: 17,
+              fontWeight: '900',
               marginLeft: busy ? 10 : 0,
             }}>
             {step === 4
@@ -1247,6 +1225,8 @@ const CreateListingScreen = () => {
                 ? 'Uploading Media'
                 : creating
                 ? 'Submitting'
+                : isEditMode
+                ? 'Save Listing'
                 : 'Submit Listing'
               : 'Continue'}
           </Text>
@@ -1254,10 +1234,10 @@ const CreateListingScreen = () => {
           {!busy ? (
             <Ionicons
               name={step === 4 ? 'checkmark' : 'arrow-forward'}
-              size={28}
+              size={21}
               color="#FFFFFF"
               style={{
-                marginLeft: 10,
+                marginLeft: 8,
               }}
             />
           ) : null}
