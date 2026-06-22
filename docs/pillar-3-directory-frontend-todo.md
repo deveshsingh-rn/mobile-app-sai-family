@@ -35,8 +35,8 @@ Directory routes: `app/directory/*`
 - [x] `PATCH /api/directory/listings/:id`
 - [x] `DELETE /api/directory/listings/:id`
 - [x] `GET /api/users/me/directory/listings`
-- [x] `POST /api/directory/listing-drafts`
-- [x] `PATCH /api/directory/listing-drafts/:id`
+- [ ] `POST /api/directory/listing-drafts` (not used after removing autosave)
+- [ ] `PATCH /api/directory/listing-drafts/:id` (not used after removing autosave)
 - [ ] `POST /api/directory/listing-drafts/:id/publish`
 - [x] `POST /api/media/upload` with `context=directory`
 
@@ -130,7 +130,7 @@ Status: Completed
 - [x] Validate multi-step form locally.
 - [x] Upload images through `POST /api/media/upload` with `context=directory`.
 - [x] Submit listing JSON with `logoUrl`, `bannerUrl`, `galleryUrls`.
-- [x] Add draft create/update autosave.
+- [x] Remove draft autosave so APIs run only on final submit.
 - [ ] Add draft publish flow if product wants publish-from-draft instead of direct submit.
 - [x] Add success screen or navigate to My Listings/detail.
 

@@ -29,20 +29,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
-  createDirectoryDraftRequest,
   createDirectoryListingRequest,
   fetchDirectoryDetailRequest,
   fetchDirectoryCategoriesRequest,
-  selectCurrentDirectoryDraft,
   selectDirectoryCategories,
   selectDirectoryDetail,
   selectDirectoryError,
   selectDirectoryUploadedMedia,
   selectIsCreatingDirectoryListing,
-  selectIsSavingDirectoryDraft,
   selectIsUploadingDirectoryMedia,
   updateDirectoryListingRequest,
-  updateDirectoryDraftRequest,
   uploadDirectoryMediaRequest,
 } from '@/store/directory';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -79,8 +75,6 @@ const CreateListingScreen = () => {
   const isEditMode = Boolean(listingId);
   const categories = useAppSelector(selectDirectoryCategories);
   const detail = useAppSelector(selectDirectoryDetail);
-  const draft = useAppSelector(selectCurrentDirectoryDraft);
-  const draftSaving = useAppSelector(selectIsSavingDirectoryDraft);
   const creating = useAppSelector(selectIsCreatingDirectoryListing);
   const uploadingMedia = useAppSelector(selectIsUploadingDirectoryMedia);
   const uploadedMedia = useAppSelector(selectDirectoryUploadedMedia);
@@ -218,47 +212,6 @@ const CreateListingScreen = () => {
     ]
   );
 
-  const saveDraft = useCallback(() => {
-    if (isEditMode) {
-      return;
-    }
-
-    const payload = toPayload(true);
-
-    if (!Object.keys(payload).length || draftSaving) {
-      return;
-    }
-
-    if (draft?.id) {
-      dispatch(updateDirectoryDraftRequest(draft.id, payload));
-    } else {
-      dispatch(createDirectoryDraftRequest(payload));
-    }
-  }, [dispatch, draft?.id, draftSaving, isEditMode, toPayload]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (
-        businessName.trim() ||
-        description.trim() ||
-        phone.trim() ||
-        whatsapp.trim() ||
-        address.trim()
-      ) {
-        saveDraft();
-      }
-    }, 1200);
-
-    return () => clearTimeout(timer);
-  }, [
-    address,
-    businessName,
-    description,
-    phone,
-    saveDraft,
-    whatsapp,
-  ]);
-
   const getStepErrors = (targetStep: number) => {
     const payload = toPayload();
     const nextErrors: Record<string, string> = {};
@@ -311,7 +264,6 @@ const CreateListingScreen = () => {
 
     if (step < 4) {
       setStep(step + 1);
-      saveDraft();
       return;
     }
 
@@ -635,11 +587,7 @@ const CreateListingScreen = () => {
             }}>
             {isEditMode
               ? 'Update your community listing'
-              : draftSaving
-              ? 'Saving draft...'
-              : draft?.id
-              ? 'Draft saved'
-              : 'Auto-save enabled'}
+              : 'Submit once when details are ready'}
           </Text>
         </View>
       </View>
