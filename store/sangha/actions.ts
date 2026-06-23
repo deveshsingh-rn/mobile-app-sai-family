@@ -10,6 +10,7 @@ import {
   SanghaGroupEvent,
   SanghaGroupMember,
   SanghaGroupPost,
+  SanghaGroupPostComment,
   SanghaHubHomeResult,
   SanghaInvitation,
   SanghaPagination,
@@ -288,6 +289,256 @@ export const fetchSanghaGroupEventsFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.FETCH_GROUP_EVENTS_FAILURE,
+  } as const);
+
+export const joinSanghaGroupRequest = (groupId: string) =>
+  ({
+    payload: { groupId },
+    type: SANGHA_ACTIONS.JOIN_GROUP_REQUEST,
+  } as const);
+
+export const joinSanghaGroupSuccess = (
+  payload: { groupId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.JOIN_GROUP_SUCCESS,
+  } as const);
+
+export const joinSanghaGroupFailure = (
+  payload: { error: string; groupId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.JOIN_GROUP_FAILURE,
+  } as const);
+
+export const leaveSanghaGroupRequest = (groupId: string) =>
+  ({
+    payload: { groupId },
+    type: SANGHA_ACTIONS.LEAVE_GROUP_REQUEST,
+  } as const);
+
+export const leaveSanghaGroupSuccess = (
+  payload: { groupId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.LEAVE_GROUP_SUCCESS,
+  } as const);
+
+export const leaveSanghaGroupFailure = (
+  payload: { error: string; groupId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.LEAVE_GROUP_FAILURE,
+  } as const);
+
+export const createSanghaGroupPostRequest = (
+  payload: {
+    content: string;
+    groupId: string;
+    mediaUrls?: string[];
+    type?: string;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_POST_REQUEST,
+  } as const);
+
+export const createSanghaGroupPostSuccess = (
+  payload: { post: SanghaGroupPost; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_POST_SUCCESS,
+  } as const);
+
+export const createSanghaGroupPostFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_POST_FAILURE,
+  } as const);
+
+export const likeSanghaGroupPostRequest = (
+  payload: { groupId: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.LIKE_GROUP_POST_REQUEST,
+  } as const);
+
+export const likeSanghaGroupPostSuccess = (
+  payload: { postId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.LIKE_GROUP_POST_SUCCESS,
+  } as const);
+
+export const likeSanghaGroupPostFailure = (
+  payload: { error: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.LIKE_GROUP_POST_FAILURE,
+  } as const);
+
+export const unlikeSanghaGroupPostRequest = (
+  payload: { groupId: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UNLIKE_GROUP_POST_REQUEST,
+  } as const);
+
+export const unlikeSanghaGroupPostSuccess = (
+  payload: { postId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UNLIKE_GROUP_POST_SUCCESS,
+  } as const);
+
+export const unlikeSanghaGroupPostFailure = (
+  payload: { error: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UNLIKE_GROUP_POST_FAILURE,
+  } as const);
+
+export const fetchSanghaGroupPostCommentsRequest = (
+  payload: {
+    groupId: string;
+    limit?: number;
+    offset?: number;
+    postId: string;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_POST_COMMENTS_REQUEST,
+  } as const);
+
+export const fetchSanghaGroupPostCommentsSuccess = (
+  payload: {
+    append?: boolean;
+    comments: SanghaGroupPostComment[];
+    postId: string;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_POST_COMMENTS_SUCCESS,
+  } as const);
+
+export const fetchSanghaGroupPostCommentsFailure = (
+  payload: { error: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_POST_COMMENTS_FAILURE,
+  } as const);
+
+export const createSanghaGroupPostCommentRequest = (
+  payload: { content: string; groupId: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_POST_COMMENT_REQUEST,
+  } as const);
+
+export const createSanghaGroupPostCommentSuccess = (
+  payload: { comment: SanghaGroupPostComment; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_POST_COMMENT_SUCCESS,
+  } as const);
+
+export const createSanghaGroupPostCommentFailure = (
+  payload: { error: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_POST_COMMENT_FAILURE,
+  } as const);
+
+export const pinSanghaGroupPostRequest = (
+  payload: { groupId: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.PIN_GROUP_POST_REQUEST,
+  } as const);
+
+export const pinSanghaGroupPostSuccess = (
+  payload: { postId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.PIN_GROUP_POST_SUCCESS,
+  } as const);
+
+export const pinSanghaGroupPostFailure = (
+  payload: { error: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.PIN_GROUP_POST_FAILURE,
+  } as const);
+
+export const unpinSanghaGroupPostRequest = (
+  payload: { groupId: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UNPIN_GROUP_POST_REQUEST,
+  } as const);
+
+export const unpinSanghaGroupPostSuccess = (
+  payload: { postId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UNPIN_GROUP_POST_SUCCESS,
+  } as const);
+
+export const unpinSanghaGroupPostFailure = (
+  payload: { error: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UNPIN_GROUP_POST_FAILURE,
+  } as const);
+
+export const deleteSanghaGroupPostRequest = (
+  payload: { groupId: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.DELETE_GROUP_POST_REQUEST,
+  } as const);
+
+export const deleteSanghaGroupPostSuccess = (
+  payload: { postId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.DELETE_GROUP_POST_SUCCESS,
+  } as const);
+
+export const deleteSanghaGroupPostFailure = (
+  payload: { error: string; postId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.DELETE_GROUP_POST_FAILURE,
   } as const);
 
 export const fetchSanghaRecentSearchesRequest = (

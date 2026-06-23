@@ -64,7 +64,7 @@ Status: Started
 - [x] Wire members to `GET /api/sangha/groups/:id/members`.
 - [x] Wire posts to `GET /api/sangha/groups/:id/posts`.
 - [x] Wire group events to `GET /api/sangha/groups/:id/events`.
-- [ ] Wire join, leave, post create, like, comment, pin, and delete actions.
+- [x] Wire join, leave, post create, like, comment, pin, and delete actions.
 
 ## Phase 6: Group Events
 

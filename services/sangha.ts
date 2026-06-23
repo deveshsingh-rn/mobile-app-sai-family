@@ -238,6 +238,119 @@ export async function apiFetchSanghaGroupEvents(
   return data;
 }
 
+export async function apiJoinSanghaGroup(groupId: string) {
+  const { data } = await apiClient.post(
+    `/api/sangha/groups/${groupId}/join`
+  );
+
+  return data;
+}
+
+export async function apiLeaveSanghaGroup(groupId: string) {
+  const { data } = await apiClient.delete(
+    `/api/sangha/groups/${groupId}/membership`
+  );
+
+  return data;
+}
+
+export async function apiCreateSanghaGroupPost(
+  groupId: string,
+  payload: {
+    content: string;
+    mediaUrls?: string[];
+    type?: string;
+  }
+) {
+  const { data } = await apiClient.post(
+    `/api/sangha/groups/${groupId}/posts`,
+    payload
+  );
+
+  return data;
+}
+
+export async function apiLikeSanghaGroupPost(
+  groupId: string,
+  postId: string
+) {
+  const { data } = await apiClient.post(
+    `/api/sangha/groups/${groupId}/posts/${postId}/like`
+  );
+
+  return data;
+}
+
+export async function apiUnlikeSanghaGroupPost(
+  groupId: string,
+  postId: string
+) {
+  const { data } = await apiClient.delete(
+    `/api/sangha/groups/${groupId}/posts/${postId}/like`
+  );
+
+  return data;
+}
+
+export async function apiFetchSanghaGroupPostComments(
+  groupId: string,
+  postId: string,
+  params: Record<string, any> = {}
+) {
+  const { data } = await apiClient.get(
+    `/api/sangha/groups/${groupId}/posts/${postId}/comments`,
+    { params }
+  );
+
+  return data;
+}
+
+export async function apiCreateSanghaGroupPostComment(
+  groupId: string,
+  postId: string,
+  payload: { content: string }
+) {
+  const { data } = await apiClient.post(
+    `/api/sangha/groups/${groupId}/posts/${postId}/comments`,
+    payload
+  );
+
+  return data;
+}
+
+export async function apiPinSanghaGroupPost(
+  groupId: string,
+  postId: string
+) {
+  const { data } = await apiClient.post(
+    `/api/sangha/groups/${groupId}/posts/${postId}/pin`
+  );
+
+  return data;
+}
+
+export async function apiUnpinSanghaGroupPost(
+  groupId: string,
+  postId: string
+) {
+  const { data } = await apiClient.delete(
+    `/api/sangha/groups/${groupId}/posts/${postId}/pin`
+  );
+
+  return data;
+}
+
+export async function apiDeleteSanghaGroupPost(
+  groupId: string,
+  postId: string
+) {
+  const { data } = await apiClient.delete(
+    `/api/sangha/groups/${groupId}/posts/${postId}`
+  );
+
+  return data;
+}
+
 export async function apiFetchSanghaLiveStreams(
   params: Record<string, any> = {}
 ) {

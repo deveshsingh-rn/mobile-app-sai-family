@@ -143,15 +143,27 @@ export type SanghaGroupPost = {
   authorAvatarUrl?: string | null;
   authorName?: string | null;
   authorRole?: string | null;
+  canDelete?: boolean;
+  canPin?: boolean;
   commentCount?: number;
   content?: string | null;
   createdAt?: string;
   id: string;
   imageUrl?: string | null;
   isPinned?: boolean;
+  likedByMe?: boolean;
   likeCount?: number;
   mediaUrls?: string[];
   type?: string;
+};
+
+export type SanghaGroupPostComment = {
+  authorAvatarUrl?: string | null;
+  authorName?: string | null;
+  content: string;
+  createdAt?: string;
+  id: string;
+  postId?: string;
 };
 
 export type SanghaGroupMember = {
@@ -241,6 +253,8 @@ export type SanghaState = {
   groupMembers: SanghaGroupMember[];
   groupMembersLoading: boolean;
   groupMembersPagination: SanghaPagination | null;
+  groupPostCommentsById: Record<string, SanghaGroupPostComment[]>;
+  groupPostCommentsLoadingIds: Record<string, boolean>;
   groupPosts: SanghaGroupPost[];
   groupPostsLoading: boolean;
   groupPostsPagination: SanghaPagination | null;
@@ -292,6 +306,36 @@ export enum SANGHA_ACTIONS {
   FETCH_GROUP_EVENTS_REQUEST = "sangha/FETCH_GROUP_EVENTS_REQUEST",
   FETCH_GROUP_EVENTS_SUCCESS = "sangha/FETCH_GROUP_EVENTS_SUCCESS",
   FETCH_GROUP_EVENTS_FAILURE = "sangha/FETCH_GROUP_EVENTS_FAILURE",
+  JOIN_GROUP_REQUEST = "sangha/JOIN_GROUP_REQUEST",
+  JOIN_GROUP_SUCCESS = "sangha/JOIN_GROUP_SUCCESS",
+  JOIN_GROUP_FAILURE = "sangha/JOIN_GROUP_FAILURE",
+  LEAVE_GROUP_REQUEST = "sangha/LEAVE_GROUP_REQUEST",
+  LEAVE_GROUP_SUCCESS = "sangha/LEAVE_GROUP_SUCCESS",
+  LEAVE_GROUP_FAILURE = "sangha/LEAVE_GROUP_FAILURE",
+  CREATE_GROUP_POST_REQUEST = "sangha/CREATE_GROUP_POST_REQUEST",
+  CREATE_GROUP_POST_SUCCESS = "sangha/CREATE_GROUP_POST_SUCCESS",
+  CREATE_GROUP_POST_FAILURE = "sangha/CREATE_GROUP_POST_FAILURE",
+  LIKE_GROUP_POST_REQUEST = "sangha/LIKE_GROUP_POST_REQUEST",
+  LIKE_GROUP_POST_SUCCESS = "sangha/LIKE_GROUP_POST_SUCCESS",
+  LIKE_GROUP_POST_FAILURE = "sangha/LIKE_GROUP_POST_FAILURE",
+  UNLIKE_GROUP_POST_REQUEST = "sangha/UNLIKE_GROUP_POST_REQUEST",
+  UNLIKE_GROUP_POST_SUCCESS = "sangha/UNLIKE_GROUP_POST_SUCCESS",
+  UNLIKE_GROUP_POST_FAILURE = "sangha/UNLIKE_GROUP_POST_FAILURE",
+  FETCH_GROUP_POST_COMMENTS_REQUEST = "sangha/FETCH_GROUP_POST_COMMENTS_REQUEST",
+  FETCH_GROUP_POST_COMMENTS_SUCCESS = "sangha/FETCH_GROUP_POST_COMMENTS_SUCCESS",
+  FETCH_GROUP_POST_COMMENTS_FAILURE = "sangha/FETCH_GROUP_POST_COMMENTS_FAILURE",
+  CREATE_GROUP_POST_COMMENT_REQUEST = "sangha/CREATE_GROUP_POST_COMMENT_REQUEST",
+  CREATE_GROUP_POST_COMMENT_SUCCESS = "sangha/CREATE_GROUP_POST_COMMENT_SUCCESS",
+  CREATE_GROUP_POST_COMMENT_FAILURE = "sangha/CREATE_GROUP_POST_COMMENT_FAILURE",
+  PIN_GROUP_POST_REQUEST = "sangha/PIN_GROUP_POST_REQUEST",
+  PIN_GROUP_POST_SUCCESS = "sangha/PIN_GROUP_POST_SUCCESS",
+  PIN_GROUP_POST_FAILURE = "sangha/PIN_GROUP_POST_FAILURE",
+  UNPIN_GROUP_POST_REQUEST = "sangha/UNPIN_GROUP_POST_REQUEST",
+  UNPIN_GROUP_POST_SUCCESS = "sangha/UNPIN_GROUP_POST_SUCCESS",
+  UNPIN_GROUP_POST_FAILURE = "sangha/UNPIN_GROUP_POST_FAILURE",
+  DELETE_GROUP_POST_REQUEST = "sangha/DELETE_GROUP_POST_REQUEST",
+  DELETE_GROUP_POST_SUCCESS = "sangha/DELETE_GROUP_POST_SUCCESS",
+  DELETE_GROUP_POST_FAILURE = "sangha/DELETE_GROUP_POST_FAILURE",
   FETCH_RECENT_SEARCHES_REQUEST = "sangha/FETCH_RECENT_SEARCHES_REQUEST",
   FETCH_RECENT_SEARCHES_SUCCESS = "sangha/FETCH_RECENT_SEARCHES_SUCCESS",
   FETCH_RECENT_SEARCHES_FAILURE = "sangha/FETCH_RECENT_SEARCHES_FAILURE",
@@ -453,6 +497,101 @@ export type SanghaAction =
         | SANGHA_ACTIONS.FETCH_GROUP_POSTS_FAILURE
         | SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_FAILURE
         | SANGHA_ACTIONS.FETCH_GROUP_EVENTS_FAILURE;
+    }
+  | {
+      payload: { groupId: string };
+      type:
+        | SANGHA_ACTIONS.JOIN_GROUP_REQUEST
+        | SANGHA_ACTIONS.LEAVE_GROUP_REQUEST;
+    }
+  | {
+      payload: { groupId: string; response?: any };
+      type:
+        | SANGHA_ACTIONS.JOIN_GROUP_SUCCESS
+        | SANGHA_ACTIONS.LEAVE_GROUP_SUCCESS;
+    }
+  | {
+      payload: { error: string; groupId: string };
+      type:
+        | SANGHA_ACTIONS.JOIN_GROUP_FAILURE
+        | SANGHA_ACTIONS.LEAVE_GROUP_FAILURE;
+    }
+  | {
+      payload: {
+        content: string;
+        groupId: string;
+        mediaUrls?: string[];
+        type?: string;
+      };
+      type: SANGHA_ACTIONS.CREATE_GROUP_POST_REQUEST;
+    }
+  | {
+      payload: { post: SanghaGroupPost; response?: any };
+      type: SANGHA_ACTIONS.CREATE_GROUP_POST_SUCCESS;
+    }
+  | {
+      payload: string;
+      type: SANGHA_ACTIONS.CREATE_GROUP_POST_FAILURE;
+    }
+  | {
+      payload: { groupId: string; postId: string };
+      type:
+        | SANGHA_ACTIONS.LIKE_GROUP_POST_REQUEST
+        | SANGHA_ACTIONS.UNLIKE_GROUP_POST_REQUEST
+        | SANGHA_ACTIONS.PIN_GROUP_POST_REQUEST
+        | SANGHA_ACTIONS.UNPIN_GROUP_POST_REQUEST
+        | SANGHA_ACTIONS.DELETE_GROUP_POST_REQUEST;
+    }
+  | {
+      payload: { postId: string; response?: any };
+      type:
+        | SANGHA_ACTIONS.LIKE_GROUP_POST_SUCCESS
+        | SANGHA_ACTIONS.UNLIKE_GROUP_POST_SUCCESS
+        | SANGHA_ACTIONS.PIN_GROUP_POST_SUCCESS
+        | SANGHA_ACTIONS.UNPIN_GROUP_POST_SUCCESS
+        | SANGHA_ACTIONS.DELETE_GROUP_POST_SUCCESS;
+    }
+  | {
+      payload: { error: string; postId: string };
+      type:
+        | SANGHA_ACTIONS.LIKE_GROUP_POST_FAILURE
+        | SANGHA_ACTIONS.UNLIKE_GROUP_POST_FAILURE
+        | SANGHA_ACTIONS.PIN_GROUP_POST_FAILURE
+        | SANGHA_ACTIONS.UNPIN_GROUP_POST_FAILURE
+        | SANGHA_ACTIONS.DELETE_GROUP_POST_FAILURE;
+    }
+  | {
+      payload: {
+        groupId: string;
+        limit?: number;
+        offset?: number;
+        postId: string;
+      };
+      type: SANGHA_ACTIONS.FETCH_GROUP_POST_COMMENTS_REQUEST;
+    }
+  | {
+      payload: {
+        append?: boolean;
+        comments: SanghaGroupPostComment[];
+        postId: string;
+      };
+      type: SANGHA_ACTIONS.FETCH_GROUP_POST_COMMENTS_SUCCESS;
+    }
+  | {
+      payload: { error: string; postId: string };
+      type: SANGHA_ACTIONS.FETCH_GROUP_POST_COMMENTS_FAILURE;
+    }
+  | {
+      payload: { content: string; groupId: string; postId: string };
+      type: SANGHA_ACTIONS.CREATE_GROUP_POST_COMMENT_REQUEST;
+    }
+  | {
+      payload: { comment: SanghaGroupPostComment; postId: string };
+      type: SANGHA_ACTIONS.CREATE_GROUP_POST_COMMENT_SUCCESS;
+    }
+  | {
+      payload: { error: string; postId: string };
+      type: SANGHA_ACTIONS.CREATE_GROUP_POST_COMMENT_FAILURE;
     }
   | {
       payload: { limit?: number };

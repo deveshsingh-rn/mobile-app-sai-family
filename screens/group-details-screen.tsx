@@ -14,12 +14,23 @@ import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
+  createSanghaGroupPostCommentRequest,
+  createSanghaGroupPostRequest,
+  deleteSanghaGroupPostRequest,
   fetchSanghaGroupDetailRequest,
   fetchSanghaGroupEventsRequest,
   fetchSanghaGroupMembersRequest,
   fetchSanghaGroupPostsRequest,
+  fetchSanghaGroupPostCommentsRequest,
+  joinSanghaGroupRequest,
+  leaveSanghaGroupRequest,
+  likeSanghaGroupPostRequest,
+  pinSanghaGroupPostRequest,
+  unlikeSanghaGroupPostRequest,
+  unpinSanghaGroupPostRequest,
 } from "@/store/sangha/actions";
 import {
+  selectIsSanghaActionPending,
   selectSanghaError,
   selectSanghaGroupDetail,
   selectSanghaGroupDetailLoading,
@@ -29,6 +40,8 @@ import {
   selectSanghaGroupMembersLoading,
   selectSanghaGroupPosts,
   selectSanghaGroupPostsLoading,
+  selectSanghaGroupPostComments,
+  selectSanghaGroupPostCommentsLoading,
 } from "@/store/sangha/selectors";
 import {
   SanghaGroupDetail,
@@ -111,6 +124,9 @@ export default function GroupDetailsScreen() {
   const error = useAppSelector(selectSanghaError);
   const [activeTab, setActiveTab] = useState<GroupTab>("Feed");
   const groupId = id || group?.id || "";
+  const groupActionPending = useAppSelector((state) =>
+    selectIsSanghaActionPending(state, groupId)
+  );
 
   useEffect(() => {
     if (!groupId) {
@@ -170,10 +186,24 @@ export default function GroupDetailsScreen() {
 
     return (
       <FeedSection
+        groupId={groupId}
         loading={postsLoading}
         posts={posts}
       />
     );
+  };
+
+  const handleJoinToggle = () => {
+    if (!groupId || groupActionPending) {
+      return;
+    }
+
+    if (group?.membershipStatus === "active") {
+      dispatch(leaveSanghaGroupRequest(groupId));
+      return;
+    }
+
+    dispatch(joinSanghaGroupRequest(groupId));
   };
 
   if (groupLoading && !group) {
@@ -363,6 +393,8 @@ export default function GroupDetailsScreen() {
 
               <TouchableOpacity
                 activeOpacity={0.85}
+                disabled={groupActionPending}
+                onPress={handleJoinToggle}
                 style={{
                   width: 88,
                   height: 48,
@@ -377,13 +409,17 @@ export default function GroupDetailsScreen() {
                   elevation: 6,
                 }}
               >
-                <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>
-                  {group?.membershipStatus === "active"
-                    ? "Joined"
-                    : group?.membershipStatus === "pending"
-                      ? "Pending"
-                      : "Join"}
-                </Text>
+                {groupActionPending ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>
+                    {group?.membershipStatus === "active"
+                      ? "Leave"
+                      : group?.membershipStatus === "pending"
+                        ? "Pending"
+                        : "Join"}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -456,14 +492,35 @@ function EmptyCard({ text }: { text: string }) {
 }
 
 function FeedSection({
+  groupId,
   loading,
   posts,
 }: {
+  groupId: string;
   loading: boolean;
   posts: SanghaGroupPost[];
 }) {
+  const dispatch = useAppDispatch();
+  const [content, setContent] = useState("");
   const pinned = posts.find((post) => post.isPinned);
   const regularPosts = posts.filter((post) => !post.isPinned);
+  const submitPost = () => {
+    const trimmed = content.trim();
+
+    if (!trimmed || !groupId) {
+      return;
+    }
+
+    dispatch(
+      createSanghaGroupPostRequest({
+        content: trimmed,
+        groupId,
+        mediaUrls: [],
+        type: "text",
+      })
+    );
+    setContent("");
+  };
 
   return (
     <>
@@ -481,8 +538,11 @@ function FeedSection({
             source={{ uri: "https://randomuser.me/api/portraits/women/12.jpg" }}
             style={{ width: 42, height: 42, borderRadius: 21 }}
           />
-          <TouchableOpacity
-            activeOpacity={0.85}
+          <TextInput
+            onChangeText={setContent}
+            onSubmitEditing={submitPost}
+            placeholder="Share seva update or bhajan note"
+            placeholderTextColor="#8B8177"
             style={{
               flex: 1,
               height: 44,
@@ -490,12 +550,26 @@ function FeedSection({
               backgroundColor: "#F8F6F2",
               marginLeft: 12,
               paddingHorizontal: 16,
+              color: "#111827",
+              fontSize: 15,
+              fontWeight: "700",
+            }}
+            value={content}
+          />
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={submitPost}
+            style={{
+              alignItems: "center",
+              backgroundColor: "#F97316",
+              borderRadius: 18,
+              height: 38,
               justifyContent: "center",
+              marginLeft: 8,
+              paddingHorizontal: 12,
             }}
           >
-            <Text style={{ color: "#8B8177", fontSize: 15, fontWeight: "700" }}>
-              Share seva update or bhajan note
-            </Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Post</Text>
           </TouchableOpacity>
         </View>
 
@@ -534,9 +608,9 @@ function FeedSection({
       {!loading && posts.length === 0 ? (
         <EmptyCard text="No posts have been shared in this group yet." />
       ) : null}
-      {pinned ? <PinnedPostCard post={pinned} /> : null}
+      {pinned ? <PinnedPostCard groupId={groupId} post={pinned} /> : null}
       {regularPosts.map((post) => (
-        <CommunityPostCard key={post.id} post={post} />
+        <CommunityPostCard key={post.id} groupId={groupId} post={post} />
       ))}
     </>
   );
@@ -593,7 +667,13 @@ function MemberRequestCard() {
   );
 }
 
-function PinnedPostCard({ post }: { post: SanghaGroupPost }) {
+function PinnedPostCard({
+  groupId,
+  post,
+}: {
+  groupId: string;
+  post: SanghaGroupPost;
+}) {
   return (
     <View
       style={{
@@ -623,17 +703,49 @@ function PinnedPostCard({ post }: { post: SanghaGroupPost }) {
       </Text>
 
       <PostActions
+        groupId={groupId}
         likes={`${post.likeCount || 0}`}
         comments={`${post.commentCount || 0}`}
+        post={post}
       />
     </View>
   );
 }
 
-function CommunityPostCard({ post }: { post: SanghaGroupPost }) {
+function CommunityPostCard({
+  groupId,
+  post,
+}: {
+  groupId: string;
+  post: SanghaGroupPost;
+}) {
+  const dispatch = useAppDispatch();
+  const comments = useAppSelector((state) =>
+    selectSanghaGroupPostComments(state, post.id)
+  );
+  const commentsLoading = useAppSelector((state) =>
+    selectSanghaGroupPostCommentsLoading(state, post.id)
+  );
+  const [comment, setComment] = useState("");
   const imageUrl =
     post.imageUrl ||
     post.mediaUrls?.find((url) => Boolean(url));
+  const submitComment = () => {
+    const trimmed = comment.trim();
+
+    if (!trimmed) {
+      return;
+    }
+
+    dispatch(
+      createSanghaGroupPostCommentRequest({
+        content: trimmed,
+        groupId,
+        postId: post.id,
+      })
+    );
+    setComment("");
+  };
 
   return (
     <View
@@ -662,6 +774,55 @@ function CommunityPostCard({ post }: { post: SanghaGroupPost }) {
         />
       ) : null}
 
+      <PostActions
+        groupId={groupId}
+        likes={`${post.likeCount || 0}`}
+        comments={`${post.commentCount || 0}`}
+        post={post}
+      />
+
+      {comments.length === 0 && post.commentCount ? (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() =>
+            dispatch(
+              fetchSanghaGroupPostCommentsRequest({
+                groupId,
+                limit: 20,
+                offset: 0,
+                postId: post.id,
+              })
+            )
+          }
+          style={{
+            marginTop: 14,
+          }}
+        >
+          <Text style={{ color: "#F97316", fontSize: 13, fontWeight: "900" }}>
+            {commentsLoading ? "Loading comments..." : "View comments"}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+
+      {comments.map((item) => (
+        <View
+          key={item.id}
+          style={{
+            backgroundColor: "#F9FAFB",
+            borderRadius: 16,
+            marginTop: 10,
+            padding: 12,
+          }}
+        >
+          <Text style={{ color: "#111827", fontSize: 13, fontWeight: "900" }}>
+            {item.authorName || "Sai Family"}
+          </Text>
+          <Text style={{ color: "#4B5563", fontSize: 13, fontWeight: "600", lineHeight: 20, marginTop: 4 }}>
+            {item.content}
+          </Text>
+        </View>
+      ))}
+
       <View
         style={{
           marginTop: 18,
@@ -675,11 +836,32 @@ function CommunityPostCard({ post }: { post: SanghaGroupPost }) {
         }}
       >
         <TextInput
+          onChangeText={setComment}
+          onSubmitEditing={submitComment}
           placeholder="Write a comment..."
           placeholderTextColor="#9CA3AF"
           style={{ fontSize: 15, color: "#111827" }}
+          value={comment}
         />
       </View>
+      {comment.trim() ? (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={submitComment}
+          style={{
+            alignItems: "center",
+            alignSelf: "flex-end",
+            backgroundColor: "#F97316",
+            borderRadius: 16,
+            height: 36,
+            justifyContent: "center",
+            marginTop: 8,
+            paddingHorizontal: 14,
+          }}
+        >
+          <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Send</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }
@@ -953,15 +1135,83 @@ function PostAuthor({
   );
 }
 
-function PostActions({likes, comments}: {likes: string; comments: string}) {
+function PostActions({
+  comments,
+  groupId,
+  likes,
+  post,
+}: {
+  comments: string;
+  groupId: string;
+  likes: string;
+  post: SanghaGroupPost;
+}) {
+  const dispatch = useAppDispatch();
+  const pending = useAppSelector((state) =>
+    selectIsSanghaActionPending(state, post.id)
+  );
+  const toggleLike = () => {
+    if (pending) return;
+
+    dispatch(
+      post.likedByMe
+        ? unlikeSanghaGroupPostRequest({
+            groupId,
+            postId: post.id,
+          })
+        : likeSanghaGroupPostRequest({
+            groupId,
+            postId: post.id,
+          })
+    );
+  };
+  const togglePin = () => {
+    if (pending) return;
+
+    dispatch(
+      post.isPinned
+        ? unpinSanghaGroupPostRequest({
+            groupId,
+            postId: post.id,
+          })
+        : pinSanghaGroupPostRequest({
+            groupId,
+            postId: post.id,
+          })
+    );
+  };
+
   return (
     <>
       <View style={{ height: 1, backgroundColor: "#E5E7EB", marginVertical: 18 }} />
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Feather name="heart" size={17} color="#6B7280" />
+        <TouchableOpacity activeOpacity={0.85} onPress={toggleLike} style={{ flexDirection: "row", alignItems: "center" }}>
+          <Feather name="heart" size={17} color={post.likedByMe ? "#F97316" : "#6B7280"} />
+        </TouchableOpacity>
         <Text style={{ marginLeft: 7, marginRight: 18, color: "#6B7280", fontSize: 14 }}>{likes}</Text>
         <Feather name="message-circle" size={17} color="#6B7280" />
         <Text style={{ marginLeft: 7, color: "#6B7280", fontSize: 14 }}>{comments}</Text>
+        {post.canPin || post.isPinned ? (
+          <TouchableOpacity activeOpacity={0.85} onPress={togglePin} style={{ marginLeft: 18 }}>
+            <Ionicons name={post.isPinned ? "pin" : "pin-outline"} size={17} color="#6B7280" />
+          </TouchableOpacity>
+        ) : null}
+        {post.canDelete ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() =>
+              dispatch(
+                deleteSanghaGroupPostRequest({
+                  groupId,
+                  postId: post.id,
+                })
+              )
+            }
+            style={{ marginLeft: 18 }}
+          >
+            <Feather name="trash-2" size={17} color="#9A3412" />
+          </TouchableOpacity>
+        ) : null}
       </View>
     </>
   );

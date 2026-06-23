@@ -12,14 +12,24 @@ import {
   apiFetchSanghaGroupDetail,
   apiFetchSanghaGroupEvents,
   apiFetchSanghaGroupMembers,
+  apiCreateSanghaGroupPost,
+  apiCreateSanghaGroupPostComment,
+  apiDeleteSanghaGroupPost,
   apiFetchSanghaGroupPosts,
+  apiFetchSanghaGroupPostComments,
   apiFetchSanghaGroups,
   apiFetchSanghaGroupsHome,
   apiFetchSanghaHome,
   apiFetchSanghaInvitations,
   apiFetchSanghaRecentSearches,
+  apiJoinSanghaGroup,
+  apiLeaveSanghaGroup,
+  apiLikeSanghaGroupPost,
+  apiPinSanghaGroupPost,
   apiRequestSanghaConnection,
   apiSearchSanghaGroups,
+  apiUnlikeSanghaGroupPost,
+  apiUnpinSanghaGroupPost,
   apiUpdateSanghaDiscovery,
 } from "@/services/sangha";
 import {
@@ -33,6 +43,12 @@ import {
   clearSanghaRecentSearchesSuccess,
   declineSanghaInvitationFailure,
   declineSanghaInvitationSuccess,
+  createSanghaGroupPostCommentFailure,
+  createSanghaGroupPostCommentSuccess,
+  createSanghaGroupPostFailure,
+  createSanghaGroupPostSuccess,
+  deleteSanghaGroupPostFailure,
+  deleteSanghaGroupPostSuccess,
   disconnectSanghaDevoteeFailure,
   disconnectSanghaDevoteeSuccess,
   fetchSanghaDevoteesFailure,
@@ -49,6 +65,8 @@ import {
   fetchSanghaGroupMembersSuccess,
   fetchSanghaGroupPostsFailure,
   fetchSanghaGroupPostsSuccess,
+  fetchSanghaGroupPostCommentsFailure,
+  fetchSanghaGroupPostCommentsSuccess,
   fetchSanghaHomeFailure,
   fetchSanghaHomeSuccess,
   fetchSanghaInvitationsFailure,
@@ -57,10 +75,22 @@ import {
   fetchSanghaProfileSuccess,
   fetchSanghaRecentSearchesFailure,
   fetchSanghaRecentSearchesSuccess,
+  joinSanghaGroupFailure,
+  joinSanghaGroupSuccess,
+  leaveSanghaGroupFailure,
+  leaveSanghaGroupSuccess,
+  likeSanghaGroupPostFailure,
+  likeSanghaGroupPostSuccess,
+  pinSanghaGroupPostFailure,
+  pinSanghaGroupPostSuccess,
   requestSanghaConnectionFailure,
   requestSanghaConnectionSuccess,
   searchSanghaGroupsFailure,
   searchSanghaGroupsSuccess,
+  unlikeSanghaGroupPostFailure,
+  unlikeSanghaGroupPostSuccess,
+  unpinSanghaGroupPostFailure,
+  unpinSanghaGroupPostSuccess,
   updateSanghaDiscoveryFailure,
   updateSanghaDiscoverySuccess,
 } from "./actions";
@@ -280,6 +310,38 @@ function normalizeEvents(response: any, append = false) {
       response?.data?.pagination ||
       null,
   };
+}
+
+function normalizePost(response: any) {
+  return (
+    response?.post ||
+    response?.data?.post ||
+    response?.groupPost ||
+    response?.data?.groupPost ||
+    response
+  );
+}
+
+function normalizeComments(response: any, append = false) {
+  return {
+    append,
+    comments:
+      response?.comments ||
+      response?.results ||
+      response?.data?.comments ||
+      response?.data?.results ||
+      [],
+  };
+}
+
+function normalizeComment(response: any) {
+  return (
+    response?.comment ||
+    response?.data?.comment ||
+    response?.groupComment ||
+    response?.data?.groupComment ||
+    response
+  );
 }
 
 function* handleFetchSanghaDevotees(
@@ -534,6 +596,188 @@ function* handleFetchGroupEvents(
         getErrorMessage(error, "Failed to fetch group events.")
       )
     );
+  }
+}
+
+function* handleJoinGroup(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(apiJoinSanghaGroup, action.payload.groupId);
+    yield put(joinSanghaGroupSuccess({ groupId: action.payload.groupId, response }));
+  } catch (error) {
+    yield put(
+      joinSanghaGroupFailure({
+        error: getErrorMessage(error, "Failed to join group."),
+        groupId: action.payload.groupId,
+      })
+    );
+  }
+}
+
+function* handleLeaveGroup(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(apiLeaveSanghaGroup, action.payload.groupId);
+    yield put(leaveSanghaGroupSuccess({ groupId: action.payload.groupId, response }));
+  } catch (error) {
+    yield put(
+      leaveSanghaGroupFailure({
+        error: getErrorMessage(error, "Failed to leave group."),
+        groupId: action.payload.groupId,
+      })
+    );
+  }
+}
+
+function* handleCreateGroupPost(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const { groupId, ...payload } = action.payload;
+    const response = yield call(apiCreateSanghaGroupPost, groupId, payload);
+    yield put(createSanghaGroupPostSuccess({ post: normalizePost(response), response }));
+  } catch (error) {
+    yield put(createSanghaGroupPostFailure(getErrorMessage(error, "Failed to create post.")));
+  }
+}
+
+function* handleLikeGroupPost(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiLikeSanghaGroupPost,
+      action.payload.groupId,
+      action.payload.postId
+    );
+    yield put(likeSanghaGroupPostSuccess({ postId: action.payload.postId, response }));
+  } catch (error) {
+    yield put(
+      likeSanghaGroupPostFailure({
+        error: getErrorMessage(error, "Failed to like post."),
+        postId: action.payload.postId,
+      })
+    );
+  }
+}
+
+function* handleUnlikeGroupPost(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiUnlikeSanghaGroupPost,
+      action.payload.groupId,
+      action.payload.postId
+    );
+    yield put(unlikeSanghaGroupPostSuccess({ postId: action.payload.postId, response }));
+  } catch (error) {
+    yield put(
+      unlikeSanghaGroupPostFailure({
+        error: getErrorMessage(error, "Failed to unlike post."),
+        postId: action.payload.postId,
+      })
+    );
+  }
+}
+
+function* handleFetchPostComments(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const { groupId, postId, ...params } = action.payload;
+    const response = yield call(
+      apiFetchSanghaGroupPostComments,
+      groupId,
+      postId,
+      params
+    );
+    yield put(
+      fetchSanghaGroupPostCommentsSuccess({
+        ...normalizeComments(response, Boolean(params.offset)),
+        postId,
+      })
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaGroupPostCommentsFailure({
+        error: getErrorMessage(error, "Failed to fetch comments."),
+        postId: action.payload.postId,
+      })
+    );
+  }
+}
+
+function* handleCreatePostComment(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiCreateSanghaGroupPostComment,
+      action.payload.groupId,
+      action.payload.postId,
+      { content: action.payload.content }
+    );
+    yield put(
+      createSanghaGroupPostCommentSuccess({
+        comment: normalizeComment(response),
+        postId: action.payload.postId,
+      })
+    );
+  } catch (error) {
+    yield put(
+      createSanghaGroupPostCommentFailure({
+        error: getErrorMessage(error, "Failed to add comment."),
+        postId: action.payload.postId,
+      })
+    );
+  }
+}
+
+function* handlePinGroupPost(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiPinSanghaGroupPost,
+      action.payload.groupId,
+      action.payload.postId
+    );
+    yield put(pinSanghaGroupPostSuccess({ postId: action.payload.postId, response }));
+  } catch (error) {
+    yield put(pinSanghaGroupPostFailure({ error: getErrorMessage(error, "Failed to pin post."), postId: action.payload.postId }));
+  }
+}
+
+function* handleUnpinGroupPost(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiUnpinSanghaGroupPost,
+      action.payload.groupId,
+      action.payload.postId
+    );
+    yield put(unpinSanghaGroupPostSuccess({ postId: action.payload.postId, response }));
+  } catch (error) {
+    yield put(unpinSanghaGroupPostFailure({ error: getErrorMessage(error, "Failed to unpin post."), postId: action.payload.postId }));
+  }
+}
+
+function* handleDeleteGroupPost(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiDeleteSanghaGroupPost,
+      action.payload.groupId,
+      action.payload.postId
+    );
+    yield put(deleteSanghaGroupPostSuccess({ postId: action.payload.postId, response }));
+  } catch (error) {
+    yield put(deleteSanghaGroupPostFailure({ error: getErrorMessage(error, "Failed to delete post."), postId: action.payload.postId }));
   }
 }
 
@@ -800,6 +1044,46 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUP_EVENTS_REQUEST,
     handleFetchGroupEvents
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.JOIN_GROUP_REQUEST,
+    handleJoinGroup
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.LEAVE_GROUP_REQUEST,
+    handleLeaveGroup
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.CREATE_GROUP_POST_REQUEST,
+    handleCreateGroupPost
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.LIKE_GROUP_POST_REQUEST,
+    handleLikeGroupPost
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.UNLIKE_GROUP_POST_REQUEST,
+    handleUnlikeGroupPost
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_GROUP_POST_COMMENTS_REQUEST,
+    handleFetchPostComments
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.CREATE_GROUP_POST_COMMENT_REQUEST,
+    handleCreatePostComment
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.PIN_GROUP_POST_REQUEST,
+    handlePinGroupPost
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.UNPIN_GROUP_POST_REQUEST,
+    handleUnpinGroupPost
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.DELETE_GROUP_POST_REQUEST,
+    handleDeleteGroupPost
   );
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_RECENT_SEARCHES_REQUEST,

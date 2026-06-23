@@ -108,6 +108,22 @@ export const selectSanghaGroupEventsLoading = (
   state: RootState
 ) => selectSanghaState(state).groupEventsLoading;
 
+export const selectSanghaGroupPostComments = (
+  state: RootState,
+  postId?: string
+) =>
+  postId
+    ? selectSanghaState(state).groupPostCommentsById[postId] || []
+    : [];
+
+export const selectSanghaGroupPostCommentsLoading = (
+  state: RootState,
+  postId?: string
+) =>
+  postId
+    ? Boolean(selectSanghaState(state).groupPostCommentsLoadingIds[postId])
+    : false;
+
 export const selectSanghaRecentSearches = (
   state: RootState
 ) => selectSanghaState(state).recentSearches;
