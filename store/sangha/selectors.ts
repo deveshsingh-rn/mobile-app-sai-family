@@ -14,6 +14,17 @@ export const selectSanghaDiscoverySaving = (
   state: RootState
 ) => selectSanghaState(state).discoverySaving;
 
+export const selectSanghaDevotees = (state: RootState) =>
+  selectSanghaState(state).devotees;
+
+export const selectSanghaDevoteesLoading = (
+  state: RootState
+) => selectSanghaState(state).devoteesLoading;
+
+export const selectSanghaDevoteesPagination = (
+  state: RootState
+) => selectSanghaState(state).devoteesPagination;
+
 export const selectSanghaNearYou = (state: RootState) =>
   selectSanghaHome(state)?.nearYou || [];
 

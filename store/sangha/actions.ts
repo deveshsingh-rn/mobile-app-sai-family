@@ -1,5 +1,7 @@
 import {
   SANGHA_ACTIONS,
+  SanghaDevoteeListParams,
+  SanghaDevoteeListResult,
   SanghaDiscoverySettingsPayload,
   SanghaHomeParams,
   SanghaHomeResult,
@@ -27,6 +29,32 @@ export const fetchSanghaHomeFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.FETCH_HOME_FAILURE,
+  } as const);
+
+export const fetchSanghaDevoteesRequest = (
+  payload: SanghaDevoteeListParams = {}
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_DEVOTEES_REQUEST,
+  } as const);
+
+export const fetchSanghaDevoteesSuccess = (
+  payload: SanghaDevoteeListResult & {
+    append?: boolean;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_DEVOTEES_SUCCESS,
+  } as const);
+
+export const fetchSanghaDevoteesFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_DEVOTEES_FAILURE,
   } as const);
 
 export const updateSanghaDiscoveryRequest = (

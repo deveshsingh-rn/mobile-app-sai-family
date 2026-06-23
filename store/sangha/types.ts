@@ -73,6 +73,16 @@ export type SanghaHomeParams = {
   tradition?: string;
 };
 
+export type SanghaDevoteeListParams = SanghaHomeParams & {
+  offset?: number;
+  type?: "near" | "suggested" | string;
+};
+
+export type SanghaDevoteeListResult = {
+  devotees: SanghaDevoteeSummary[];
+  pagination: SanghaPagination | null;
+};
+
 export type SanghaHomeResult = {
   nearMeEnabled?: boolean;
   nearYou?: SanghaDevoteeSummary[];
@@ -150,6 +160,9 @@ export type SanghaLiveStream = {
 };
 
 export type SanghaState = {
+  devotees: SanghaDevoteeSummary[];
+  devoteesLoading: boolean;
+  devoteesPagination: SanghaPagination | null;
   discoverySaving: boolean;
   error: string | null;
   home: SanghaHomeResult | null;
@@ -160,6 +173,9 @@ export enum SANGHA_ACTIONS {
   FETCH_HOME_REQUEST = "sangha/FETCH_HOME_REQUEST",
   FETCH_HOME_SUCCESS = "sangha/FETCH_HOME_SUCCESS",
   FETCH_HOME_FAILURE = "sangha/FETCH_HOME_FAILURE",
+  FETCH_DEVOTEES_REQUEST = "sangha/FETCH_DEVOTEES_REQUEST",
+  FETCH_DEVOTEES_SUCCESS = "sangha/FETCH_DEVOTEES_SUCCESS",
+  FETCH_DEVOTEES_FAILURE = "sangha/FETCH_DEVOTEES_FAILURE",
   UPDATE_DISCOVERY_REQUEST = "sangha/UPDATE_DISCOVERY_REQUEST",
   UPDATE_DISCOVERY_SUCCESS = "sangha/UPDATE_DISCOVERY_SUCCESS",
   UPDATE_DISCOVERY_FAILURE = "sangha/UPDATE_DISCOVERY_FAILURE",
@@ -177,6 +193,20 @@ export type SanghaAction =
   | {
       payload: string;
       type: SANGHA_ACTIONS.FETCH_HOME_FAILURE;
+    }
+  | {
+      payload: SanghaDevoteeListParams;
+      type: SANGHA_ACTIONS.FETCH_DEVOTEES_REQUEST;
+    }
+  | {
+      payload: SanghaDevoteeListResult & {
+        append?: boolean;
+      };
+      type: SANGHA_ACTIONS.FETCH_DEVOTEES_SUCCESS;
+    }
+  | {
+      payload: string;
+      type: SANGHA_ACTIONS.FETCH_DEVOTEES_FAILURE;
     }
   | {
       payload: SanghaDiscoverySettingsPayload;

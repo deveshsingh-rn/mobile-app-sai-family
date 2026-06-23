@@ -1,6 +1,11 @@
-import React from 'react';
+import React, {
+  useEffect,
+  useMemo,
+} from 'react';
 import {
+  ActivityIndicator,
   Image,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Text,
@@ -15,93 +20,80 @@ import {
 } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type SanghaPerson = {
-  badge: string;
-  image: string;
-  meta: string;
-  name: string;
-  subtitle: string;
-};
+import { fetchSanghaDevoteesRequest } from '@/store/sangha/actions';
+import {
+  selectSanghaDevotees,
+  selectSanghaDevoteesLoading,
+  selectSanghaDevoteesPagination,
+  selectSanghaError,
+} from '@/store/sangha/selectors';
+import { SanghaDevoteeSummary } from '@/store/sangha/types';
+import {
+  useAppDispatch,
+  useAppSelector,
+} from '@/store/hooks';
 
-const nearPeople: SanghaPerson[] = [
-  {
-    badge: '3 Mutual Connections',
-    image:
-      'https://randomuser.me/api/portraits/women/44.jpg',
-    meta: 'Andheri West · 1.1 km',
-    name: 'Priya Sharma',
-    subtitle: 'Shirdi Sai Devotee',
-  },
-  {
-    badge: 'Nearby',
-    image:
-      'https://randomuser.me/api/portraits/men/32.jpg',
-    meta: 'Versova · 1.2 km',
-    name: 'Rahul Verma',
-    subtitle: 'Iskcon Tradition',
-  },
-  {
-    badge: 'Seva Group',
-    image:
-      'https://randomuser.me/api/portraits/women/21.jpg',
-    meta: 'Juhu · 2.4 km',
-    name: 'Kavita Rao',
-    subtitle: 'Sai Seva Volunteer',
-  },
-  {
-    badge: 'Bhajan Circle',
-    image:
-      'https://randomuser.me/api/portraits/men/64.jpg',
-    meta: 'Bandra · 3.8 km',
-    name: 'Amit Deshmukh',
-    subtitle: 'Bhajan Singer',
-  },
-];
+function getAvatarUri(item: SanghaDevoteeSummary) {
+  return (
+    item.avatarUrl ||
+    item.profileImageUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      item.name || 'Sai Family'
+    )}&background=FFF7ED&color=F97316`
+  );
+}
 
-const suggestedPeople: SanghaPerson[] = [
-  {
-    badge: 'Based on your tradition',
-    image:
-      'https://randomuser.me/api/portraits/women/68.jpg',
-    meta: 'Art of Living · Bangalore',
-    name: 'Ananya Desai',
-    subtitle: 'Meditation and seva',
-  },
-  {
-    badge: 'Based on your city',
-    image:
-      'https://randomuser.me/api/portraits/men/75.jpg',
-    meta: 'Vipassana · Pune',
-    name: 'Vikram Singh',
-    subtitle: 'Weekly satsang host',
-  },
-  {
-    badge: 'Shared interests',
-    image:
-      'https://randomuser.me/api/portraits/women/52.jpg',
-    meta: 'Sai Literature · Delhi',
-    name: 'Meera Iyer',
-    subtitle: 'Reads and shares Sai texts',
-  },
-  {
-    badge: 'Community match',
-    image:
-      'https://randomuser.me/api/portraits/men/18.jpg',
-    meta: 'Online Global',
-    name: 'Nikhil Shah',
-    subtitle: 'Digital seva volunteer',
-  },
-];
+function getSubtitle(item: SanghaDevoteeSummary) {
+  return (
+    item.tradition ||
+    item.bio ||
+    'Sai Family Devotee'
+  );
+}
+
+function getMeta(item: SanghaDevoteeSummary) {
+  return [
+    item.approximateLocationLabel || item.city,
+    item.distanceLabel ||
+      (typeof item.distanceKm === 'number'
+        ? `${item.distanceKm.toFixed(1)} km`
+        : null),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+function getBadge(item: SanghaDevoteeSummary) {
+  if (item.mutualConnectionCount) {
+    return `${item.mutualConnectionCount} Mutual Connections`;
+  }
+
+  return (
+    item.recommendationReason ||
+    item.purposeTags?.[0] ||
+    item.connectionStatus ||
+    'Sangha match'
+  );
+}
 
 function PersonCard({
   item,
 }: {
-  item: SanghaPerson;
+  item: SanghaDevoteeSummary;
 }) {
+  const id = item.userId || item.id;
+
   return (
     <TouchableOpacity
       activeOpacity={0.9}
-      onPress={() => router.push('/sangha-profile')}
+      onPress={() => {
+        if (id) {
+          router.push({
+            pathname: '/sangha-profile',
+            params: { id },
+          });
+        }
+      }}
       style={{
         backgroundColor: '#FFFFFF',
         borderColor: '#F1F1F1',
@@ -125,7 +117,7 @@ function PersonCard({
         }}>
         <Image
           source={{
-            uri: item.image,
+            uri: getAvatarUri(item),
           }}
           style={{
             borderRadius: 34,
@@ -154,7 +146,7 @@ function PersonCard({
               fontWeight: '700',
               marginTop: 4,
             }}>
-            {item.subtitle}
+            {getSubtitle(item)}
           </Text>
           <Text
             style={{
@@ -163,7 +155,7 @@ function PersonCard({
               fontWeight: '600',
               marginTop: 4,
             }}>
-            {item.meta}
+            {getMeta(item)}
           </Text>
         </View>
       </View>
@@ -196,7 +188,7 @@ function PersonCard({
               fontWeight: '800',
               marginLeft: 6,
             }}>
-            {item.badge}
+            {getBadge(item)}
           </Text>
         </View>
 
@@ -224,18 +216,66 @@ function PersonCard({
 }
 
 export default function SanghaListScreen() {
-  const { type } =
+  const {
+    distance,
+    purpose,
+    tradition,
+    type,
+  } =
     useLocalSearchParams<{
+      distance?: string;
+      purpose?: string;
+      tradition?: string;
       type?: string;
     }>();
+  const dispatch = useAppDispatch();
+  const devotees = useAppSelector(selectSanghaDevotees);
+  const loading = useAppSelector(
+    selectSanghaDevoteesLoading
+  );
+  const pagination = useAppSelector(
+    selectSanghaDevoteesPagination
+  );
+  const error = useAppSelector(selectSanghaError);
 
   const isSuggested = type === 'suggested';
-  const data = isSuggested
-    ? suggestedPeople
-    : nearPeople;
   const title = isSuggested
     ? 'Suggested For You'
     : 'Near You';
+  const baseParams = useMemo(
+    () => ({
+      distance: distance || 'nearby',
+      limit: 20,
+      offset: 0,
+      purpose: purpose || 'connect',
+      tradition: tradition || undefined,
+      type: isSuggested ? 'suggested' : 'near',
+    }),
+    [distance, isSuggested, purpose, tradition]
+  );
+
+  useEffect(() => {
+    dispatch(fetchSanghaDevoteesRequest(baseParams));
+  }, [baseParams, dispatch]);
+
+  const refreshList = () => {
+    dispatch(fetchSanghaDevoteesRequest(baseParams));
+  };
+
+  const loadMore = () => {
+    if (loading || !pagination?.hasMore) {
+      return;
+    }
+
+    dispatch(
+      fetchSanghaDevoteesRequest({
+        ...baseParams,
+        offset:
+          pagination.nextOffset ??
+          pagination.offset + pagination.limit,
+      })
+    );
+  };
 
   return (
     <SafeAreaView
@@ -295,24 +335,144 @@ export default function SanghaListScreen() {
               fontWeight: '700',
               marginTop: 2,
             }}>
-            {data.length} devotees found
+            {devotees.length} devotees found
           </Text>
         </View>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading && devotees.length > 0}
+            onRefresh={refreshList}
+            tintColor="#F97316"
+          />
+        }
         contentContainerStyle={{
           paddingHorizontal: 18,
           paddingBottom: 34,
           paddingTop: 8,
         }}>
-        {data.map((item) => (
+        {loading && devotees.length === 0 ? (
+          <View
+            style={{
+              alignItems: 'center',
+              backgroundColor: '#FFFFFF',
+              borderColor: '#F1F1F1',
+              borderRadius: 28,
+              borderWidth: 1,
+              padding: 28,
+            }}>
+            <ActivityIndicator color="#F97316" />
+            <Text
+              style={{
+                color: '#6B7280',
+                fontSize: 14,
+                fontWeight: '800',
+                marginTop: 12,
+              }}>
+              Loading devotees
+            </Text>
+          </View>
+        ) : null}
+
+        {!loading && error ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={refreshList}
+            style={{
+              backgroundColor: '#FFF7ED',
+              borderColor: '#FDE7CF',
+              borderRadius: 24,
+              borderWidth: 1,
+              marginBottom: 16,
+              padding: 16,
+            }}>
+            <Text
+              style={{
+                color: '#9A3412',
+                fontSize: 14,
+                fontWeight: '900',
+              }}>
+              {error}
+            </Text>
+            <Text
+              style={{
+                color: '#F97316',
+                fontSize: 13,
+                fontWeight: '900',
+                marginTop: 8,
+              }}>
+              Tap to retry
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {!loading && devotees.length === 0 && !error ? (
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderColor: '#F1F1F1',
+              borderRadius: 28,
+              borderWidth: 1,
+              padding: 22,
+            }}>
+            <Text
+              style={{
+                color: '#111827',
+                fontSize: 18,
+                fontWeight: '900',
+              }}>
+              No devotees found
+            </Text>
+            <Text
+              style={{
+                color: '#6B7280',
+                fontSize: 14,
+                fontWeight: '600',
+                lineHeight: 23,
+                marginTop: 8,
+              }}>
+              Try changing filters from the Sangha discovery screen.
+            </Text>
+          </View>
+        ) : null}
+
+        {devotees.map((item) => (
           <PersonCard
-            key={item.name}
+            key={item.userId || item.id || item.name}
             item={item}
           />
         ))}
+
+        {pagination?.hasMore ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            disabled={loading}
+            onPress={loadMore}
+            style={{
+              alignItems: 'center',
+              backgroundColor: '#111111',
+              borderRadius: 20,
+              height: 50,
+              justifyContent: 'center',
+              marginTop: 2,
+            }}>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 14,
+                  fontWeight: '900',
+                }}>
+                Load more
+              </Text>
+            )}
+          </TouchableOpacity>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

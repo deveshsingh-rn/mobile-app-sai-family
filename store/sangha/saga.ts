@@ -1,10 +1,13 @@
 import { call, put, takeLatest } from "redux-saga/effects";
 
 import {
+  apiFetchSanghaDevotees,
   apiFetchSanghaHome,
   apiUpdateSanghaDiscovery,
 } from "@/services/sangha";
 import {
+  fetchSanghaDevoteesFailure,
+  fetchSanghaDevoteesSuccess,
   fetchSanghaHomeFailure,
   fetchSanghaHomeSuccess,
   updateSanghaDiscoveryFailure,
@@ -50,6 +53,22 @@ function normalizeSanghaHome(response: any) {
   };
 }
 
+function normalizeDevoteeList(response: any, append = false) {
+  return {
+    append,
+    devotees:
+      response?.devotees ||
+      response?.results ||
+      response?.data?.devotees ||
+      response?.data?.results ||
+      [],
+    pagination:
+      response?.pagination ||
+      response?.data?.pagination ||
+      null,
+  };
+}
+
 function* handleFetchSanghaHome(
   action: any
 ): Generator<any, void, any> {
@@ -68,6 +87,35 @@ function* handleFetchSanghaHome(
         getErrorMessage(
           error,
           "Failed to fetch Sangha home."
+        )
+      )
+    );
+  }
+}
+
+function* handleFetchSanghaDevotees(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchSanghaDevotees,
+      action.payload
+    );
+
+    yield put(
+      fetchSanghaDevoteesSuccess(
+        normalizeDevoteeList(
+          response,
+          Boolean(action.payload?.offset)
+        )
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaDevoteesFailure(
+        getErrorMessage(
+          error,
+          "Failed to fetch Sangha devotees."
         )
       )
     );
@@ -105,6 +153,10 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_HOME_REQUEST,
     handleFetchSanghaHome
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_DEVOTEES_REQUEST,
+    handleFetchSanghaDevotees
   );
   yield takeLatest(
     SANGHA_ACTIONS.UPDATE_DISCOVERY_REQUEST,

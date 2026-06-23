@@ -5,6 +5,9 @@ import {
 } from "./types";
 
 export const initialSanghaState: SanghaState = {
+  devotees: [],
+  devoteesLoading: false,
+  devoteesPagination: null,
   discoverySaving: false,
   error: null,
   home: null,
@@ -36,6 +39,34 @@ export function sanghaReducer(
         ...state,
         error: action.payload,
         homeLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_DEVOTEES_REQUEST:
+      return {
+        ...state,
+        devoteesLoading: true,
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.FETCH_DEVOTEES_SUCCESS:
+      return {
+        ...state,
+        devotees: action.payload.append
+          ? [
+              ...state.devotees,
+              ...action.payload.devotees,
+            ]
+          : action.payload.devotees,
+        devoteesLoading: false,
+        devoteesPagination: action.payload.pagination,
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.FETCH_DEVOTEES_FAILURE:
+      return {
+        ...state,
+        devoteesLoading: false,
+        error: action.payload,
       };
 
     case SANGHA_ACTIONS.UPDATE_DISCOVERY_REQUEST:

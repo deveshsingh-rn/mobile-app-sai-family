@@ -38,9 +38,9 @@ Status: Started
 
 ## Phase 3: Devotee Discovery And Profile
 
-Status: Not started
+Status: Started
 
-- [ ] Wire `screens/sangha-list-screen.tsx` to `GET /api/sangha/devotees`.
+- [x] Wire `screens/sangha-list-screen.tsx` to `GET /api/sangha/devotees`.
 - [ ] Wire `screens/sangha-profile-screen.tsx` to `GET /api/sangha/devotees/:id`.
 - [ ] Wire connect, accept, decline, disconnect, and block actions.
 - [ ] Preserve privacy-safe location display.
