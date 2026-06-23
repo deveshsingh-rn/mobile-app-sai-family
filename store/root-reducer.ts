@@ -5,6 +5,7 @@ import { directoryReducer } from "./directory/reducer";
 import { eventsReducer } from "./events/reducer";
 import { experiencesReducer } from "./experiences/reducer";
 import { notificationsReducer } from "./notifications/reducer";
+import { sanghaReducer } from "./sangha/reducer";
 
 export const rootReducer = combineReducers({
   devoteeAccount: devoteeAccountReducer,
@@ -12,4 +13,5 @@ export const rootReducer = combineReducers({
   events: eventsReducer,
   experiences: experiencesReducer,
   notifications: notificationsReducer,
+  sangha: sanghaReducer,
 });

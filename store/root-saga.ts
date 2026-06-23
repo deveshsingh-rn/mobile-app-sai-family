@@ -5,6 +5,7 @@ import { directorySaga } from "./directory/saga";
 import { eventsSaga } from "./events/saga";
 import { experiencesSaga } from "./experiences/saga";
 import { notificationsSaga } from "./notifications/saga";
+import { sanghaSaga } from "./sangha/saga";
 
 export function* rootSaga() {
   yield all([
@@ -13,5 +14,6 @@ export function* rootSaga() {
     fork(eventsSaga),
     fork(experiencesSaga),
     fork(notificationsSaga),
+    fork(sanghaSaga),
   ]);
 }

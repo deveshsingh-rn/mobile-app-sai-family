@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
+  ActivityIndicator,
   Image,
   Modal,
   ScrollView,
@@ -14,39 +19,23 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const nearYou = [
-  {
-    image:
-      'https://randomuser.me/api/portraits/women/44.jpg',
-    mutual: '3 Mutual\nConnections',
-    name: 'Priya Sharma',
-    tradition: 'Shirdi Sai Devotee',
-  },
-  {
-    image:
-      'https://randomuser.me/api/portraits/men/32.jpg',
-    mutual: '1.2 km away',
-    name: 'Rahul Verma',
-    tradition: 'Iskcon Tradition',
-  },
-];
-
-const suggested = [
-  {
-    badge: 'Based on your tradition',
-    image:
-      'https://randomuser.me/api/portraits/women/68.jpg',
-    name: 'Ananya Desai',
-    subtitle: 'Art of Living · Bangalore',
-  },
-  {
-    badge: 'Based on your city',
-    image:
-      'https://randomuser.me/api/portraits/men/75.jpg',
-    name: 'Vikram Singh',
-    subtitle: 'Vipassana · Pune',
-  },
-];
+import {
+  fetchSanghaHomeRequest,
+  updateSanghaDiscoveryRequest,
+} from '@/store/sangha/actions';
+import {
+  selectSanghaDiscoverySaving,
+  selectSanghaError,
+  selectSanghaHome,
+  selectSanghaHomeLoading,
+  selectSanghaNearYou,
+  selectSanghaSuggestedForYou,
+} from '@/store/sangha/selectors';
+import { SanghaDevoteeSummary } from '@/store/sangha/types';
+import {
+  useAppDispatch,
+  useAppSelector,
+} from '@/store/hooks';
 
 const filters = {
   distance: ['Nearby', 'Same City', 'Online'],
@@ -60,7 +49,73 @@ const filters = {
   purpose: ['Connect', 'Bhajan', 'Seva', 'Events'],
 };
 
+const distanceParam: Record<string, string> = {
+  Nearby: 'nearby',
+  Online: 'online',
+  'Same City': 'same_city',
+};
+
+const purposeParam: Record<string, string> = {
+  Bhajan: 'bhajan',
+  Connect: 'connect',
+  Events: 'events',
+  Seva: 'seva',
+};
+
+function getAvatarUri(item: SanghaDevoteeSummary) {
+  const image =
+    item.avatarUrl ||
+    item.profileImageUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      item.name || 'Sai Family'
+    )}&background=FFF7ED&color=F97316`;
+
+  return image;
+}
+
+function getSubtitle(item: SanghaDevoteeSummary) {
+  return (
+    item.tradition ||
+    item.approximateLocationLabel ||
+    item.city ||
+    'Sai Family Devotee'
+  );
+}
+
+function getMutualLabel(item: SanghaDevoteeSummary) {
+  if (item.mutualConnectionCount) {
+    return `${item.mutualConnectionCount} Mutual\nConnections`;
+  }
+
+  return (
+    item.distanceLabel ||
+    (typeof item.distanceKm === 'number'
+      ? `${item.distanceKm.toFixed(1)} km away`
+      : item.approximateLocationLabel || 'Nearby devotee')
+  );
+}
+
+function getSuggestedBadge(item: SanghaDevoteeSummary) {
+  return (
+    item.recommendationReason ||
+    item.purposeTags?.[0] ||
+    item.tradition ||
+    'Suggested for you'
+  );
+}
+
 export default function SanghaScreen() {
+  const dispatch = useAppDispatch();
+  const home = useAppSelector(selectSanghaHome);
+  const nearYou = useAppSelector(selectSanghaNearYou);
+  const suggested = useAppSelector(
+    selectSanghaSuggestedForYou
+  );
+  const loading = useAppSelector(selectSanghaHomeLoading);
+  const savingDiscovery = useAppSelector(
+    selectSanghaDiscoverySaving
+  );
+  const error = useAppSelector(selectSanghaError);
   const [enabled, setEnabled] = useState(false);
   const [filterVisible, setFilterVisible] =
     useState(false);
@@ -70,6 +125,60 @@ export default function SanghaScreen() {
     useState('All');
   const [selectedPurpose, setSelectedPurpose] =
     useState('Connect');
+
+  const homeParams = useMemo(
+    () => ({
+      distance: distanceParam[selectedDistance] || 'nearby',
+      limit: 10,
+      purpose: purposeParam[selectedPurpose] || 'connect',
+      tradition:
+        selectedTradition === 'All'
+          ? undefined
+          : selectedTradition,
+    }),
+    [
+      selectedDistance,
+      selectedPurpose,
+      selectedTradition,
+    ]
+  );
+
+  useEffect(() => {
+    dispatch(fetchSanghaHomeRequest(homeParams));
+  }, [dispatch, homeParams]);
+
+  useEffect(() => {
+    if (typeof home?.nearMeEnabled === 'boolean') {
+      setEnabled(home.nearMeEnabled);
+    }
+  }, [home?.nearMeEnabled]);
+
+  const handleNearMeToggle = (value: boolean) => {
+    setEnabled(value);
+    dispatch(
+      updateSanghaDiscoveryRequest({
+        nearMeEnabled: value,
+        purposeTags: [homeParams.purpose],
+        tradition:
+          selectedTradition === 'All'
+            ? undefined
+            : selectedTradition,
+      })
+    );
+  };
+
+  const openProfile = (item: SanghaDevoteeSummary) => {
+    const id = item.userId || item.id;
+
+    if (!id) {
+      return;
+    }
+
+    router.push({
+      pathname: '/sangha-profile',
+      params: { id },
+    });
+  };
 
   return (
     <SafeAreaView
@@ -305,7 +414,8 @@ export default function SanghaScreen() {
 
                 <Switch
                   value={enabled}
-                  onValueChange={setEnabled}
+                  disabled={savingDiscovery}
+                  onValueChange={handleNearMeToggle}
                   trackColor={{
                     false: '#E5E7EB',
                     true: '#F6C28B',
@@ -354,6 +464,12 @@ export default function SanghaScreen() {
                 router.push({
                   pathname: '/sangha-list',
                   params: {
+                    distance: homeParams.distance,
+                    purpose: homeParams.purpose,
+                    tradition:
+                      selectedTradition === 'All'
+                        ? ''
+                        : selectedTradition,
                     type: 'near',
                   },
                 })
@@ -375,11 +491,66 @@ export default function SanghaScreen() {
               justifyContent: 'space-between',
               marginTop: 18,
             }}>
-            {nearYou.map((item, index) => (
+            {loading && nearYou.length === 0 ? (
+              <View
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#F0F0F0',
+                  borderRadius: 26,
+                  borderWidth: 1,
+                  flex: 1,
+                  padding: 24,
+                }}>
+                <ActivityIndicator color="#F97316" />
+                <Text
+                  style={{
+                    color: '#6B7280',
+                    fontSize: 13,
+                    fontWeight: '700',
+                    marginTop: 10,
+                  }}>
+                  Finding devotees near you
+                </Text>
+              </View>
+            ) : null}
+
+            {!loading && nearYou.length === 0 ? (
+              <View
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#F0F0F0',
+                  borderRadius: 26,
+                  borderWidth: 1,
+                  flex: 1,
+                  padding: 22,
+                }}>
+                <Text
+                  style={{
+                    color: '#111827',
+                    fontSize: 16,
+                    fontWeight: '900',
+                  }}>
+                  No devotees found yet
+                </Text>
+                <Text
+                  style={{
+                    color: '#6B7280',
+                    fontSize: 13,
+                    fontWeight: '600',
+                    lineHeight: 21,
+                    marginTop: 8,
+                  }}>
+                  Try a wider filter or enable Near Me discovery.
+                </Text>
+              </View>
+            ) : null}
+
+            {nearYou.slice(0, 2).map((item, index) => (
               <TouchableOpacity
-                key={item.name}
+                key={item.userId || item.id || item.name}
                 activeOpacity={0.9}
-                onPress={() => router.push('/sangha-profile')}
+                onPress={() => openProfile(item)}
                 style={{
                   alignItems: 'center',
                   backgroundColor: '#FFFFFF',
@@ -400,7 +571,7 @@ export default function SanghaScreen() {
                   width: '48%',
                 }}>
                 <Image
-                  source={{ uri: item.image }}
+                  source={{ uri: getAvatarUri(item) }}
                   style={{
                     borderRadius: 36,
                     height: 72,
@@ -427,7 +598,7 @@ export default function SanghaScreen() {
                     marginTop: 6,
                     textAlign: 'center',
                   }}>
-                  {item.tradition}
+                  {getSubtitle(item)}
                 </Text>
 
                 <View
@@ -455,7 +626,7 @@ export default function SanghaScreen() {
                       marginLeft: 5,
                       textAlign: 'center',
                     }}>
-                    {item.mutual}
+                    {getMutualLabel(item)}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -490,6 +661,12 @@ export default function SanghaScreen() {
                 router.push({
                   pathname: '/sangha-list',
                   params: {
+                    distance: homeParams.distance,
+                    purpose: homeParams.purpose,
+                    tradition:
+                      selectedTradition === 'All'
+                        ? ''
+                        : selectedTradition,
                     type: 'suggested',
                   },
                 })
@@ -505,11 +682,76 @@ export default function SanghaScreen() {
             </TouchableOpacity>
           </View>
 
+          {error ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() =>
+                dispatch(fetchSanghaHomeRequest(homeParams))
+              }
+              style={{
+                backgroundColor: '#FFF7ED',
+                borderColor: '#FDE7CF',
+                borderRadius: 22,
+                borderWidth: 1,
+                marginBottom: 16,
+                padding: 16,
+              }}>
+              <Text
+                style={{
+                  color: '#9A3412',
+                  fontSize: 14,
+                  fontWeight: '800',
+                }}>
+                {error}
+              </Text>
+              <Text
+                style={{
+                  color: '#F97316',
+                  fontSize: 13,
+                  fontWeight: '900',
+                  marginTop: 8,
+                }}>
+                Tap to retry
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {!loading && suggested.length === 0 ? (
+            <View
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderColor: '#F1F1F1',
+                borderRadius: 28,
+                borderWidth: 1,
+                marginBottom: 18,
+                padding: 18,
+              }}>
+              <Text
+                style={{
+                  color: '#111827',
+                  fontSize: 16,
+                  fontWeight: '900',
+                }}>
+                Suggestions will appear here
+              </Text>
+              <Text
+                style={{
+                  color: '#6B7280',
+                  fontSize: 13,
+                  fontWeight: '600',
+                  lineHeight: 21,
+                  marginTop: 7,
+                }}>
+                Update your tradition and purpose filters to improve matches.
+              </Text>
+            </View>
+          ) : null}
+
           {suggested.map((item, index) => (
             <TouchableOpacity
-              key={item.name}
+              key={item.userId || item.id || item.name}
               activeOpacity={0.9}
-              onPress={() => router.push('/sangha-profile')}
+              onPress={() => openProfile(item)}
               style={{
                 backgroundColor: '#FFFFFF',
                 borderColor: '#F1F1F1',
@@ -532,7 +774,7 @@ export default function SanghaScreen() {
                   flexDirection: 'row',
                 }}>
                 <Image
-                  source={{ uri: item.image }}
+                  source={{ uri: getAvatarUri(item) }}
                   style={{
                     borderRadius: 30,
                     height: 60,
@@ -560,8 +802,13 @@ export default function SanghaScreen() {
                       fontSize: 14,
                       fontWeight: '600',
                       marginTop: 4,
-                    }}>
-                    {item.subtitle}
+                  }}>
+                    {[
+                      item.tradition,
+                      item.city || item.approximateLocationLabel,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || 'Sai Family Devotee'}
                   </Text>
 
                   <View
@@ -587,7 +834,7 @@ export default function SanghaScreen() {
                         fontWeight: '700',
                         marginLeft: 5,
                       }}>
-                      {item.badge}
+                      {getSuggestedBadge(item)}
                     </Text>
                   </View>
                 </View>
