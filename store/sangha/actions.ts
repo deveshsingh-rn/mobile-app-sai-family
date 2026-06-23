@@ -291,6 +291,85 @@ export const fetchSanghaGroupEventsFailure = (
     type: SANGHA_ACTIONS.FETCH_GROUP_EVENTS_FAILURE,
   } as const);
 
+export const createSanghaGroupEventRequest = (
+  payload: {
+    description?: string;
+    endAt?: string;
+    groupId: string;
+    startAt: string;
+    title: string;
+    venueName?: string;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_EVENT_REQUEST,
+  } as const);
+
+export const createSanghaGroupEventSuccess = (
+  payload: { event: SanghaGroupEvent; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_EVENT_SUCCESS,
+  } as const);
+
+export const createSanghaGroupEventFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_EVENT_FAILURE,
+  } as const);
+
+export const rsvpSanghaGroupEventRequest = (
+  payload: { eventId: string; groupId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.RSVP_GROUP_EVENT_REQUEST,
+  } as const);
+
+export const rsvpSanghaGroupEventSuccess = (
+  payload: { eventId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.RSVP_GROUP_EVENT_SUCCESS,
+  } as const);
+
+export const rsvpSanghaGroupEventFailure = (
+  payload: { error: string; eventId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.RSVP_GROUP_EVENT_FAILURE,
+  } as const);
+
+export const cancelSanghaGroupEventRsvpRequest = (
+  payload: { eventId: string; groupId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_REQUEST,
+  } as const);
+
+export const cancelSanghaGroupEventRsvpSuccess = (
+  payload: { eventId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_SUCCESS,
+  } as const);
+
+export const cancelSanghaGroupEventRsvpFailure = (
+  payload: { error: string; eventId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_FAILURE,
+  } as const);
+
 export const joinSanghaGroupRequest = (groupId: string) =>
   ({
     payload: { groupId },

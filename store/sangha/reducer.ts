@@ -112,6 +112,16 @@ function updatePost(
   );
 }
 
+function updateEvent(
+  events: SanghaState["groupEvents"],
+  eventId: string,
+  changes: Partial<SanghaState["groupEvents"][number]>
+) {
+  return events.map((event) =>
+    event.id === eventId ? { ...event, ...changes } : event
+  );
+}
+
 export function sanghaReducer(
   state: SanghaState = initialSanghaState,
   action: SanghaAction
@@ -585,6 +595,80 @@ export function sanghaReducer(
         groupPostCommentsLoadingIds: removePending(
           state.groupPostCommentsLoadingIds,
           action.payload.postId
+        ),
+        error: action.payload.error,
+      };
+
+    case SANGHA_ACTIONS.CREATE_GROUP_EVENT_REQUEST:
+      return {
+        ...state,
+        error: null,
+        groupEventsLoading: true,
+      };
+
+    case SANGHA_ACTIONS.CREATE_GROUP_EVENT_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        groupEvents: [action.payload.event, ...state.groupEvents],
+        groupEventsLoading: false,
+      };
+
+    case SANGHA_ACTIONS.CREATE_GROUP_EVENT_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        groupEventsLoading: false,
+      };
+
+    case SANGHA_ACTIONS.RSVP_GROUP_EVENT_REQUEST:
+    case SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_REQUEST:
+      return {
+        ...state,
+        actionPendingIds: {
+          ...state.actionPendingIds,
+          [action.payload.eventId]: true,
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.RSVP_GROUP_EVENT_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.eventId
+        ),
+        groupEvents: updateEvent(state.groupEvents, action.payload.eventId, {
+          rsvpedByMe: true,
+          rsvpCount:
+            (state.groupEvents.find((event) => event.id === action.payload.eventId)?.rsvpCount || 0) + 1,
+        }),
+      };
+
+    case SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.eventId
+        ),
+        groupEvents: updateEvent(state.groupEvents, action.payload.eventId, {
+          rsvpedByMe: false,
+          rsvpCount: Math.max(
+            (state.groupEvents.find((event) => event.id === action.payload.eventId)?.rsvpCount || 0) - 1,
+            0
+          ),
+        }),
+      };
+
+    case SANGHA_ACTIONS.RSVP_GROUP_EVENT_FAILURE:
+    case SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_FAILURE:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.eventId
         ),
         error: action.payload.error,
       };

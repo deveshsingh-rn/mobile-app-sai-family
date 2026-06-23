@@ -238,6 +238,40 @@ export async function apiFetchSanghaGroupEvents(
   return data;
 }
 
+export async function apiCreateSanghaGroupEvent(
+  groupId: string,
+  payload: Record<string, any>
+) {
+  const { data } = await apiClient.post(
+    `/api/sangha/groups/${groupId}/events`,
+    payload
+  );
+
+  return data;
+}
+
+export async function apiRsvpSanghaGroupEvent(
+  groupId: string,
+  eventId: string
+) {
+  const { data } = await apiClient.post(
+    `/api/sangha/groups/${groupId}/events/${eventId}/rsvp`
+  );
+
+  return data;
+}
+
+export async function apiCancelSanghaGroupEventRsvp(
+  groupId: string,
+  eventId: string
+) {
+  const { data } = await apiClient.delete(
+    `/api/sangha/groups/${groupId}/events/${eventId}/rsvp`
+  );
+
+  return data;
+}
+
 export async function apiJoinSanghaGroup(groupId: string) {
   const { data } = await apiClient.post(
     `/api/sangha/groups/${groupId}/join`

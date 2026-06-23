@@ -181,7 +181,9 @@ export type SanghaGroupEvent = {
   address?: string | null;
   attendeeCount?: number;
   city?: string | null;
+  endAt?: string;
   id: string;
+  rsvpedByMe?: boolean;
   rsvpCount?: number;
   startAt?: string;
   title?: string;
@@ -336,6 +338,15 @@ export enum SANGHA_ACTIONS {
   DELETE_GROUP_POST_REQUEST = "sangha/DELETE_GROUP_POST_REQUEST",
   DELETE_GROUP_POST_SUCCESS = "sangha/DELETE_GROUP_POST_SUCCESS",
   DELETE_GROUP_POST_FAILURE = "sangha/DELETE_GROUP_POST_FAILURE",
+  CREATE_GROUP_EVENT_REQUEST = "sangha/CREATE_GROUP_EVENT_REQUEST",
+  CREATE_GROUP_EVENT_SUCCESS = "sangha/CREATE_GROUP_EVENT_SUCCESS",
+  CREATE_GROUP_EVENT_FAILURE = "sangha/CREATE_GROUP_EVENT_FAILURE",
+  RSVP_GROUP_EVENT_REQUEST = "sangha/RSVP_GROUP_EVENT_REQUEST",
+  RSVP_GROUP_EVENT_SUCCESS = "sangha/RSVP_GROUP_EVENT_SUCCESS",
+  RSVP_GROUP_EVENT_FAILURE = "sangha/RSVP_GROUP_EVENT_FAILURE",
+  CANCEL_GROUP_EVENT_RSVP_REQUEST = "sangha/CANCEL_GROUP_EVENT_RSVP_REQUEST",
+  CANCEL_GROUP_EVENT_RSVP_SUCCESS = "sangha/CANCEL_GROUP_EVENT_RSVP_SUCCESS",
+  CANCEL_GROUP_EVENT_RSVP_FAILURE = "sangha/CANCEL_GROUP_EVENT_RSVP_FAILURE",
   FETCH_RECENT_SEARCHES_REQUEST = "sangha/FETCH_RECENT_SEARCHES_REQUEST",
   FETCH_RECENT_SEARCHES_SUCCESS = "sangha/FETCH_RECENT_SEARCHES_SUCCESS",
   FETCH_RECENT_SEARCHES_FAILURE = "sangha/FETCH_RECENT_SEARCHES_FAILURE",
@@ -592,6 +603,43 @@ export type SanghaAction =
   | {
       payload: { error: string; postId: string };
       type: SANGHA_ACTIONS.CREATE_GROUP_POST_COMMENT_FAILURE;
+    }
+  | {
+      payload: {
+        groupId: string;
+        title: string;
+        description?: string;
+        startAt: string;
+        endAt?: string;
+        venueName?: string;
+      };
+      type: SANGHA_ACTIONS.CREATE_GROUP_EVENT_REQUEST;
+    }
+  | {
+      payload: { event: SanghaGroupEvent; response?: any };
+      type: SANGHA_ACTIONS.CREATE_GROUP_EVENT_SUCCESS;
+    }
+  | {
+      payload: string;
+      type: SANGHA_ACTIONS.CREATE_GROUP_EVENT_FAILURE;
+    }
+  | {
+      payload: { eventId: string; groupId: string };
+      type:
+        | SANGHA_ACTIONS.RSVP_GROUP_EVENT_REQUEST
+        | SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_REQUEST;
+    }
+  | {
+      payload: { eventId: string; response?: any };
+      type:
+        | SANGHA_ACTIONS.RSVP_GROUP_EVENT_SUCCESS
+        | SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_SUCCESS;
+    }
+  | {
+      payload: { error: string; eventId: string };
+      type:
+        | SANGHA_ACTIONS.RSVP_GROUP_EVENT_FAILURE
+        | SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_FAILURE;
     }
   | {
       payload: { limit?: number };

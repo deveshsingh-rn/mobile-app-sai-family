@@ -16,6 +16,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   createSanghaGroupPostCommentRequest,
   createSanghaGroupPostRequest,
+  cancelSanghaGroupEventRsvpRequest,
+  createSanghaGroupEventRequest,
   deleteSanghaGroupPostRequest,
   fetchSanghaGroupDetailRequest,
   fetchSanghaGroupEventsRequest,
@@ -26,6 +28,7 @@ import {
   leaveSanghaGroupRequest,
   likeSanghaGroupPostRequest,
   pinSanghaGroupPostRequest,
+  rsvpSanghaGroupEventRequest,
   unlikeSanghaGroupPostRequest,
   unpinSanghaGroupPostRequest,
 } from "@/store/sangha/actions";
@@ -175,6 +178,7 @@ export default function GroupDetailsScreen() {
       return (
         <EventsSection
           events={events}
+          groupId={groupId}
           loading={eventsLoading}
         />
       );
@@ -960,11 +964,44 @@ function MembersSection({
 
 function EventsSection({
   events,
+  groupId,
   loading,
 }: {
   events: SanghaGroupEvent[];
+  groupId: string;
   loading: boolean;
 }) {
+  const dispatch = useAppDispatch();
+  const [showCreate, setShowCreate] = useState(false);
+  const [title, setTitle] = useState("");
+  const [venueName, setVenueName] = useState("");
+  const [startAt, setStartAt] = useState("");
+  const submitEvent = () => {
+    const trimmedTitle = title.trim();
+
+    if (!trimmedTitle || !groupId) {
+      return;
+    }
+
+    const fallbackStart = new Date(
+      Date.now() + 24 * 60 * 60 * 1000
+    ).toISOString();
+
+    dispatch(
+      createSanghaGroupEventRequest({
+        description: "Created from Sangha group calendar.",
+        groupId,
+        startAt: startAt.trim() || fallbackStart,
+        title: trimmedTitle,
+        venueName: venueName.trim() || undefined,
+      })
+    );
+    setTitle("");
+    setVenueName("");
+    setStartAt("");
+    setShowCreate(false);
+  };
+
   return (
     <>
       <View
@@ -983,6 +1020,7 @@ function EventsSection({
         </Text>
         <TouchableOpacity
           activeOpacity={0.85}
+          onPress={() => setShowCreate((current) => !current)}
           style={{
             alignSelf: "flex-start",
             marginTop: 16,
@@ -997,6 +1035,83 @@ function EventsSection({
         </TouchableOpacity>
       </View>
 
+      {showCreate ? (
+        <View
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderColor: "#EEE7DD",
+            borderRadius: 22,
+            borderWidth: 1,
+            marginTop: 14,
+            padding: 16,
+          }}
+        >
+          <TextInput
+            onChangeText={setTitle}
+            placeholder="Event title"
+            placeholderTextColor="#9CA3AF"
+            style={{
+              backgroundColor: "#F8F6F2",
+              borderRadius: 16,
+              color: "#111827",
+              fontSize: 15,
+              fontWeight: "700",
+              height: 46,
+              paddingHorizontal: 14,
+            }}
+            value={title}
+          />
+          <TextInput
+            onChangeText={setVenueName}
+            placeholder="Venue name"
+            placeholderTextColor="#9CA3AF"
+            style={{
+              backgroundColor: "#F8F6F2",
+              borderRadius: 16,
+              color: "#111827",
+              fontSize: 15,
+              fontWeight: "700",
+              height: 46,
+              marginTop: 10,
+              paddingHorizontal: 14,
+            }}
+            value={venueName}
+          />
+          <TextInput
+            onChangeText={setStartAt}
+            placeholder="Start time ISO, optional"
+            placeholderTextColor="#9CA3AF"
+            style={{
+              backgroundColor: "#F8F6F2",
+              borderRadius: 16,
+              color: "#111827",
+              fontSize: 15,
+              fontWeight: "700",
+              height: 46,
+              marginTop: 10,
+              paddingHorizontal: 14,
+            }}
+            value={startAt}
+          />
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={submitEvent}
+            style={{
+              alignItems: "center",
+              backgroundColor: "#F97316",
+              borderRadius: 16,
+              height: 44,
+              justifyContent: "center",
+              marginTop: 12,
+            }}
+          >
+            <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>
+              Publish Event
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
       {loading ? (
         <EmptyCard text="Loading group events..." />
       ) : null}
@@ -1004,7 +1119,45 @@ function EventsSection({
         <EmptyCard text="No upcoming group events are visible yet." />
       ) : null}
       {events.map((event) => (
-        <View
+        <GroupEventCard
+          key={event.id}
+          event={event}
+          groupId={groupId}
+        />
+      ))}
+    </>
+  );
+}
+
+function GroupEventCard({
+  event,
+  groupId,
+}: {
+  event: SanghaGroupEvent;
+  groupId: string;
+}) {
+  const dispatch = useAppDispatch();
+  const pending = useAppSelector((state) =>
+    selectIsSanghaActionPending(state, event.id)
+  );
+  const toggleRsvp = () => {
+    if (pending) return;
+
+    dispatch(
+      event.rsvpedByMe
+        ? cancelSanghaGroupEventRsvpRequest({
+            eventId: event.id,
+            groupId,
+          })
+        : rsvpSanghaGroupEventRequest({
+            eventId: event.id,
+            groupId,
+          })
+    );
+  };
+
+  return (
+    <View
           key={event.id}
           style={{
             marginTop: 14,
@@ -1043,19 +1196,25 @@ function EventsSection({
           </View>
           <TouchableOpacity
             activeOpacity={0.85}
+            disabled={pending}
+            onPress={toggleRsvp}
             style={{
               height: 38,
               borderRadius: 19,
-              backgroundColor: "#F3F4F6",
+              backgroundColor: event.rsvpedByMe ? "#FFF7ED" : "#F3F4F6",
               paddingHorizontal: 14,
               justifyContent: "center",
             }}
           >
-            <Text style={{ color: "#111827", fontSize: 13, fontWeight: "800" }}>RSVP</Text>
+            {pending ? (
+              <ActivityIndicator color="#F97316" />
+            ) : (
+              <Text style={{ color: event.rsvpedByMe ? "#F97316" : "#111827", fontSize: 13, fontWeight: "800" }}>
+                {event.rsvpedByMe ? "Cancel" : "RSVP"}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
-      ))}
-    </>
   );
 }
 

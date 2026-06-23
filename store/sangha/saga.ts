@@ -14,6 +14,8 @@ import {
   apiFetchSanghaGroupMembers,
   apiCreateSanghaGroupPost,
   apiCreateSanghaGroupPostComment,
+  apiCreateSanghaGroupEvent,
+  apiCancelSanghaGroupEventRsvp,
   apiDeleteSanghaGroupPost,
   apiFetchSanghaGroupPosts,
   apiFetchSanghaGroupPostComments,
@@ -27,6 +29,7 @@ import {
   apiLikeSanghaGroupPost,
   apiPinSanghaGroupPost,
   apiRequestSanghaConnection,
+  apiRsvpSanghaGroupEvent,
   apiSearchSanghaGroups,
   apiUnlikeSanghaGroupPost,
   apiUnpinSanghaGroupPost,
@@ -47,6 +50,10 @@ import {
   createSanghaGroupPostCommentSuccess,
   createSanghaGroupPostFailure,
   createSanghaGroupPostSuccess,
+  cancelSanghaGroupEventRsvpFailure,
+  cancelSanghaGroupEventRsvpSuccess,
+  createSanghaGroupEventFailure,
+  createSanghaGroupEventSuccess,
   deleteSanghaGroupPostFailure,
   deleteSanghaGroupPostSuccess,
   disconnectSanghaDevoteeFailure,
@@ -85,6 +92,8 @@ import {
   pinSanghaGroupPostSuccess,
   requestSanghaConnectionFailure,
   requestSanghaConnectionSuccess,
+  rsvpSanghaGroupEventFailure,
+  rsvpSanghaGroupEventSuccess,
   searchSanghaGroupsFailure,
   searchSanghaGroupsSuccess,
   unlikeSanghaGroupPostFailure,
@@ -344,6 +353,16 @@ function normalizeComment(response: any) {
   );
 }
 
+function normalizeEvent(response: any) {
+  return (
+    response?.event ||
+    response?.data?.event ||
+    response?.groupEvent ||
+    response?.data?.groupEvent ||
+    response
+  );
+}
+
 function* handleFetchSanghaDevotees(
   action: any
 ): Generator<any, void, any> {
@@ -595,6 +614,84 @@ function* handleFetchGroupEvents(
       fetchSanghaGroupEventsFailure(
         getErrorMessage(error, "Failed to fetch group events.")
       )
+    );
+  }
+}
+
+function* handleCreateGroupEvent(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const { groupId, ...payload } = action.payload;
+    const response = yield call(
+      apiCreateSanghaGroupEvent,
+      groupId,
+      payload
+    );
+
+    yield put(
+      createSanghaGroupEventSuccess({
+        event: normalizeEvent(response),
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      createSanghaGroupEventFailure(
+        getErrorMessage(error, "Failed to create group event.")
+      )
+    );
+  }
+}
+
+function* handleRsvpGroupEvent(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiRsvpSanghaGroupEvent,
+      action.payload.groupId,
+      action.payload.eventId
+    );
+
+    yield put(
+      rsvpSanghaGroupEventSuccess({
+        eventId: action.payload.eventId,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      rsvpSanghaGroupEventFailure({
+        error: getErrorMessage(error, "Failed to RSVP."),
+        eventId: action.payload.eventId,
+      })
+    );
+  }
+}
+
+function* handleCancelGroupEventRsvp(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiCancelSanghaGroupEventRsvp,
+      action.payload.groupId,
+      action.payload.eventId
+    );
+
+    yield put(
+      cancelSanghaGroupEventRsvpSuccess({
+        eventId: action.payload.eventId,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      cancelSanghaGroupEventRsvpFailure({
+        error: getErrorMessage(error, "Failed to cancel RSVP."),
+        eventId: action.payload.eventId,
+      })
     );
   }
 }
@@ -1044,6 +1141,18 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUP_EVENTS_REQUEST,
     handleFetchGroupEvents
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.CREATE_GROUP_EVENT_REQUEST,
+    handleCreateGroupEvent
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.RSVP_GROUP_EVENT_REQUEST,
+    handleRsvpGroupEvent
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_REQUEST,
+    handleCancelGroupEventRsvp
   );
   yield takeLatest(
     SANGHA_ACTIONS.JOIN_GROUP_REQUEST,

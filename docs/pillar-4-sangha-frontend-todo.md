@@ -68,11 +68,11 @@ Status: Started
 
 ## Phase 6: Group Events
 
-Status: Not started
+Status: Completed
 
-- [ ] Wire create group event.
-- [ ] Wire group event RSVP and cancel RSVP.
-- [ ] Reuse event card UI patterns where possible.
+- [x] Wire create group event.
+- [x] Wire group event RSVP and cancel RSVP.
+- [x] Reuse event card UI patterns where possible.
 
 ## Phase 7: Notifications
 
