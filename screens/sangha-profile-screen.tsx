@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   StatusBar,
   View,
   Text,
@@ -11,16 +17,29 @@ import {
 import {
   Ionicons,
 } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import {
+  router,
+  useLocalSearchParams,
+} from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const interests = [
-  'Bhajans',
-  'Meditation',
-  'Seva',
-  'Reading Texts',
-  'Yoga',
-];
+import {
+  blockSanghaDevoteeRequest,
+  disconnectSanghaDevoteeRequest,
+  fetchSanghaProfileRequest,
+  requestSanghaConnectionRequest,
+} from '@/store/sangha/actions';
+import {
+  selectIsSanghaActionPending,
+  selectSanghaError,
+  selectSanghaProfile,
+  selectSanghaProfileLoading,
+} from '@/store/sangha/selectors';
+import { SanghaDevoteeProfile } from '@/store/sangha/types';
+import {
+  useAppDispatch,
+  useAppSelector,
+} from '@/store/hooks';
 
 const profileTabs = [
   'About',
@@ -30,47 +49,326 @@ const profileTabs = [
 
 type ProfileTab = (typeof profileTabs)[number];
 
-const experiences = [
-  {
-    content:
-      'Today morning bhajan at the mandir felt deeply peaceful. Sharing one small moment from aarti that stayed with me.',
-    image:
-      'https://images.unsplash.com/photo-1609604161777-0c39f681a0ed?q=80&w=900',
-    likes: 42,
-    place: 'Pune Sai Mandir',
-    time: '2h ago',
-  },
-  {
-    content:
-      'Seva with the Sunday food distribution group. Grateful to meet devotees walking the same path.',
-    image:
-      'https://images.unsplash.com/photo-1593113598332-cd288d649433?q=80&w=900',
-    likes: 31,
-    place: 'Community Kitchen',
-    time: '1d ago',
-  },
-];
+function getProfileId(profile?: SanghaDevoteeProfile | null) {
+  return profile?.userId || profile?.id || '';
+}
 
-const events = [
-  {
-    date: '15 Jun',
-    title: 'Thursday Sai Bhajan',
-    time: '7:00 PM',
-    venue: 'Sai Mandir Hall, Pune',
-    type: 'Bhajan',
-  },
-  {
-    date: '22 Jun',
-    title: 'Weekend Seva Drive',
-    time: '8:30 AM',
-    venue: 'Food Distribution Center',
-    type: 'Seva',
-  },
-];
+function getAvatarUri(profile?: SanghaDevoteeProfile | null) {
+  const name = profile?.name || 'Sai Family';
+
+  return (
+    profile?.avatarUrl ||
+    profile?.profileImageUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      name
+    )}&background=FFF7ED&color=F97316`
+  );
+}
+
+function getLocationLabel(profile?: SanghaDevoteeProfile | null) {
+  const location =
+    profile?.approximateLocationLabel ||
+    [profile?.city, profile?.state].filter(Boolean).join(', ');
+
+  return location
+    ? location.toUpperCase()
+    : 'SAI FAMILY DEVOTEE';
+}
+
+function getBio(profile?: SanghaDevoteeProfile | null) {
+  return (
+    profile?.bio ||
+    [
+      profile?.tradition,
+      profile?.city
+        ? `based in ${profile.city}`
+        : null,
+      'walking the Sai path with the community.',
+    ]
+      .filter(Boolean)
+      .join(', ')
+  );
+}
+
+function getInterests(profile?: SanghaDevoteeProfile | null) {
+  return [
+    ...(profile?.interests || []),
+    ...(profile?.purposeTags || []),
+  ].filter(Boolean);
+}
+
+function getConnectLabel(
+  profile?: SanghaDevoteeProfile | null
+) {
+  switch (profile?.connectionStatus) {
+    case 'connected':
+      return 'Connected';
+    case 'pending':
+      return 'Requested';
+    case 'blocked':
+      return 'Blocked';
+    default:
+      return 'Connect';
+  }
+}
+
+function getConnectIcon(
+  profile?: SanghaDevoteeProfile | null
+) {
+  switch (profile?.connectionStatus) {
+    case 'connected':
+      return 'checkmark-circle';
+    case 'pending':
+      return 'time';
+    case 'blocked':
+      return 'ban';
+    default:
+      return 'person-add';
+  }
+}
+
+function formatDateLabel(value?: string | null) {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatTimeLabel(value?: string | null) {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
 
 const SanghaProfileScreen = () => {
+  const { id } =
+    useLocalSearchParams<{
+      id?: string;
+    }>();
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector(selectSanghaProfile);
+  const loading = useAppSelector(selectSanghaProfileLoading);
+  const error = useAppSelector(selectSanghaError);
   const [activeTab, setActiveTab] =
     useState<ProfileTab>('About');
+  const profileId = getProfileId(profile) || id || '';
+  const actionPending = useAppSelector((state) =>
+    selectIsSanghaActionPending(state, profileId)
+  );
+  const interests = useMemo(
+    () => getInterests(profile),
+    [profile]
+  );
+  const journeyItems = useMemo(
+    () =>
+      [
+        {
+          active: true,
+          subtitle: profile?.joinedAt
+            ? formatDateLabel(profile.joinedAt)
+            : profile?.memberId || 'Sai Family member',
+          title: 'Joined Sai Family',
+        },
+        profile?.tradition
+          ? {
+              subtitle: profile.tradition,
+              title: 'Spiritual Tradition',
+            }
+          : null,
+        profile?.purposeTags?.length
+          ? {
+              subtitle: profile.purposeTags.join(', '),
+              title: 'Sangha Purpose',
+            }
+          : null,
+      ].filter(Boolean) as Array<{
+        active?: boolean;
+        subtitle: string;
+        title: string;
+      }>,
+    [profile]
+  );
+  const experiences = profile?.experiences || [];
+  const events = profile?.events || [];
+
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchSanghaProfileRequest(id));
+    }
+  }, [dispatch, id]);
+
+  const handleConnectionPress = () => {
+    if (!profileId || actionPending) {
+      return;
+    }
+
+    if (profile?.connectionStatus === 'connected') {
+      dispatch(disconnectSanghaDevoteeRequest(profileId));
+      return;
+    }
+
+    if (
+      profile?.connectionStatus === 'pending' ||
+      profile?.connectionStatus === 'blocked'
+    ) {
+      return;
+    }
+
+    dispatch(requestSanghaConnectionRequest(profileId));
+  };
+
+  const handleBlock = () => {
+    if (!profileId || actionPending) {
+      return;
+    }
+
+    Alert.alert(
+      'Block devotee?',
+      'This will stop connection requests and hide this devotee from your Sangha discovery.',
+      [
+        {
+          style: 'cancel',
+          text: 'Cancel',
+        },
+        {
+          onPress: () =>
+            dispatch(
+              blockSanghaDevoteeRequest({
+                id: profileId,
+                reason: 'Blocked from mobile profile screen',
+              })
+            ),
+          style: 'destructive',
+          text: 'Block',
+        },
+      ]
+    );
+  };
+
+  if (loading && !profile) {
+    return (
+      <SafeAreaView
+        style={{
+          alignItems: 'center',
+          backgroundColor: '#F8F7F5',
+          flex: 1,
+          justifyContent: 'center',
+          paddingHorizontal: 24,
+        }}>
+        <ActivityIndicator color="#D96A3D" />
+        <Text
+          style={{
+            color: '#8B7355',
+            fontSize: 15,
+            fontWeight: '800',
+            marginTop: 14,
+          }}>
+          Loading devotee profile
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!loading && !profile && error) {
+    return (
+      <SafeAreaView
+        style={{
+          backgroundColor: '#F8F7F5',
+          flex: 1,
+          padding: 24,
+        }}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.back()}
+          style={{
+            alignItems: 'center',
+            backgroundColor: '#FFFFFF',
+            borderRadius: 22,
+            height: 44,
+            justifyContent: 'center',
+            width: 44,
+          }}>
+          <Ionicons
+            name="arrow-back"
+            size={22}
+            color="#111827"
+          />
+        </TouchableOpacity>
+        <View
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: 28,
+            marginTop: 28,
+            padding: 22,
+          }}>
+          <Text
+            style={{
+              color: '#111827',
+              fontSize: 20,
+              fontWeight: '900',
+            }}>
+            Profile unavailable
+          </Text>
+          <Text
+            style={{
+              color: '#8B7355',
+              fontSize: 15,
+              fontWeight: '600',
+              lineHeight: 24,
+              marginTop: 8,
+            }}>
+            {error}
+          </Text>
+          {id ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() =>
+                dispatch(fetchSanghaProfileRequest(id))
+              }
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#D96A3D',
+                borderRadius: 18,
+                height: 48,
+                justifyContent: 'center',
+                marginTop: 18,
+              }}>
+              <Text
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 15,
+                  fontWeight: '900',
+                }}>
+                Retry
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView
@@ -140,6 +438,7 @@ const SanghaProfileScreen = () => {
           {/* Menu */}
           <TouchableOpacity
             activeOpacity={0.85}
+            onPress={handleBlock}
             style={{
               width: 54,
               height: 54,
@@ -157,7 +456,7 @@ const SanghaProfileScreen = () => {
               elevation: 2,
             }}>
             <Ionicons
-              name="ellipsis-vertical"
+              name="ban-outline"
               size={22}
               color="#111827"
             />
@@ -174,7 +473,7 @@ const SanghaProfileScreen = () => {
           <View>
             <Image
               source={{
-                uri: 'https://randomuser.me/api/portraits/women/44.jpg',
+                uri: getAvatarUri(profile),
               }}
               style={{
                 width: 136,
@@ -227,7 +526,7 @@ const SanghaProfileScreen = () => {
               fontFamily: 'serif',
               letterSpacing: -0.8,
             }}>
-            Priya Sharma
+            {profile?.name || 'Sai Family Devotee'}
           </Text>
 
           {/* Location */}
@@ -239,7 +538,7 @@ const SanghaProfileScreen = () => {
               color: '#8B7355',
               fontWeight: '700',
             }}>
-            PUNE, MAHARASHTRA
+            {getLocationLabel(profile)}
           </Text>
         </View>
 
@@ -287,10 +586,7 @@ const SanghaProfileScreen = () => {
                 fontStyle: 'italic',
                 fontFamily: 'serif',
               }}>
-              Sai devotee since 2015, based in
-              Pune. Bhajan singer, software
-              engineer. Finding peace in daily
-              seva. Jai Sai Ram! 🙏
+              {getBio(profile)}
             </Text>
           </View>
         </View>
@@ -298,12 +594,24 @@ const SanghaProfileScreen = () => {
         {/* Connect Button */}
         <TouchableOpacity
           activeOpacity={0.88}
+          disabled={
+            actionPending ||
+            profile?.connectionStatus === 'pending' ||
+            profile?.connectionStatus === 'blocked'
+          }
+          onPress={handleConnectionPress}
           style={{
             marginTop: 28,
             marginHorizontal: 50,
             height: 64,
             borderRadius: 32,
-            backgroundColor: '#D96A3D',
+            backgroundColor:
+              profile?.connectionStatus === 'connected'
+                ? '#111111'
+                : profile?.connectionStatus === 'pending' ||
+                    profile?.connectionStatus === 'blocked'
+                  ? '#8B7355'
+                  : '#D96A3D',
             justifyContent: 'center',
             alignItems: 'center',
             flexDirection: 'row',
@@ -316,11 +624,15 @@ const SanghaProfileScreen = () => {
             shadowRadius: 14,
             elevation: 6,
           }}>
-          <Ionicons
-            name="person-add"
-            size={22}
-            color="#FFFFFF"
-          />
+          {actionPending ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Ionicons
+              name={getConnectIcon(profile)}
+              size={22}
+              color="#FFFFFF"
+            />
+          )}
 
           <Text
             style={{
@@ -329,7 +641,9 @@ const SanghaProfileScreen = () => {
               color: '#FFFFFF',
               fontWeight: '700',
             }}>
-            Connect
+            {actionPending
+              ? 'Please wait'
+              : getConnectLabel(profile)}
           </Text>
         </TouchableOpacity>
 
@@ -398,22 +712,15 @@ const SanghaProfileScreen = () => {
               color: '#5B5B5B',
               fontWeight: '500',
             }}>
-            You and Priya both know{' '}
+            You and {profile?.name || 'this devotee'} have{' '}
             <Text
               style={{
                 color: '#111111',
                 fontWeight: '800',
               }}>
-              Raj
-            </Text>{' '}
-            and{' '}
-            <Text
-              style={{
-                color: '#111111',
-                fontWeight: '800',
-              }}>
-              Meera
+              {profile?.mutualConnectionCount || 0}
             </Text>
+            {' '}mutual Sangha connections
           </Text>
         </View>
 
@@ -521,28 +828,15 @@ const SanghaProfileScreen = () => {
                   marginTop: 28,
                   paddingLeft: 10,
                 }}>
-                {[
-                  {
-                    title: 'Joined Sai Family',
-                    subtitle: 'March 2023',
-                    active: true,
-                  },
-                  {
-                    title: 'First Shirdi Visit',
-                    subtitle: '2015 with family',
-                  },
-                  {
-                    title: 'Active Seva',
-                    subtitle:
-                      'Weekly food distribution',
-                  },
-                ].map((item, index) => (
+                {journeyItems.map((item, index) => (
                   <View
-                    key={index}
+                    key={item.title}
                     style={{
                       flexDirection: 'row',
                       marginBottom:
-                        index === 2 ? 0 : 26,
+                        index === journeyItems.length - 1
+                          ? 0
+                          : 26,
                     }}>
                     <View
                       style={{
@@ -575,7 +869,7 @@ const SanghaProfileScreen = () => {
                         )}
                       </View>
 
-                      {index !== 2 && (
+                      {index !== journeyItems.length - 1 && (
                         <View
                           style={{
                             width: 2,
@@ -638,9 +932,30 @@ const SanghaProfileScreen = () => {
                   flexWrap: 'wrap',
                   marginTop: 22,
                 }}>
+                {interests.length === 0 ? (
+                  <View
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      borderColor: '#F0F0F0',
+                      borderRadius: 24,
+                      borderWidth: 1,
+                      marginTop: 20,
+                      padding: 18,
+                    }}>
+                    <Text
+                      style={{
+                        color: '#8B7355',
+                        fontSize: 15,
+                        fontWeight: '700',
+                      }}>
+                      This devotee has not shared practices yet.
+                    </Text>
+                  </View>
+                ) : null}
+
                 {interests.map((item, index) => (
                   <TouchableOpacity
-                    key={index}
+                    key={`${item}-${index}`}
                     activeOpacity={0.85}
                     style={{
                       height: 48,
@@ -693,9 +1008,29 @@ const SanghaProfileScreen = () => {
               Shared Experiences
             </Text>
 
+            {experiences.length === 0 ? (
+              <View
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 26,
+                  marginTop: 18,
+                  padding: 18,
+                }}>
+                <Text
+                  style={{
+                    color: '#8B7355',
+                    fontSize: 15,
+                    fontWeight: '700',
+                    lineHeight: 24,
+                  }}>
+                  No shared experiences are visible yet.
+                </Text>
+              </View>
+            ) : null}
+
             {experiences.map((item, index) => (
               <TouchableOpacity
-                key={index}
+                key={item.id || index}
                 activeOpacity={0.9}
                 style={{
                   backgroundColor: '#FFFFFF',
@@ -711,13 +1046,24 @@ const SanghaProfileScreen = () => {
                   shadowRadius: 10,
                   elevation: 2,
                 }}>
-                <Image
-                  source={{ uri: item.image }}
-                  style={{
-                    height: 150,
-                    width: '100%',
-                  }}
-                />
+                {item.image ||
+                item.imageUrl ||
+                item.thumbnailUrl ||
+                item.mediaUrl ? (
+                  <Image
+                    source={{
+                      uri:
+                        item.image ||
+                        item.imageUrl ||
+                        item.thumbnailUrl ||
+                        item.mediaUrl,
+                    }}
+                    style={{
+                      height: 150,
+                      width: '100%',
+                    }}
+                  />
+                ) : null}
                 <View
                   style={{
                     padding: 16,
@@ -739,7 +1085,17 @@ const SanghaProfileScreen = () => {
                         fontWeight: '700',
                         marginLeft: 6,
                       }}>
-                      {item.place} · {item.time}
+                      {[
+                        item.place ||
+                          item.locationName ||
+                          item.venueName,
+                        item.time ||
+                          formatDateLabel(
+                            item.createdAt || item.updatedAt
+                          ),
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </Text>
                   </View>
                   <Text
@@ -750,7 +1106,10 @@ const SanghaProfileScreen = () => {
                       lineHeight: 25,
                       marginTop: 12,
                     }}>
-                    {item.content}
+                    {item.content ||
+                      item.description ||
+                      item.title ||
+                      'Shared a Sangha experience.'}
                   </Text>
                   <View
                     style={{
@@ -770,7 +1129,11 @@ const SanghaProfileScreen = () => {
                         fontWeight: '700',
                         marginLeft: 7,
                       }}>
-                      {item.likes} blessings
+                      {item.likes ||
+                        item.likeCount ||
+                        item.blessingCount ||
+                        0}{' '}
+                      blessings
                     </Text>
                   </View>
                 </View>
@@ -795,9 +1158,29 @@ const SanghaProfileScreen = () => {
               Events Joined
             </Text>
 
+            {events.length === 0 ? (
+              <View
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 26,
+                  marginTop: 18,
+                  padding: 18,
+                }}>
+                <Text
+                  style={{
+                    color: '#8B7355',
+                    fontSize: 15,
+                    fontWeight: '700',
+                    lineHeight: 24,
+                  }}>
+                  No joined events are visible yet.
+                </Text>
+              </View>
+            ) : null}
+
             {events.map((item, index) => (
               <TouchableOpacity
-                key={index}
+                key={item.id || index}
                 activeOpacity={0.9}
                 style={{
                   backgroundColor: '#FFFFFF',
@@ -830,7 +1213,10 @@ const SanghaProfileScreen = () => {
                       fontWeight: '900',
                       textAlign: 'center',
                     }}>
-                    {item.date}
+                    {item.date ||
+                      formatDateLabel(
+                        item.startAt || item.createdAt
+                      )}
                   </Text>
                 </View>
 
@@ -853,7 +1239,7 @@ const SanghaProfileScreen = () => {
                         fontSize: 12,
                         fontWeight: '800',
                       }}>
-                      {item.type}
+                      {item.type || 'Sangha'}
                     </Text>
                   </View>
 
@@ -864,7 +1250,7 @@ const SanghaProfileScreen = () => {
                       fontWeight: '800',
                       marginTop: 9,
                     }}>
-                    {item.title}
+                    {item.title || item.name || 'Sangha Event'}
                   </Text>
 
                   <View
@@ -885,7 +1271,8 @@ const SanghaProfileScreen = () => {
                         fontWeight: '600',
                         marginLeft: 6,
                       }}>
-                      {item.time}
+                      {item.time ||
+                        formatTimeLabel(item.startAt)}
                     </Text>
                   </View>
 
@@ -909,7 +1296,11 @@ const SanghaProfileScreen = () => {
                         fontWeight: '600',
                         marginLeft: 6,
                       }}>
-                      {item.venue}
+                      {item.venue ||
+                        item.venueName ||
+                        item.address ||
+                        item.city ||
+                        'Location shared in event'}
                     </Text>
                   </View>
                 </View>

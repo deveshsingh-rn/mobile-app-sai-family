@@ -41,8 +41,9 @@ Status: Started
 Status: Started
 
 - [x] Wire `screens/sangha-list-screen.tsx` to `GET /api/sangha/devotees`.
-- [ ] Wire `screens/sangha-profile-screen.tsx` to `GET /api/sangha/devotees/:id`.
-- [ ] Wire connect, accept, decline, disconnect, and block actions.
+- [x] Wire `screens/sangha-profile-screen.tsx` to `GET /api/sangha/devotees/:id`.
+- [x] Wire connect, disconnect, and block actions.
+- [ ] Wire accept and decline actions from connection invitation surfaces.
 - [ ] Preserve privacy-safe location display.
 
 ## Phase 4: Sangha Hub And Groups

@@ -1,15 +1,27 @@
 import { call, put, takeLatest } from "redux-saga/effects";
 
 import {
+  apiBlockSanghaDevotee,
+  apiDisconnectSanghaDevotee,
   apiFetchSanghaDevotees,
+  apiFetchSanghaDevoteeProfile,
   apiFetchSanghaHome,
+  apiRequestSanghaConnection,
   apiUpdateSanghaDiscovery,
 } from "@/services/sangha";
 import {
+  blockSanghaDevoteeFailure,
+  blockSanghaDevoteeSuccess,
+  disconnectSanghaDevoteeFailure,
+  disconnectSanghaDevoteeSuccess,
   fetchSanghaDevoteesFailure,
   fetchSanghaDevoteesSuccess,
   fetchSanghaHomeFailure,
   fetchSanghaHomeSuccess,
+  fetchSanghaProfileFailure,
+  fetchSanghaProfileSuccess,
+  requestSanghaConnectionFailure,
+  requestSanghaConnectionSuccess,
   updateSanghaDiscoveryFailure,
   updateSanghaDiscoverySuccess,
 } from "./actions";
@@ -93,6 +105,16 @@ function* handleFetchSanghaHome(
   }
 }
 
+function normalizeProfile(response: any) {
+  return (
+    response?.devotee ||
+    response?.profile ||
+    response?.data?.devotee ||
+    response?.data?.profile ||
+    response
+  );
+}
+
 function* handleFetchSanghaDevotees(
   action: any
 ): Generator<any, void, any> {
@@ -118,6 +140,113 @@ function* handleFetchSanghaDevotees(
           "Failed to fetch Sangha devotees."
         )
       )
+    );
+  }
+}
+
+function* handleFetchSanghaProfile(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchSanghaDevoteeProfile,
+      action.payload.id
+    );
+
+    yield put(fetchSanghaProfileSuccess(normalizeProfile(response)));
+  } catch (error) {
+    yield put(
+      fetchSanghaProfileFailure(
+        getErrorMessage(
+          error,
+          "Failed to fetch devotee profile."
+        )
+      )
+    );
+  }
+}
+
+function* handleRequestConnection(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiRequestSanghaConnection,
+      action.payload.id
+    );
+
+    yield put(
+      requestSanghaConnectionSuccess({
+        id: action.payload.id,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      requestSanghaConnectionFailure({
+        error: getErrorMessage(
+          error,
+          "Failed to request connection."
+        ),
+        id: action.payload.id,
+      })
+    );
+  }
+}
+
+function* handleDisconnectDevotee(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiDisconnectSanghaDevotee,
+      action.payload.id
+    );
+
+    yield put(
+      disconnectSanghaDevoteeSuccess({
+        id: action.payload.id,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      disconnectSanghaDevoteeFailure({
+        error: getErrorMessage(
+          error,
+          "Failed to disconnect devotee."
+        ),
+        id: action.payload.id,
+      })
+    );
+  }
+}
+
+function* handleBlockDevotee(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiBlockSanghaDevotee,
+      action.payload.id,
+      { reason: action.payload.reason }
+    );
+
+    yield put(
+      blockSanghaDevoteeSuccess({
+        id: action.payload.id,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      blockSanghaDevoteeFailure({
+        error: getErrorMessage(
+          error,
+          "Failed to block devotee."
+        ),
+        id: action.payload.id,
+      })
     );
   }
 }
@@ -157,6 +286,22 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_DEVOTEES_REQUEST,
     handleFetchSanghaDevotees
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_PROFILE_REQUEST,
+    handleFetchSanghaProfile
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.REQUEST_CONNECTION_REQUEST,
+    handleRequestConnection
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.DISCONNECT_DEVOTEE_REQUEST,
+    handleDisconnectDevotee
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.BLOCK_DEVOTEE_REQUEST,
+    handleBlockDevotee
   );
   yield takeLatest(
     SANGHA_ACTIONS.UPDATE_DISCOVERY_REQUEST,

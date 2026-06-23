@@ -2,6 +2,7 @@ import {
   SANGHA_ACTIONS,
   SanghaDevoteeListParams,
   SanghaDevoteeListResult,
+  SanghaDevoteeProfile,
   SanghaDiscoverySettingsPayload,
   SanghaHomeParams,
   SanghaHomeResult,
@@ -55,6 +56,100 @@ export const fetchSanghaDevoteesFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.FETCH_DEVOTEES_FAILURE,
+  } as const);
+
+export const fetchSanghaProfileRequest = (id: string) =>
+  ({
+    payload: { id },
+    type: SANGHA_ACTIONS.FETCH_PROFILE_REQUEST,
+  } as const);
+
+export const fetchSanghaProfileSuccess = (
+  payload: SanghaDevoteeProfile
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_PROFILE_SUCCESS,
+  } as const);
+
+export const fetchSanghaProfileFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_PROFILE_FAILURE,
+  } as const);
+
+export const requestSanghaConnectionRequest = (
+  id: string
+) =>
+  ({
+    payload: { id },
+    type: SANGHA_ACTIONS.REQUEST_CONNECTION_REQUEST,
+  } as const);
+
+export const requestSanghaConnectionSuccess = (
+  payload: { id: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.REQUEST_CONNECTION_SUCCESS,
+  } as const);
+
+export const requestSanghaConnectionFailure = (
+  payload: { error: string; id: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.REQUEST_CONNECTION_FAILURE,
+  } as const);
+
+export const disconnectSanghaDevoteeRequest = (
+  id: string
+) =>
+  ({
+    payload: { id },
+    type: SANGHA_ACTIONS.DISCONNECT_DEVOTEE_REQUEST,
+  } as const);
+
+export const disconnectSanghaDevoteeSuccess = (
+  payload: { id: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.DISCONNECT_DEVOTEE_SUCCESS,
+  } as const);
+
+export const disconnectSanghaDevoteeFailure = (
+  payload: { error: string; id: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.DISCONNECT_DEVOTEE_FAILURE,
+  } as const);
+
+export const blockSanghaDevoteeRequest = (
+  payload: { id: string; reason?: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.BLOCK_DEVOTEE_REQUEST,
+  } as const);
+
+export const blockSanghaDevoteeSuccess = (
+  payload: { id: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.BLOCK_DEVOTEE_SUCCESS,
+  } as const);
+
+export const blockSanghaDevoteeFailure = (
+  payload: { error: string; id: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.BLOCK_DEVOTEE_FAILURE,
   } as const);
 
 export const updateSanghaDiscoveryRequest = (

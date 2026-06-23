@@ -160,6 +160,7 @@ export type SanghaLiveStream = {
 };
 
 export type SanghaState = {
+  actionPendingIds: Record<string, boolean>;
   devotees: SanghaDevoteeSummary[];
   devoteesLoading: boolean;
   devoteesPagination: SanghaPagination | null;
@@ -167,6 +168,8 @@ export type SanghaState = {
   error: string | null;
   home: SanghaHomeResult | null;
   homeLoading: boolean;
+  profile: SanghaDevoteeProfile | null;
+  profileLoading: boolean;
 };
 
 export enum SANGHA_ACTIONS {
@@ -176,6 +179,18 @@ export enum SANGHA_ACTIONS {
   FETCH_DEVOTEES_REQUEST = "sangha/FETCH_DEVOTEES_REQUEST",
   FETCH_DEVOTEES_SUCCESS = "sangha/FETCH_DEVOTEES_SUCCESS",
   FETCH_DEVOTEES_FAILURE = "sangha/FETCH_DEVOTEES_FAILURE",
+  FETCH_PROFILE_REQUEST = "sangha/FETCH_PROFILE_REQUEST",
+  FETCH_PROFILE_SUCCESS = "sangha/FETCH_PROFILE_SUCCESS",
+  FETCH_PROFILE_FAILURE = "sangha/FETCH_PROFILE_FAILURE",
+  REQUEST_CONNECTION_REQUEST = "sangha/REQUEST_CONNECTION_REQUEST",
+  REQUEST_CONNECTION_SUCCESS = "sangha/REQUEST_CONNECTION_SUCCESS",
+  REQUEST_CONNECTION_FAILURE = "sangha/REQUEST_CONNECTION_FAILURE",
+  DISCONNECT_DEVOTEE_REQUEST = "sangha/DISCONNECT_DEVOTEE_REQUEST",
+  DISCONNECT_DEVOTEE_SUCCESS = "sangha/DISCONNECT_DEVOTEE_SUCCESS",
+  DISCONNECT_DEVOTEE_FAILURE = "sangha/DISCONNECT_DEVOTEE_FAILURE",
+  BLOCK_DEVOTEE_REQUEST = "sangha/BLOCK_DEVOTEE_REQUEST",
+  BLOCK_DEVOTEE_SUCCESS = "sangha/BLOCK_DEVOTEE_SUCCESS",
+  BLOCK_DEVOTEE_FAILURE = "sangha/BLOCK_DEVOTEE_FAILURE",
   UPDATE_DISCOVERY_REQUEST = "sangha/UPDATE_DISCOVERY_REQUEST",
   UPDATE_DISCOVERY_SUCCESS = "sangha/UPDATE_DISCOVERY_SUCCESS",
   UPDATE_DISCOVERY_FAILURE = "sangha/UPDATE_DISCOVERY_FAILURE",
@@ -207,6 +222,54 @@ export type SanghaAction =
   | {
       payload: string;
       type: SANGHA_ACTIONS.FETCH_DEVOTEES_FAILURE;
+    }
+  | {
+      payload: { id: string };
+      type: SANGHA_ACTIONS.FETCH_PROFILE_REQUEST;
+    }
+  | {
+      payload: SanghaDevoteeProfile;
+      type: SANGHA_ACTIONS.FETCH_PROFILE_SUCCESS;
+    }
+  | {
+      payload: string;
+      type: SANGHA_ACTIONS.FETCH_PROFILE_FAILURE;
+    }
+  | {
+      payload: { id: string };
+      type: SANGHA_ACTIONS.REQUEST_CONNECTION_REQUEST;
+    }
+  | {
+      payload: { id: string; response?: any };
+      type: SANGHA_ACTIONS.REQUEST_CONNECTION_SUCCESS;
+    }
+  | {
+      payload: { error: string; id: string };
+      type: SANGHA_ACTIONS.REQUEST_CONNECTION_FAILURE;
+    }
+  | {
+      payload: { id: string };
+      type: SANGHA_ACTIONS.DISCONNECT_DEVOTEE_REQUEST;
+    }
+  | {
+      payload: { id: string; response?: any };
+      type: SANGHA_ACTIONS.DISCONNECT_DEVOTEE_SUCCESS;
+    }
+  | {
+      payload: { error: string; id: string };
+      type: SANGHA_ACTIONS.DISCONNECT_DEVOTEE_FAILURE;
+    }
+  | {
+      payload: { id: string; reason?: string };
+      type: SANGHA_ACTIONS.BLOCK_DEVOTEE_REQUEST;
+    }
+  | {
+      payload: { id: string; response?: any };
+      type: SANGHA_ACTIONS.BLOCK_DEVOTEE_SUCCESS;
+    }
+  | {
+      payload: { error: string; id: string };
+      type: SANGHA_ACTIONS.BLOCK_DEVOTEE_FAILURE;
     }
   | {
       payload: SanghaDiscoverySettingsPayload;

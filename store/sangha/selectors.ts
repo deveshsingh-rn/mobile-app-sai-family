@@ -25,6 +25,23 @@ export const selectSanghaDevoteesPagination = (
   state: RootState
 ) => selectSanghaState(state).devoteesPagination;
 
+export const selectSanghaProfile = (state: RootState) =>
+  selectSanghaState(state).profile;
+
+export const selectSanghaProfileLoading = (
+  state: RootState
+) => selectSanghaState(state).profileLoading;
+
+export const selectIsSanghaActionPending = (
+  state: RootState,
+  id?: string
+) =>
+  id
+    ? Boolean(
+        selectSanghaState(state).actionPendingIds[id]
+      )
+    : false;
+
 export const selectSanghaNearYou = (state: RootState) =>
   selectSanghaHome(state)?.nearYou || [];
 
