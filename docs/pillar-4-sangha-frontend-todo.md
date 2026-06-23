@@ -58,12 +58,12 @@ Status: Started
 
 ## Phase 5: Group Details
 
-Status: Not started
+Status: Started
 
-- [ ] Wire `screens/group-details-screen.tsx` to `GET /api/sangha/groups/:id`.
-- [ ] Wire members to `GET /api/sangha/groups/:id/members`.
-- [ ] Wire posts to `GET /api/sangha/groups/:id/posts`.
-- [ ] Wire group events to `GET /api/sangha/groups/:id/events`.
+- [x] Wire `screens/group-details-screen.tsx` to `GET /api/sangha/groups/:id`.
+- [x] Wire members to `GET /api/sangha/groups/:id/members`.
+- [x] Wire posts to `GET /api/sangha/groups/:id/posts`.
+- [x] Wire group events to `GET /api/sangha/groups/:id/events`.
 - [ ] Wire join, leave, post create, like, comment, pin, and delete actions.
 
 ## Phase 6: Group Events

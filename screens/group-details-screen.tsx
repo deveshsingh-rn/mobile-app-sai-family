@@ -1,5 +1,6 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {
+  ActivityIndicator,
   StatusBar,
   View,
   Text,
@@ -9,87 +10,211 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const avatars = [
-  "https://randomuser.me/api/portraits/women/12.jpg",
-  "https://randomuser.me/api/portraits/men/32.jpg",
-  "https://randomuser.me/api/portraits/women/44.jpg",
-];
+import {
+  fetchSanghaGroupDetailRequest,
+  fetchSanghaGroupEventsRequest,
+  fetchSanghaGroupMembersRequest,
+  fetchSanghaGroupPostsRequest,
+} from "@/store/sangha/actions";
+import {
+  selectSanghaError,
+  selectSanghaGroupDetail,
+  selectSanghaGroupDetailLoading,
+  selectSanghaGroupEvents,
+  selectSanghaGroupEventsLoading,
+  selectSanghaGroupMembers,
+  selectSanghaGroupMembersLoading,
+  selectSanghaGroupPosts,
+  selectSanghaGroupPostsLoading,
+} from "@/store/sangha/selectors";
+import {
+  SanghaGroupDetail,
+  SanghaGroupEvent,
+  SanghaGroupMember,
+  SanghaGroupPost,
+} from "@/store/sangha/types";
+import {
+  useAppDispatch,
+  useAppSelector,
+} from "@/store/hooks";
 
 const tabs = ["Feed", "Members", "Events", "About"] as const;
 type GroupTab = (typeof tabs)[number];
 
-const members = [
-  {
-    image: "https://randomuser.me/api/portraits/men/64.jpg",
-    name: "Ravi Sharma",
-    role: "Admin",
-    status: "Online now",
-  },
-  {
-    image: "https://randomuser.me/api/portraits/women/68.jpg",
-    name: "Priya Patel",
-    role: "Seva Lead",
-    status: "Active 1h ago",
-  },
-  {
-    image: "https://randomuser.me/api/portraits/men/21.jpg",
-    name: "Amit Desai",
-    role: "Member",
-    status: "Active today",
-  },
-  {
-    image: "https://randomuser.me/api/portraits/women/41.jpg",
-    name: "Neha Kulkarni",
-    role: "Member",
-    status: "Joined this week",
-  },
-];
+function imageForName(name?: string | null) {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    name || "Sai Family"
+  )}&background=FFF7ED&color=F97316`;
+}
 
-const events = [
-  {
-    date: "SUN",
-    day: "31",
-    title: "Weekend Food Drive",
-    meta: "8:00 AM · Andheri Community Kitchen",
-    going: "46 going",
-  },
-  {
-    date: "THU",
-    day: "04",
-    title: "Sai Bhajan Evening",
-    meta: "7:30 PM · Sai Mandir Hall",
-    going: "82 going",
-  },
-  {
-    date: "SAT",
-    day: "13",
-    title: "New Volunteer Orientation",
-    meta: "5:00 PM · Online",
-    going: "18 going",
-  },
-];
+function groupBanner(group?: SanghaGroupDetail | null) {
+  return (
+    group?.bannerUrl ||
+    imageForName(group?.name || "Sangha Group")
+  );
+}
+
+function memberAvatar(member: SanghaGroupMember) {
+  return (
+    member.avatarUrl ||
+    member.profileImageUrl ||
+    imageForName(member.name)
+  );
+}
+
+function postAuthorAvatar(post: SanghaGroupPost) {
+  return post.authorAvatarUrl || imageForName(post.authorName);
+}
+
+function formatDate(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function formatTime(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 export default function GroupDetailsScreen() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const dispatch = useAppDispatch();
+  const group = useAppSelector(selectSanghaGroupDetail);
+  const groupLoading = useAppSelector(
+    selectSanghaGroupDetailLoading
+  );
+  const posts = useAppSelector(selectSanghaGroupPosts);
+  const postsLoading = useAppSelector(
+    selectSanghaGroupPostsLoading
+  );
+  const members = useAppSelector(selectSanghaGroupMembers);
+  const membersLoading = useAppSelector(
+    selectSanghaGroupMembersLoading
+  );
+  const events = useAppSelector(selectSanghaGroupEvents);
+  const eventsLoading = useAppSelector(
+    selectSanghaGroupEventsLoading
+  );
+  const error = useAppSelector(selectSanghaError);
   const [activeTab, setActiveTab] = useState<GroupTab>("Feed");
+  const groupId = id || group?.id || "";
+
+  useEffect(() => {
+    if (!groupId) {
+      return;
+    }
+
+    dispatch(fetchSanghaGroupDetailRequest(groupId));
+    dispatch(
+      fetchSanghaGroupPostsRequest({
+        groupId,
+        limit: 20,
+        offset: 0,
+        pinnedFirst: true,
+      })
+    );
+    dispatch(
+      fetchSanghaGroupMembersRequest({
+        groupId,
+        limit: 20,
+        offset: 0,
+        role: "all",
+        status: "active",
+      })
+    );
+    dispatch(
+      fetchSanghaGroupEventsRequest({
+        groupId,
+        limit: 20,
+        offset: 0,
+        status: "upcoming",
+      })
+    );
+  }, [dispatch, groupId]);
 
   const renderTabContent = () => {
     if (activeTab === "Members") {
-      return <MembersSection />;
+      return (
+        <MembersSection
+          loading={membersLoading}
+          members={members}
+        />
+      );
     }
 
     if (activeTab === "Events") {
-      return <EventsSection />;
+      return (
+        <EventsSection
+          events={events}
+          loading={eventsLoading}
+        />
+      );
     }
 
     if (activeTab === "About") {
-      return <AboutSection />;
+      return <AboutSection group={group} />;
     }
 
-    return <FeedSection />;
+    return (
+      <FeedSection
+        loading={postsLoading}
+        posts={posts}
+      />
+    );
   };
+
+  if (groupLoading && !group) {
+    return (
+      <SafeAreaView style={{ alignItems: "center", backgroundColor: "#F8F6F2", flex: 1, justifyContent: "center" }}>
+        <ActivityIndicator color="#F97316" />
+        <Text style={{ color: "#6B7280", fontSize: 15, fontWeight: "800", marginTop: 12 }}>
+          Loading group details
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!groupLoading && !group && error) {
+    return (
+      <SafeAreaView style={{ backgroundColor: "#F8F6F2", flex: 1, padding: 22 }}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.back()}
+          style={{
+            alignItems: "center",
+            backgroundColor: "#FFFFFF",
+            borderRadius: 22,
+            height: 44,
+            justifyContent: "center",
+            width: 44,
+          }}
+        >
+          <Ionicons name="arrow-back" size={22} color="#2B1308" />
+        </TouchableOpacity>
+        <View style={{ backgroundColor: "#FFFFFF", borderRadius: 24, marginTop: 22, padding: 18 }}>
+          <Text style={{ color: "#111827", fontSize: 19, fontWeight: "900" }}>
+            Group unavailable
+          </Text>
+          <Text style={{ color: "#6B7280", fontSize: 14, fontWeight: "600", lineHeight: 22, marginTop: 8 }}>
+            {error}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F8F6F2" }}>
@@ -100,7 +225,7 @@ export default function GroupDetailsScreen() {
         <View style={{ height: 345, backgroundColor: "#2B1308" }}>
           <Image
             source={{
-              uri: "https://images.unsplash.com/photo-1604076913837-52ab5629fba9?q=80&w=1200",
+              uri: groupBanner(group),
             }}
             style={{ width: "100%", height: "100%", opacity: 0.72 }}
           />
@@ -145,7 +270,7 @@ export default function GroupDetailsScreen() {
                 }}
               >
                 <Text style={{ color: "#C2410C", fontSize: 13, fontWeight: "800" }}>
-                  SANGHA
+                  {(group?.purpose || "SANGHA").toUpperCase()}
                 </Text>
               </View>
 
@@ -160,7 +285,7 @@ export default function GroupDetailsScreen() {
                 }}
               >
                 <Text style={{ color: "#7C2D12", fontSize: 13, fontWeight: "800" }}>
-                  1.2K MEMBERS
+                  {group?.memberCount || 0} MEMBERS
                 </Text>
               </View>
             </View>
@@ -175,7 +300,7 @@ export default function GroupDetailsScreen() {
                 letterSpacing: -0.4,
               }}
             >
-              The Living Community{"\n"}Space
+              {group?.name || "Sangha Group"}
             </Text>
 
             <Text
@@ -188,7 +313,9 @@ export default function GroupDetailsScreen() {
                 fontWeight: "500",
               }}
             >
-              A dedicated space for daily spiritual practice, bhajan sharing, and community support in the...
+              {group?.description ||
+                group?.purposeText ||
+                "A dedicated space for spiritual practice, seva, bhajan sharing, and community support."}
             </Text>
 
             <View
@@ -200,10 +327,10 @@ export default function GroupDetailsScreen() {
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                {avatars.map((uri, index) => (
+                {members.slice(0, 3).map((member, index) => (
                   <Image
-                    key={index}
-                    source={{ uri }}
+                    key={member.id || index}
+                    source={{ uri: memberAvatar(member) }}
                     style={{
                       width: 34,
                       height: 34,
@@ -228,7 +355,9 @@ export default function GroupDetailsScreen() {
                     alignItems: "center",
                   }}
                 >
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>+1k</Text>
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
+                    +{Math.max((group?.memberCount || 0) - 3, 0)}
+                  </Text>
                 </View>
               </View>
 
@@ -249,7 +378,11 @@ export default function GroupDetailsScreen() {
                 }}
               >
                 <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>
-                  Joined
+                  {group?.membershipStatus === "active"
+                    ? "Joined"
+                    : group?.membershipStatus === "pending"
+                      ? "Pending"
+                      : "Join"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -305,7 +438,33 @@ export default function GroupDetailsScreen() {
   );
 }
 
-function FeedSection() {
+function EmptyCard({ text }: { text: string }) {
+  return (
+    <View
+      style={{
+        backgroundColor: "#FFFFFF",
+        borderRadius: 22,
+        marginTop: 16,
+        padding: 18,
+      }}
+    >
+      <Text style={{ color: "#6B7280", fontSize: 15, fontWeight: "700", lineHeight: 23 }}>
+        {text}
+      </Text>
+    </View>
+  );
+}
+
+function FeedSection({
+  loading,
+  posts,
+}: {
+  loading: boolean;
+  posts: SanghaGroupPost[];
+}) {
+  const pinned = posts.find((post) => post.isPinned);
+  const regularPosts = posts.filter((post) => !post.isPinned);
+
   return (
     <>
       <View
@@ -369,8 +528,16 @@ function FeedSection() {
       </View>
 
       <MemberRequestCard />
-      <PinnedPostCard />
-      <CommunityPostCard />
+      {loading ? (
+        <EmptyCard text="Loading group posts..." />
+      ) : null}
+      {!loading && posts.length === 0 ? (
+        <EmptyCard text="No posts have been shared in this group yet." />
+      ) : null}
+      {pinned ? <PinnedPostCard post={pinned} /> : null}
+      {regularPosts.map((post) => (
+        <CommunityPostCard key={post.id} post={post} />
+      ))}
     </>
   );
 }
@@ -426,7 +593,7 @@ function MemberRequestCard() {
   );
 }
 
-function PinnedPostCard() {
+function PinnedPostCard({ post }: { post: SanghaGroupPost }) {
   return (
     <View
       style={{
@@ -446,22 +613,28 @@ function PinnedPostCard() {
       </View>
 
       <PostAuthor
-        image="https://randomuser.me/api/portraits/men/64.jpg"
-        name="Ravi Sharma"
-        meta="Admin · 2 hours ago"
+        image={postAuthorAvatar(post)}
+        name={post.authorName || "Sai Family"}
+        meta={`${post.authorRole || "Member"} · ${formatDate(post.createdAt)}`}
       />
 
       <Text style={postTextStyle}>
-        Hari Om family! Weekly gathering this Thursday will be at the community hall instead of
-        the temple. Please bring your bhajan books.
+        {post.content || "Shared a group update."}
       </Text>
 
-      <PostActions likes="24" comments="5" />
+      <PostActions
+        likes={`${post.likeCount || 0}`}
+        comments={`${post.commentCount || 0}`}
+      />
     </View>
   );
 }
 
-function CommunityPostCard() {
+function CommunityPostCard({ post }: { post: SanghaGroupPost }) {
+  const imageUrl =
+    post.imageUrl ||
+    post.mediaUrls?.find((url) => Boolean(url));
+
   return (
     <View
       style={{
@@ -472,21 +645,22 @@ function CommunityPostCard() {
       }}
     >
       <PostAuthor
-        image="https://randomuser.me/api/portraits/women/68.jpg"
-        name="Priya Patel"
-        meta="4 hours ago"
+        image={postAuthorAvatar(post)}
+        name={post.authorName || "Sai Family"}
+        meta={formatDate(post.createdAt)}
         menu
       />
 
       <Text style={postTextStyle}>
-        Beautiful morning meditation session today. The energy was incredible. Grateful for this
-        sangha. 🙏
+        {post.content || "Shared a group update."}
       </Text>
 
-      <Image
-        source={{ uri: "https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7?q=80&w=1200" }}
-        style={{ marginTop: 14, width: "100%", height: 250, borderRadius: 16 }}
-      />
+      {imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={{ marginTop: 14, width: "100%", height: 250, borderRadius: 16 }}
+        />
+      ) : null}
 
       <View
         style={{
@@ -510,7 +684,13 @@ function CommunityPostCard() {
   );
 }
 
-function MembersSection() {
+function MembersSection({
+  loading,
+  members,
+}: {
+  loading: boolean;
+  members: SanghaGroupMember[];
+}) {
   return (
     <>
       <View
@@ -548,9 +728,15 @@ function MembersSection() {
       </View>
 
       <View style={{ marginTop: 18 }}>
+        {loading ? (
+          <EmptyCard text="Loading members..." />
+        ) : null}
+        {!loading && members.length === 0 ? (
+          <EmptyCard text="No active members are visible yet." />
+        ) : null}
         {members.map((member) => (
           <View
-            key={member.name}
+            key={member.id}
             style={{
               backgroundColor: "#FFFFFF",
               borderRadius: 22,
@@ -560,14 +746,14 @@ function MembersSection() {
               alignItems: "center",
             }}
           >
-            <Image source={{ uri: member.image }} style={{ width: 54, height: 54, borderRadius: 27 }} />
+            <Image source={{ uri: memberAvatar(member) }} style={{ width: 54, height: 54, borderRadius: 27 }} />
             <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text style={{ color: "#111827", fontSize: 17, fontWeight: "900" }}>{member.name}</Text>
+              <Text style={{ color: "#111827", fontSize: 17, fontWeight: "900" }}>{member.name || "Sai Family"}</Text>
               <Text style={{ color: "#F97316", fontSize: 13, fontWeight: "800", marginTop: 3 }}>
-                {member.role}
+                {member.role || "Member"}
               </Text>
               <Text style={{ color: "#6B7280", fontSize: 13, fontWeight: "600", marginTop: 3 }}>
-                {member.status}
+                {member.status || "Active member"}
               </Text>
             </View>
             <TouchableOpacity
@@ -590,7 +776,13 @@ function MembersSection() {
   );
 }
 
-function EventsSection() {
+function EventsSection({
+  events,
+  loading,
+}: {
+  events: SanghaGroupEvent[];
+  loading: boolean;
+}) {
   return (
     <>
       <View
@@ -623,9 +815,15 @@ function EventsSection() {
         </TouchableOpacity>
       </View>
 
+      {loading ? (
+        <EmptyCard text="Loading group events..." />
+      ) : null}
+      {!loading && events.length === 0 ? (
+        <EmptyCard text="No upcoming group events are visible yet." />
+      ) : null}
       {events.map((event) => (
         <View
-          key={event.title}
+          key={event.id}
           style={{
             marginTop: 14,
             backgroundColor: "#FFFFFF",
@@ -645,18 +843,20 @@ function EventsSection() {
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "#F97316", fontSize: 12, fontWeight: "900" }}>{event.date}</Text>
+            <Text style={{ color: "#F97316", fontSize: 12, fontWeight: "900" }}>
+              {formatDate(event.startAt).split(" ")[0] || "EVENT"}
+            </Text>
             <Text style={{ color: "#111827", fontSize: 22, fontWeight: "900", marginTop: 2 }}>
-              {event.day}
+              {formatDate(event.startAt).split(" ")[1] || ""}
             </Text>
           </View>
           <View style={{ flex: 1, marginLeft: 14 }}>
-            <Text style={{ color: "#111827", fontSize: 17, fontWeight: "900" }}>{event.title}</Text>
+            <Text style={{ color: "#111827", fontSize: 17, fontWeight: "900" }}>{event.title || "Sangha Event"}</Text>
             <Text style={{ color: "#6B7280", fontSize: 13, fontWeight: "600", marginTop: 5 }}>
-              {event.meta}
+              {[formatTime(event.startAt), event.venueName || event.address || event.city].filter(Boolean).join(" · ")}
             </Text>
             <Text style={{ color: "#F97316", fontSize: 13, fontWeight: "800", marginTop: 7 }}>
-              {event.going}
+              {event.rsvpCount || event.attendeeCount || 0} going
             </Text>
           </View>
           <TouchableOpacity
@@ -677,27 +877,40 @@ function EventsSection() {
   );
 }
 
-function AboutSection() {
+function AboutSection({
+  group,
+}: {
+  group: SanghaGroupDetail | null;
+}) {
   return (
     <>
       <InfoCard title="Purpose" icon="compass">
-        A dedicated space for daily spiritual practice, bhajan sharing, local seva planning, and
-        community support for Sai devotees.
+        {group?.purposeText ||
+          group?.description ||
+          "A dedicated space for daily spiritual practice, bhajan sharing, seva planning, and community support."}
       </InfoCard>
 
       <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-        <StatCard value="1.2K" label="Members" />
-        <StatCard value="38" label="Events" />
-        <StatCard value="96%" label="Active" />
+        <StatCard value={`${group?.memberCount || 0}`} label="Members" />
+        <StatCard value={`${group?.stats?.events || 0}`} label="Events" />
+        <StatCard value={`${group?.activePercent || 0}%`} label="Active" />
       </View>
 
       <InfoCard title="Guidelines" icon="document-text">
-        Keep posts respectful, avoid promotional spam, protect private member details, and use the
-        events tab for meetups or seva drives.
+        {group?.guidelines ||
+          "Keep posts respectful, avoid promotional spam, protect private member details, and use the events tab for meetups or seva drives."}
       </InfoCard>
 
       <InfoCard title="Location & Privacy" icon="location">
-        Mumbai, Maharashtra · Public group · Posts are visible to joined members.
+        {[
+          group?.locationLabel ||
+            [group?.city, group?.state, group?.country]
+              .filter(Boolean)
+              .join(", "),
+          group?.privacy ? `${group.privacy} group` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ") || "Location and privacy details are not shared yet."}
       </InfoCard>
     </>
   );

@@ -9,6 +9,10 @@ import {
   apiDisconnectSanghaDevotee,
   apiFetchSanghaDevotees,
   apiFetchSanghaDevoteeProfile,
+  apiFetchSanghaGroupDetail,
+  apiFetchSanghaGroupEvents,
+  apiFetchSanghaGroupMembers,
+  apiFetchSanghaGroupPosts,
   apiFetchSanghaGroups,
   apiFetchSanghaGroupsHome,
   apiFetchSanghaHome,
@@ -37,6 +41,14 @@ import {
   fetchSanghaGroupsHomeFailure,
   fetchSanghaGroupsHomeSuccess,
   fetchSanghaGroupsSuccess,
+  fetchSanghaGroupDetailFailure,
+  fetchSanghaGroupDetailSuccess,
+  fetchSanghaGroupEventsFailure,
+  fetchSanghaGroupEventsSuccess,
+  fetchSanghaGroupMembersFailure,
+  fetchSanghaGroupMembersSuccess,
+  fetchSanghaGroupPostsFailure,
+  fetchSanghaGroupPostsSuccess,
   fetchSanghaHomeFailure,
   fetchSanghaHomeSuccess,
   fetchSanghaInvitationsFailure,
@@ -212,6 +224,64 @@ function normalizeInvitations(response: any, append = false) {
   };
 }
 
+function normalizeGroupDetail(response: any) {
+  return (
+    response?.group ||
+    response?.data?.group ||
+    response?.detail ||
+    response?.data?.detail ||
+    response
+  );
+}
+
+function normalizePosts(response: any, append = false) {
+  return {
+    append,
+    pagination:
+      response?.pagination ||
+      response?.data?.pagination ||
+      null,
+    posts:
+      response?.posts ||
+      response?.results ||
+      response?.data?.posts ||
+      response?.data?.results ||
+      [],
+  };
+}
+
+function normalizeMembers(response: any, append = false) {
+  return {
+    append,
+    members:
+      response?.members ||
+      response?.results ||
+      response?.data?.members ||
+      response?.data?.results ||
+      [],
+    pagination:
+      response?.pagination ||
+      response?.data?.pagination ||
+      null,
+  };
+}
+
+function normalizeEvents(response: any, append = false) {
+  return {
+    append,
+    events:
+      response?.events ||
+      response?.results ||
+      response?.data?.events ||
+      response?.data?.results ||
+      [],
+    pagination:
+      response?.pagination ||
+      response?.data?.pagination ||
+      null,
+  };
+}
+
 function* handleFetchSanghaDevotees(
   action: any
 ): Generator<any, void, any> {
@@ -364,6 +434,104 @@ function* handleFetchSanghaGroups(
     yield put(
       fetchSanghaGroupsFailure(
         getErrorMessage(error, "Failed to fetch Sangha groups.")
+      )
+    );
+  }
+}
+
+function* handleFetchGroupDetail(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchSanghaGroupDetail,
+      action.payload.id
+    );
+
+    yield put(
+      fetchSanghaGroupDetailSuccess(
+        normalizeGroupDetail(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaGroupDetailFailure(
+        getErrorMessage(error, "Failed to fetch group detail.")
+      )
+    );
+  }
+}
+
+function* handleFetchGroupPosts(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const { groupId, ...params } = action.payload;
+    const response = yield call(
+      apiFetchSanghaGroupPosts,
+      groupId,
+      params
+    );
+
+    yield put(
+      fetchSanghaGroupPostsSuccess(
+        normalizePosts(response, Boolean(params.offset))
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaGroupPostsFailure(
+        getErrorMessage(error, "Failed to fetch group posts.")
+      )
+    );
+  }
+}
+
+function* handleFetchGroupMembers(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const { groupId, ...params } = action.payload;
+    const response = yield call(
+      apiFetchSanghaGroupMembers,
+      groupId,
+      params
+    );
+
+    yield put(
+      fetchSanghaGroupMembersSuccess(
+        normalizeMembers(response, Boolean(params.offset))
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaGroupMembersFailure(
+        getErrorMessage(error, "Failed to fetch group members.")
+      )
+    );
+  }
+}
+
+function* handleFetchGroupEvents(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const { groupId, ...params } = action.payload;
+    const response = yield call(
+      apiFetchSanghaGroupEvents,
+      groupId,
+      params
+    );
+
+    yield put(
+      fetchSanghaGroupEventsSuccess(
+        normalizeEvents(response, Boolean(params.offset))
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaGroupEventsFailure(
+        getErrorMessage(error, "Failed to fetch group events.")
       )
     );
   }
@@ -616,6 +784,22 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUPS_REQUEST,
     handleFetchSanghaGroups
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_GROUP_DETAIL_REQUEST,
+    handleFetchGroupDetail
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_GROUP_POSTS_REQUEST,
+    handleFetchGroupPosts
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_REQUEST,
+    handleFetchGroupMembers
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_GROUP_EVENTS_REQUEST,
+    handleFetchGroupEvents
   );
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_RECENT_SEARCHES_REQUEST,

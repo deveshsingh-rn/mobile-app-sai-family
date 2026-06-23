@@ -76,6 +76,38 @@ export const selectSanghaGroupsListPagination = (
   state: RootState
 ) => selectSanghaState(state).groupsListPagination;
 
+export const selectSanghaGroupDetail = (
+  state: RootState
+) => selectSanghaState(state).groupDetail;
+
+export const selectSanghaGroupDetailLoading = (
+  state: RootState
+) => selectSanghaState(state).groupDetailLoading;
+
+export const selectSanghaGroupPosts = (
+  state: RootState
+) => selectSanghaState(state).groupPosts;
+
+export const selectSanghaGroupPostsLoading = (
+  state: RootState
+) => selectSanghaState(state).groupPostsLoading;
+
+export const selectSanghaGroupMembers = (
+  state: RootState
+) => selectSanghaState(state).groupMembers;
+
+export const selectSanghaGroupMembersLoading = (
+  state: RootState
+) => selectSanghaState(state).groupMembersLoading;
+
+export const selectSanghaGroupEvents = (
+  state: RootState
+) => selectSanghaState(state).groupEvents;
+
+export const selectSanghaGroupEventsLoading = (
+  state: RootState
+) => selectSanghaState(state).groupEventsLoading;
+
 export const selectSanghaRecentSearches = (
   state: RootState
 ) => selectSanghaState(state).recentSearches;

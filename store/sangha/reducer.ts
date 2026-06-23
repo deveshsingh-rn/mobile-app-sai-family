@@ -13,6 +13,17 @@ export const initialSanghaState: SanghaState = {
   error: null,
   groupsHome: null,
   groupsHomeLoading: false,
+  groupDetail: null,
+  groupDetailLoading: false,
+  groupEvents: [],
+  groupEventsLoading: false,
+  groupEventsPagination: null,
+  groupMembers: [],
+  groupMembersLoading: false,
+  groupMembersPagination: null,
+  groupPosts: [],
+  groupPostsLoading: false,
+  groupPostsPagination: null,
   groupsList: [],
   groupsListLoading: false,
   groupsListPagination: null,
@@ -242,6 +253,103 @@ export function sanghaReducer(
         ...state,
         error: action.payload,
         groupsListLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_DETAIL_REQUEST:
+      return {
+        ...state,
+        error: null,
+        groupDetailLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_DETAIL_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        groupDetail: action.payload,
+        groupDetailLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_DETAIL_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        groupDetailLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_POSTS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        groupPostsLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_POSTS_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        groupPosts: action.payload.append
+          ? mergeById(state.groupPosts, action.payload.posts)
+          : action.payload.posts,
+        groupPostsLoading: false,
+        groupPostsPagination: action.payload.pagination,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_POSTS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        groupPostsLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        groupMembersLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        groupMembers: action.payload.append
+          ? mergeById(state.groupMembers, action.payload.members)
+          : action.payload.members,
+        groupMembersLoading: false,
+        groupMembersPagination: action.payload.pagination,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        groupMembersLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_EVENTS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        groupEventsLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_EVENTS_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        groupEvents: action.payload.append
+          ? mergeById(state.groupEvents, action.payload.events)
+          : action.payload.events,
+        groupEventsLoading: false,
+        groupEventsPagination: action.payload.pagination,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_EVENTS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        groupEventsLoading: false,
       };
 
     case SANGHA_ACTIONS.FETCH_RECENT_SEARCHES_REQUEST:

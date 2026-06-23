@@ -6,6 +6,10 @@ import {
   SanghaDiscoverySettingsPayload,
   SanghaGroupListParams,
   SanghaGroupListResult,
+  SanghaGroupDetail,
+  SanghaGroupEvent,
+  SanghaGroupMember,
+  SanghaGroupPost,
   SanghaHubHomeResult,
   SanghaInvitation,
   SanghaPagination,
@@ -160,6 +164,130 @@ export const fetchSanghaGroupsFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.FETCH_GROUPS_FAILURE,
+  } as const);
+
+export const fetchSanghaGroupDetailRequest = (
+  id: string
+) =>
+  ({
+    payload: { id },
+    type: SANGHA_ACTIONS.FETCH_GROUP_DETAIL_REQUEST,
+  } as const);
+
+export const fetchSanghaGroupDetailSuccess = (
+  payload: SanghaGroupDetail
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_DETAIL_SUCCESS,
+  } as const);
+
+export const fetchSanghaGroupDetailFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_DETAIL_FAILURE,
+  } as const);
+
+export const fetchSanghaGroupPostsRequest = (
+  payload: {
+    groupId: string;
+    limit?: number;
+    offset?: number;
+    pinnedFirst?: boolean;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_POSTS_REQUEST,
+  } as const);
+
+export const fetchSanghaGroupPostsSuccess = (
+  payload: {
+    append?: boolean;
+    pagination: SanghaPagination | null;
+    posts: SanghaGroupPost[];
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_POSTS_SUCCESS,
+  } as const);
+
+export const fetchSanghaGroupPostsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_POSTS_FAILURE,
+  } as const);
+
+export const fetchSanghaGroupMembersRequest = (
+  payload: {
+    groupId: string;
+    limit?: number;
+    offset?: number;
+    role?: string;
+    status?: string;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_REQUEST,
+  } as const);
+
+export const fetchSanghaGroupMembersSuccess = (
+  payload: {
+    append?: boolean;
+    members: SanghaGroupMember[];
+    pagination: SanghaPagination | null;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_SUCCESS,
+  } as const);
+
+export const fetchSanghaGroupMembersFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_FAILURE,
+  } as const);
+
+export const fetchSanghaGroupEventsRequest = (
+  payload: {
+    groupId: string;
+    limit?: number;
+    offset?: number;
+    status?: string;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_EVENTS_REQUEST,
+  } as const);
+
+export const fetchSanghaGroupEventsSuccess = (
+  payload: {
+    append?: boolean;
+    events: SanghaGroupEvent[];
+    pagination: SanghaPagination | null;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_EVENTS_SUCCESS,
+  } as const);
+
+export const fetchSanghaGroupEventsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_EVENTS_FAILURE,
   } as const);
 
 export const fetchSanghaRecentSearchesRequest = (

@@ -202,6 +202,42 @@ export async function apiFetchSanghaGroupDetail(
   return data;
 }
 
+export async function apiFetchSanghaGroupPosts(
+  groupId: string,
+  params: Record<string, any> = {}
+) {
+  const { data } = await apiClient.get(
+    `/api/sangha/groups/${groupId}/posts`,
+    { params }
+  );
+
+  return data;
+}
+
+export async function apiFetchSanghaGroupMembers(
+  groupId: string,
+  params: Record<string, any> = {}
+) {
+  const { data } = await apiClient.get(
+    `/api/sangha/groups/${groupId}/members`,
+    { params }
+  );
+
+  return data;
+}
+
+export async function apiFetchSanghaGroupEvents(
+  groupId: string,
+  params: Record<string, any> = {}
+) {
+  const { data } = await apiClient.get(
+    `/api/sangha/groups/${groupId}/events`,
+    { params }
+  );
+
+  return data;
+}
+
 export async function apiFetchSanghaLiveStreams(
   params: Record<string, any> = {}
 ) {

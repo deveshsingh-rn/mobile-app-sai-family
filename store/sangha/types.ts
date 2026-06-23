@@ -115,6 +115,7 @@ export type SanghaHomeResult = {
 export type SanghaGroupSummary = {
   bannerUrl?: string | null;
   city?: string | null;
+  country?: string | null;
   description?: string | null;
   id: string;
   isOfficial?: boolean;
@@ -124,6 +125,56 @@ export type SanghaGroupSummary = {
   privacy?: "public" | "private" | string;
   purpose?: string;
   state?: string | null;
+};
+
+export type SanghaGroupDetail = SanghaGroupSummary & {
+  activePercent?: number;
+  canManage?: boolean;
+  canPost?: boolean;
+  guidelines?: string | null;
+  joinRequestCount?: number;
+  locationLabel?: string | null;
+  postCount?: number;
+  purposeText?: string | null;
+  stats?: Record<string, number>;
+};
+
+export type SanghaGroupPost = {
+  authorAvatarUrl?: string | null;
+  authorName?: string | null;
+  authorRole?: string | null;
+  commentCount?: number;
+  content?: string | null;
+  createdAt?: string;
+  id: string;
+  imageUrl?: string | null;
+  isPinned?: boolean;
+  likeCount?: number;
+  mediaUrls?: string[];
+  type?: string;
+};
+
+export type SanghaGroupMember = {
+  avatarUrl?: string | null;
+  id: string;
+  joinedAt?: string;
+  name?: string;
+  profileImageUrl?: string | null;
+  role?: string;
+  status?: string;
+  userId?: string;
+};
+
+export type SanghaGroupEvent = {
+  address?: string | null;
+  attendeeCount?: number;
+  city?: string | null;
+  id: string;
+  rsvpCount?: number;
+  startAt?: string;
+  title?: string;
+  type?: string;
+  venueName?: string | null;
 };
 
 export type SanghaHubHomeResult = {
@@ -182,6 +233,17 @@ export type SanghaState = {
   error: string | null;
   groupsHome: SanghaHubHomeResult | null;
   groupsHomeLoading: boolean;
+  groupDetail: SanghaGroupDetail | null;
+  groupDetailLoading: boolean;
+  groupEvents: SanghaGroupEvent[];
+  groupEventsLoading: boolean;
+  groupEventsPagination: SanghaPagination | null;
+  groupMembers: SanghaGroupMember[];
+  groupMembersLoading: boolean;
+  groupMembersPagination: SanghaPagination | null;
+  groupPosts: SanghaGroupPost[];
+  groupPostsLoading: boolean;
+  groupPostsPagination: SanghaPagination | null;
   groupsList: SanghaGroupSummary[];
   groupsListLoading: boolean;
   groupsListPagination: SanghaPagination | null;
@@ -218,6 +280,18 @@ export enum SANGHA_ACTIONS {
   FETCH_GROUPS_REQUEST = "sangha/FETCH_GROUPS_REQUEST",
   FETCH_GROUPS_SUCCESS = "sangha/FETCH_GROUPS_SUCCESS",
   FETCH_GROUPS_FAILURE = "sangha/FETCH_GROUPS_FAILURE",
+  FETCH_GROUP_DETAIL_REQUEST = "sangha/FETCH_GROUP_DETAIL_REQUEST",
+  FETCH_GROUP_DETAIL_SUCCESS = "sangha/FETCH_GROUP_DETAIL_SUCCESS",
+  FETCH_GROUP_DETAIL_FAILURE = "sangha/FETCH_GROUP_DETAIL_FAILURE",
+  FETCH_GROUP_POSTS_REQUEST = "sangha/FETCH_GROUP_POSTS_REQUEST",
+  FETCH_GROUP_POSTS_SUCCESS = "sangha/FETCH_GROUP_POSTS_SUCCESS",
+  FETCH_GROUP_POSTS_FAILURE = "sangha/FETCH_GROUP_POSTS_FAILURE",
+  FETCH_GROUP_MEMBERS_REQUEST = "sangha/FETCH_GROUP_MEMBERS_REQUEST",
+  FETCH_GROUP_MEMBERS_SUCCESS = "sangha/FETCH_GROUP_MEMBERS_SUCCESS",
+  FETCH_GROUP_MEMBERS_FAILURE = "sangha/FETCH_GROUP_MEMBERS_FAILURE",
+  FETCH_GROUP_EVENTS_REQUEST = "sangha/FETCH_GROUP_EVENTS_REQUEST",
+  FETCH_GROUP_EVENTS_SUCCESS = "sangha/FETCH_GROUP_EVENTS_SUCCESS",
+  FETCH_GROUP_EVENTS_FAILURE = "sangha/FETCH_GROUP_EVENTS_FAILURE",
   FETCH_RECENT_SEARCHES_REQUEST = "sangha/FETCH_RECENT_SEARCHES_REQUEST",
   FETCH_RECENT_SEARCHES_SUCCESS = "sangha/FETCH_RECENT_SEARCHES_SUCCESS",
   FETCH_RECENT_SEARCHES_FAILURE = "sangha/FETCH_RECENT_SEARCHES_FAILURE",
@@ -322,6 +396,63 @@ export type SanghaAction =
       type:
         | SANGHA_ACTIONS.SEARCH_GROUPS_FAILURE
         | SANGHA_ACTIONS.FETCH_GROUPS_FAILURE;
+    }
+  | {
+      payload: { id: string };
+      type: SANGHA_ACTIONS.FETCH_GROUP_DETAIL_REQUEST;
+    }
+  | {
+      payload: SanghaGroupDetail;
+      type: SANGHA_ACTIONS.FETCH_GROUP_DETAIL_SUCCESS;
+    }
+  | {
+      payload: string;
+      type: SANGHA_ACTIONS.FETCH_GROUP_DETAIL_FAILURE;
+    }
+  | {
+      payload: {
+        groupId: string;
+        limit?: number;
+        offset?: number;
+        pinnedFirst?: boolean;
+        role?: string;
+        status?: string;
+      };
+      type:
+        | SANGHA_ACTIONS.FETCH_GROUP_POSTS_REQUEST
+        | SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_REQUEST
+        | SANGHA_ACTIONS.FETCH_GROUP_EVENTS_REQUEST;
+    }
+  | {
+      payload: {
+        append?: boolean;
+        pagination: SanghaPagination | null;
+        posts: SanghaGroupPost[];
+      };
+      type: SANGHA_ACTIONS.FETCH_GROUP_POSTS_SUCCESS;
+    }
+  | {
+      payload: {
+        append?: boolean;
+        members: SanghaGroupMember[];
+        pagination: SanghaPagination | null;
+      };
+      type: SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_SUCCESS;
+    }
+  | {
+      payload: {
+        append?: boolean;
+        events: SanghaGroupEvent[];
+        pagination: SanghaPagination | null;
+      };
+      type: SANGHA_ACTIONS.FETCH_GROUP_EVENTS_SUCCESS;
+    }
+  | {
+      payload: string;
+      type:
+        | SANGHA_ACTIONS.FETCH_GROUP_POSTS_FAILURE
+        | SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_FAILURE
+        | SANGHA_ACTIONS.FETCH_GROUP_EVENTS_FAILURE;
     }
   | {
       payload: { limit?: number };
