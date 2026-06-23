@@ -13,6 +13,7 @@ import {
   SanghaGroupPostComment,
   SanghaHubHomeResult,
   SanghaInvitation,
+  SanghaNotification,
   SanghaPagination,
   SanghaRecentSearch,
   SanghaHomeParams,
@@ -368,6 +369,62 @@ export const cancelSanghaGroupEventRsvpFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_FAILURE,
+  } as const);
+
+export const fetchSanghaNotificationsRequest = (
+  payload: {
+    limit?: number;
+    offset?: number;
+    unreadOnly?: boolean;
+  } = {}
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_NOTIFICATIONS_REQUEST,
+  } as const);
+
+export const fetchSanghaNotificationsSuccess = (
+  payload: {
+    append?: boolean;
+    notifications: SanghaNotification[];
+    pagination: SanghaPagination | null;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_NOTIFICATIONS_SUCCESS,
+  } as const);
+
+export const fetchSanghaNotificationsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_NOTIFICATIONS_FAILURE,
+  } as const);
+
+export const markSanghaNotificationsReadRequest = (
+  payload: { notificationIds: string[] }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.MARK_NOTIFICATIONS_READ_REQUEST,
+  } as const);
+
+export const markSanghaNotificationsReadSuccess = (
+  payload: { notificationIds: string[]; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.MARK_NOTIFICATIONS_READ_SUCCESS,
+  } as const);
+
+export const markSanghaNotificationsReadFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.MARK_NOTIFICATIONS_READ_FAILURE,
   } as const);
 
 export const joinSanghaGroupRequest = (groupId: string) =>

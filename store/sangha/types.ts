@@ -238,6 +238,18 @@ export type SanghaLiveStream = {
   visibility?: string;
 };
 
+export type SanghaNotification = {
+  body?: string | null;
+  createdAt?: string;
+  data?: Record<string, any> | null;
+  groupId?: string | null;
+  id: string;
+  isRead?: boolean;
+  readAt?: string | null;
+  title?: string | null;
+  type?: string;
+};
+
 export type SanghaState = {
   actionPendingIds: Record<string, boolean>;
   devotees: SanghaDevoteeSummary[];
@@ -275,6 +287,9 @@ export type SanghaState = {
   userInvitations: SanghaInvitation[];
   userInvitationsLoading: boolean;
   userInvitationsPagination: SanghaPagination | null;
+  notifications: SanghaNotification[];
+  notificationsLoading: boolean;
+  notificationsPagination: SanghaPagination | null;
 };
 
 export enum SANGHA_ACTIONS {
@@ -347,6 +362,12 @@ export enum SANGHA_ACTIONS {
   CANCEL_GROUP_EVENT_RSVP_REQUEST = "sangha/CANCEL_GROUP_EVENT_RSVP_REQUEST",
   CANCEL_GROUP_EVENT_RSVP_SUCCESS = "sangha/CANCEL_GROUP_EVENT_RSVP_SUCCESS",
   CANCEL_GROUP_EVENT_RSVP_FAILURE = "sangha/CANCEL_GROUP_EVENT_RSVP_FAILURE",
+  FETCH_NOTIFICATIONS_REQUEST = "sangha/FETCH_NOTIFICATIONS_REQUEST",
+  FETCH_NOTIFICATIONS_SUCCESS = "sangha/FETCH_NOTIFICATIONS_SUCCESS",
+  FETCH_NOTIFICATIONS_FAILURE = "sangha/FETCH_NOTIFICATIONS_FAILURE",
+  MARK_NOTIFICATIONS_READ_REQUEST = "sangha/MARK_NOTIFICATIONS_READ_REQUEST",
+  MARK_NOTIFICATIONS_READ_SUCCESS = "sangha/MARK_NOTIFICATIONS_READ_SUCCESS",
+  MARK_NOTIFICATIONS_READ_FAILURE = "sangha/MARK_NOTIFICATIONS_READ_FAILURE",
   FETCH_RECENT_SEARCHES_REQUEST = "sangha/FETCH_RECENT_SEARCHES_REQUEST",
   FETCH_RECENT_SEARCHES_SUCCESS = "sangha/FETCH_RECENT_SEARCHES_SUCCESS",
   FETCH_RECENT_SEARCHES_FAILURE = "sangha/FETCH_RECENT_SEARCHES_FAILURE",
@@ -640,6 +661,38 @@ export type SanghaAction =
       type:
         | SANGHA_ACTIONS.RSVP_GROUP_EVENT_FAILURE
         | SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_FAILURE;
+    }
+  | {
+      payload: {
+        limit?: number;
+        offset?: number;
+        unreadOnly?: boolean;
+      };
+      type: SANGHA_ACTIONS.FETCH_NOTIFICATIONS_REQUEST;
+    }
+  | {
+      payload: {
+        append?: boolean;
+        notifications: SanghaNotification[];
+        pagination: SanghaPagination | null;
+      };
+      type: SANGHA_ACTIONS.FETCH_NOTIFICATIONS_SUCCESS;
+    }
+  | {
+      payload: string;
+      type: SANGHA_ACTIONS.FETCH_NOTIFICATIONS_FAILURE;
+    }
+  | {
+      payload: { notificationIds: string[] };
+      type: SANGHA_ACTIONS.MARK_NOTIFICATIONS_READ_REQUEST;
+    }
+  | {
+      payload: { notificationIds: string[]; response?: any };
+      type: SANGHA_ACTIONS.MARK_NOTIFICATIONS_READ_SUCCESS;
+    }
+  | {
+      payload: string;
+      type: SANGHA_ACTIONS.MARK_NOTIFICATIONS_READ_FAILURE;
     }
   | {
       payload: { limit?: number };

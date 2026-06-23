@@ -144,6 +144,25 @@ export const selectSanghaUserInvitationsPagination = (
   state: RootState
 ) => selectSanghaState(state).userInvitationsPagination;
 
+export const selectSanghaNotifications = (
+  state: RootState
+) => selectSanghaState(state).notifications;
+
+export const selectSanghaNotificationsLoading = (
+  state: RootState
+) => selectSanghaState(state).notificationsLoading;
+
+export const selectSanghaNotificationsPagination = (
+  state: RootState
+) => selectSanghaState(state).notificationsPagination;
+
+export const selectSanghaUnreadNotificationCount = (
+  state: RootState
+) =>
+  selectSanghaNotifications(state).filter(
+    (notification) => !notification.isRead
+  ).length;
+
 export const selectIsSanghaActionPending = (
   state: RootState,
   id?: string

@@ -114,6 +114,7 @@ function AppLayoutContent() {
         <Stack.Screen name="sangha-hub" options={{ headerShown: false }} />
         <Stack.Screen name="sangha-hub-list" options={{ headerShown: false }} />
         <Stack.Screen name="sangha-hub-search" options={{ headerShown: false }} />
+        <Stack.Screen name="sangha-notifications" options={{ headerShown: false }} />
         <Stack.Screen name="sangha-list" options={{ headerShown: false }} />
         <Stack.Screen name="sangha-profile" options={{ headerShown: false }} />
         <Stack.Screen name="group-details" options={{ headerShown: false }} />

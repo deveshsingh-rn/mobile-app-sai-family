@@ -76,11 +76,11 @@ Status: Completed
 
 ## Phase 7: Notifications
 
-Status: Not started
+Status: Completed
 
-- [ ] Wire `GET /api/users/me/sangha/notifications`.
-- [ ] Wire mark-read action.
-- [ ] Add unread indicators in hub/header where UI requires.
+- [x] Wire `GET /api/users/me/sangha/notifications`.
+- [x] Wire mark-read action.
+- [x] Add unread indicators in hub/header where UI requires.
 
 ## Phase 8: Live Streaming
 

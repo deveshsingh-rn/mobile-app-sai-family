@@ -28,6 +28,7 @@ import {
   acceptSanghaInvitationRequest,
   declineSanghaInvitationRequest,
   fetchSanghaGroupsHomeRequest,
+  fetchSanghaNotificationsRequest,
 } from '@/store/sangha/actions';
 import {
   selectSanghaError,
@@ -35,6 +36,7 @@ import {
   selectSanghaHubInvitations,
   selectSanghaHubMyGroups,
   selectSanghaHubPurposeTiles,
+  selectSanghaUnreadNotificationCount,
 } from '@/store/sangha/selectors';
 import {
   SanghaGroupSummary,
@@ -140,6 +142,9 @@ const SanghaHubScreen = () => {
     selectSanghaGroupsHomeLoading
   );
   const error = useAppSelector(selectSanghaError);
+  const unreadCount = useAppSelector(
+    selectSanghaUnreadNotificationCount
+  );
   const [filterVisible, setFilterVisible] =
     useState(false);
   const [purpose, setPurpose] = useState('All');
@@ -164,6 +169,13 @@ const SanghaHubScreen = () => {
 
   useEffect(() => {
     dispatch(fetchSanghaGroupsHomeRequest(groupsHomeParams));
+    dispatch(
+      fetchSanghaNotificationsRequest({
+        limit: 20,
+        offset: 0,
+        unreadOnly: false,
+      })
+    );
   }, [dispatch, groupsHomeParams]);
 
   const refreshHub = () => {
@@ -233,6 +245,7 @@ const SanghaHubScreen = () => {
             {/* Notification */}
             <TouchableOpacity
               activeOpacity={0.85}
+              onPress={() => router.push('/sangha-notifications')}
               style={{
                 width: 54,
                 height: 54,
@@ -248,18 +261,28 @@ const SanghaHubScreen = () => {
                 color="#F97316"
               />
 
-              {/* Dot */}
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 12,
-                  right: 13,
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: '#9F1239',
-                }}
-              />
+              {unreadCount > 0 ? (
+                <View
+                  style={{
+                    alignItems: 'center',
+                    backgroundColor: '#9F1239',
+                    borderRadius: 9,
+                    minWidth: 18,
+                    paddingHorizontal: 5,
+                    position: 'absolute',
+                    right: 7,
+                    top: 8,
+                  }}>
+                  <Text
+                    style={{
+                      color: '#FFFFFF',
+                      fontSize: 10,
+                      fontWeight: '900',
+                    }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
+                </View>
+              ) : null}
             </TouchableOpacity>
           </View>
 

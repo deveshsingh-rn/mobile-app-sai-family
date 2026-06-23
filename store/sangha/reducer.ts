@@ -41,6 +41,9 @@ export const initialSanghaState: SanghaState = {
   userInvitations: [],
   userInvitationsLoading: false,
   userInvitationsPagination: null,
+  notifications: [],
+  notificationsLoading: false,
+  notificationsPagination: null,
 };
 
 function removePending(
@@ -671,6 +674,60 @@ export function sanghaReducer(
           action.payload.eventId
         ),
         error: action.payload.error,
+      };
+
+    case SANGHA_ACTIONS.FETCH_NOTIFICATIONS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        notificationsLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_NOTIFICATIONS_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        notifications: action.payload.append
+          ? mergeById(
+              state.notifications,
+              action.payload.notifications
+            )
+          : action.payload.notifications,
+        notificationsLoading: false,
+        notificationsPagination: action.payload.pagination,
+      };
+
+    case SANGHA_ACTIONS.FETCH_NOTIFICATIONS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        notificationsLoading: false,
+      };
+
+    case SANGHA_ACTIONS.MARK_NOTIFICATIONS_READ_REQUEST:
+      return {
+        ...state,
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.MARK_NOTIFICATIONS_READ_SUCCESS:
+      return {
+        ...state,
+        notifications: state.notifications.map((item) =>
+          action.payload.notificationIds.includes(item.id)
+            ? {
+                ...item,
+                isRead: true,
+                readAt: item.readAt || new Date().toISOString(),
+              }
+            : item
+        ),
+      };
+
+    case SANGHA_ACTIONS.MARK_NOTIFICATIONS_READ_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
       };
 
     case SANGHA_ACTIONS.FETCH_RECENT_SEARCHES_REQUEST:

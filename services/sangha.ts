@@ -395,3 +395,25 @@ export async function apiFetchSanghaLiveStreams(
 
   return data;
 }
+
+export async function apiFetchSanghaNotifications(
+  params: Record<string, any> = {}
+) {
+  const { data } = await apiClient.get(
+    "/api/users/me/sangha/notifications",
+    { params }
+  );
+
+  return data;
+}
+
+export async function apiMarkSanghaNotificationsRead(payload: {
+  notificationIds: string[];
+}) {
+  const { data } = await apiClient.post(
+    "/api/users/me/sangha/notifications/read",
+    payload
+  );
+
+  return data;
+}

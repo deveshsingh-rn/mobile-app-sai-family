@@ -27,6 +27,8 @@ import {
   apiJoinSanghaGroup,
   apiLeaveSanghaGroup,
   apiLikeSanghaGroupPost,
+  apiFetchSanghaNotifications,
+  apiMarkSanghaNotificationsRead,
   apiPinSanghaGroupPost,
   apiRequestSanghaConnection,
   apiRsvpSanghaGroupEvent,
@@ -78,6 +80,8 @@ import {
   fetchSanghaHomeSuccess,
   fetchSanghaInvitationsFailure,
   fetchSanghaInvitationsSuccess,
+  fetchSanghaNotificationsFailure,
+  fetchSanghaNotificationsSuccess,
   fetchSanghaProfileFailure,
   fetchSanghaProfileSuccess,
   fetchSanghaRecentSearchesFailure,
@@ -88,6 +92,8 @@ import {
   leaveSanghaGroupSuccess,
   likeSanghaGroupPostFailure,
   likeSanghaGroupPostSuccess,
+  markSanghaNotificationsReadFailure,
+  markSanghaNotificationsReadSuccess,
   pinSanghaGroupPostFailure,
   pinSanghaGroupPostSuccess,
   requestSanghaConnectionFailure,
@@ -361,6 +367,22 @@ function normalizeEvent(response: any) {
     response?.data?.groupEvent ||
     response
   );
+}
+
+function normalizeNotifications(response: any, append = false) {
+  return {
+    append,
+    notifications:
+      response?.notifications ||
+      response?.results ||
+      response?.data?.notifications ||
+      response?.data?.results ||
+      [],
+    pagination:
+      response?.pagination ||
+      response?.data?.pagination ||
+      null,
+  };
 }
 
 function* handleFetchSanghaDevotees(
@@ -692,6 +714,56 @@ function* handleCancelGroupEventRsvp(
         error: getErrorMessage(error, "Failed to cancel RSVP."),
         eventId: action.payload.eventId,
       })
+    );
+  }
+}
+
+function* handleFetchNotifications(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchSanghaNotifications,
+      action.payload
+    );
+
+    yield put(
+      fetchSanghaNotificationsSuccess(
+        normalizeNotifications(
+          response,
+          Boolean(action.payload?.offset)
+        )
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaNotificationsFailure(
+        getErrorMessage(error, "Failed to fetch Sangha notifications.")
+      )
+    );
+  }
+}
+
+function* handleMarkNotificationsRead(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiMarkSanghaNotificationsRead,
+      action.payload
+    );
+
+    yield put(
+      markSanghaNotificationsReadSuccess({
+        notificationIds: action.payload.notificationIds,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      markSanghaNotificationsReadFailure(
+        getErrorMessage(error, "Failed to mark notifications read.")
+      )
     );
   }
 }
@@ -1153,6 +1225,14 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.CANCEL_GROUP_EVENT_RSVP_REQUEST,
     handleCancelGroupEventRsvp
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_NOTIFICATIONS_REQUEST,
+    handleFetchNotifications
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.MARK_NOTIFICATIONS_READ_REQUEST,
+    handleMarkNotificationsRead
   );
   yield takeLatest(
     SANGHA_ACTIONS.JOIN_GROUP_REQUEST,
