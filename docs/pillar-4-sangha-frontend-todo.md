@@ -48,9 +48,9 @@ Status: Started
 
 ## Phase 4: Sangha Hub And Groups
 
-Status: Not started
+Status: Started
 
-- [ ] Wire `screens/sangha-hub-screen.tsx` to `GET /api/sangha/groups/home`.
+- [x] Wire `screens/sangha-hub-screen.tsx` to `GET /api/sangha/groups/home`.
 - [ ] Wire hub search to `GET /api/sangha/groups/search`.
 - [ ] Wire group lists to `GET /api/sangha/groups`.
 - [ ] Wire recent searches and clear recent searches.

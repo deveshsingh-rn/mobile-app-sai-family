@@ -1,6 +1,12 @@
-import React, {useState} from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
+  ActivityIndicator,
   Modal,
+  RefreshControl,
   StatusBar,
   View,
   Text,
@@ -12,50 +18,153 @@ import {
 
 
 import {
-  Feather,
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const purposeData = [
+import { fetchSanghaGroupsHomeRequest } from '@/store/sangha/actions';
+import {
+  selectSanghaError,
+  selectSanghaGroupsHomeLoading,
+  selectSanghaHubInvitations,
+  selectSanghaHubMyGroups,
+  selectSanghaHubPurposeTiles,
+} from '@/store/sangha/selectors';
+import {
+  SanghaGroupSummary,
+  SanghaInvitation,
+} from '@/store/sangha/types';
+import {
+  useAppDispatch,
+  useAppSelector,
+} from '@/store/hooks';
+
+const purposePresentation: Record<
+  string,
   {
-    title: 'City Chapter',
-    subtitle: 'Local connection',
-    icon: 'map-marker-radius',
-    bg: '#FFF7D6',
-    iconColor: '#F97316',
-  },
-  {
-    title: 'Seva',
-    subtitle: 'Purpose & service',
-    icon: 'hands-pray',
-    bg: '#FCE7F3',
-    iconColor: '#BE185D',
-  },
-  {
-    title: 'Bhajan',
-    subtitle: 'Musical worship',
-    icon: 'musical-notes',
+    bg: string;
+    icon: keyof typeof Ionicons.glyphMap | string;
+    iconColor: string;
+    subtitle: string;
+    useMaterial?: boolean;
+  }
+> = {
+  bhajan: {
     bg: '#E0F2FE',
+    icon: 'musical-notes',
     iconColor: '#0284C7',
+    subtitle: 'Musical worship',
   },
-  {
-    title: 'Online Global',
-    subtitle: 'Diaspora network',
-    icon: 'earth',
+  city_chapter: {
+    bg: '#FFF7D6',
+    icon: 'map-marker-radius',
+    iconColor: '#F97316',
+    subtitle: 'Local connection',
+    useMaterial: true,
+  },
+  seva: {
+    bg: '#FCE7F3',
+    icon: 'hands-pray',
+    iconColor: '#BE185D',
+    subtitle: 'Purpose & service',
+  },
+  online_global: {
     bg: '#DCFCE7',
+    icon: 'earth',
     iconColor: '#16A34A',
+    subtitle: 'Diaspora network',
   },
-];
+};
+
+function normalizePurposeKey(value?: string) {
+  return (value || 'sangha')
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+}
+
+function getAvatarUri(invitation: SanghaInvitation) {
+  const invitedBy = invitation.invitedBy;
+  const name = invitedBy?.name || 'Sai Family';
+
+  return (
+    invitedBy?.avatarUrl ||
+    invitedBy?.profileImageUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      name
+    )}&background=FFF7ED&color=F97316`
+  );
+}
+
+function getBannerUri(group: SanghaGroupSummary) {
+  return (
+    group.bannerUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      group.name || 'Sangha'
+    )}&background=FFF7ED&color=F97316&size=256`
+  );
+}
+
+function formatShortDate(value?: string) {
+  if (!value) {
+    return 'Recently';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+  });
+}
 
 const SanghaHubScreen = () => {
+  const dispatch = useAppDispatch();
+  const invitations = useAppSelector(
+    selectSanghaHubInvitations
+  );
+  const myGroups = useAppSelector(selectSanghaHubMyGroups);
+  const purposeTiles = useAppSelector(
+    selectSanghaHubPurposeTiles
+  );
+  const loading = useAppSelector(
+    selectSanghaGroupsHomeLoading
+  );
+  const error = useAppSelector(selectSanghaError);
   const [filterVisible, setFilterVisible] =
     useState(false);
   const [purpose, setPurpose] = useState('All');
   const [activity, setActivity] = useState('Active');
   const [privacy, setPrivacy] = useState('Any');
+  const groupsHomeParams = useMemo(
+    () => ({
+      limit: 10,
+      privacy:
+        privacy === 'Any'
+          ? 'any'
+          : privacy === 'Invite Only'
+            ? 'private'
+            : privacy.toLowerCase(),
+      purpose:
+        purpose === 'All'
+          ? 'all'
+          : normalizePurposeKey(purpose),
+    }),
+    [privacy, purpose]
+  );
+
+  useEffect(() => {
+    dispatch(fetchSanghaGroupsHomeRequest(groupsHomeParams));
+  }, [dispatch, groupsHomeParams]);
+
+  const refreshHub = () => {
+    dispatch(fetchSanghaGroupsHomeRequest(groupsHomeParams));
+  };
 
   return (
     <SafeAreaView
@@ -70,6 +179,13 @@ const SanghaHubScreen = () => {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={refreshHub}
+            tintColor="#F97316"
+          />
+        }
         contentContainerStyle={{
           paddingBottom: 40,
         }}>
@@ -204,6 +320,38 @@ const SanghaHubScreen = () => {
               />
             </TouchableOpacity>
           </TouchableOpacity>
+
+          {error ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={refreshHub}
+              style={{
+                backgroundColor: '#FFF7ED',
+                borderColor: '#FDE7CF',
+                borderRadius: 22,
+                borderWidth: 1,
+                marginTop: 16,
+                padding: 16,
+              }}>
+              <Text
+                style={{
+                  color: '#9A3412',
+                  fontSize: 14,
+                  fontWeight: '900',
+                }}>
+                {error}
+              </Text>
+              <Text
+                style={{
+                  color: '#F97316',
+                  fontSize: 13,
+                  fontWeight: '900',
+                  marginTop: 8,
+                }}>
+                Tap to retry
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Pending Invitations */}
@@ -251,7 +399,7 @@ const SanghaHubScreen = () => {
                   color: '#F97316',
                   fontWeight: '700',
                 }}>
-                2 New
+                {invitations.length} New
               </Text>
             </TouchableOpacity>
           </View>
@@ -265,249 +413,256 @@ const SanghaHubScreen = () => {
               paddingTop: 22,
               paddingRight: 10,
             }}>
-            {/* Card 1 */}
-            <View
-              style={{
-                width: 320,
-                backgroundColor: '#FFFFFF',
-                borderRadius: 30,
-                borderWidth: 1,
-                borderColor: '#F6EFD9',
-                padding: 18,
-                marginRight: 18,
-                shadowColor: '#000',
-                shadowOffset: {
-                  width: 0,
-                  height: 4,
-                },
-                shadowOpacity: 0.03,
-                shadowRadius: 8,
-                elevation: 2,
-              }}>
-              {/* Top */}
+            {loading && invitations.length === 0 ? (
               <View
                 style={{
-                  flexDirection: 'row',
-                }}>
-                {/* Avatar */}
-                <View>
-                  <Image
-                    source={{
-                      uri: 'https://randomuser.me/api/portraits/men/32.jpg',
-                    }}
-                    style={{
-                      width: 58,
-                      height: 58,
-                      borderRadius: 29,
-                    }}
-                  />
-
-                  {/* Badge */}
-                  <View
-                    style={{
-                      position: 'absolute',
-                      right: -2,
-                      bottom: -2,
-                      width: 18,
-                      height: 18,
-                      borderRadius: 9,
-                      backgroundColor: '#FFF7ED',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderWidth: 2,
-                      borderColor: '#FFFFFF',
-                    }}>
-                    <Text
-                      style={{
-                        fontSize: 10,
-                        color: '#F97316',
-                        fontWeight: '700',
-                      }}>
-                      ॐ
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Content */}
-                <View
-                  style={{
-                    flex: 1,
-                    marginLeft: 14,
-                  }}>
-                  <Text
-                    style={{
-                      fontSize: 17,
-                      color: '#6B7280',
-                      fontWeight: '500',
-                    }}>
-                    <Text
-                      style={{
-                        color: '#1F2937',
-                        fontWeight: '700',
-                      }}>
-                      Rahul M.
-                    </Text>{' '}
-                    invited you to
-                  </Text>
-
-                  <Text
-                    style={{
-                      marginTop: 2,
-                      fontSize: 18,
-                      color: '#1F2937',
-                      fontWeight: '800',
-                    }}>
-                    Mumbai Youth Seva
-                  </Text>
-
-                  {/* Meta */}
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      marginTop: 10,
-                    }}>
-                    <Ionicons
-                      name="people"
-                      size={14}
-                      color="#9CA3AF"
-                    />
-
-                    <Text
-                      style={{
-                        marginLeft: 5,
-                        fontSize: 14,
-                        color: '#9CA3AF',
-                        fontWeight: '500',
-                      }}>
-                      142 members
-                    </Text>
-
-                    <View
-                      style={{
-                        width: 4,
-                        height: 4,
-                        borderRadius: 2,
-                        backgroundColor: '#D1D5DB',
-                        marginHorizontal: 10,
-                      }}
-                    />
-
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: '#9CA3AF',
-                        fontWeight: '500',
-                      }}>
-                      Invited 2d ago
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Buttons */}
-              <View
-                style={{
-                  marginTop: 24,
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                }}>
-                {/* Accept */}
-                <TouchableOpacity
-                  activeOpacity={0.88}
-                  style={{
-                    width: '47%',
-                    height: 50,
-                    borderRadius: 18,
-                    backgroundColor: '#F97316',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      color: '#FFFFFF',
-                      fontWeight: '700',
-                    }}>
-                    Accept
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Decline */}
-                <TouchableOpacity
-                  activeOpacity={0.88}
-                  style={{
-                    width: '47%',
-                    height: 50,
-                    borderRadius: 18,
-                    backgroundColor: '#F8F8F8',
-                    borderWidth: 1,
-                    borderColor: '#ECECEC',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      color: '#6B7280',
-                      fontWeight: '600',
-                    }}>
-                    Decline
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Mini Partial Card */}
-            <View
-              style={{
-                width: 120,
-                backgroundColor: '#FFFFFF',
-                borderRadius: 30,
-                borderWidth: 1,
-                borderColor: '#F6EFD9',
-                padding: 18,
-                shadowColor: '#000',
-                shadowOffset: {
-                  width: 0,
-                  height: 4,
-                },
-                shadowOpacity: 0.03,
-                shadowRadius: 8,
-                elevation: 2,
-              }}>
-              <Image
-                source={{
-                  uri: 'https://randomuser.me/api/portraits/women/68.jpg',
-                }}
-                style={{
-                  width: 58,
-                  height: 58,
-                  borderRadius: 29,
-                  alignSelf: 'center',
-                }}
-              />
-
-              <TouchableOpacity
-                activeOpacity={0.88}
-                style={{
-                  marginTop: 24,
-                  height: 50,
-                  borderRadius: 18,
-                  backgroundColor: '#F97316',
-                  justifyContent: 'center',
                   alignItems: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#F6EFD9',
+                  borderRadius: 30,
+                  borderWidth: 1,
+                  marginRight: 18,
+                  padding: 24,
+                  width: 320,
+                }}>
+                <ActivityIndicator color="#F97316" />
+                <Text
+                  style={{
+                    color: '#6B7280',
+                    fontSize: 14,
+                    fontWeight: '800',
+                    marginTop: 12,
+                  }}>
+                  Loading invitations
+                </Text>
+              </View>
+            ) : null}
+
+            {!loading && invitations.length === 0 ? (
+              <View
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderColor: '#F6EFD9',
+                  borderRadius: 30,
+                  borderWidth: 1,
+                  marginRight: 18,
+                  padding: 20,
+                  width: 320,
                 }}>
                 <Text
                   style={{
-                    fontSize: 18,
-                    color: '#FFFFFF',
-                    fontWeight: '700',
+                    color: '#1F2937',
+                    fontSize: 17,
+                    fontWeight: '900',
                   }}>
-                  Accept
+                  No pending invitations
                 </Text>
-              </TouchableOpacity>
-            </View>
+                <Text
+                  style={{
+                    color: '#6B7280',
+                    fontSize: 14,
+                    fontWeight: '600',
+                    lineHeight: 22,
+                    marginTop: 8,
+                  }}>
+                  New group invites will appear here.
+                </Text>
+              </View>
+            ) : null}
+
+            {invitations.map((invitation) => {
+              const group = invitation.group;
+
+              return (
+                <View
+                  key={invitation.id}
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    borderColor: '#F6EFD9',
+                    borderRadius: 30,
+                    borderWidth: 1,
+                    elevation: 2,
+                    marginRight: 18,
+                    padding: 18,
+                    shadowColor: '#000',
+                    shadowOffset: {
+                      width: 0,
+                      height: 4,
+                    },
+                    shadowOpacity: 0.03,
+                    shadowRadius: 8,
+                    width: 320,
+                  }}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                    }}>
+                    <View>
+                      <Image
+                        source={{
+                          uri: getAvatarUri(invitation),
+                        }}
+                        style={{
+                          borderRadius: 29,
+                          height: 58,
+                          width: 58,
+                        }}
+                      />
+
+                      <View
+                        style={{
+                          alignItems: 'center',
+                          backgroundColor: '#FFF7ED',
+                          borderColor: '#FFFFFF',
+                          borderRadius: 9,
+                          borderWidth: 2,
+                          bottom: -2,
+                          height: 18,
+                          justifyContent: 'center',
+                          position: 'absolute',
+                          right: -2,
+                          width: 18,
+                        }}>
+                        <Text
+                          style={{
+                            color: '#F97316',
+                            fontSize: 10,
+                            fontWeight: '700',
+                          }}>
+                          ॐ
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View
+                      style={{
+                        flex: 1,
+                        marginLeft: 14,
+                      }}>
+                      <Text
+                        style={{
+                          color: '#6B7280',
+                          fontSize: 17,
+                          fontWeight: '500',
+                        }}>
+                        <Text
+                          style={{
+                            color: '#1F2937',
+                            fontWeight: '700',
+                          }}>
+                          {invitation.invitedBy?.name ||
+                            'Sai Family'}
+                        </Text>{' '}
+                        invited you to
+                      </Text>
+
+                      <Text
+                        style={{
+                          color: '#1F2937',
+                          fontSize: 18,
+                          fontWeight: '800',
+                          marginTop: 2,
+                        }}>
+                        {group?.name || 'Sangha Group'}
+                      </Text>
+
+                      <View
+                        style={{
+                          alignItems: 'center',
+                          flexDirection: 'row',
+                          marginTop: 10,
+                        }}>
+                        <Ionicons
+                          name="people"
+                          size={14}
+                          color="#9CA3AF"
+                        />
+
+                        <Text
+                          style={{
+                            color: '#9CA3AF',
+                            fontSize: 14,
+                            fontWeight: '500',
+                            marginLeft: 5,
+                          }}>
+                          {group?.memberCount || 0} members
+                        </Text>
+
+                        <View
+                          style={{
+                            backgroundColor: '#D1D5DB',
+                            borderRadius: 2,
+                            height: 4,
+                            marginHorizontal: 10,
+                            width: 4,
+                          }}
+                        />
+
+                        <Text
+                          style={{
+                            color: '#9CA3AF',
+                            fontSize: 14,
+                            fontWeight: '500',
+                          }}>
+                          {formatShortDate(
+                            invitation.createdAt
+                          )}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      marginTop: 24,
+                    }}>
+                    <TouchableOpacity
+                      activeOpacity={0.88}
+                      style={{
+                        alignItems: 'center',
+                        backgroundColor: '#F97316',
+                        borderRadius: 18,
+                        height: 50,
+                        justifyContent: 'center',
+                        width: '47%',
+                      }}>
+                      <Text
+                        style={{
+                          color: '#FFFFFF',
+                          fontSize: 18,
+                          fontWeight: '700',
+                        }}>
+                        Accept
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      activeOpacity={0.88}
+                      style={{
+                        alignItems: 'center',
+                        backgroundColor: '#F8F8F8',
+                        borderColor: '#ECECEC',
+                        borderRadius: 18,
+                        borderWidth: 1,
+                        height: 50,
+                        justifyContent: 'center',
+                        width: '47%',
+                      }}>
+                      <Text
+                        style={{
+                          color: '#6B7280',
+                          fontSize: 18,
+                          fontWeight: '600',
+                        }}>
+                        Decline
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
           </ScrollView>
         </View>
 
@@ -536,81 +691,144 @@ const SanghaHubScreen = () => {
               justifyContent: 'space-between',
               marginTop: 24,
             }}>
-            {purposeData.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                activeOpacity={0.88}
-                onPress={() =>
-                  router.push({
-                    pathname: '/sangha-hub-list',
-                    params: {
-                      type: 'purpose',
-                      purpose: item.title,
-                    },
-                  })
-                }
+            {loading && purposeTiles.length === 0 ? (
+              <View
                 style={{
-                  width: '48%',
-                  height: 138,
-                  borderRadius: 28,
-                  backgroundColor: item.bg,
-                  justifyContent: 'center',
                   alignItems: 'center',
-                  marginBottom: 18,
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 28,
+                  padding: 24,
+                  width: '100%',
                 }}>
-                {/* Icon */}
-                <View
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 26,
-                    backgroundColor: 'rgba(255,255,255,0.35)',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  {item.title ===
-                  'City Chapter' ? (
-                    <MaterialCommunityIcons
-                      name={
-                        item.icon as keyof typeof MaterialCommunityIcons.glyphMap
-                      }
-                      size={28}
-                      color={item.iconColor}
-                    />
-                  ) : (
-                    <Ionicons
-                      name={
-                        item.icon as keyof typeof Ionicons.glyphMap
-                      }
-                      size={28}
-                      color={item.iconColor}
-                    />
-                  )}
-                </View>
-
-                {/* Title */}
+                <ActivityIndicator color="#F97316" />
                 <Text
                   style={{
-                    marginTop: 16,
-                    fontSize: 20,
-                    color: '#1F2937',
-                    fontWeight: '700',
-                  }}>
-                  {item.title}
-                </Text>
-
-                {/* Subtitle */}
-                <Text
-                  style={{
-                    marginTop: 4,
-                    fontSize: 14,
                     color: '#6B7280',
-                    fontWeight: '500',
+                    fontSize: 14,
+                    fontWeight: '800',
+                    marginTop: 12,
                   }}>
-                  {item.subtitle}
+                  Loading purposes
                 </Text>
-              </TouchableOpacity>
-            ))}
+              </View>
+            ) : null}
+
+            {!loading && purposeTiles.length === 0 ? (
+              <View
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 28,
+                  padding: 20,
+                  width: '100%',
+                }}>
+                <Text
+                  style={{
+                    color: '#1F2937',
+                    fontSize: 17,
+                    fontWeight: '900',
+                  }}>
+                  No purpose groups yet
+                </Text>
+                <Text
+                  style={{
+                    color: '#6B7280',
+                    fontSize: 14,
+                    fontWeight: '600',
+                    lineHeight: 22,
+                    marginTop: 8,
+                  }}>
+                  Community purposes will appear as groups are created.
+                </Text>
+              </View>
+            ) : null}
+
+            {purposeTiles.map((item) => {
+              const purposeKey = normalizePurposeKey(
+                item.purpose || item.label
+              );
+              const presentation =
+                purposePresentation[purposeKey] || {
+                  bg: '#FFF7D6',
+                  icon: 'people',
+                  iconColor: '#F97316',
+                  subtitle: 'Sangha community',
+                };
+
+              return (
+                <TouchableOpacity
+                  key={item.purpose || item.label}
+                  activeOpacity={0.88}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/sangha-hub-list',
+                      params: {
+                        purpose: item.purpose || item.label,
+                        type: 'purpose',
+                      },
+                    })
+                  }
+                  style={{
+                    alignItems: 'center',
+                    backgroundColor: presentation.bg,
+                    borderRadius: 28,
+                    height: 138,
+                    justifyContent: 'center',
+                    marginBottom: 18,
+                    width: '48%',
+                  }}>
+                  <View
+                    style={{
+                      alignItems: 'center',
+                      backgroundColor:
+                        'rgba(255,255,255,0.35)',
+                      borderRadius: 26,
+                      height: 52,
+                      justifyContent: 'center',
+                      width: 52,
+                    }}>
+                    {presentation.useMaterial ? (
+                      <MaterialCommunityIcons
+                        name={
+                          presentation.icon as keyof typeof MaterialCommunityIcons.glyphMap
+                        }
+                        size={28}
+                        color={presentation.iconColor}
+                      />
+                    ) : (
+                      <Ionicons
+                        name={
+                          presentation.icon as keyof typeof Ionicons.glyphMap
+                        }
+                        size={28}
+                        color={presentation.iconColor}
+                      />
+                    )}
+                  </View>
+
+                  <Text
+                    style={{
+                      color: '#1F2937',
+                      fontSize: 20,
+                      fontWeight: '700',
+                      marginTop: 16,
+                    }}>
+                    {item.label}
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: '#6B7280',
+                      fontSize: 14,
+                      fontWeight: '500',
+                      marginTop: 4,
+                    }}>
+                    {item.count
+                      ? `${item.count} groups`
+                      : presentation.subtitle}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -656,173 +874,201 @@ const SanghaHubScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Group Card */}
-          <TouchableOpacity
-            activeOpacity={0.88}
-            onPress={() =>
-              router.push('/group-details')
-            }
-            style={{
-              marginTop: 24,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 30,
-              padding: 16,
-              shadowColor: '#000',
-              shadowOffset: {
-                width: 0,
-                height: 4,
-              },
-              shadowOpacity: 0.03,
-              shadowRadius: 8,
-              elevation: 2,
-            }}>
-            {/* Top */}
+          {loading && myGroups.length === 0 ? (
             <View
               style={{
-                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: '#FFFFFF',
+                borderRadius: 30,
+                marginTop: 24,
+                padding: 24,
               }}>
-              {/* Banner */}
+              <ActivityIndicator color="#F97316" />
+              <Text
+                style={{
+                  color: '#6B7280',
+                  fontSize: 14,
+                  fontWeight: '800',
+                  marginTop: 12,
+                }}>
+                Loading your groups
+              </Text>
+            </View>
+          ) : null}
+
+          {!loading && myGroups.length === 0 ? (
+            <View
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 30,
+                marginTop: 24,
+                padding: 20,
+              }}>
+              <Text
+                style={{
+                  color: '#1F2937',
+                  fontSize: 17,
+                  fontWeight: '900',
+                }}>
+                You have not joined a group yet
+              </Text>
+              <Text
+                style={{
+                  color: '#6B7280',
+                  fontSize: 14,
+                  fontWeight: '600',
+                  lineHeight: 22,
+                  marginTop: 8,
+                }}>
+                Explore groups by purpose or search for a Sangha community.
+              </Text>
+            </View>
+          ) : null}
+
+          {myGroups.slice(0, 3).map((group) => (
+            <TouchableOpacity
+              key={group.id}
+              activeOpacity={0.88}
+              onPress={() =>
+                router.push({
+                  pathname: '/group-details',
+                  params: { id: group.id },
+                })
+              }
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 30,
+                elevation: 2,
+                marginTop: 24,
+                padding: 16,
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 0,
+                  height: 4,
+                },
+                shadowOpacity: 0.03,
+                shadowRadius: 8,
+              }}>
               <View
                 style={{
-                  width: 86,
-                  height: 86,
-                  borderRadius: 22,
-                  overflow: 'hidden',
-                  position: 'relative',
+                  flexDirection: 'row',
                 }}>
-                <Image
-                  source={{
-                    uri: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1200',
-                  }}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                  }}
-                />
-
-                {/* Badge */}
                 <View
                   style={{
-                    position: 'absolute',
-                    bottom: 8,
-                    left: 8,
-                    backgroundColor: '#FFF3D6',
-                    borderRadius: 8,
-                    paddingHorizontal: 8,
-                    paddingVertical: 3,
+                    borderRadius: 22,
+                    height: 86,
+                    overflow: 'hidden',
+                    position: 'relative',
+                    width: 86,
                   }}>
-                  <Text
+                  <Image
+                    source={{
+                      uri: getBannerUri(group),
+                    }}
                     style={{
-                      fontSize: 10,
-                      color: '#F97316',
-                      fontWeight: '800',
-                    }}>
-                    SEVA
-                  </Text>
-                </View>
-              </View>
+                      height: '100%',
+                      width: '100%',
+                    }}
+                  />
 
-              {/* Content */}
-              <View
-                style={{
-                  flex: 1,
-                  marginLeft: 16,
-                }}>
-                {/* Title */}
+                  <View
+                    style={{
+                      backgroundColor: '#FFF3D6',
+                      borderRadius: 8,
+                      bottom: 8,
+                      left: 8,
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      position: 'absolute',
+                    }}>
+                    <Text
+                      style={{
+                        color: '#F97316',
+                        fontSize: 10,
+                        fontWeight: '800',
+                      }}>
+                      {(group.purpose || 'SANGHA').toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+
                 <View
                   style={{
-                    flexDirection: 'row',
-                    justifyContent:
-                      'space-between',
-                    alignItems: 'flex-start',
+                    flex: 1,
+                    marginLeft: 16,
                   }}>
+                  <View
+                    style={{
+                      alignItems: 'flex-start',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                    }}>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: '#1F2937',
+                        flex: 1,
+                        fontSize: 18,
+                        fontWeight: '800',
+                        marginRight: 10,
+                      }}>
+                      {group.name}
+                    </Text>
+
+                    <View
+                      style={{
+                        backgroundColor: group.isOfficial
+                          ? '#16A34A'
+                          : '#F97316',
+                        borderRadius: 5,
+                        height: 10,
+                        marginTop: 6,
+                        width: 10,
+                      }}
+                    />
+                  </View>
+
                   <Text
                     numberOfLines={1}
                     style={{
-                      flex: 1,
-                      fontSize: 18,
-                      color: '#1F2937',
-                      fontWeight: '800',
-                      marginRight: 10,
-                    }}>
-                    Andheri Weekend Food Drive
-                  </Text>
-
-                  <View
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: 5,
-                      backgroundColor: '#F97316',
-                      marginTop: 6,
-                    }}
-                  />
-                </View>
-
-                {/* Subtitle */}
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    marginTop: 6,
-                    fontSize: 16,
-                    color: '#6B7280',
-                    fontWeight: '500',
-                  }}>
-                    New opportunity: Sunday
-                    breakfast...
-                  </Text>
-
-                {/* Bottom */}
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: 16,
-                  }}>
-                  {/* Avatars */}
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                    }}>
-                    {[
-                      'https://randomuser.me/api/portraits/men/11.jpg',
-                      'https://randomuser.me/api/portraits/women/12.jpg',
-                      'https://randomuser.me/api/portraits/men/15.jpg',
-                    ].map((item, index) => (
-                      <Image
-                        key={index}
-                        source={{
-                          uri: item,
-                        }}
-                        style={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: 12,
-                          borderWidth: 2,
-                          borderColor: '#FFFFFF',
-                          marginLeft:
-                            index === 0
-                              ? 0
-                              : -8,
-                        }}
-                      />
-                    ))}
-                  </View>
-
-                  {/* Time */}
-                  <Text
-                    style={{
-                      marginLeft: 12,
-                      fontSize: 14,
-                      color: '#9CA3AF',
+                      color: '#6B7280',
+                      fontSize: 16,
                       fontWeight: '500',
+                      marginTop: 6,
                     }}>
-                    Active 2h ago
+                    {group.description ||
+                      [group.city, group.state]
+                        .filter(Boolean)
+                        .join(', ') ||
+                      group.privacy ||
+                      'Sangha community'}
                   </Text>
+
+                  <View
+                    style={{
+                      alignItems: 'center',
+                      flexDirection: 'row',
+                      marginTop: 16,
+                    }}>
+                    <Ionicons
+                      name="people"
+                      size={16}
+                      color="#9CA3AF"
+                    />
+                    <Text
+                      style={{
+                        color: '#9CA3AF',
+                        fontSize: 14,
+                        fontWeight: '500',
+                        marginLeft: 7,
+                      }}>
+                      {group.memberCount || 0} members
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          ))}
         </View>
       </ScrollView>
 

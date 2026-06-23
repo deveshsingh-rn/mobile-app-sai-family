@@ -32,6 +32,26 @@ export const selectSanghaProfileLoading = (
   state: RootState
 ) => selectSanghaState(state).profileLoading;
 
+export const selectSanghaGroupsHome = (
+  state: RootState
+) => selectSanghaState(state).groupsHome;
+
+export const selectSanghaGroupsHomeLoading = (
+  state: RootState
+) => selectSanghaState(state).groupsHomeLoading;
+
+export const selectSanghaHubInvitations = (
+  state: RootState
+) => selectSanghaGroupsHome(state)?.invitations || [];
+
+export const selectSanghaHubMyGroups = (
+  state: RootState
+) => selectSanghaGroupsHome(state)?.myGroups || [];
+
+export const selectSanghaHubPurposeTiles = (
+  state: RootState
+) => selectSanghaGroupsHome(state)?.purposeTiles || [];
+
 export const selectIsSanghaActionPending = (
   state: RootState,
   id?: string

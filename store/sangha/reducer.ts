@@ -11,6 +11,8 @@ export const initialSanghaState: SanghaState = {
   devoteesPagination: null,
   discoverySaving: false,
   error: null,
+  groupsHome: null,
+  groupsHomeLoading: false,
   home: null,
   homeLoading: false,
   profile: null,
@@ -124,6 +126,28 @@ export function sanghaReducer(
         ...state,
         error: action.payload,
         profileLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUPS_HOME_REQUEST:
+      return {
+        ...state,
+        error: null,
+        groupsHomeLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUPS_HOME_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        groupsHome: action.payload,
+        groupsHomeLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUPS_HOME_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        groupsHomeLoading: false,
       };
 
     case SANGHA_ACTIONS.REQUEST_CONNECTION_REQUEST:

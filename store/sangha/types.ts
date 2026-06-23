@@ -166,6 +166,8 @@ export type SanghaState = {
   devoteesPagination: SanghaPagination | null;
   discoverySaving: boolean;
   error: string | null;
+  groupsHome: SanghaHubHomeResult | null;
+  groupsHomeLoading: boolean;
   home: SanghaHomeResult | null;
   homeLoading: boolean;
   profile: SanghaDevoteeProfile | null;
@@ -182,6 +184,9 @@ export enum SANGHA_ACTIONS {
   FETCH_PROFILE_REQUEST = "sangha/FETCH_PROFILE_REQUEST",
   FETCH_PROFILE_SUCCESS = "sangha/FETCH_PROFILE_SUCCESS",
   FETCH_PROFILE_FAILURE = "sangha/FETCH_PROFILE_FAILURE",
+  FETCH_GROUPS_HOME_REQUEST = "sangha/FETCH_GROUPS_HOME_REQUEST",
+  FETCH_GROUPS_HOME_SUCCESS = "sangha/FETCH_GROUPS_HOME_SUCCESS",
+  FETCH_GROUPS_HOME_FAILURE = "sangha/FETCH_GROUPS_HOME_FAILURE",
   REQUEST_CONNECTION_REQUEST = "sangha/REQUEST_CONNECTION_REQUEST",
   REQUEST_CONNECTION_SUCCESS = "sangha/REQUEST_CONNECTION_SUCCESS",
   REQUEST_CONNECTION_FAILURE = "sangha/REQUEST_CONNECTION_FAILURE",
@@ -234,6 +239,22 @@ export type SanghaAction =
   | {
       payload: string;
       type: SANGHA_ACTIONS.FETCH_PROFILE_FAILURE;
+    }
+  | {
+      payload: {
+        limit?: number;
+        privacy?: string;
+        purpose?: string;
+      };
+      type: SANGHA_ACTIONS.FETCH_GROUPS_HOME_REQUEST;
+    }
+  | {
+      payload: SanghaHubHomeResult;
+      type: SANGHA_ACTIONS.FETCH_GROUPS_HOME_SUCCESS;
+    }
+  | {
+      payload: string;
+      type: SANGHA_ACTIONS.FETCH_GROUPS_HOME_FAILURE;
     }
   | {
       payload: { id: string };

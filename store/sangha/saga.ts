@@ -5,6 +5,7 @@ import {
   apiDisconnectSanghaDevotee,
   apiFetchSanghaDevotees,
   apiFetchSanghaDevoteeProfile,
+  apiFetchSanghaGroupsHome,
   apiFetchSanghaHome,
   apiRequestSanghaConnection,
   apiUpdateSanghaDiscovery,
@@ -20,6 +21,8 @@ import {
   fetchSanghaHomeSuccess,
   fetchSanghaProfileFailure,
   fetchSanghaProfileSuccess,
+  fetchSanghaGroupsHomeFailure,
+  fetchSanghaGroupsHomeSuccess,
   requestSanghaConnectionFailure,
   requestSanghaConnectionSuccess,
   updateSanghaDiscoveryFailure,
@@ -115,6 +118,34 @@ function normalizeProfile(response: any) {
   );
 }
 
+function normalizeGroupsHome(response: any) {
+  return {
+    invitations:
+      response?.invitations ||
+      response?.pendingInvitations ||
+      response?.data?.invitations ||
+      response?.data?.pendingInvitations ||
+      [],
+    myGroups:
+      response?.myGroups ||
+      response?.groups ||
+      response?.data?.myGroups ||
+      response?.data?.groups ||
+      [],
+    purposeTiles:
+      response?.purposeTiles ||
+      response?.purposes ||
+      response?.data?.purposeTiles ||
+      response?.data?.purposes ||
+      [],
+    recommendedGroups:
+      response?.recommendedGroups ||
+      response?.data?.recommendedGroups ||
+      [],
+    stats: response?.stats || response?.data?.stats || undefined,
+  };
+}
+
 function* handleFetchSanghaDevotees(
   action: any
 ): Generator<any, void, any> {
@@ -190,6 +221,32 @@ function* handleRequestConnection(
         ),
         id: action.payload.id,
       })
+    );
+  }
+}
+
+function* handleFetchSanghaGroupsHome(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchSanghaGroupsHome,
+      action.payload
+    );
+
+    yield put(
+      fetchSanghaGroupsHomeSuccess(
+        normalizeGroupsHome(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaGroupsHomeFailure(
+        getErrorMessage(
+          error,
+          "Failed to fetch Sangha Hub."
+        )
+      )
     );
   }
 }
@@ -290,6 +347,10 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_PROFILE_REQUEST,
     handleFetchSanghaProfile
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_GROUPS_HOME_REQUEST,
+    handleFetchSanghaGroupsHome
   );
   yield takeLatest(
     SANGHA_ACTIONS.REQUEST_CONNECTION_REQUEST,

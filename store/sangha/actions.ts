@@ -4,6 +4,7 @@ import {
   SanghaDevoteeListResult,
   SanghaDevoteeProfile,
   SanghaDiscoverySettingsPayload,
+  SanghaHubHomeResult,
   SanghaHomeParams,
   SanghaHomeResult,
 } from "./types";
@@ -78,6 +79,34 @@ export const fetchSanghaProfileFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.FETCH_PROFILE_FAILURE,
+  } as const);
+
+export const fetchSanghaGroupsHomeRequest = (
+  payload: {
+    limit?: number;
+    privacy?: string;
+    purpose?: string;
+  } = {}
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUPS_HOME_REQUEST,
+  } as const);
+
+export const fetchSanghaGroupsHomeSuccess = (
+  payload: SanghaHubHomeResult
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUPS_HOME_SUCCESS,
+  } as const);
+
+export const fetchSanghaGroupsHomeFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUPS_HOME_FAILURE,
   } as const);
 
 export const requestSanghaConnectionRequest = (
