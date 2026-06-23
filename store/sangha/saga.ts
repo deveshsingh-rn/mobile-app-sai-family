@@ -1,30 +1,54 @@
 import { call, put, takeLatest } from "redux-saga/effects";
 
 import {
+  apiAcceptSanghaInvitation,
+  apiAddSanghaRecentSearch,
   apiBlockSanghaDevotee,
+  apiClearSanghaRecentSearches,
+  apiDeclineSanghaInvitation,
   apiDisconnectSanghaDevotee,
   apiFetchSanghaDevotees,
   apiFetchSanghaDevoteeProfile,
+  apiFetchSanghaGroups,
   apiFetchSanghaGroupsHome,
   apiFetchSanghaHome,
+  apiFetchSanghaInvitations,
+  apiFetchSanghaRecentSearches,
   apiRequestSanghaConnection,
+  apiSearchSanghaGroups,
   apiUpdateSanghaDiscovery,
 } from "@/services/sangha";
 import {
+  acceptSanghaInvitationFailure,
+  acceptSanghaInvitationSuccess,
+  addSanghaRecentSearchFailure,
+  addSanghaRecentSearchSuccess,
   blockSanghaDevoteeFailure,
   blockSanghaDevoteeSuccess,
+  clearSanghaRecentSearchesFailure,
+  clearSanghaRecentSearchesSuccess,
+  declineSanghaInvitationFailure,
+  declineSanghaInvitationSuccess,
   disconnectSanghaDevoteeFailure,
   disconnectSanghaDevoteeSuccess,
   fetchSanghaDevoteesFailure,
   fetchSanghaDevoteesSuccess,
-  fetchSanghaHomeFailure,
-  fetchSanghaHomeSuccess,
-  fetchSanghaProfileFailure,
-  fetchSanghaProfileSuccess,
+  fetchSanghaGroupsFailure,
   fetchSanghaGroupsHomeFailure,
   fetchSanghaGroupsHomeSuccess,
+  fetchSanghaGroupsSuccess,
+  fetchSanghaHomeFailure,
+  fetchSanghaHomeSuccess,
+  fetchSanghaInvitationsFailure,
+  fetchSanghaInvitationsSuccess,
+  fetchSanghaProfileFailure,
+  fetchSanghaProfileSuccess,
+  fetchSanghaRecentSearchesFailure,
+  fetchSanghaRecentSearchesSuccess,
   requestSanghaConnectionFailure,
   requestSanghaConnectionSuccess,
+  searchSanghaGroupsFailure,
+  searchSanghaGroupsSuccess,
   updateSanghaDiscoveryFailure,
   updateSanghaDiscoverySuccess,
 } from "./actions";
@@ -146,6 +170,48 @@ function normalizeGroupsHome(response: any) {
   };
 }
 
+function normalizeGroupList(response: any, append = false) {
+  return {
+    append,
+    groups:
+      response?.groups ||
+      response?.results ||
+      response?.data?.groups ||
+      response?.data?.results ||
+      [],
+    pagination:
+      response?.pagination ||
+      response?.data?.pagination ||
+      null,
+  };
+}
+
+function normalizeRecentSearches(response: any) {
+  return (
+    response?.searches ||
+    response?.recentSearches ||
+    response?.data?.searches ||
+    response?.data?.recentSearches ||
+    []
+  );
+}
+
+function normalizeInvitations(response: any, append = false) {
+  return {
+    append,
+    invitations:
+      response?.invitations ||
+      response?.results ||
+      response?.data?.invitations ||
+      response?.data?.results ||
+      [],
+    pagination:
+      response?.pagination ||
+      response?.data?.pagination ||
+      null,
+  };
+}
+
 function* handleFetchSanghaDevotees(
   action: any
 ): Generator<any, void, any> {
@@ -251,6 +317,197 @@ function* handleFetchSanghaGroupsHome(
   }
 }
 
+function* handleSearchSanghaGroups(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiSearchSanghaGroups,
+      action.payload
+    );
+
+    yield put(
+      searchSanghaGroupsSuccess(
+        normalizeGroupList(
+          response,
+          Boolean(action.payload?.offset)
+        )
+      )
+    );
+  } catch (error) {
+    yield put(
+      searchSanghaGroupsFailure(
+        getErrorMessage(error, "Failed to search Sangha groups.")
+      )
+    );
+  }
+}
+
+function* handleFetchSanghaGroups(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchSanghaGroups,
+      action.payload
+    );
+
+    yield put(
+      fetchSanghaGroupsSuccess(
+        normalizeGroupList(
+          response,
+          Boolean(action.payload?.offset)
+        )
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaGroupsFailure(
+        getErrorMessage(error, "Failed to fetch Sangha groups.")
+      )
+    );
+  }
+}
+
+function* handleFetchRecentSearches(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchSanghaRecentSearches,
+      action.payload
+    );
+
+    yield put(
+      fetchSanghaRecentSearchesSuccess(
+        normalizeRecentSearches(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaRecentSearchesFailure(
+        getErrorMessage(error, "Failed to fetch recent searches.")
+      )
+    );
+  }
+}
+
+function* handleAddRecentSearch(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiAddSanghaRecentSearch,
+      action.payload
+    );
+
+    yield put(
+      addSanghaRecentSearchSuccess(
+        normalizeRecentSearches(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      addSanghaRecentSearchFailure(
+        getErrorMessage(error, "Failed to save recent search.")
+      )
+    );
+  }
+}
+
+function* handleClearRecentSearches(): Generator<
+  any,
+  void,
+  any
+> {
+  try {
+    yield call(apiClearSanghaRecentSearches);
+    yield put(clearSanghaRecentSearchesSuccess());
+  } catch (error) {
+    yield put(
+      clearSanghaRecentSearchesFailure(
+        getErrorMessage(error, "Failed to clear recent searches.")
+      )
+    );
+  }
+}
+
+function* handleFetchInvitations(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchSanghaInvitations,
+      action.payload
+    );
+
+    yield put(
+      fetchSanghaInvitationsSuccess(
+        normalizeInvitations(
+          response,
+          Boolean(action.payload?.offset)
+        )
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaInvitationsFailure(
+        getErrorMessage(error, "Failed to fetch invitations.")
+      )
+    );
+  }
+}
+
+function* handleAcceptInvitation(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiAcceptSanghaInvitation,
+      action.payload.id
+    );
+
+    yield put(
+      acceptSanghaInvitationSuccess({
+        id: action.payload.id,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      acceptSanghaInvitationFailure({
+        error: getErrorMessage(error, "Failed to accept invitation."),
+        id: action.payload.id,
+      })
+    );
+  }
+}
+
+function* handleDeclineInvitation(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiDeclineSanghaInvitation,
+      action.payload.id
+    );
+
+    yield put(
+      declineSanghaInvitationSuccess({
+        id: action.payload.id,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      declineSanghaInvitationFailure({
+        error: getErrorMessage(error, "Failed to decline invitation."),
+        id: action.payload.id,
+      })
+    );
+  }
+}
+
 function* handleDisconnectDevotee(
   action: any
 ): Generator<any, void, any> {
@@ -351,6 +608,38 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUPS_HOME_REQUEST,
     handleFetchSanghaGroupsHome
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.SEARCH_GROUPS_REQUEST,
+    handleSearchSanghaGroups
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_GROUPS_REQUEST,
+    handleFetchSanghaGroups
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_RECENT_SEARCHES_REQUEST,
+    handleFetchRecentSearches
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.ADD_RECENT_SEARCH_REQUEST,
+    handleAddRecentSearch
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.CLEAR_RECENT_SEARCHES_REQUEST,
+    handleClearRecentSearches
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_INVITATIONS_REQUEST,
+    handleFetchInvitations
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.ACCEPT_INVITATION_REQUEST,
+    handleAcceptInvitation
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.DECLINE_INVITATION_REQUEST,
+    handleDeclineInvitation
   );
   yield takeLatest(
     SANGHA_ACTIONS.REQUEST_CONNECTION_REQUEST,

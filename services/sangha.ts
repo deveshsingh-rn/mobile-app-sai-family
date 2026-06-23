@@ -120,12 +120,73 @@ export async function apiSearchSanghaGroups(
   return data;
 }
 
+export async function apiFetchSanghaRecentSearches(
+  params: Record<string, any> = {}
+) {
+  const { data } = await apiClient.get(
+    "/api/users/me/sangha/recent-searches",
+    { params }
+  );
+
+  return data;
+}
+
+export async function apiAddSanghaRecentSearch(payload: {
+  query: string;
+}) {
+  const { data } = await apiClient.post(
+    "/api/users/me/sangha/recent-searches",
+    payload
+  );
+
+  return data;
+}
+
+export async function apiClearSanghaRecentSearches() {
+  const { data } = await apiClient.delete(
+    "/api/users/me/sangha/recent-searches"
+  );
+
+  return data;
+}
+
 export async function apiFetchSanghaGroups(
   params: Record<string, any> = {}
 ) {
   const { data } = await apiClient.get(
     "/api/sangha/groups",
     { params }
+  );
+
+  return data;
+}
+
+export async function apiFetchSanghaInvitations(
+  params: Record<string, any> = {}
+) {
+  const { data } = await apiClient.get(
+    "/api/users/me/sangha/invitations",
+    { params }
+  );
+
+  return data;
+}
+
+export async function apiAcceptSanghaInvitation(
+  invitationId: string
+) {
+  const { data } = await apiClient.post(
+    `/api/users/me/sangha/invitations/${invitationId}/accept`
+  );
+
+  return data;
+}
+
+export async function apiDeclineSanghaInvitation(
+  invitationId: string
+) {
+  const { data } = await apiClient.post(
+    `/api/users/me/sangha/invitations/${invitationId}/decline`
   );
 
   return data;

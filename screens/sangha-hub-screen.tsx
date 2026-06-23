@@ -24,7 +24,11 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { fetchSanghaGroupsHomeRequest } from '@/store/sangha/actions';
+import {
+  acceptSanghaInvitationRequest,
+  declineSanghaInvitationRequest,
+  fetchSanghaGroupsHomeRequest,
+} from '@/store/sangha/actions';
 import {
   selectSanghaError,
   selectSanghaGroupsHomeLoading,
@@ -620,6 +624,13 @@ const SanghaHubScreen = () => {
                     }}>
                     <TouchableOpacity
                       activeOpacity={0.88}
+                      onPress={() =>
+                        dispatch(
+                          acceptSanghaInvitationRequest(
+                            invitation.id
+                          )
+                        )
+                      }
                       style={{
                         alignItems: 'center',
                         backgroundColor: '#F97316',
@@ -640,6 +651,13 @@ const SanghaHubScreen = () => {
 
                     <TouchableOpacity
                       activeOpacity={0.88}
+                      onPress={() =>
+                        dispatch(
+                          declineSanghaInvitationRequest(
+                            invitation.id
+                          )
+                        )
+                      }
                       style={{
                         alignItems: 'center',
                         backgroundColor: '#F8F8F8',

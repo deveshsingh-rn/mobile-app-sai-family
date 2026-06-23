@@ -13,10 +13,21 @@ export const initialSanghaState: SanghaState = {
   error: null,
   groupsHome: null,
   groupsHomeLoading: false,
+  groupsList: [],
+  groupsListLoading: false,
+  groupsListPagination: null,
   home: null,
   homeLoading: false,
   profile: null,
   profileLoading: false,
+  recentSearches: [],
+  recentSearchesLoading: false,
+  searchGroups: [],
+  searchGroupsLoading: false,
+  searchGroupsPagination: null,
+  userInvitations: [],
+  userInvitationsLoading: false,
+  userInvitationsPagination: null,
 };
 
 function removePending(
@@ -49,6 +60,33 @@ function updateProfileConnection(
         : state.profile.canConnect,
     connectionStatus,
   };
+}
+
+function mergeById<T extends { id?: string }>(
+  current: T[],
+  incoming: T[]
+) {
+  const seen = new Set<string>();
+
+  return [...current, ...incoming].filter((item) => {
+    if (!item.id) {
+      return true;
+    }
+
+    if (seen.has(item.id)) {
+      return false;
+    }
+
+    seen.add(item.id);
+    return true;
+  });
+}
+
+function removeInvitation(
+  list: SanghaState["userInvitations"],
+  id: string
+) {
+  return list.filter((item) => item.id !== id);
 }
 
 export function sanghaReducer(
@@ -148,6 +186,170 @@ export function sanghaReducer(
         ...state,
         error: action.payload,
         groupsHomeLoading: false,
+      };
+
+    case SANGHA_ACTIONS.SEARCH_GROUPS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        searchGroupsLoading: true,
+      };
+
+    case SANGHA_ACTIONS.SEARCH_GROUPS_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        searchGroups: action.payload.append
+          ? mergeById(
+              state.searchGroups,
+              action.payload.groups
+            )
+          : action.payload.groups,
+        searchGroupsLoading: false,
+        searchGroupsPagination: action.payload.pagination,
+      };
+
+    case SANGHA_ACTIONS.SEARCH_GROUPS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        searchGroupsLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUPS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        groupsListLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUPS_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        groupsList: action.payload.append
+          ? mergeById(
+              state.groupsList,
+              action.payload.groups
+            )
+          : action.payload.groups,
+        groupsListLoading: false,
+        groupsListPagination: action.payload.pagination,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUPS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        groupsListLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_RECENT_SEARCHES_REQUEST:
+    case SANGHA_ACTIONS.ADD_RECENT_SEARCH_REQUEST:
+    case SANGHA_ACTIONS.CLEAR_RECENT_SEARCHES_REQUEST:
+      return {
+        ...state,
+        error: null,
+        recentSearchesLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_RECENT_SEARCHES_SUCCESS:
+    case SANGHA_ACTIONS.ADD_RECENT_SEARCH_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        recentSearches: action.payload,
+        recentSearchesLoading: false,
+      };
+
+    case SANGHA_ACTIONS.CLEAR_RECENT_SEARCHES_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        recentSearches: [],
+        recentSearchesLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_RECENT_SEARCHES_FAILURE:
+    case SANGHA_ACTIONS.ADD_RECENT_SEARCH_FAILURE:
+    case SANGHA_ACTIONS.CLEAR_RECENT_SEARCHES_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        recentSearchesLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_INVITATIONS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        userInvitationsLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_INVITATIONS_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        userInvitations: action.payload.append
+          ? mergeById(
+              state.userInvitations,
+              action.payload.invitations
+            )
+          : action.payload.invitations,
+        userInvitationsLoading: false,
+        userInvitationsPagination: action.payload.pagination,
+      };
+
+    case SANGHA_ACTIONS.FETCH_INVITATIONS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        userInvitationsLoading: false,
+      };
+
+    case SANGHA_ACTIONS.ACCEPT_INVITATION_REQUEST:
+    case SANGHA_ACTIONS.DECLINE_INVITATION_REQUEST:
+      return {
+        ...state,
+        actionPendingIds: {
+          ...state.actionPendingIds,
+          [action.payload.id]: true,
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.ACCEPT_INVITATION_SUCCESS:
+    case SANGHA_ACTIONS.DECLINE_INVITATION_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.id
+        ),
+        groupsHome: state.groupsHome
+          ? {
+              ...state.groupsHome,
+              invitations: removeInvitation(
+                state.groupsHome.invitations || [],
+                action.payload.id
+              ),
+            }
+          : state.groupsHome,
+        userInvitations: removeInvitation(
+          state.userInvitations,
+          action.payload.id
+        ),
+      };
+
+    case SANGHA_ACTIONS.ACCEPT_INVITATION_FAILURE:
+    case SANGHA_ACTIONS.DECLINE_INVITATION_FAILURE:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.id
+        ),
+        error: action.payload.error,
       };
 
     case SANGHA_ACTIONS.REQUEST_CONNECTION_REQUEST:

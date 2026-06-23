@@ -1,6 +1,11 @@
-import React from 'react';
+import React, {
+  useEffect,
+  useMemo,
+} from 'react';
 import {
+  ActivityIndicator,
   Image,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Text,
@@ -15,52 +20,78 @@ import {
 } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const invitations = [
-  {
-    by: 'Rahul M.',
-    image:
-      'https://randomuser.me/api/portraits/men/32.jpg',
-    meta: '142 members · Invited 2d ago',
-    title: 'Mumbai Youth Seva',
-  },
-  {
-    by: 'Ananya D.',
-    image:
-      'https://randomuser.me/api/portraits/women/68.jpg',
-    meta: '86 members · Invited today',
-    title: 'Thursday Bhajan Circle',
-  },
-];
+import {
+  acceptSanghaInvitationRequest,
+  declineSanghaInvitationRequest,
+  fetchSanghaGroupsRequest,
+  fetchSanghaInvitationsRequest,
+} from '@/store/sangha/actions';
+import {
+  selectIsSanghaActionPending,
+  selectSanghaError,
+  selectSanghaGroupsList,
+  selectSanghaGroupsListLoading,
+  selectSanghaGroupsListPagination,
+  selectSanghaUserInvitations,
+  selectSanghaUserInvitationsLoading,
+  selectSanghaUserInvitationsPagination,
+} from '@/store/sangha/selectors';
+import {
+  SanghaGroupSummary,
+  SanghaInvitation,
+} from '@/store/sangha/types';
+import {
+  useAppDispatch,
+  useAppSelector,
+} from '@/store/hooks';
 
-const groups = [
-  {
-    badge: 'SEVA',
-    image:
-      'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1200',
-    meta: 'Active 2h ago · 142 members',
-    title: 'Andheri Weekend Food Drive',
-  },
-  {
-    badge: 'BHAJAN',
-    image:
-      'https://images.unsplash.com/photo-1609604161777-0c39f681a0ed?q=80&w=1200',
-    meta: 'Next meet Thursday · 86 members',
-    title: 'Pune Sai Bhajan Circle',
-  },
-  {
-    badge: 'ONLINE',
-    image:
-      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200',
-    meta: 'Daily 8 PM · 320 members',
-    title: 'Online Global Satsang',
-  },
-];
+function avatarForInvitation(item: SanghaInvitation) {
+  const invitedBy = item.invitedBy;
+  const name = invitedBy?.name || 'Sai Family';
+
+  return (
+    invitedBy?.avatarUrl ||
+    invitedBy?.profileImageUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      name
+    )}&background=FFF7ED&color=F97316`
+  );
+}
+
+function bannerForGroup(item: SanghaGroupSummary) {
+  return (
+    item.bannerUrl ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      item.name
+    )}&background=FFF7ED&color=F97316&size=256`
+  );
+}
+
+function normalizePurpose(value?: string) {
+  return (value || 'all').toLowerCase().replace(/\s+/g, '_');
+}
+
+function groupMeta(item: SanghaGroupSummary) {
+  return [
+    item.privacy,
+    `${item.memberCount || 0} members`,
+    item.city || item.state,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
 
 function InvitationCard({
   item,
 }: {
-  item: (typeof invitations)[number];
+  item: SanghaInvitation;
 }) {
+  const dispatch = useAppDispatch();
+  const pending = useAppSelector((state) =>
+    selectIsSanghaActionPending(state, item.id)
+  );
+  const group = item.group;
+
   return (
     <View
       style={{
@@ -76,7 +107,7 @@ function InvitationCard({
           flexDirection: 'row',
         }}>
         <Image
-          source={{uri: item.image}}
+          source={{uri: avatarForInvitation(item)}}
           style={{
             borderRadius: 29,
             height: 58,
@@ -99,7 +130,7 @@ function InvitationCard({
                 color: '#1F2937',
                 fontWeight: '900',
               }}>
-              {item.by}
+              {item.invitedBy?.name || 'Sai Family'}
             </Text>{' '}
             invited you to
           </Text>
@@ -110,7 +141,7 @@ function InvitationCard({
               fontWeight: '900',
               marginTop: 3,
             }}>
-            {item.title}
+            {group?.name || 'Sangha Group'}
           </Text>
           <Text
             style={{
@@ -119,7 +150,7 @@ function InvitationCard({
               fontWeight: '600',
               marginTop: 7,
             }}>
-            {item.meta}
+            {group?.memberCount || 0} members
           </Text>
         </View>
       </View>
@@ -131,6 +162,10 @@ function InvitationCard({
         }}>
         <TouchableOpacity
           activeOpacity={0.88}
+          disabled={pending}
+          onPress={() =>
+            dispatch(acceptSanghaInvitationRequest(item.id))
+          }
           style={{
             alignItems: 'center',
             backgroundColor: '#F97316',
@@ -139,17 +174,25 @@ function InvitationCard({
             height: 46,
             justifyContent: 'center',
           }}>
-          <Text
-            style={{
-              color: '#FFFFFF',
-              fontSize: 15,
-              fontWeight: '900',
-            }}>
-            Accept
-          </Text>
+          {pending ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text
+              style={{
+                color: '#FFFFFF',
+                fontSize: 15,
+                fontWeight: '900',
+              }}>
+              Accept
+            </Text>
+          )}
         </TouchableOpacity>
         <TouchableOpacity
           activeOpacity={0.88}
+          disabled={pending}
+          onPress={() =>
+            dispatch(declineSanghaInvitationRequest(item.id))
+          }
           style={{
             alignItems: 'center',
             backgroundColor: '#F8F8F8',
@@ -177,12 +220,17 @@ function InvitationCard({
 function GroupCard({
   item,
 }: {
-  item: (typeof groups)[number];
+  item: SanghaGroupSummary;
 }) {
   return (
     <TouchableOpacity
       activeOpacity={0.9}
-      onPress={() => router.push('/group-details')}
+      onPress={() =>
+        router.push({
+          pathname: '/group-details',
+          params: { id: item.id },
+        })
+      }
       style={{
         backgroundColor: '#FFFFFF',
         borderRadius: 28,
@@ -201,7 +249,7 @@ function GroupCard({
             width: 86,
           }}>
           <Image
-            source={{uri: item.image}}
+            source={{uri: bannerForGroup(item)}}
             style={{
               height: '100%',
               width: '100%',
@@ -227,7 +275,7 @@ function GroupCard({
                 fontSize: 10,
                 fontWeight: '900',
               }}>
-              {item.badge}
+              {(item.purpose || 'SANGHA').toUpperCase()}
             </Text>
           </View>
           <Text
@@ -237,7 +285,7 @@ function GroupCard({
               fontWeight: '900',
               marginTop: 8,
             }}>
-            {item.title}
+            {item.name}
           </Text>
           <Text
             style={{
@@ -246,7 +294,7 @@ function GroupCard({
               fontWeight: '600',
               marginTop: 6,
             }}>
-            {item.meta}
+            {groupMeta(item)}
           </Text>
         </View>
       </View>
@@ -255,11 +303,29 @@ function GroupCard({
 }
 
 export default function SanghaHubListScreen() {
+  const dispatch = useAppDispatch();
   const {type, purpose} =
     useLocalSearchParams<{
       purpose?: string;
       type?: string;
     }>();
+  const invitations = useAppSelector(
+    selectSanghaUserInvitations
+  );
+  const invitationsLoading = useAppSelector(
+    selectSanghaUserInvitationsLoading
+  );
+  const invitationsPagination = useAppSelector(
+    selectSanghaUserInvitationsPagination
+  );
+  const groups = useAppSelector(selectSanghaGroupsList);
+  const groupsLoading = useAppSelector(
+    selectSanghaGroupsListLoading
+  );
+  const groupsPagination = useAppSelector(
+    selectSanghaGroupsListPagination
+  );
+  const error = useAppSelector(selectSanghaError);
   const listType = Array.isArray(type)
     ? type[0]
     : type;
@@ -272,6 +338,95 @@ export default function SanghaHubListScreen() {
     : purposeName
       ? `${purposeName} Groups`
       : 'My Groups';
+  const groupsParams = useMemo(
+    () => ({
+      limit: 20,
+      offset: 0,
+      privacy: 'any',
+      purpose: purposeName
+        ? normalizePurpose(purposeName)
+        : 'all',
+      type:
+        listType === 'groups'
+          ? 'mine'
+          : purposeName
+            ? 'purpose'
+            : 'recommended',
+    }),
+    [listType, purposeName]
+  );
+  const invitationsParams = useMemo(
+    () => ({
+      limit: 20,
+      offset: 0,
+      status: 'pending',
+    }),
+    []
+  );
+  const loading = isPending
+    ? invitationsLoading
+    : groupsLoading;
+  const itemCount = isPending
+    ? invitations.length
+    : groups.length;
+
+  useEffect(() => {
+    if (isPending) {
+      dispatch(
+        fetchSanghaInvitationsRequest(invitationsParams)
+      );
+      return;
+    }
+
+    dispatch(fetchSanghaGroupsRequest(groupsParams));
+  }, [
+    dispatch,
+    groupsParams,
+    invitationsParams,
+    isPending,
+  ]);
+
+  const refresh = () => {
+    if (isPending) {
+      dispatch(
+        fetchSanghaInvitationsRequest(invitationsParams)
+      );
+      return;
+    }
+
+    dispatch(fetchSanghaGroupsRequest(groupsParams));
+  };
+
+  const loadMore = () => {
+    if (loading) {
+      return;
+    }
+
+    if (isPending && invitationsPagination?.hasMore) {
+      dispatch(
+        fetchSanghaInvitationsRequest({
+          ...invitationsParams,
+          offset:
+            invitationsPagination.nextOffset ??
+            invitationsPagination.offset +
+              invitationsPagination.limit,
+        })
+      );
+      return;
+    }
+
+    if (!isPending && groupsPagination?.hasMore) {
+      dispatch(
+        fetchSanghaGroupsRequest({
+          ...groupsParams,
+          offset:
+            groupsPagination.nextOffset ??
+            groupsPagination.offset +
+              groupsPagination.limit,
+        })
+      );
+    }
+  };
 
   return (
     <SafeAreaView
@@ -330,30 +485,141 @@ export default function SanghaHubListScreen() {
               fontWeight: '700',
               marginTop: 2,
             }}>
-            {isPending ? invitations.length : groups.length} items
+            {itemCount} items
           </Text>
         </View>
       </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading && itemCount > 0}
+            onRefresh={refresh}
+            tintColor="#F97316"
+          />
+        }
         contentContainerStyle={{
           paddingHorizontal: 18,
           paddingBottom: 34,
           paddingTop: 8,
         }}>
+        {loading && itemCount === 0 ? (
+          <View
+            style={{
+              alignItems: 'center',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 28,
+              padding: 24,
+            }}>
+            <ActivityIndicator color="#F97316" />
+            <Text
+              style={{
+                color: '#6B7280',
+                fontSize: 14,
+                fontWeight: '800',
+                marginTop: 12,
+              }}>
+              Loading Sangha data
+            </Text>
+          </View>
+        ) : null}
+
+        {!loading && error ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={refresh}
+            style={{
+              backgroundColor: '#FFF7ED',
+              borderColor: '#FDE7CF',
+              borderRadius: 24,
+              borderWidth: 1,
+              marginBottom: 16,
+              padding: 16,
+            }}>
+            <Text
+              style={{
+                color: '#9A3412',
+                fontSize: 14,
+                fontWeight: '900',
+              }}>
+              {error}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {!loading && itemCount === 0 && !error ? (
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 28,
+              padding: 20,
+            }}>
+            <Text
+              style={{
+                color: '#1F2937',
+                fontSize: 17,
+                fontWeight: '900',
+              }}>
+              Nothing here yet
+            </Text>
+            <Text
+              style={{
+                color: '#6B7280',
+                fontSize: 14,
+                fontWeight: '600',
+                lineHeight: 22,
+                marginTop: 8,
+              }}>
+              {isPending
+                ? 'Pending group invitations will appear here.'
+                : 'Matching Sangha groups will appear here.'}
+            </Text>
+          </View>
+        ) : null}
+
         {isPending
           ? invitations.map((item) => (
               <InvitationCard
-                key={item.title}
+                key={item.id}
                 item={item}
               />
             ))
           : groups.map((item) => (
               <GroupCard
-                key={item.title}
+                key={item.id}
                 item={item}
               />
             ))}
+
+        {(isPending
+          ? invitationsPagination?.hasMore
+          : groupsPagination?.hasMore) ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            disabled={loading}
+            onPress={loadMore}
+            style={{
+              alignItems: 'center',
+              backgroundColor: '#1F2937',
+              borderRadius: 18,
+              height: 50,
+              justifyContent: 'center',
+              marginTop: 4,
+            }}>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 14,
+                  fontWeight: '900',
+                }}>
+                Load more
+              </Text>
+            )}
+          </TouchableOpacity>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

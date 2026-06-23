@@ -52,6 +52,50 @@ export const selectSanghaHubPurposeTiles = (
   state: RootState
 ) => selectSanghaGroupsHome(state)?.purposeTiles || [];
 
+export const selectSanghaSearchGroups = (
+  state: RootState
+) => selectSanghaState(state).searchGroups;
+
+export const selectSanghaSearchGroupsLoading = (
+  state: RootState
+) => selectSanghaState(state).searchGroupsLoading;
+
+export const selectSanghaSearchGroupsPagination = (
+  state: RootState
+) => selectSanghaState(state).searchGroupsPagination;
+
+export const selectSanghaGroupsList = (
+  state: RootState
+) => selectSanghaState(state).groupsList;
+
+export const selectSanghaGroupsListLoading = (
+  state: RootState
+) => selectSanghaState(state).groupsListLoading;
+
+export const selectSanghaGroupsListPagination = (
+  state: RootState
+) => selectSanghaState(state).groupsListPagination;
+
+export const selectSanghaRecentSearches = (
+  state: RootState
+) => selectSanghaState(state).recentSearches;
+
+export const selectSanghaRecentSearchesLoading = (
+  state: RootState
+) => selectSanghaState(state).recentSearchesLoading;
+
+export const selectSanghaUserInvitations = (
+  state: RootState
+) => selectSanghaState(state).userInvitations;
+
+export const selectSanghaUserInvitationsLoading = (
+  state: RootState
+) => selectSanghaState(state).userInvitationsLoading;
+
+export const selectSanghaUserInvitationsPagination = (
+  state: RootState
+) => selectSanghaState(state).userInvitationsPagination;
+
 export const selectIsSanghaActionPending = (
   state: RootState,
   id?: string

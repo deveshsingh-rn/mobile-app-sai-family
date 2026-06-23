@@ -83,6 +83,20 @@ export type SanghaDevoteeListResult = {
   pagination: SanghaPagination | null;
 };
 
+export type SanghaGroupListParams = {
+  limit?: number;
+  offset?: number;
+  privacy?: string;
+  purpose?: string;
+  q?: string;
+  type?: string;
+};
+
+export type SanghaGroupListResult = {
+  groups: SanghaGroupSummary[];
+  pagination: SanghaPagination | null;
+};
+
 export type SanghaHomeResult = {
   nearMeEnabled?: boolean;
   nearYou?: SanghaDevoteeSummary[];
@@ -168,10 +182,21 @@ export type SanghaState = {
   error: string | null;
   groupsHome: SanghaHubHomeResult | null;
   groupsHomeLoading: boolean;
+  groupsList: SanghaGroupSummary[];
+  groupsListLoading: boolean;
+  groupsListPagination: SanghaPagination | null;
   home: SanghaHomeResult | null;
   homeLoading: boolean;
   profile: SanghaDevoteeProfile | null;
   profileLoading: boolean;
+  recentSearches: SanghaRecentSearch[];
+  recentSearchesLoading: boolean;
+  searchGroups: SanghaGroupSummary[];
+  searchGroupsLoading: boolean;
+  searchGroupsPagination: SanghaPagination | null;
+  userInvitations: SanghaInvitation[];
+  userInvitationsLoading: boolean;
+  userInvitationsPagination: SanghaPagination | null;
 };
 
 export enum SANGHA_ACTIONS {
@@ -187,6 +212,30 @@ export enum SANGHA_ACTIONS {
   FETCH_GROUPS_HOME_REQUEST = "sangha/FETCH_GROUPS_HOME_REQUEST",
   FETCH_GROUPS_HOME_SUCCESS = "sangha/FETCH_GROUPS_HOME_SUCCESS",
   FETCH_GROUPS_HOME_FAILURE = "sangha/FETCH_GROUPS_HOME_FAILURE",
+  SEARCH_GROUPS_REQUEST = "sangha/SEARCH_GROUPS_REQUEST",
+  SEARCH_GROUPS_SUCCESS = "sangha/SEARCH_GROUPS_SUCCESS",
+  SEARCH_GROUPS_FAILURE = "sangha/SEARCH_GROUPS_FAILURE",
+  FETCH_GROUPS_REQUEST = "sangha/FETCH_GROUPS_REQUEST",
+  FETCH_GROUPS_SUCCESS = "sangha/FETCH_GROUPS_SUCCESS",
+  FETCH_GROUPS_FAILURE = "sangha/FETCH_GROUPS_FAILURE",
+  FETCH_RECENT_SEARCHES_REQUEST = "sangha/FETCH_RECENT_SEARCHES_REQUEST",
+  FETCH_RECENT_SEARCHES_SUCCESS = "sangha/FETCH_RECENT_SEARCHES_SUCCESS",
+  FETCH_RECENT_SEARCHES_FAILURE = "sangha/FETCH_RECENT_SEARCHES_FAILURE",
+  ADD_RECENT_SEARCH_REQUEST = "sangha/ADD_RECENT_SEARCH_REQUEST",
+  ADD_RECENT_SEARCH_SUCCESS = "sangha/ADD_RECENT_SEARCH_SUCCESS",
+  ADD_RECENT_SEARCH_FAILURE = "sangha/ADD_RECENT_SEARCH_FAILURE",
+  CLEAR_RECENT_SEARCHES_REQUEST = "sangha/CLEAR_RECENT_SEARCHES_REQUEST",
+  CLEAR_RECENT_SEARCHES_SUCCESS = "sangha/CLEAR_RECENT_SEARCHES_SUCCESS",
+  CLEAR_RECENT_SEARCHES_FAILURE = "sangha/CLEAR_RECENT_SEARCHES_FAILURE",
+  FETCH_INVITATIONS_REQUEST = "sangha/FETCH_INVITATIONS_REQUEST",
+  FETCH_INVITATIONS_SUCCESS = "sangha/FETCH_INVITATIONS_SUCCESS",
+  FETCH_INVITATIONS_FAILURE = "sangha/FETCH_INVITATIONS_FAILURE",
+  ACCEPT_INVITATION_REQUEST = "sangha/ACCEPT_INVITATION_REQUEST",
+  ACCEPT_INVITATION_SUCCESS = "sangha/ACCEPT_INVITATION_SUCCESS",
+  ACCEPT_INVITATION_FAILURE = "sangha/ACCEPT_INVITATION_FAILURE",
+  DECLINE_INVITATION_REQUEST = "sangha/DECLINE_INVITATION_REQUEST",
+  DECLINE_INVITATION_SUCCESS = "sangha/DECLINE_INVITATION_SUCCESS",
+  DECLINE_INVITATION_FAILURE = "sangha/DECLINE_INVITATION_FAILURE",
   REQUEST_CONNECTION_REQUEST = "sangha/REQUEST_CONNECTION_REQUEST",
   REQUEST_CONNECTION_SUCCESS = "sangha/REQUEST_CONNECTION_SUCCESS",
   REQUEST_CONNECTION_FAILURE = "sangha/REQUEST_CONNECTION_FAILURE",
@@ -255,6 +304,89 @@ export type SanghaAction =
   | {
       payload: string;
       type: SANGHA_ACTIONS.FETCH_GROUPS_HOME_FAILURE;
+    }
+  | {
+      payload: SanghaGroupListParams;
+      type:
+        | SANGHA_ACTIONS.SEARCH_GROUPS_REQUEST
+        | SANGHA_ACTIONS.FETCH_GROUPS_REQUEST;
+    }
+  | {
+      payload: SanghaGroupListResult & { append?: boolean };
+      type:
+        | SANGHA_ACTIONS.SEARCH_GROUPS_SUCCESS
+        | SANGHA_ACTIONS.FETCH_GROUPS_SUCCESS;
+    }
+  | {
+      payload: string;
+      type:
+        | SANGHA_ACTIONS.SEARCH_GROUPS_FAILURE
+        | SANGHA_ACTIONS.FETCH_GROUPS_FAILURE;
+    }
+  | {
+      payload: { limit?: number };
+      type: SANGHA_ACTIONS.FETCH_RECENT_SEARCHES_REQUEST;
+    }
+  | {
+      payload: SanghaRecentSearch[];
+      type:
+        | SANGHA_ACTIONS.FETCH_RECENT_SEARCHES_SUCCESS
+        | SANGHA_ACTIONS.ADD_RECENT_SEARCH_SUCCESS;
+    }
+  | {
+      payload: string;
+      type:
+        | SANGHA_ACTIONS.FETCH_RECENT_SEARCHES_FAILURE
+        | SANGHA_ACTIONS.ADD_RECENT_SEARCH_FAILURE
+        | SANGHA_ACTIONS.CLEAR_RECENT_SEARCHES_FAILURE;
+    }
+  | {
+      payload: { query: string };
+      type: SANGHA_ACTIONS.ADD_RECENT_SEARCH_REQUEST;
+    }
+  | {
+      type: SANGHA_ACTIONS.CLEAR_RECENT_SEARCHES_REQUEST;
+    }
+  | {
+      type: SANGHA_ACTIONS.CLEAR_RECENT_SEARCHES_SUCCESS;
+    }
+  | {
+      payload: {
+        limit?: number;
+        offset?: number;
+        status?: string;
+      };
+      type: SANGHA_ACTIONS.FETCH_INVITATIONS_REQUEST;
+    }
+  | {
+      payload: {
+        append?: boolean;
+        invitations: SanghaInvitation[];
+        pagination: SanghaPagination | null;
+      };
+      type: SANGHA_ACTIONS.FETCH_INVITATIONS_SUCCESS;
+    }
+  | {
+      payload: string;
+      type: SANGHA_ACTIONS.FETCH_INVITATIONS_FAILURE;
+    }
+  | {
+      payload: { id: string };
+      type:
+        | SANGHA_ACTIONS.ACCEPT_INVITATION_REQUEST
+        | SANGHA_ACTIONS.DECLINE_INVITATION_REQUEST;
+    }
+  | {
+      payload: { id: string; response?: any };
+      type:
+        | SANGHA_ACTIONS.ACCEPT_INVITATION_SUCCESS
+        | SANGHA_ACTIONS.DECLINE_INVITATION_SUCCESS;
+    }
+  | {
+      payload: { error: string; id: string };
+      type:
+        | SANGHA_ACTIONS.ACCEPT_INVITATION_FAILURE
+        | SANGHA_ACTIONS.DECLINE_INVITATION_FAILURE;
     }
   | {
       payload: { id: string };

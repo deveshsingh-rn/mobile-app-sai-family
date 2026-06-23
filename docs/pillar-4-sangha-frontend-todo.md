@@ -51,10 +51,10 @@ Status: Started
 Status: Started
 
 - [x] Wire `screens/sangha-hub-screen.tsx` to `GET /api/sangha/groups/home`.
-- [ ] Wire hub search to `GET /api/sangha/groups/search`.
-- [ ] Wire group lists to `GET /api/sangha/groups`.
-- [ ] Wire recent searches and clear recent searches.
-- [ ] Wire invitations list and accept/decline flow.
+- [x] Wire hub search to `GET /api/sangha/groups/search`.
+- [x] Wire group lists to `GET /api/sangha/groups`.
+- [x] Wire recent searches and clear recent searches.
+- [x] Wire invitations list and accept/decline flow.
 
 ## Phase 5: Group Details
 
