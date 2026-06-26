@@ -214,6 +214,40 @@ export async function apiFetchSanghaGroupPosts(
   return data;
 }
 
+export async function apiFetchSanghaGroupFeed(
+  groupId: string,
+  params: Record<string, any> = {}
+) {
+  const { data } = await apiClient.get(
+    `/api/sangha/groups/${groupId}/feed`,
+    { params }
+  );
+
+  return data;
+}
+
+export async function apiFetchSanghaGroupMembership(
+  groupId: string
+) {
+  const { data } = await apiClient.get(
+    `/api/sangha/groups/${groupId}/membership`
+  );
+
+  return data;
+}
+
+export async function apiFetchSanghaGroupJoinRequests(
+  groupId: string,
+  params: Record<string, any> = {}
+) {
+  const { data } = await apiClient.get(
+    `/api/sangha/groups/${groupId}/join-requests`,
+    { params }
+  );
+
+  return data;
+}
+
 export async function apiFetchSanghaGroupMembers(
   groupId: string,
   params: Record<string, any> = {}
@@ -413,6 +447,53 @@ export async function apiMarkSanghaNotificationsRead(payload: {
   const { data } = await apiClient.post(
     "/api/users/me/sangha/notifications/read",
     payload
+  );
+
+  return data;
+}
+
+export async function apiStartSanghaConversation(payload: {
+  groupId?: string;
+  participantUserId: string;
+  type: "direct" | string;
+}) {
+  const { data } = await apiClient.post(
+    "/api/sangha/conversations",
+    payload
+  );
+
+  return data;
+}
+
+export async function apiFetchSanghaConversationMessages(
+  conversationId: string,
+  params: Record<string, any> = {}
+) {
+  const { data } = await apiClient.get(
+    `/api/sangha/conversations/${conversationId}/messages`,
+    { params }
+  );
+
+  return data;
+}
+
+export async function apiSendSanghaConversationMessage(
+  conversationId: string,
+  payload: { content: string }
+) {
+  const { data } = await apiClient.post(
+    `/api/sangha/conversations/${conversationId}/messages`,
+    payload
+  );
+
+  return data;
+}
+
+export async function apiMarkSanghaConversationRead(
+  conversationId: string
+) {
+  const { data } = await apiClient.patch(
+    `/api/sangha/conversations/${conversationId}/read`
   );
 
   return data;

@@ -68,10 +68,12 @@ Status: Started
 - [x] Make member search functional.
 - [x] Launch chat from member cards.
 - [x] Launch Event pillar create screen from group events and feed quick action.
-- [ ] Replace group feed list with unified `GET /api/sangha/groups/:id/feed` after backend adds cross-pillar aggregation.
-- [ ] Replace local chat shell with conversation/message APIs after backend adds Sangha messaging.
-- [ ] Replace static member request card with `GET /api/sangha/groups/:id/join-requests`.
-- [ ] Gate post/comment/event controls from backend capability flags instead of only membership status.
+- [x] Replace group feed list with unified `GET /api/sangha/groups/:id/feed` with old posts fallback.
+- [x] Replace local chat shell with conversation/message APIs.
+- [x] Replace static member request count with `GET /api/sangha/groups/:id/join-requests`.
+- [x] Gate post/comment/event controls from backend capability flags.
+- [ ] Wire join request approve/decline buttons.
+- [ ] Add infinite scroll for unified group feed, join requests, and chat messages.
 
 ## Phase 6: Group Events
 

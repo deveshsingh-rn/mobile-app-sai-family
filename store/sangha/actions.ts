@@ -8,6 +8,9 @@ import {
   SanghaGroupListResult,
   SanghaGroupDetail,
   SanghaGroupEvent,
+  SanghaGroupFeedItem,
+  SanghaGroupJoinRequest,
+  SanghaGroupMembership,
   SanghaGroupMember,
   SanghaGroupPost,
   SanghaGroupPostComment,
@@ -18,6 +21,8 @@ import {
   SanghaRecentSearch,
   SanghaHomeParams,
   SanghaHomeResult,
+  SanghaConversation,
+  SanghaConversationMessage,
 } from "./types";
 
 export const fetchSanghaHomeRequest = (
@@ -223,6 +228,96 @@ export const fetchSanghaGroupPostsFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.FETCH_GROUP_POSTS_FAILURE,
+  } as const);
+
+export const fetchSanghaGroupFeedRequest = (
+  payload: {
+    groupId: string;
+    limit?: number;
+    offset?: number;
+    pinnedFirst?: boolean;
+    types?: string;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_FEED_REQUEST,
+  } as const);
+
+export const fetchSanghaGroupFeedSuccess = (
+  payload: {
+    append?: boolean;
+    feed: SanghaGroupFeedItem[];
+    pagination: SanghaPagination | null;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_FEED_SUCCESS,
+  } as const);
+
+export const fetchSanghaGroupFeedFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_FEED_FAILURE,
+  } as const);
+
+export const fetchSanghaGroupMembershipRequest = (
+  groupId: string
+) =>
+  ({
+    payload: { groupId },
+    type: SANGHA_ACTIONS.FETCH_GROUP_MEMBERSHIP_REQUEST,
+  } as const);
+
+export const fetchSanghaGroupMembershipSuccess = (
+  payload: SanghaGroupMembership
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_MEMBERSHIP_SUCCESS,
+  } as const);
+
+export const fetchSanghaGroupMembershipFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_MEMBERSHIP_FAILURE,
+  } as const);
+
+export const fetchSanghaGroupJoinRequestsRequest = (
+  payload: {
+    groupId: string;
+    limit?: number;
+    offset?: number;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_JOIN_REQUESTS_REQUEST,
+  } as const);
+
+export const fetchSanghaGroupJoinRequestsSuccess = (
+  payload: {
+    append?: boolean;
+    joinRequests: SanghaGroupJoinRequest[];
+    pagination: SanghaPagination | null;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_JOIN_REQUESTS_SUCCESS,
+  } as const);
+
+export const fetchSanghaGroupJoinRequestsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_GROUP_JOIN_REQUESTS_FAILURE,
   } as const);
 
 export const fetchSanghaGroupMembersRequest = (
@@ -919,4 +1014,116 @@ export const updateSanghaDiscoveryFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.UPDATE_DISCOVERY_FAILURE,
+  } as const);
+
+export const startSanghaConversationRequest = (
+  payload: {
+    groupId?: string;
+    memberName?: string;
+    participantUserId: string;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.START_CONVERSATION_REQUEST,
+  } as const);
+
+export const startSanghaConversationSuccess = (
+  payload: SanghaConversation
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.START_CONVERSATION_SUCCESS,
+  } as const);
+
+export const startSanghaConversationFailure = (
+  payload: { error: string; participantUserId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.START_CONVERSATION_FAILURE,
+  } as const);
+
+export const fetchSanghaConversationMessagesRequest = (
+  payload: {
+    before?: string;
+    conversationId: string;
+    limit?: number;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_REQUEST,
+  } as const);
+
+export const fetchSanghaConversationMessagesSuccess = (
+  payload: {
+    append?: boolean;
+    conversationId: string;
+    messages: SanghaConversationMessage[];
+    nextCursor?: string | null;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_SUCCESS,
+  } as const);
+
+export const fetchSanghaConversationMessagesFailure = (
+  payload: { conversationId: string; error: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_FAILURE,
+  } as const);
+
+export const sendSanghaConversationMessageRequest = (
+  payload: { content: string; conversationId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_REQUEST,
+  } as const);
+
+export const sendSanghaConversationMessageSuccess = (
+  payload: {
+    conversationId: string;
+    message: SanghaConversationMessage;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_SUCCESS,
+  } as const);
+
+export const sendSanghaConversationMessageFailure = (
+  payload: { conversationId: string; error: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_FAILURE,
+  } as const);
+
+export const markSanghaConversationReadRequest = (
+  conversationId: string
+) =>
+  ({
+    payload: { conversationId },
+    type: SANGHA_ACTIONS.MARK_CONVERSATION_READ_REQUEST,
+  } as const);
+
+export const markSanghaConversationReadSuccess = (
+  conversationId: string
+) =>
+  ({
+    payload: { conversationId },
+    type: SANGHA_ACTIONS.MARK_CONVERSATION_READ_SUCCESS,
+  } as const);
+
+export const markSanghaConversationReadFailure = (
+  payload: { conversationId: string; error: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.MARK_CONVERSATION_READ_FAILURE,
   } as const);

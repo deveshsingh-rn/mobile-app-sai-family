@@ -157,6 +157,62 @@ export type SanghaGroupPost = {
   type?: string;
 };
 
+export type SanghaGroupFeedItem = SanghaGroupPost & {
+  author?: {
+    avatarUrl?: string | null;
+    id?: string;
+    name?: string | null;
+    role?: string | null;
+  };
+  sourceId?: string;
+  sourceType?: "post" | "experience" | "event" | string;
+};
+
+export type SanghaGroupMembership = {
+  canComment?: boolean;
+  canCreateEvent?: boolean;
+  canInvite?: boolean;
+  canModerate?: boolean;
+  canPost?: boolean;
+  groupId?: string;
+  membershipStatus?: "none" | "pending" | "active" | "member" | "admin" | "moderator" | string;
+  pendingRequestId?: string | null;
+  role?: string | null;
+};
+
+export type SanghaGroupJoinRequest = {
+  canApprove?: boolean;
+  canDecline?: boolean;
+  id: string;
+  note?: string | null;
+  requestedAt?: string;
+  requester?: SanghaDevoteeSummary;
+  requesterId?: string;
+  status?: string;
+};
+
+export type SanghaConversation = {
+  groupId?: string | null;
+  id: string;
+  participant?: SanghaDevoteeSummary;
+  participantUserId?: string;
+  type?: "direct" | string;
+  unreadCount?: number;
+};
+
+export type SanghaConversationMessage = {
+  authorAvatarUrl?: string | null;
+  authorName?: string | null;
+  authorUserId?: string;
+  content: string;
+  conversationId?: string;
+  createdAt?: string;
+  id: string;
+  isMine?: boolean;
+  readAt?: string | null;
+  status?: "sending" | "sent" | "delivered" | "read" | string;
+};
+
 export type SanghaGroupPostComment = {
   authorAvatarUrl?: string | null;
   authorName?: string | null;
@@ -264,6 +320,14 @@ export type SanghaState = {
   groupEvents: SanghaGroupEvent[];
   groupEventsLoading: boolean;
   groupEventsPagination: SanghaPagination | null;
+  groupFeed: SanghaGroupFeedItem[];
+  groupFeedLoading: boolean;
+  groupFeedPagination: SanghaPagination | null;
+  groupJoinRequests: SanghaGroupJoinRequest[];
+  groupJoinRequestsLoading: boolean;
+  groupJoinRequestsPagination: SanghaPagination | null;
+  groupMembership: SanghaGroupMembership | null;
+  groupMembershipLoading: boolean;
   groupMembers: SanghaGroupMember[];
   groupMembersLoading: boolean;
   groupMembersPagination: SanghaPagination | null;
@@ -290,6 +354,10 @@ export type SanghaState = {
   notifications: SanghaNotification[];
   notificationsLoading: boolean;
   notificationsPagination: SanghaPagination | null;
+  activeConversation: SanghaConversation | null;
+  conversationMessagesById: Record<string, SanghaConversationMessage[]>;
+  conversationMessagesLoadingIds: Record<string, boolean>;
+  conversationMessageCursors: Record<string, string | null>;
 };
 
 export enum SANGHA_ACTIONS {
@@ -317,6 +385,15 @@ export enum SANGHA_ACTIONS {
   FETCH_GROUP_POSTS_REQUEST = "sangha/FETCH_GROUP_POSTS_REQUEST",
   FETCH_GROUP_POSTS_SUCCESS = "sangha/FETCH_GROUP_POSTS_SUCCESS",
   FETCH_GROUP_POSTS_FAILURE = "sangha/FETCH_GROUP_POSTS_FAILURE",
+  FETCH_GROUP_FEED_REQUEST = "sangha/FETCH_GROUP_FEED_REQUEST",
+  FETCH_GROUP_FEED_SUCCESS = "sangha/FETCH_GROUP_FEED_SUCCESS",
+  FETCH_GROUP_FEED_FAILURE = "sangha/FETCH_GROUP_FEED_FAILURE",
+  FETCH_GROUP_MEMBERSHIP_REQUEST = "sangha/FETCH_GROUP_MEMBERSHIP_REQUEST",
+  FETCH_GROUP_MEMBERSHIP_SUCCESS = "sangha/FETCH_GROUP_MEMBERSHIP_SUCCESS",
+  FETCH_GROUP_MEMBERSHIP_FAILURE = "sangha/FETCH_GROUP_MEMBERSHIP_FAILURE",
+  FETCH_GROUP_JOIN_REQUESTS_REQUEST = "sangha/FETCH_GROUP_JOIN_REQUESTS_REQUEST",
+  FETCH_GROUP_JOIN_REQUESTS_SUCCESS = "sangha/FETCH_GROUP_JOIN_REQUESTS_SUCCESS",
+  FETCH_GROUP_JOIN_REQUESTS_FAILURE = "sangha/FETCH_GROUP_JOIN_REQUESTS_FAILURE",
   FETCH_GROUP_MEMBERS_REQUEST = "sangha/FETCH_GROUP_MEMBERS_REQUEST",
   FETCH_GROUP_MEMBERS_SUCCESS = "sangha/FETCH_GROUP_MEMBERS_SUCCESS",
   FETCH_GROUP_MEMBERS_FAILURE = "sangha/FETCH_GROUP_MEMBERS_FAILURE",
@@ -398,6 +475,18 @@ export enum SANGHA_ACTIONS {
   UPDATE_DISCOVERY_REQUEST = "sangha/UPDATE_DISCOVERY_REQUEST",
   UPDATE_DISCOVERY_SUCCESS = "sangha/UPDATE_DISCOVERY_SUCCESS",
   UPDATE_DISCOVERY_FAILURE = "sangha/UPDATE_DISCOVERY_FAILURE",
+  START_CONVERSATION_REQUEST = "sangha/START_CONVERSATION_REQUEST",
+  START_CONVERSATION_SUCCESS = "sangha/START_CONVERSATION_SUCCESS",
+  START_CONVERSATION_FAILURE = "sangha/START_CONVERSATION_FAILURE",
+  FETCH_CONVERSATION_MESSAGES_REQUEST = "sangha/FETCH_CONVERSATION_MESSAGES_REQUEST",
+  FETCH_CONVERSATION_MESSAGES_SUCCESS = "sangha/FETCH_CONVERSATION_MESSAGES_SUCCESS",
+  FETCH_CONVERSATION_MESSAGES_FAILURE = "sangha/FETCH_CONVERSATION_MESSAGES_FAILURE",
+  SEND_CONVERSATION_MESSAGE_REQUEST = "sangha/SEND_CONVERSATION_MESSAGE_REQUEST",
+  SEND_CONVERSATION_MESSAGE_SUCCESS = "sangha/SEND_CONVERSATION_MESSAGE_SUCCESS",
+  SEND_CONVERSATION_MESSAGE_FAILURE = "sangha/SEND_CONVERSATION_MESSAGE_FAILURE",
+  MARK_CONVERSATION_READ_REQUEST = "sangha/MARK_CONVERSATION_READ_REQUEST",
+  MARK_CONVERSATION_READ_SUCCESS = "sangha/MARK_CONVERSATION_READ_SUCCESS",
+  MARK_CONVERSATION_READ_FAILURE = "sangha/MARK_CONVERSATION_READ_FAILURE",
 }
 
 export type SanghaAction =
@@ -808,4 +897,29 @@ export type SanghaAction =
   | {
       payload: string;
       type: SANGHA_ACTIONS.UPDATE_DISCOVERY_FAILURE;
+    }
+  | {
+      payload?: any;
+      type:
+        | SANGHA_ACTIONS.FETCH_GROUP_FEED_REQUEST
+        | SANGHA_ACTIONS.FETCH_GROUP_FEED_SUCCESS
+        | SANGHA_ACTIONS.FETCH_GROUP_FEED_FAILURE
+        | SANGHA_ACTIONS.FETCH_GROUP_MEMBERSHIP_REQUEST
+        | SANGHA_ACTIONS.FETCH_GROUP_MEMBERSHIP_SUCCESS
+        | SANGHA_ACTIONS.FETCH_GROUP_MEMBERSHIP_FAILURE
+        | SANGHA_ACTIONS.FETCH_GROUP_JOIN_REQUESTS_REQUEST
+        | SANGHA_ACTIONS.FETCH_GROUP_JOIN_REQUESTS_SUCCESS
+        | SANGHA_ACTIONS.FETCH_GROUP_JOIN_REQUESTS_FAILURE
+        | SANGHA_ACTIONS.START_CONVERSATION_REQUEST
+        | SANGHA_ACTIONS.START_CONVERSATION_SUCCESS
+        | SANGHA_ACTIONS.START_CONVERSATION_FAILURE
+        | SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_REQUEST
+        | SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_SUCCESS
+        | SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_FAILURE
+        | SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_REQUEST
+        | SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_SUCCESS
+        | SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_FAILURE
+        | SANGHA_ACTIONS.MARK_CONVERSATION_READ_REQUEST
+        | SANGHA_ACTIONS.MARK_CONVERSATION_READ_SUCCESS
+        | SANGHA_ACTIONS.MARK_CONVERSATION_READ_FAILURE;
     };

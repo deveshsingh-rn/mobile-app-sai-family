@@ -49,7 +49,386 @@
       "name": "Auth",
       "item": [
         {
-          "name": "POST /auth/send-otp",
+          "name": "User Authentication",
+          "item": [
+            {
+              "name": "POST /api/auth/mobile/send-otp",
+              "description": "Sends a six-digit OTP through MSG91. mobileNumber must use E.164 format, for example +919876543210.",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/auth/mobile/send-otp"
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/auth/mobile/verify-otp",
+              "description": "Verifies the MSG91 OTP. In local development, {{otp}} may be 7664 when STATIC_OTP=7664.",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Mobile authentication succeeded\", () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "if (json.tokens) {",
+                      "  pm.environment.set(\"accessToken\", json.tokens.accessToken);",
+                      "  pm.environment.set(\"refreshToken\", json.tokens.refreshToken);",
+                      "}",
+                      "if (json.user) {",
+                      "  pm.environment.set(\"authUserId\", json.user.id);",
+                      "  pm.environment.set(\"authorId\", json.user.id);",
+                      "  pm.environment.set(\"authRole\", json.user.role);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\",\n  \"otp\": \"{{otp}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/auth/mobile/verify-otp"
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/auth/email/register",
+              "description": "Creates email credentials and sends a six-digit verification code through the configured SMTP server. Password requires 8-72 characters, upper/lowercase letters, and a number.",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/auth/email/register"
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/auth/email/verify",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Email verified\", () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "if (json.tokens) { pm.environment.set(\"accessToken\", json.tokens.accessToken); pm.environment.set(\"refreshToken\", json.tokens.refreshToken); }",
+                      "if (json.user) { pm.environment.set(\"authUserId\", json.user.id); pm.environment.set(\"authorId\", json.user.id); pm.environment.set(\"authRole\", json.user.role); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\",\n  \"otp\": \"{{emailOtp}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/auth/email/verify"
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/auth/email/resend-verification",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/auth/email/resend-verification"
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/auth/email/login",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Email login succeeded\", () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "if (json.tokens) { pm.environment.set(\"accessToken\", json.tokens.accessToken); pm.environment.set(\"refreshToken\", json.tokens.refreshToken); }",
+                      "if (json.user) { pm.environment.set(\"authUserId\", json.user.id); pm.environment.set(\"authorId\", json.user.id); pm.environment.set(\"authRole\", json.user.role); }"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/auth/email/login"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Admin Authentication",
+          "description": "Admins use the same authentication services. The returned JWT role comes from the database; these APIs never promote a user to admin.",
+          "item": [
+            {
+              "name": "POST /api/auth/mobile/send-otp - Admin",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mobileNumber\": \"{{adminMobileNumber}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/auth/mobile/send-otp"
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/auth/mobile/verify-otp - Admin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Admin mobile login succeeded\", () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "pm.expect([\"mandir_admin\", \"super_admin\"]).to.include(json.user.role);",
+                      "pm.environment.set(\"adminAccessToken\", json.tokens.accessToken);",
+                      "pm.environment.set(\"adminRefreshToken\", json.tokens.refreshToken);",
+                      "pm.environment.set(\"adminId\", json.user.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"mobileNumber\": \"{{adminMobileNumber}}\",\n  \"otp\": \"{{otp}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/auth/mobile/verify-otp"
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/auth/email/register - Configure Admin Password",
+              "description": "Use this once when the existing admin email has no password. The database role is preserved and an SMTP verification email is sent.",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/auth/email/register"
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/auth/email/verify - Admin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Admin email verified\", () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "pm.expect([\"mandir_admin\", \"super_admin\"]).to.include(json.user.role);",
+                      "pm.environment.set(\"adminAccessToken\", json.tokens.accessToken);",
+                      "pm.environment.set(\"adminRefreshToken\", json.tokens.refreshToken);",
+                      "pm.environment.set(\"adminId\", json.user.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"otp\": \"{{emailOtp}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/auth/email/verify"
+              },
+              "response": []
+            },
+            {
+              "name": "POST /api/auth/email/login - Admin",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Admin email login succeeded\", () => pm.response.to.have.status(200));",
+                      "const json = pm.response.json();",
+                      "pm.expect([\"mandir_admin\", \"super_admin\"]).to.include(json.user.role);",
+                      "pm.environment.set(\"adminAccessToken\", json.tokens.accessToken);",
+                      "pm.environment.set(\"adminRefreshToken\", json.tokens.refreshToken);",
+                      "pm.environment.set(\"adminId\", json.user.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/auth/email/login"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "POST /api/auth/refresh-token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Token refreshed\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.environment.set(\"accessToken\", json.tokens.accessToken);",
+                  "pm.environment.set(\"refreshToken\", json.tokens.refreshToken);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -60,28 +439,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\"\n}",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/send-otp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "send-otp"
-              ]
-            }
+            "url": "{{baseUrl}}/api/auth/refresh-token"
           },
           "response": []
         },
         {
-          "name": "POST /auth/verify-otp",
+          "name": "POST /api/auth/logout",
           "request": {
             "method": "POST",
             "header": [
@@ -92,23 +462,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"mobileNumber\": \"{{mobileNumber}}\",\n  \"otp\": \"{{otp}}\"\n}",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             },
-            "url": {
-              "raw": "{{baseUrl}}/auth/verify-otp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "verify-otp"
-              ]
-            }
+            "url": "{{baseUrl}}/api/auth/logout"
           },
           "response": []
         }
@@ -119,7 +480,7 @@
       "item": [
         {
           "name": "POST /accounts - Create devotee account with profile image",
-          "description": "Validation: profileImage is required (jpg/png/webp, <=5MB). name min 2, email valid, mobileNumber 8-15 chars, completeAddress min 10, pincode 4-10 digits, occupation min 2. Optional expoPushToken must match Expo token format.",
+          "description": "Run a mobile or email verification request first. This protected multipart request completes the authenticated account. email/mobileNumber must match the selected verified identity when already present.",
           "event": [
             {
               "listen": "test",
@@ -144,8 +505,9 @@
             "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
               }
             ],
             "body": {
@@ -158,12 +520,12 @@
                 },
                 {
                   "key": "email",
-                  "value": "devotee{{$timestamp}}@example.com",
+                  "value": "{{email}}",
                   "type": "text"
                 },
                 {
                   "key": "mobileNumber",
-                  "value": "+91{{$timestamp}}",
+                  "value": "{{mobileNumber}}",
                   "type": "text"
                 },
                 {
@@ -6046,6 +6408,390 @@
           "response": []
         },
         {
+          "name": "GET /api/sangha/groups/:id/feed - Unified Group Feed",
+          "description": "Unified group feed for Group Detail tabs. Returns Sangha posts plus linked group events with sourceType/sourceId, author, permissions, state, and pagination.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/feed?limit=20&offset=0&types=post,experience,event&pinnedFirst=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "%7B%7BsanghaGroupId%7D%7D",
+                "feed"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "types",
+                  "value": "post,experience,event"
+                },
+                {
+                  "key": "pinnedFirst",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/groups/:id/membership - Current User Capabilities",
+          "description": "Returns current user membershipStatus, role, canPost, canComment, canCreateEvent, canInvite, canModerate, and pendingRequestId.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/membership",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "%7B%7BsanghaGroupId%7D%7D",
+                "membership"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/groups/:id/join-requests - Pending Requests",
+          "description": "Moderator/admin/owner only. Returns pending join requests with requester summary, requestedAt, note, and approve/decline permission flags.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/groups/{{sanghaGroupId}}/join-requests?limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "groups",
+                "%7B%7BsanghaGroupId%7D%7D",
+                "join-requests"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/events - Create Event With Sangha groupId",
+          "description": "Existing Event create API with optional Sangha context. Requires current user to be group owner/admin/moderator. Response includes normal event plus sangha.groupEvent projection.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sangha linked event created\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "if (json.event?.id) pm.environment.set(\"eventId\", json.event.id);",
+                  "if (json.sangha?.groupEvent?.id) pm.environment.set(\"sanghaGroupEventId\", json.sangha.groupEvent.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sangha Linked Thursday Sai Bhajan\",\n  \"description\": \"Full Event pillar event created from a Sangha group context.\",\n  \"type\": \"bhajan\",\n  \"startAt\": \"2026-07-02T13:30:00.000Z\",\n  \"endAt\": \"2026-07-02T15:00:00.000Z\",\n  \"timezone\": \"Asia/Kolkata\",\n  \"venueName\": \"Sai Mandir Hall\",\n  \"address\": \"MG Road, Pune, Maharashtra\",\n  \"city\": \"Pune\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"latitude\": 18.5204,\n  \"longitude\": 73.8567,\n  \"bannerUrl\": \"{{uploadedMediaUrl}}\",\n  \"groupId\": \"{{sanghaGroupId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "events"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/conversations - Start Direct Chat",
+          "description": "Starts or returns an existing direct conversation. With groupId, both users must be active group members. Without groupId, users must be connected.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Conversation ready\", function () { pm.expect([200, 201]).to.include(pm.response.code); });",
+                  "const json = pm.response.json();",
+                  "if (json.conversation?.id) pm.environment.set(\"sanghaConversationId\", json.conversation.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"direct\",\n  \"participantUserId\": \"{{sanghaDevoteeId}}\",\n  \"groupId\": \"{{sanghaGroupId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/conversations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "conversations"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/sangha/conversations/:id/messages - Message History",
+          "description": "Cursor-paginated newest-first messages. Pass before={{sanghaMessageCursor}} to load older messages. Response includes nextCursor.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Messages loaded\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json.nextCursor) pm.environment.set(\"sanghaMessageCursor\", json.nextCursor);",
+                  "if (json.messages?.[0]?.id) pm.environment.set(\"sanghaMessageId\", json.messages[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/conversations/{{sanghaConversationId}}/messages?limit=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "conversations",
+                "%7B%7BsanghaConversationId%7D%7D",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "30"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/conversations/:id/messages - Send Message",
+          "description": "Sends a direct text message. Max 1000 characters. Rate limited and block-list enforced.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Message sent\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "if (json.message?.id) pm.environment.set(\"sanghaMessageId\", json.message.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Om Sai Ram. Sharing this message from Postman.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/conversations/{{sanghaConversationId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "conversations",
+                "%7B%7BsanghaConversationId%7D%7D",
+                "messages"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/sangha/conversations/:id/read - Mark Read",
+          "description": "Marks the conversation read for the current user and updates inbound message read state.",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/conversations/{{sanghaConversationId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "conversations",
+                "%7B%7BsanghaConversationId%7D%7D",
+                "read"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/sangha/messages/:id/report - Report Message",
+          "description": "Reports another user message. reason enum: spam|abuse|privacy|other. Creates message report plus Sangha moderation report.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"abuse\",\n  \"note\": \"Message report test from Postman.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sangha/messages/{{sanghaMessageId}}/report",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sangha",
+                "messages",
+                "%7B%7BsanghaMessageId%7D%7D",
+                "report"
+              ],
+              "query": []
+            }
+          },
+          "response": []
+        },
+        {
           "name": "PATCH /api/sangha/groups/:id - Update Group",
           "request": {
             "method": "PATCH",
@@ -7604,7 +8350,67 @@
     },
     {
       "key": "otp",
-      "value": "123456",
+      "value": "7664",
+      "type": "string"
+    },
+    {
+      "key": "emailOtp",
+      "value": "7664",
+      "type": "string"
+    },
+    {
+      "key": "email",
+      "value": "devotee@example.com",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "SaiFamily@2026",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authUserId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authRole",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminMobileNumber",
+      "value": "+910000000000",
+      "type": "string"
+    },
+    {
+      "key": "adminEmail",
+      "value": "bhagat123@gmail.com",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminAccessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminRefreshToken",
+      "value": "",
       "type": "string"
     },
     {

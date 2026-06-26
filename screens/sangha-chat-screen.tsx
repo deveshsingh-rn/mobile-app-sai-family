@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +14,21 @@ import {
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 
+import {
+  fetchSanghaConversationMessagesRequest,
+  markSanghaConversationReadRequest,
+  sendSanghaConversationMessageRequest,
+  startSanghaConversationRequest,
+} from "@/store/sangha/actions";
+import {
+  selectIsSanghaActionPending,
+  selectSanghaActiveConversation,
+  selectSanghaConversationMessages,
+  selectSanghaConversationMessagesLoading,
+  selectSanghaError,
+} from "@/store/sangha/selectors";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+
 function avatarForName(name?: string | null) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
     name || "Sai Family"
@@ -20,23 +36,68 @@ function avatarForName(name?: string | null) {
 }
 
 export default function SanghaChatScreen() {
-  const { groupId, memberName } = useLocalSearchParams<{
+  const { groupId, memberId, memberName } = useLocalSearchParams<{
     groupId?: string;
     memberId?: string;
     memberName?: string;
   }>();
+  const dispatch = useAppDispatch();
+  const conversation = useAppSelector(selectSanghaActiveConversation);
+  const conversationId = conversation?.id;
+  const messages = useAppSelector((state) =>
+    selectSanghaConversationMessages(state, conversationId)
+  );
+  const messagesLoading = useAppSelector((state) =>
+    selectSanghaConversationMessagesLoading(state, conversationId)
+  );
+  const starting = useAppSelector((state) =>
+    selectIsSanghaActionPending(state, memberId)
+  );
+  const error = useAppSelector(selectSanghaError);
   const [draft, setDraft] = useState("");
-  const [localMessages, setLocalMessages] = useState<string[]>([]);
   const displayName = memberName || "Sai Family";
+
+  useEffect(() => {
+    if (!memberId) {
+      return;
+    }
+
+    dispatch(
+      startSanghaConversationRequest({
+        groupId,
+        memberName: displayName,
+        participantUserId: memberId,
+      })
+    );
+  }, [dispatch, displayName, groupId, memberId]);
+
+  useEffect(() => {
+    if (!conversationId) {
+      return;
+    }
+
+    dispatch(
+      fetchSanghaConversationMessagesRequest({
+        conversationId,
+        limit: 30,
+      })
+    );
+    dispatch(markSanghaConversationReadRequest(conversationId));
+  }, [conversationId, dispatch]);
 
   const sendMessage = () => {
     const trimmed = draft.trim();
 
-    if (!trimmed) {
+    if (!trimmed || !conversationId) {
       return;
     }
 
-    setLocalMessages((current) => [...current, trimmed]);
+    dispatch(
+      sendSanghaConversationMessageRequest({
+        content: trimmed,
+        conversationId,
+      })
+    );
     setDraft("");
   };
 
@@ -124,16 +185,29 @@ export default function SanghaChatScreen() {
                 lineHeight: 21,
               }}
             >
-              Namaste. Start a respectful conversation with this devotee.
+              {starting
+                ? "Opening conversation..."
+                : error && !conversationId
+                  ? error
+                  : "Namaste. Start a respectful conversation with this devotee."}
             </Text>
           </View>
 
-          {localMessages.map((message, index) => (
+          {messagesLoading ? (
+            <ActivityIndicator
+              color="#F97316"
+              style={{ marginTop: 16 }}
+            />
+          ) : null}
+
+          {messages.map((message, index) => (
             <View
-              key={`${message}-${index}`}
+              key={message.id || `${message.content}-${index}`}
               style={{
-                alignSelf: "flex-end",
-                backgroundColor: "#F97316",
+                alignSelf: message.isMine ? "flex-end" : "flex-start",
+                backgroundColor: message.isMine ? "#F97316" : "#FFFFFF",
+                borderColor: "#EEE7DD",
+                borderWidth: message.isMine ? 0 : 1,
                 borderRadius: 20,
                 marginTop: 12,
                 maxWidth: "82%",
@@ -143,13 +217,13 @@ export default function SanghaChatScreen() {
             >
               <Text
                 style={{
-                  color: "#FFFFFF",
+                  color: message.isMine ? "#FFFFFF" : "#374151",
                   fontSize: 14,
                   fontWeight: "700",
                   lineHeight: 21,
                 }}
               >
-                {message}
+                {message.content}
               </Text>
             </View>
           ))}
@@ -185,10 +259,11 @@ export default function SanghaChatScreen() {
           />
           <TouchableOpacity
             activeOpacity={0.85}
+            disabled={!conversationId || !draft.trim()}
             onPress={sendMessage}
             style={{
               alignItems: "center",
-              backgroundColor: draft.trim() ? "#F97316" : "#D1D5DB",
+              backgroundColor: conversationId && draft.trim() ? "#F97316" : "#D1D5DB",
               borderRadius: 22,
               height: 44,
               justifyContent: "center",

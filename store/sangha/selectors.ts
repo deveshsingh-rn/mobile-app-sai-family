@@ -92,6 +92,30 @@ export const selectSanghaGroupPostsLoading = (
   state: RootState
 ) => selectSanghaState(state).groupPostsLoading;
 
+export const selectSanghaGroupFeed = (
+  state: RootState
+) => selectSanghaState(state).groupFeed;
+
+export const selectSanghaGroupFeedLoading = (
+  state: RootState
+) => selectSanghaState(state).groupFeedLoading;
+
+export const selectSanghaGroupMembership = (
+  state: RootState
+) => selectSanghaState(state).groupMembership;
+
+export const selectSanghaGroupMembershipLoading = (
+  state: RootState
+) => selectSanghaState(state).groupMembershipLoading;
+
+export const selectSanghaGroupJoinRequests = (
+  state: RootState
+) => selectSanghaState(state).groupJoinRequests;
+
+export const selectSanghaGroupJoinRequestsLoading = (
+  state: RootState
+) => selectSanghaState(state).groupJoinRequestsLoading;
+
 export const selectSanghaGroupMembers = (
   state: RootState
 ) => selectSanghaState(state).groupMembers;
@@ -155,6 +179,36 @@ export const selectSanghaNotificationsLoading = (
 export const selectSanghaNotificationsPagination = (
   state: RootState
 ) => selectSanghaState(state).notificationsPagination;
+
+export const selectSanghaActiveConversation = (
+  state: RootState
+) => selectSanghaState(state).activeConversation;
+
+export const selectSanghaConversationMessages = (
+  state: RootState,
+  conversationId?: string
+) =>
+  conversationId
+    ? selectSanghaState(state).conversationMessagesById[conversationId] || []
+    : [];
+
+export const selectSanghaConversationMessagesLoading = (
+  state: RootState,
+  conversationId?: string
+) =>
+  conversationId
+    ? Boolean(
+        selectSanghaState(state).conversationMessagesLoadingIds[conversationId]
+      )
+    : false;
+
+export const selectSanghaConversationMessageCursor = (
+  state: RootState,
+  conversationId?: string
+) =>
+  conversationId
+    ? selectSanghaState(state).conversationMessageCursors[conversationId] || null
+    : null;
 
 export const selectSanghaUnreadNotificationCount = (
   state: RootState

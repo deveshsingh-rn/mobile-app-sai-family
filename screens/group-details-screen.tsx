@@ -17,9 +17,12 @@ import {
   createSanghaGroupPostCommentRequest,
   createSanghaGroupPostRequest,
   cancelSanghaGroupEventRsvpRequest,
+  fetchSanghaGroupFeedRequest,
   deleteSanghaGroupPostRequest,
   fetchSanghaGroupDetailRequest,
   fetchSanghaGroupEventsRequest,
+  fetchSanghaGroupJoinRequestsRequest,
+  fetchSanghaGroupMembershipRequest,
   fetchSanghaGroupMembersRequest,
   fetchSanghaGroupPostsRequest,
   fetchSanghaGroupPostCommentsRequest,
@@ -38,8 +41,12 @@ import {
   selectSanghaGroupDetailLoading,
   selectSanghaGroupEvents,
   selectSanghaGroupEventsLoading,
+  selectSanghaGroupFeed,
+  selectSanghaGroupFeedLoading,
+  selectSanghaGroupJoinRequests,
   selectSanghaGroupMembers,
   selectSanghaGroupMembersLoading,
+  selectSanghaGroupMembership,
   selectSanghaGroupPosts,
   selectSanghaGroupPostsLoading,
   selectSanghaGroupPostComments,
@@ -112,9 +119,15 @@ export default function GroupDetailsScreen() {
     selectSanghaGroupDetailLoading
   );
   const posts = useAppSelector(selectSanghaGroupPosts);
+  const feed = useAppSelector(selectSanghaGroupFeed);
   const postsLoading = useAppSelector(
     selectSanghaGroupPostsLoading
   );
+  const feedLoading = useAppSelector(
+    selectSanghaGroupFeedLoading
+  );
+  const membership = useAppSelector(selectSanghaGroupMembership);
+  const joinRequests = useAppSelector(selectSanghaGroupJoinRequests);
   const members = useAppSelector(selectSanghaGroupMembers);
   const membersLoading = useAppSelector(
     selectSanghaGroupMembersLoading
@@ -129,7 +142,19 @@ export default function GroupDetailsScreen() {
   const groupActionPending = useAppSelector((state) =>
     selectIsSanghaActionPending(state, groupId)
   );
-  const isActiveMember = group?.membershipStatus === "active";
+  const membershipStatus =
+    membership?.membershipStatus || group?.membershipStatus;
+  const isActiveMember =
+    membershipStatus === "active" ||
+    membershipStatus === "member" ||
+    membershipStatus === "admin" ||
+    membershipStatus === "moderator";
+  const canPost =
+    membership?.canPost ?? group?.canPost ?? isActiveMember;
+  const canComment =
+    membership?.canComment ?? canPost;
+  const canCreateEvent =
+    membership?.canCreateEvent ?? isActiveMember;
 
   useEffect(() => {
     if (!groupId) {
@@ -137,6 +162,23 @@ export default function GroupDetailsScreen() {
     }
 
     dispatch(fetchSanghaGroupDetailRequest(groupId));
+    dispatch(fetchSanghaGroupMembershipRequest(groupId));
+    dispatch(
+      fetchSanghaGroupFeedRequest({
+        groupId,
+        limit: 20,
+        offset: 0,
+        pinnedFirst: true,
+        types: "post,experience,event",
+      })
+    );
+    dispatch(
+      fetchSanghaGroupJoinRequestsRequest({
+        groupId,
+        limit: 20,
+        offset: 0,
+      })
+    );
     dispatch(
       fetchSanghaGroupPostsRequest({
         groupId,
@@ -179,8 +221,8 @@ export default function GroupDetailsScreen() {
       return (
         <EventsSection
           events={events}
+          canCreateEvent={canCreateEvent}
           groupId={groupId}
-          isActiveMember={isActiveMember}
           loading={eventsLoading}
         />
       );
@@ -193,9 +235,11 @@ export default function GroupDetailsScreen() {
     return (
       <FeedSection
         groupId={groupId}
-        isActiveMember={isActiveMember}
-        loading={postsLoading}
-        posts={posts}
+        canComment={canComment}
+        canPost={canPost}
+        joinRequestCount={joinRequests.length || group?.joinRequestCount || 0}
+        loading={feedLoading || postsLoading}
+        posts={feed.length ? feed : posts}
       />
     );
   };
@@ -499,13 +543,17 @@ function EmptyCard({ text }: { text: string }) {
 }
 
 function FeedSection({
+  canComment,
+  canPost,
   groupId,
-  isActiveMember,
+  joinRequestCount,
   loading,
   posts,
 }: {
+  canComment: boolean;
+  canPost: boolean;
   groupId: string;
-  isActiveMember: boolean;
+  joinRequestCount: number;
   loading: boolean;
   posts: SanghaGroupPost[];
 }) {
@@ -516,7 +564,7 @@ function FeedSection({
   const submitPost = () => {
     const trimmed = content.trim();
 
-    if (!trimmed || !groupId || !isActiveMember) {
+    if (!trimmed || !groupId || !canPost) {
       return;
     }
 
@@ -548,10 +596,10 @@ function FeedSection({
             style={{ width: 42, height: 42, borderRadius: 21 }}
           />
           <TextInput
-            editable={isActiveMember}
+            editable={canPost}
             onChangeText={setContent}
             onSubmitEditing={submitPost}
-            placeholder={isActiveMember ? "Share seva update or bhajan note" : "Join this community to post"}
+            placeholder={canPost ? "Share seva update or bhajan note" : "Join this community to post"}
             placeholderTextColor="#8B8177"
             style={{
               flex: 1,
@@ -568,11 +616,11 @@ function FeedSection({
           />
           <TouchableOpacity
             activeOpacity={0.85}
-            disabled={!isActiveMember}
+            disabled={!canPost}
             onPress={submitPost}
             style={{
               alignItems: "center",
-              backgroundColor: isActiveMember ? "#F97316" : "#D1D5DB",
+              backgroundColor: canPost ? "#F97316" : "#D1D5DB",
               borderRadius: 18,
               height: 38,
               justifyContent: "center",
@@ -613,20 +661,20 @@ function FeedSection({
             <TouchableOpacity
               key={item.label}
               activeOpacity={0.85}
-              disabled={!isActiveMember}
+              disabled={!canPost}
               onPress={item.onPress}
               style={{
                 flex: 1,
                 height: 42,
                 borderRadius: 15,
-                backgroundColor: isActiveMember ? "#FFF7ED" : "#F3F4F6",
+                backgroundColor: canPost ? "#FFF7ED" : "#F3F4F6",
                 alignItems: "center",
                 justifyContent: "center",
                 flexDirection: "row",
               }}
             >
-              <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={16} color={isActiveMember ? "#F97316" : "#9CA3AF"} />
-              <Text style={{ marginLeft: 6, color: isActiveMember ? "#9A3412" : "#6B7280", fontSize: 13, fontWeight: "800" }}>
+              <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={16} color={canPost ? "#F97316" : "#9CA3AF"} />
+              <Text style={{ marginLeft: 6, color: canPost ? "#9A3412" : "#6B7280", fontSize: 13, fontWeight: "800" }}>
                 {item.label}
               </Text>
             </TouchableOpacity>
@@ -634,7 +682,7 @@ function FeedSection({
         </View>
       </View>
 
-      <MemberRequestCard />
+      <MemberRequestCard pendingCount={joinRequestCount} />
       {loading ? (
         <EmptyCard text="Loading group posts..." />
       ) : null}
@@ -643,13 +691,22 @@ function FeedSection({
       ) : null}
       {pinned ? <PinnedPostCard groupId={groupId} post={pinned} /> : null}
       {regularPosts.map((post) => (
-        <CommunityPostCard key={post.id} groupId={groupId} post={post} />
+        <CommunityPostCard
+          key={post.id}
+          canComment={canComment}
+          groupId={groupId}
+          post={post}
+        />
       ))}
     </>
   );
 }
 
-function MemberRequestCard() {
+function MemberRequestCard({
+  pendingCount,
+}: {
+  pendingCount: number;
+}) {
   return (
     <View
       style={{
@@ -680,7 +737,7 @@ function MemberRequestCard() {
       <View style={{ flex: 1, marginLeft: 14 }}>
         <Text style={{ fontSize: 16, color: "#111827", fontWeight: "900" }}>Member Requests</Text>
         <Text style={{ marginTop: 2, fontSize: 14, color: "#6B7280", fontWeight: "500" }}>
-          12 pending approvals
+          {pendingCount} pending approval{pendingCount === 1 ? "" : "s"}
         </Text>
       </View>
 
@@ -746,9 +803,11 @@ function PinnedPostCard({
 }
 
 function CommunityPostCard({
+  canComment,
   groupId,
   post,
 }: {
+  canComment: boolean;
   groupId: string;
   post: SanghaGroupPost;
 }) {
@@ -766,7 +825,7 @@ function CommunityPostCard({
   const submitComment = () => {
     const trimmed = comment.trim();
 
-    if (!trimmed) {
+    if (!trimmed || !canComment) {
       return;
     }
 
@@ -870,8 +929,9 @@ function CommunityPostCard({
       >
         <TextInput
           onChangeText={setComment}
+          editable={canComment}
           onSubmitEditing={submitComment}
-          placeholder="Write a comment..."
+          placeholder={canComment ? "Write a comment..." : "Join to comment"}
           placeholderTextColor="#9CA3AF"
           style={{ fontSize: 15, color: "#111827" }}
           value={comment}
@@ -1019,14 +1079,14 @@ function MembersSection({
 }
 
 function EventsSection({
+  canCreateEvent,
   events,
   groupId,
-  isActiveMember,
   loading,
 }: {
+  canCreateEvent: boolean;
   events: SanghaGroupEvent[];
   groupId: string;
-  isActiveMember: boolean;
   loading: boolean;
 }) {
   return (
@@ -1047,7 +1107,7 @@ function EventsSection({
         </Text>
         <TouchableOpacity
           activeOpacity={0.85}
-          disabled={!isActiveMember}
+          disabled={!canCreateEvent}
           onPress={() =>
             router.push({
               pathname: "/events/create",
@@ -1059,13 +1119,13 @@ function EventsSection({
             marginTop: 16,
             height: 42,
             borderRadius: 21,
-            backgroundColor: isActiveMember ? "#F97316" : "#D1D5DB",
+            backgroundColor: canCreateEvent ? "#F97316" : "#D1D5DB",
             paddingHorizontal: 18,
             justifyContent: "center",
           }}
         >
           <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>
-            {isActiveMember ? "Create Event" : "Join to Create"}
+            {canCreateEvent ? "Create Event" : "Join to Create"}
           </Text>
         </TouchableOpacity>
       </View>

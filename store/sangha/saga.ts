@@ -11,6 +11,9 @@ import {
   apiFetchSanghaDevoteeProfile,
   apiFetchSanghaGroupDetail,
   apiFetchSanghaGroupEvents,
+  apiFetchSanghaGroupFeed,
+  apiFetchSanghaGroupJoinRequests,
+  apiFetchSanghaGroupMembership,
   apiFetchSanghaGroupMembers,
   apiCreateSanghaGroupPost,
   apiCreateSanghaGroupPostComment,
@@ -36,6 +39,10 @@ import {
   apiUnlikeSanghaGroupPost,
   apiUnpinSanghaGroupPost,
   apiUpdateSanghaDiscovery,
+  apiStartSanghaConversation,
+  apiFetchSanghaConversationMessages,
+  apiSendSanghaConversationMessage,
+  apiMarkSanghaConversationRead,
 } from "@/services/sangha";
 import {
   acceptSanghaInvitationFailure,
@@ -70,6 +77,12 @@ import {
   fetchSanghaGroupDetailSuccess,
   fetchSanghaGroupEventsFailure,
   fetchSanghaGroupEventsSuccess,
+  fetchSanghaGroupFeedFailure,
+  fetchSanghaGroupFeedSuccess,
+  fetchSanghaGroupJoinRequestsFailure,
+  fetchSanghaGroupJoinRequestsSuccess,
+  fetchSanghaGroupMembershipFailure,
+  fetchSanghaGroupMembershipSuccess,
   fetchSanghaGroupMembersFailure,
   fetchSanghaGroupMembersSuccess,
   fetchSanghaGroupPostsFailure,
@@ -108,6 +121,14 @@ import {
   unpinSanghaGroupPostSuccess,
   updateSanghaDiscoveryFailure,
   updateSanghaDiscoverySuccess,
+  startSanghaConversationFailure,
+  startSanghaConversationSuccess,
+  fetchSanghaConversationMessagesFailure,
+  fetchSanghaConversationMessagesSuccess,
+  sendSanghaConversationMessageFailure,
+  sendSanghaConversationMessageSuccess,
+  markSanghaConversationReadFailure,
+  markSanghaConversationReadSuccess,
 } from "./actions";
 import { SANGHA_ACTIONS } from "./types";
 
@@ -295,6 +316,52 @@ function normalizePosts(response: any, append = false) {
   };
 }
 
+function normalizeFeed(response: any, append = false) {
+  return {
+    append,
+    feed:
+      response?.feed ||
+      response?.items ||
+      response?.results ||
+      response?.data?.feed ||
+      response?.data?.items ||
+      response?.data?.results ||
+      [],
+    pagination:
+      response?.pagination ||
+      response?.data?.pagination ||
+      null,
+  };
+}
+
+function normalizeMembership(response: any) {
+  return (
+    response?.membership ||
+    response?.data?.membership ||
+    response?.capabilities ||
+    response?.data?.capabilities ||
+    response
+  );
+}
+
+function normalizeJoinRequests(response: any, append = false) {
+  return {
+    append,
+    joinRequests:
+      response?.joinRequests ||
+      response?.requests ||
+      response?.results ||
+      response?.data?.joinRequests ||
+      response?.data?.requests ||
+      response?.data?.results ||
+      [],
+    pagination:
+      response?.pagination ||
+      response?.data?.pagination ||
+      null,
+  };
+}
+
 function normalizeMembers(response: any, append = false) {
   return {
     append,
@@ -383,6 +450,38 @@ function normalizeNotifications(response: any, append = false) {
       response?.data?.pagination ||
       null,
   };
+}
+
+function normalizeConversation(response: any) {
+  return (
+    response?.conversation ||
+    response?.data?.conversation ||
+    response
+  );
+}
+
+function normalizeMessages(response: any, append = false) {
+  return {
+    append,
+    messages:
+      response?.messages ||
+      response?.results ||
+      response?.data?.messages ||
+      response?.data?.results ||
+      [],
+    nextCursor:
+      response?.nextCursor ||
+      response?.data?.nextCursor ||
+      null,
+  };
+}
+
+function normalizeMessage(response: any) {
+  return (
+    response?.message ||
+    response?.data?.message ||
+    response
+  );
 }
 
 function* handleFetchSanghaDevotees(
@@ -585,6 +684,79 @@ function* handleFetchGroupPosts(
     yield put(
       fetchSanghaGroupPostsFailure(
         getErrorMessage(error, "Failed to fetch group posts.")
+      )
+    );
+  }
+}
+
+function* handleFetchGroupFeed(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const { groupId, ...params } = action.payload;
+    const response = yield call(
+      apiFetchSanghaGroupFeed,
+      groupId,
+      params
+    );
+
+    yield put(
+      fetchSanghaGroupFeedSuccess(
+        normalizeFeed(response, Boolean(params.offset))
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaGroupFeedFailure(
+        getErrorMessage(error, "Failed to fetch group feed.")
+      )
+    );
+  }
+}
+
+function* handleFetchGroupMembership(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchSanghaGroupMembership,
+      action.payload.groupId
+    );
+
+    yield put(
+      fetchSanghaGroupMembershipSuccess(
+        normalizeMembership(response)
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaGroupMembershipFailure(
+        getErrorMessage(error, "Failed to fetch group membership.")
+      )
+    );
+  }
+}
+
+function* handleFetchGroupJoinRequests(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const { groupId, ...params } = action.payload;
+    const response = yield call(
+      apiFetchSanghaGroupJoinRequests,
+      groupId,
+      params
+    );
+
+    yield put(
+      fetchSanghaGroupJoinRequestsSuccess(
+        normalizeJoinRequests(response, Boolean(params.offset))
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaGroupJoinRequestsFailure(
+        getErrorMessage(error, "Failed to fetch join requests.")
       )
     );
   }
@@ -1173,6 +1345,111 @@ function* handleUpdateSanghaDiscovery(
   }
 }
 
+function* handleStartConversation(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(apiStartSanghaConversation, {
+      groupId: action.payload.groupId,
+      participantUserId: action.payload.participantUserId,
+      type: "direct",
+    });
+    const conversation = normalizeConversation(response);
+
+    yield put(
+      startSanghaConversationSuccess({
+        ...conversation,
+        participantUserId:
+          conversation?.participantUserId ||
+          action.payload.participantUserId,
+      })
+    );
+  } catch (error) {
+    yield put(
+      startSanghaConversationFailure({
+        error: getErrorMessage(error, "Failed to start chat."),
+        participantUserId: action.payload.participantUserId,
+      })
+    );
+  }
+}
+
+function* handleFetchConversationMessages(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const { conversationId, ...params } = action.payload;
+    const response = yield call(
+      apiFetchSanghaConversationMessages,
+      conversationId,
+      params
+    );
+
+    yield put(
+      fetchSanghaConversationMessagesSuccess({
+        ...normalizeMessages(response, Boolean(params.before)),
+        conversationId,
+      })
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaConversationMessagesFailure({
+        conversationId: action.payload.conversationId,
+        error: getErrorMessage(error, "Failed to fetch messages."),
+      })
+    );
+  }
+}
+
+function* handleSendConversationMessage(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiSendSanghaConversationMessage,
+      action.payload.conversationId,
+      { content: action.payload.content }
+    );
+
+    yield put(
+      sendSanghaConversationMessageSuccess({
+        conversationId: action.payload.conversationId,
+        message: normalizeMessage(response),
+      })
+    );
+  } catch (error) {
+    yield put(
+      sendSanghaConversationMessageFailure({
+        conversationId: action.payload.conversationId,
+        error: getErrorMessage(error, "Failed to send message."),
+      })
+    );
+  }
+}
+
+function* handleMarkConversationRead(
+  action: any
+): Generator<any, void, any> {
+  try {
+    yield call(
+      apiMarkSanghaConversationRead,
+      action.payload.conversationId
+    );
+    yield put(
+      markSanghaConversationReadSuccess(
+        action.payload.conversationId
+      )
+    );
+  } catch (error) {
+    yield put(
+      markSanghaConversationReadFailure({
+        conversationId: action.payload.conversationId,
+        error: getErrorMessage(error, "Failed to mark chat read."),
+      })
+    );
+  }
+}
+
 export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_HOME_REQUEST,
@@ -1205,6 +1482,18 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUP_POSTS_REQUEST,
     handleFetchGroupPosts
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_GROUP_FEED_REQUEST,
+    handleFetchGroupFeed
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_GROUP_MEMBERSHIP_REQUEST,
+    handleFetchGroupMembership
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_GROUP_JOIN_REQUESTS_REQUEST,
+    handleFetchGroupJoinRequests
   );
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_REQUEST,
@@ -1313,5 +1602,21 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.UPDATE_DISCOVERY_REQUEST,
     handleUpdateSanghaDiscovery
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.START_CONVERSATION_REQUEST,
+    handleStartConversation
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_REQUEST,
+    handleFetchConversationMessages
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_REQUEST,
+    handleSendConversationMessage
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.MARK_CONVERSATION_READ_REQUEST,
+    handleMarkConversationRead
   );
 }

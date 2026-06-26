@@ -18,6 +18,14 @@ export const initialSanghaState: SanghaState = {
   groupEvents: [],
   groupEventsLoading: false,
   groupEventsPagination: null,
+  groupFeed: [],
+  groupFeedLoading: false,
+  groupFeedPagination: null,
+  groupJoinRequests: [],
+  groupJoinRequestsLoading: false,
+  groupJoinRequestsPagination: null,
+  groupMembership: null,
+  groupMembershipLoading: false,
   groupMembers: [],
   groupMembersLoading: false,
   groupMembersPagination: null,
@@ -44,6 +52,10 @@ export const initialSanghaState: SanghaState = {
   notifications: [],
   notificationsLoading: false,
   notificationsPagination: null,
+  activeConversation: null,
+  conversationMessagesById: {},
+  conversationMessagesLoadingIds: {},
+  conversationMessageCursors: {},
 };
 
 function removePending(
@@ -113,6 +125,13 @@ function updatePost(
   return posts.map((post) =>
     post.id === postId ? { ...post, ...changes } : post
   );
+}
+
+function mergeMessages(
+  current: SanghaState["conversationMessagesById"][string] = [],
+  incoming: SanghaState["conversationMessagesById"][string] = []
+) {
+  return mergeById([...incoming], current);
 }
 
 function updateEvent(
@@ -325,6 +344,95 @@ export function sanghaReducer(
         ...state,
         error: action.payload,
         groupPostsLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_FEED_REQUEST:
+      return {
+        ...state,
+        error: null,
+        groupFeedLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_FEED_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        groupFeed: action.payload.append
+          ? mergeById(state.groupFeed, action.payload.feed)
+          : action.payload.feed,
+        groupFeedLoading: false,
+        groupFeedPagination: action.payload.pagination,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_FEED_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        groupFeedLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_MEMBERSHIP_REQUEST:
+      return {
+        ...state,
+        error: null,
+        groupMembershipLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_MEMBERSHIP_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        groupDetail: state.groupDetail
+          ? {
+              ...state.groupDetail,
+              canManage:
+                action.payload.canModerate ??
+                state.groupDetail.canManage,
+              canPost:
+                action.payload.canPost ??
+                state.groupDetail.canPost,
+              membershipStatus:
+                action.payload.membershipStatus ||
+                state.groupDetail.membershipStatus,
+            }
+          : state.groupDetail,
+        groupMembership: action.payload,
+        groupMembershipLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_MEMBERSHIP_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        groupMembershipLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_JOIN_REQUESTS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        groupJoinRequestsLoading: true,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_JOIN_REQUESTS_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        groupJoinRequests: action.payload.append
+          ? mergeById(
+              state.groupJoinRequests,
+              action.payload.joinRequests
+            )
+          : action.payload.joinRequests,
+        groupJoinRequestsLoading: false,
+        groupJoinRequestsPagination: action.payload.pagination,
+      };
+
+    case SANGHA_ACTIONS.FETCH_GROUP_JOIN_REQUESTS_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        groupJoinRequestsLoading: false,
       };
 
     case SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_REQUEST:
@@ -942,6 +1050,108 @@ export function sanghaReducer(
         ...state,
         discoverySaving: false,
         error: action.payload,
+      };
+
+    case SANGHA_ACTIONS.START_CONVERSATION_REQUEST:
+      return {
+        ...state,
+        actionPendingIds: {
+          ...state.actionPendingIds,
+          [action.payload.participantUserId]: true,
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.START_CONVERSATION_SUCCESS:
+      return {
+        ...state,
+        activeConversation: action.payload,
+        actionPendingIds: action.payload.participantUserId
+          ? removePending(
+              state.actionPendingIds,
+              action.payload.participantUserId
+            )
+          : state.actionPendingIds,
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.START_CONVERSATION_FAILURE:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.participantUserId
+        ),
+        error: action.payload.error,
+      };
+
+    case SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_REQUEST:
+      return {
+        ...state,
+        conversationMessagesLoadingIds: {
+          ...state.conversationMessagesLoadingIds,
+          [action.payload.conversationId]: true,
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_SUCCESS:
+      return {
+        ...state,
+        conversationMessageCursors: {
+          ...state.conversationMessageCursors,
+          [action.payload.conversationId]:
+            action.payload.nextCursor ?? null,
+        },
+        conversationMessagesById: {
+          ...state.conversationMessagesById,
+          [action.payload.conversationId]: action.payload.append
+            ? mergeMessages(
+                state.conversationMessagesById[action.payload.conversationId],
+                action.payload.messages
+              )
+            : action.payload.messages,
+        },
+        conversationMessagesLoadingIds: removePending(
+          state.conversationMessagesLoadingIds,
+          action.payload.conversationId
+        ),
+      };
+
+    case SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_SUCCESS:
+      return {
+        ...state,
+        conversationMessagesById: {
+          ...state.conversationMessagesById,
+          [action.payload.conversationId]: [
+            ...(state.conversationMessagesById[action.payload.conversationId] || []),
+            action.payload.message,
+          ],
+        },
+      };
+
+    case SANGHA_ACTIONS.MARK_CONVERSATION_READ_SUCCESS:
+      return {
+        ...state,
+        activeConversation: state.activeConversation
+          && state.activeConversation.id === action.payload.conversationId
+            ? {
+                ...state.activeConversation,
+                unreadCount: 0,
+              }
+            : state.activeConversation,
+      };
+
+    case SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_FAILURE:
+    case SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_FAILURE:
+    case SANGHA_ACTIONS.MARK_CONVERSATION_READ_FAILURE:
+      return {
+        ...state,
+        conversationMessagesLoadingIds: removePending(
+          state.conversationMessagesLoadingIds,
+          action.payload.conversationId
+        ),
+        error: action.payload.error,
       };
 
     default:
