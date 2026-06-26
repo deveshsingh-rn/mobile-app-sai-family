@@ -127,6 +127,19 @@ export type SanghaGroupSummary = {
   state?: string | null;
 };
 
+export type CreateSanghaGroupPayload = {
+  bannerUrl?: string;
+  city?: string;
+  country?: string;
+  description: string;
+  guidelines?: string;
+  name: string;
+  privacy: "public" | "private" | "invite_only" | string;
+  purpose: string;
+  purposeText?: string;
+  state?: string;
+};
+
 export type SanghaGroupDetail = SanghaGroupSummary & {
   activePercent?: number;
   canManage?: boolean;
@@ -315,6 +328,8 @@ export type SanghaState = {
   error: string | null;
   groupsHome: SanghaHubHomeResult | null;
   groupsHomeLoading: boolean;
+  createdGroup: SanghaGroupSummary | null;
+  creatingGroup: boolean;
   groupDetail: SanghaGroupDetail | null;
   groupDetailLoading: boolean;
   groupEvents: SanghaGroupEvent[];
@@ -379,6 +394,9 @@ export enum SANGHA_ACTIONS {
   FETCH_GROUPS_REQUEST = "sangha/FETCH_GROUPS_REQUEST",
   FETCH_GROUPS_SUCCESS = "sangha/FETCH_GROUPS_SUCCESS",
   FETCH_GROUPS_FAILURE = "sangha/FETCH_GROUPS_FAILURE",
+  CREATE_GROUP_REQUEST = "sangha/CREATE_GROUP_REQUEST",
+  CREATE_GROUP_SUCCESS = "sangha/CREATE_GROUP_SUCCESS",
+  CREATE_GROUP_FAILURE = "sangha/CREATE_GROUP_FAILURE",
   FETCH_GROUP_DETAIL_REQUEST = "sangha/FETCH_GROUP_DETAIL_REQUEST",
   FETCH_GROUP_DETAIL_SUCCESS = "sangha/FETCH_GROUP_DETAIL_SUCCESS",
   FETCH_GROUP_DETAIL_FAILURE = "sangha/FETCH_GROUP_DETAIL_FAILURE",
@@ -921,5 +939,8 @@ export type SanghaAction =
         | SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_FAILURE
         | SANGHA_ACTIONS.MARK_CONVERSATION_READ_REQUEST
         | SANGHA_ACTIONS.MARK_CONVERSATION_READ_SUCCESS
-        | SANGHA_ACTIONS.MARK_CONVERSATION_READ_FAILURE;
+        | SANGHA_ACTIONS.MARK_CONVERSATION_READ_FAILURE
+        | SANGHA_ACTIONS.CREATE_GROUP_REQUEST
+        | SANGHA_ACTIONS.CREATE_GROUP_SUCCESS
+        | SANGHA_ACTIONS.CREATE_GROUP_FAILURE;
     };

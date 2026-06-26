@@ -13,6 +13,8 @@ export const initialSanghaState: SanghaState = {
   error: null,
   groupsHome: null,
   groupsHomeLoading: false,
+  createdGroup: null,
+  creatingGroup: false,
   groupDetail: null,
   groupDetailLoading: false,
   groupEvents: [],
@@ -297,6 +299,41 @@ export function sanghaReducer(
         ...state,
         error: action.payload,
         groupsListLoading: false,
+      };
+
+    case SANGHA_ACTIONS.CREATE_GROUP_REQUEST:
+      return {
+        ...state,
+        createdGroup: null,
+        creatingGroup: true,
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.CREATE_GROUP_SUCCESS:
+      return {
+        ...state,
+        createdGroup: action.payload,
+        creatingGroup: false,
+        groupsHome: state.groupsHome
+          ? {
+              ...state.groupsHome,
+              myGroups: [
+                action.payload,
+                ...(state.groupsHome.myGroups || []),
+              ],
+            }
+          : state.groupsHome,
+        groupsList: mergeById(
+          [action.payload],
+          state.groupsList
+        ),
+      };
+
+    case SANGHA_ACTIONS.CREATE_GROUP_FAILURE:
+      return {
+        ...state,
+        creatingGroup: false,
+        error: action.payload,
       };
 
     case SANGHA_ACTIONS.FETCH_GROUP_DETAIL_REQUEST:

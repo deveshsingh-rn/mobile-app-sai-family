@@ -256,48 +256,67 @@ const SanghaHubScreen = () => {
               </Text>
             </View>
 
-            {/* Notification */}
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => router.push('/sangha-notifications')}
-              style={{
-                width: 54,
-                height: 54,
-                borderRadius: 27,
-                backgroundColor: '#FFF7E6',
-                justifyContent: 'center',
-                alignItems: 'center',
-                position: 'relative',
-              }}>
-              <Ionicons
-                name="notifications"
-                size={22}
-                color="#F97316"
-              />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => router.push('/sangha-create-group')}
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: '#F97316',
+                  borderRadius: 27,
+                  height: 54,
+                  justifyContent: 'center',
+                  width: 54,
+                }}>
+                <Ionicons
+                  name="add"
+                  size={25}
+                  color="#FFFFFF"
+                />
+              </TouchableOpacity>
 
-              {unreadCount > 0 ? (
-                <View
-                  style={{
-                    alignItems: 'center',
-                    backgroundColor: '#9F1239',
-                    borderRadius: 9,
-                    minWidth: 18,
-                    paddingHorizontal: 5,
-                    position: 'absolute',
-                    right: 7,
-                    top: 8,
-                  }}>
-                  <Text
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => router.push('/sangha-notifications')}
+                style={{
+                  width: 54,
+                  height: 54,
+                  borderRadius: 27,
+                  backgroundColor: '#FFF7E6',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  position: 'relative',
+                }}>
+                <Ionicons
+                  name="notifications"
+                  size={22}
+                  color="#F97316"
+                />
+
+                {unreadCount > 0 ? (
+                  <View
                     style={{
-                      color: '#FFFFFF',
-                      fontSize: 10,
-                      fontWeight: '900',
+                      alignItems: 'center',
+                      backgroundColor: '#9F1239',
+                      borderRadius: 9,
+                      minWidth: 18,
+                      paddingHorizontal: 5,
+                      position: 'absolute',
+                      right: 7,
+                      top: 8,
                     }}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </Text>
-                </View>
-              ) : null}
-            </TouchableOpacity>
+                    <Text
+                      style={{
+                        color: '#FFFFFF',
+                        fontSize: 10,
+                        fontWeight: '900',
+                      }}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Text>
+                  </View>
+                ) : null}
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Search */}

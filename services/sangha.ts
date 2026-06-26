@@ -161,6 +161,26 @@ export async function apiFetchSanghaGroups(
   return data;
 }
 
+export async function apiCreateSanghaGroup(payload: {
+  bannerUrl?: string;
+  city?: string;
+  country?: string;
+  description: string;
+  guidelines?: string;
+  name: string;
+  privacy: string;
+  purpose: string;
+  purposeText?: string;
+  state?: string;
+}) {
+  const { data } = await apiClient.post(
+    "/api/sangha/groups",
+    payload
+  );
+
+  return data;
+}
+
 export async function apiFetchSanghaInvitations(
   params: Record<string, any> = {}
 ) {

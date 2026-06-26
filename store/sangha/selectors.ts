@@ -76,6 +76,14 @@ export const selectSanghaGroupsListPagination = (
   state: RootState
 ) => selectSanghaState(state).groupsListPagination;
 
+export const selectCreatedSanghaGroup = (
+  state: RootState
+) => selectSanghaState(state).createdGroup;
+
+export const selectCreatingSanghaGroup = (
+  state: RootState
+) => selectSanghaState(state).creatingGroup;
+
 export const selectSanghaGroupDetail = (
   state: RootState
 ) => selectSanghaState(state).groupDetail;

@@ -6,6 +6,7 @@ import {
   SanghaDiscoverySettingsPayload,
   SanghaGroupListParams,
   SanghaGroupListResult,
+  SanghaGroupSummary,
   SanghaGroupDetail,
   SanghaGroupEvent,
   SanghaGroupFeedItem,
@@ -23,6 +24,7 @@ import {
   SanghaHomeResult,
   SanghaConversation,
   SanghaConversationMessage,
+  CreateSanghaGroupPayload,
 } from "./types";
 
 export const fetchSanghaHomeRequest = (
@@ -171,6 +173,30 @@ export const fetchSanghaGroupsFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.FETCH_GROUPS_FAILURE,
+  } as const);
+
+export const createSanghaGroupRequest = (
+  payload: CreateSanghaGroupPayload
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_REQUEST,
+  } as const);
+
+export const createSanghaGroupSuccess = (
+  payload: SanghaGroupSummary
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_SUCCESS,
+  } as const);
+
+export const createSanghaGroupFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.CREATE_GROUP_FAILURE,
   } as const);
 
 export const fetchSanghaGroupDetailRequest = (

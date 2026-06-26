@@ -5,6 +5,7 @@ import {
   apiAddSanghaRecentSearch,
   apiBlockSanghaDevotee,
   apiClearSanghaRecentSearches,
+  apiCreateSanghaGroup,
   apiDeclineSanghaInvitation,
   apiDisconnectSanghaDevotee,
   apiFetchSanghaDevotees,
@@ -53,6 +54,8 @@ import {
   blockSanghaDevoteeSuccess,
   clearSanghaRecentSearchesFailure,
   clearSanghaRecentSearchesSuccess,
+  createSanghaGroupFailure,
+  createSanghaGroupSuccess,
   declineSanghaInvitationFailure,
   declineSanghaInvitationSuccess,
   createSanghaGroupPostCommentFailure,
@@ -262,6 +265,14 @@ function normalizeGroupList(response: any, append = false) {
       response?.data?.pagination ||
       null,
   };
+}
+
+function normalizeGroup(response: any) {
+  return (
+    response?.group ||
+    response?.data?.group ||
+    response
+  );
 }
 
 function normalizeRecentSearches(response: any) {
@@ -636,6 +647,27 @@ function* handleFetchSanghaGroups(
     yield put(
       fetchSanghaGroupsFailure(
         getErrorMessage(error, "Failed to fetch Sangha groups.")
+      )
+    );
+  }
+}
+
+function* handleCreateSanghaGroup(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiCreateSanghaGroup,
+      action.payload
+    );
+
+    yield put(
+      createSanghaGroupSuccess(normalizeGroup(response))
+    );
+  } catch (error) {
+    yield put(
+      createSanghaGroupFailure(
+        getErrorMessage(error, "Failed to create Sangha group.")
       )
     );
   }
@@ -1474,6 +1506,10 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUPS_REQUEST,
     handleFetchSanghaGroups
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.CREATE_GROUP_REQUEST,
+    handleCreateSanghaGroup
   );
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUP_DETAIL_REQUEST,
