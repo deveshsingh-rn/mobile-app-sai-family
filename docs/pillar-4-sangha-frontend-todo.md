@@ -65,6 +65,13 @@ Status: Started
 - [x] Wire posts to `GET /api/sangha/groups/:id/posts`.
 - [x] Wire group events to `GET /api/sangha/groups/:id/events`.
 - [x] Wire join, leave, post create, like, comment, pin, and delete actions.
+- [x] Make member search functional.
+- [x] Launch chat from member cards.
+- [x] Launch Event pillar create screen from group events and feed quick action.
+- [ ] Replace group feed list with unified `GET /api/sangha/groups/:id/feed` after backend adds cross-pillar aggregation.
+- [ ] Replace local chat shell with conversation/message APIs after backend adds Sangha messaging.
+- [ ] Replace static member request card with `GET /api/sangha/groups/:id/join-requests`.
+- [ ] Gate post/comment/event controls from backend capability flags instead of only membership status.
 
 ## Phase 6: Group Events
 

@@ -17,7 +17,6 @@ import {
   createSanghaGroupPostCommentRequest,
   createSanghaGroupPostRequest,
   cancelSanghaGroupEventRsvpRequest,
-  createSanghaGroupEventRequest,
   deleteSanghaGroupPostRequest,
   fetchSanghaGroupDetailRequest,
   fetchSanghaGroupEventsRequest,
@@ -130,6 +129,7 @@ export default function GroupDetailsScreen() {
   const groupActionPending = useAppSelector((state) =>
     selectIsSanghaActionPending(state, groupId)
   );
+  const isActiveMember = group?.membershipStatus === "active";
 
   useEffect(() => {
     if (!groupId) {
@@ -168,6 +168,7 @@ export default function GroupDetailsScreen() {
     if (activeTab === "Members") {
       return (
         <MembersSection
+          groupId={groupId}
           loading={membersLoading}
           members={members}
         />
@@ -179,6 +180,7 @@ export default function GroupDetailsScreen() {
         <EventsSection
           events={events}
           groupId={groupId}
+          isActiveMember={isActiveMember}
           loading={eventsLoading}
         />
       );
@@ -191,6 +193,7 @@ export default function GroupDetailsScreen() {
     return (
       <FeedSection
         groupId={groupId}
+        isActiveMember={isActiveMember}
         loading={postsLoading}
         posts={posts}
       />
@@ -497,10 +500,12 @@ function EmptyCard({ text }: { text: string }) {
 
 function FeedSection({
   groupId,
+  isActiveMember,
   loading,
   posts,
 }: {
   groupId: string;
+  isActiveMember: boolean;
   loading: boolean;
   posts: SanghaGroupPost[];
 }) {
@@ -511,7 +516,7 @@ function FeedSection({
   const submitPost = () => {
     const trimmed = content.trim();
 
-    if (!trimmed || !groupId) {
+    if (!trimmed || !groupId || !isActiveMember) {
       return;
     }
 
@@ -543,9 +548,10 @@ function FeedSection({
             style={{ width: 42, height: 42, borderRadius: 21 }}
           />
           <TextInput
+            editable={isActiveMember}
             onChangeText={setContent}
             onSubmitEditing={submitPost}
-            placeholder="Share seva update or bhajan note"
+            placeholder={isActiveMember ? "Share seva update or bhajan note" : "Join this community to post"}
             placeholderTextColor="#8B8177"
             style={{
               flex: 1,
@@ -562,10 +568,11 @@ function FeedSection({
           />
           <TouchableOpacity
             activeOpacity={0.85}
+            disabled={!isActiveMember}
             onPress={submitPost}
             style={{
               alignItems: "center",
-              backgroundColor: "#F97316",
+              backgroundColor: isActiveMember ? "#F97316" : "#D1D5DB",
               borderRadius: 18,
               height: 38,
               justifyContent: "center",
@@ -579,25 +586,47 @@ function FeedSection({
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
           {[
-            { icon: "image", label: "Photo" },
-            { icon: "calendar", label: "Event" },
-            { icon: "megaphone", label: "Notice" },
+            {
+              icon: "image",
+              label: "Photo",
+              onPress: () =>
+                router.push({
+                  pathname: "/(tabs)/experiences/post",
+                  params: { groupId, source: "sangha" },
+                }),
+            },
+            {
+              icon: "calendar",
+              label: "Event",
+              onPress: () =>
+                router.push({
+                  pathname: "/events/create",
+                  params: { groupId, source: "sangha" },
+                }),
+            },
+            {
+              icon: "megaphone",
+              label: "Notice",
+              onPress: () => setContent((current) => current || "[Notice] "),
+            },
           ].map((item) => (
             <TouchableOpacity
               key={item.label}
               activeOpacity={0.85}
+              disabled={!isActiveMember}
+              onPress={item.onPress}
               style={{
                 flex: 1,
                 height: 42,
                 borderRadius: 15,
-                backgroundColor: "#FFF7ED",
+                backgroundColor: isActiveMember ? "#FFF7ED" : "#F3F4F6",
                 alignItems: "center",
                 justifyContent: "center",
                 flexDirection: "row",
               }}
             >
-              <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={16} color="#F97316" />
-              <Text style={{ marginLeft: 6, color: "#9A3412", fontSize: 13, fontWeight: "800" }}>
+              <Ionicons name={item.icon as keyof typeof Ionicons.glyphMap} size={16} color={isActiveMember ? "#F97316" : "#9CA3AF"} />
+              <Text style={{ marginLeft: 6, color: isActiveMember ? "#9A3412" : "#6B7280", fontSize: 13, fontWeight: "800" }}>
                 {item.label}
               </Text>
             </TouchableOpacity>
@@ -871,12 +900,24 @@ function CommunityPostCard({
 }
 
 function MembersSection({
+  groupId,
   loading,
   members,
 }: {
+  groupId: string;
   loading: boolean;
   members: SanghaGroupMember[];
 }) {
+  const [query, setQuery] = useState("");
+  const trimmedQuery = query.trim().toLowerCase();
+  const visibleMembers = trimmedQuery
+    ? members.filter((member) =>
+        [member.name, member.role, member.status]
+          .filter(Boolean)
+          .some((value) => value?.toLowerCase().includes(trimmedQuery))
+      )
+    : members;
+
   return (
     <>
       <View
@@ -900,16 +941,18 @@ function MembersSection({
         >
           <Ionicons name="search" size={18} color="#9CA3AF" />
           <TextInput
+            onChangeText={setQuery}
             placeholder="Search members"
             placeholderTextColor="#9CA3AF"
             style={{ flex: 1, marginLeft: 10, fontSize: 15, color: "#111827", fontWeight: "600" }}
+            value={query}
           />
         </View>
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-          <ActionPill icon="person-add" label="Invite" />
-          <ActionPill icon="shield-checkmark" label="Admins" />
-          <ActionPill icon="funnel" label="Filter" />
+          <ActionPill icon="person-add" label="Invite" onPress={() => setQuery("")} />
+          <ActionPill icon="shield-checkmark" label="Admins" onPress={() => setQuery("admin")} />
+          <ActionPill icon="funnel" label="Active" onPress={() => setQuery("active")} />
         </View>
       </View>
 
@@ -920,7 +963,10 @@ function MembersSection({
         {!loading && members.length === 0 ? (
           <EmptyCard text="No active members are visible yet." />
         ) : null}
-        {members.map((member) => (
+        {!loading && members.length > 0 && visibleMembers.length === 0 ? (
+          <EmptyCard text="No members matched your search." />
+        ) : null}
+        {visibleMembers.map((member) => (
           <View
             key={member.id}
             style={{
@@ -944,6 +990,16 @@ function MembersSection({
             </View>
             <TouchableOpacity
               activeOpacity={0.85}
+              onPress={() =>
+                router.push({
+                  pathname: "/sangha-chat",
+                  params: {
+                    groupId,
+                    memberId: member.userId || member.id,
+                    memberName: member.name || "Sai Family",
+                  },
+                })
+              }
               style={{
                 width: 42,
                 height: 42,
@@ -965,43 +1021,14 @@ function MembersSection({
 function EventsSection({
   events,
   groupId,
+  isActiveMember,
   loading,
 }: {
   events: SanghaGroupEvent[];
   groupId: string;
+  isActiveMember: boolean;
   loading: boolean;
 }) {
-  const dispatch = useAppDispatch();
-  const [showCreate, setShowCreate] = useState(false);
-  const [title, setTitle] = useState("");
-  const [venueName, setVenueName] = useState("");
-  const [startAt, setStartAt] = useState("");
-  const submitEvent = () => {
-    const trimmedTitle = title.trim();
-
-    if (!trimmedTitle || !groupId) {
-      return;
-    }
-
-    const fallbackStart = new Date(
-      Date.now() + 24 * 60 * 60 * 1000
-    ).toISOString();
-
-    dispatch(
-      createSanghaGroupEventRequest({
-        description: "Created from Sangha group calendar.",
-        groupId,
-        startAt: startAt.trim() || fallbackStart,
-        title: trimmedTitle,
-        venueName: venueName.trim() || undefined,
-      })
-    );
-    setTitle("");
-    setVenueName("");
-    setStartAt("");
-    setShowCreate(false);
-  };
-
   return (
     <>
       <View
@@ -1020,97 +1047,28 @@ function EventsSection({
         </Text>
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={() => setShowCreate((current) => !current)}
+          disabled={!isActiveMember}
+          onPress={() =>
+            router.push({
+              pathname: "/events/create",
+              params: { groupId, source: "sangha" },
+            })
+          }
           style={{
             alignSelf: "flex-start",
             marginTop: 16,
             height: 42,
             borderRadius: 21,
-            backgroundColor: "#F97316",
+            backgroundColor: isActiveMember ? "#F97316" : "#D1D5DB",
             paddingHorizontal: 18,
             justifyContent: "center",
           }}
         >
-          <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>Create Event</Text>
+          <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>
+            {isActiveMember ? "Create Event" : "Join to Create"}
+          </Text>
         </TouchableOpacity>
       </View>
-
-      {showCreate ? (
-        <View
-          style={{
-            backgroundColor: "#FFFFFF",
-            borderColor: "#EEE7DD",
-            borderRadius: 22,
-            borderWidth: 1,
-            marginTop: 14,
-            padding: 16,
-          }}
-        >
-          <TextInput
-            onChangeText={setTitle}
-            placeholder="Event title"
-            placeholderTextColor="#9CA3AF"
-            style={{
-              backgroundColor: "#F8F6F2",
-              borderRadius: 16,
-              color: "#111827",
-              fontSize: 15,
-              fontWeight: "700",
-              height: 46,
-              paddingHorizontal: 14,
-            }}
-            value={title}
-          />
-          <TextInput
-            onChangeText={setVenueName}
-            placeholder="Venue name"
-            placeholderTextColor="#9CA3AF"
-            style={{
-              backgroundColor: "#F8F6F2",
-              borderRadius: 16,
-              color: "#111827",
-              fontSize: 15,
-              fontWeight: "700",
-              height: 46,
-              marginTop: 10,
-              paddingHorizontal: 14,
-            }}
-            value={venueName}
-          />
-          <TextInput
-            onChangeText={setStartAt}
-            placeholder="Start time ISO, optional"
-            placeholderTextColor="#9CA3AF"
-            style={{
-              backgroundColor: "#F8F6F2",
-              borderRadius: 16,
-              color: "#111827",
-              fontSize: 15,
-              fontWeight: "700",
-              height: 46,
-              marginTop: 10,
-              paddingHorizontal: 14,
-            }}
-            value={startAt}
-          />
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={submitEvent}
-            style={{
-              alignItems: "center",
-              backgroundColor: "#F97316",
-              borderRadius: 16,
-              height: 44,
-              justifyContent: "center",
-              marginTop: 12,
-            }}
-          >
-            <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>
-              Publish Event
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
 
       {loading ? (
         <EmptyCard text="Loading group events..." />
@@ -1376,10 +1334,19 @@ function PostActions({
   );
 }
 
-function ActionPill({icon, label}: {icon: keyof typeof Ionicons.glyphMap; label: string}) {
+function ActionPill({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress?: () => void;
+}) {
   return (
     <TouchableOpacity
       activeOpacity={0.85}
+      onPress={onPress}
       style={{
         flex: 1,
         height: 42,

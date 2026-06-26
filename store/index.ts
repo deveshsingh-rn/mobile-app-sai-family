@@ -6,7 +6,6 @@ import { injectStore } from '@/services/api';
 
 const sagaMiddleware = createSagaMiddleware();
 
-// Use DevTools compose if available (RN Debugger sets it on `global`)
 const composeEnhancers =
   (__DEV__ &&
     (global as any).__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ &&
@@ -22,11 +21,16 @@ const configureStore = () => {
     composeEnhancers(applyMiddleware(sagaMiddleware))
   );
 
+  // 👇 YAHAN LOGIC ADD KIYA: Har action par current state console hogi
+  // if (__DEV__) {
+  //   store.subscribe(() => {
+  //     console.log('====== REDUX STATE UPDATED ======\n', store.getState());
+  //   });
+  // }
+
   sagaMiddleware.run(rootSaga);
   return store;
 };
 
 export const store = configureStore();
-
-// Inject store into API layer to avoid circular dependencies for 401 interceptor logouts
 injectStore(store);

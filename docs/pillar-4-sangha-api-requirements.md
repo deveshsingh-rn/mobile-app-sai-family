@@ -123,7 +123,75 @@ Features:
 - About: purpose, stats, guidelines, privacy/location.
 - Admin/moderator actions.
 
-### 8. Live Satsang / Bhajan Streaming
+#### Group Details Cross-Pillar API Bridges
+
+The mobile UI now launches existing pillar flows from the group detail tabs. Backend should support these bridges so Sangha does not maintain duplicate event/feed/chat logic.
+
+Required:
+
+- `GET /api/sangha/groups/:id/feed`
+  - Returns a unified paginated group feed.
+  - Should include Sangha group posts, linked Experience pillar posts, linked Event pillar updates, pinned items, and moderation flags.
+  - Query params: `limit`, `offset`, `types=post,experience,event`, `pinnedFirst=true`.
+  - Each item should include `sourceType`, `sourceId`, `createdAt`, `author`, `canLike`, `canComment`, `canPin`, `canDelete`, and current-user state.
+
+- `POST /api/events` with optional Sangha context, or an equivalent `POST /api/sangha/groups/:id/events/publish-from-event`
+  - The Event pillar create screen should create a full event using the existing Event payload, while attaching `groupId`.
+  - Backend should return the normal Event detail plus group event projection.
+  - Permission rule: current user must be group member/moderator/admin and allowed to create events.
+
+- `GET /api/sangha/groups/:id/join-requests`
+  - Needed to replace static member request counts in group feed/admin surfaces.
+  - Should return pending requests with requester summary, requestedAt, note, and approve/decline permission flags.
+
+- `GET /api/sangha/groups/:id/membership`
+  - Returns current user membership status and capability flags.
+  - Suggested fields: `membershipStatus`, `role`, `canPost`, `canComment`, `canCreateEvent`, `canInvite`, `canModerate`, `pendingRequestId`.
+
+### 8. Sangha Messaging
+
+Screens:
+
+- `app/sangha-chat.tsx`
+- `screens/sangha-chat-screen.tsx`
+
+Features:
+
+- Start a direct chat from a group member card.
+- Load conversation history with pagination.
+- Send text messages.
+- Track delivered/read state.
+- Block/report abusive messages.
+- Optionally support group-level channels later.
+
+Required APIs:
+
+- `POST /api/sangha/conversations`
+  - Body: `{ "type": "direct", "participantUserId": "...", "groupId": "..." }`
+  - Returns existing or newly created conversation.
+
+- `GET /api/sangha/conversations/:id/messages?limit=30&before=<cursor>`
+  - Cursor-based pagination is preferred for memory safety.
+  - Return newest page plus `nextCursor`.
+
+- `POST /api/sangha/conversations/:id/messages`
+  - Body: `{ "content": "..." }`
+  - Requires max length validation, rate limiting, and block-list enforcement.
+
+- `PATCH /api/sangha/conversations/:id/read`
+  - Marks conversation read for current user.
+
+- `POST /api/sangha/messages/:id/report`
+  - Body: `{ "reason": "spam|abuse|privacy|other", "note": "..." }`
+
+Performance rules:
+
+- Paginate messages with cursors, not offset.
+- Do not send full member profiles inside every message; include compact author summary or hydrate separately.
+- Enforce payload size limits and rate limits.
+- Real-time delivery can use WebSocket/SSE later, but REST polling must remain safe for older clients.
+
+### 9. Live Satsang / Bhajan Streaming
 
 Future feature for Sangha groups and official communities.
 

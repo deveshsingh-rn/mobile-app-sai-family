@@ -195,6 +195,7 @@ const SanghaHubScreen = () => {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[0]}
         refreshControl={
           <RefreshControl
             refreshing={loading}
@@ -208,8 +209,21 @@ const SanghaHubScreen = () => {
         {/* Header */}
         <View
           style={{
+            backgroundColor: '#FAFAF9',
+            borderBottomColor: '#EFEFEF',
+            borderBottomWidth: 1,
+            elevation: 3,
             paddingHorizontal: 22,
-            paddingTop: 26,
+            paddingTop: 16,
+            paddingBottom: 8,
+            shadowColor: '#000',
+            shadowOffset: {
+              width: 0,
+              height: 4,
+            },
+            shadowOpacity: 0.04,
+            shadowRadius: 8,
+            zIndex: 10,
           }}>
           {/* Top */}
           <View
@@ -291,8 +305,8 @@ const SanghaHubScreen = () => {
             activeOpacity={0.9}
             onPress={() => router.push('/sangha-hub-search')}
             style={{
-              marginTop: 22,
-              height: 62,
+              marginTop: 12,
+              height: 58,
               borderRadius: 31,
               backgroundColor: '#FFFFFF',
               borderWidth: 1,
