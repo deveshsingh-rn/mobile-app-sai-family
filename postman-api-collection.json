@@ -52,7 +52,7 @@
           "name": "User Authentication",
           "item": [
             {
-              "name": "POST /api/auth/user/mobile/send-otp",
+              "name": "POST /api/auth/mobile/send-otp",
               "description": "Sends a six-digit OTP through MSG91. mobileNumber must use E.164 format, for example +919876543210.",
               "request": {
                 "method": "POST",
@@ -71,12 +71,12 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/api/auth/user/mobile/send-otp"
+                "url": "{{baseUrl}}/api/auth/mobile/send-otp"
               },
               "response": []
             },
             {
-              "name": "POST /api/auth/user/mobile/verify-otp",
+              "name": "POST /api/auth/mobile/verify-otp",
               "description": "Verifies the MSG91 OTP. In local development, {{otp}} may be 7664 when STATIC_OTP=7664.",
               "event": [
                 {
@@ -116,24 +116,19 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/api/auth/user/mobile/verify-otp"
+                "url": "{{baseUrl}}/api/auth/mobile/verify-otp"
               },
               "response": []
             },
             {
-              "name": "POST /api/auth/user/email/setup-password",
-              "description": "Protected. Run user mobile OTP verification and POST /accounts first, then configure email/password login for the same onboarded account. Sends a verification code through SMTP.",
+              "name": "POST /api/auth/email/register",
+              "description": "Creates email credentials and sends a six-digit verification code through the configured SMTP server. Password requires 8-72 characters, upper/lowercase letters, and a number.",
               "request": {
                 "method": "POST",
                 "header": [
                   {
                     "key": "Content-Type",
                     "value": "application/json"
-                  },
-                  {
-                    "key": "Authorization",
-                    "value": "Bearer {{accessToken}}",
-                    "type": "text"
                   }
                 ],
                 "body": {
@@ -145,12 +140,12 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/api/auth/user/email/setup-password"
+                "url": "{{baseUrl}}/api/auth/email/register"
               },
               "response": []
             },
             {
-              "name": "POST /api/auth/user/email/verify",
+              "name": "POST /api/auth/email/verify",
               "event": [
                 {
                   "listen": "test",
@@ -182,12 +177,12 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/api/auth/user/email/verify"
+                "url": "{{baseUrl}}/api/auth/email/verify"
               },
               "response": []
             },
             {
-              "name": "POST /api/auth/user/email/resend-verification",
+              "name": "POST /api/auth/email/resend-verification",
               "request": {
                 "method": "POST",
                 "header": [
@@ -205,12 +200,12 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/api/auth/user/email/resend-verification"
+                "url": "{{baseUrl}}/api/auth/email/resend-verification"
               },
               "response": []
             },
             {
-              "name": "POST /api/auth/user/email/login",
+              "name": "POST /api/auth/email/login",
               "event": [
                 {
                   "listen": "test",
@@ -242,7 +237,7 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/api/auth/user/email/login"
+                "url": "{{baseUrl}}/api/auth/email/login"
               },
               "response": []
             }
@@ -253,7 +248,7 @@
           "description": "Admins use the same authentication services. The returned JWT role comes from the database; these APIs never promote a user to admin.",
           "item": [
             {
-              "name": "POST /api/auth/admin/mobile/send-otp",
+              "name": "POST /api/auth/mobile/send-otp - Admin",
               "request": {
                 "method": "POST",
                 "header": [
@@ -271,12 +266,12 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/api/auth/admin/mobile/send-otp"
+                "url": "{{baseUrl}}/api/auth/mobile/send-otp"
               },
               "response": []
             },
             {
-              "name": "POST /api/auth/admin/mobile/verify-otp",
+              "name": "POST /api/auth/mobile/verify-otp - Admin",
               "event": [
                 {
                   "listen": "test",
@@ -310,12 +305,12 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/api/auth/admin/mobile/verify-otp"
+                "url": "{{baseUrl}}/api/auth/mobile/verify-otp"
               },
               "response": []
             },
             {
-              "name": "POST /api/auth/admin/email/setup-password",
+              "name": "POST /api/auth/email/register - Configure Admin Password",
               "description": "Use this once when the existing admin email has no password. The database role is preserved and an SMTP verification email is sent.",
               "request": {
                 "method": "POST",
@@ -334,12 +329,12 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/api/auth/admin/email/setup-password"
+                "url": "{{baseUrl}}/api/auth/email/register"
               },
               "response": []
             },
             {
-              "name": "POST /api/auth/admin/email/verify",
+              "name": "POST /api/auth/email/verify - Admin",
               "event": [
                 {
                   "listen": "test",
@@ -373,12 +368,12 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/api/auth/admin/email/verify"
+                "url": "{{baseUrl}}/api/auth/email/verify"
               },
               "response": []
             },
             {
-              "name": "POST /api/auth/admin/email/login",
+              "name": "POST /api/auth/email/login - Admin",
               "event": [
                 {
                   "listen": "test",
@@ -412,7 +407,7 @@
                     }
                   }
                 },
-                "url": "{{baseUrl}}/api/auth/admin/email/login"
+                "url": "{{baseUrl}}/api/auth/email/login"
               },
               "response": []
             }

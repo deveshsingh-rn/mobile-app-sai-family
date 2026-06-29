@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Image,
@@ -6,22 +6,39 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
 import {
   Bell,
   ChevronRight,
+  CheckCircle2,
+  KeyRound,
   Languages,
   LogOut,
+  Mail,
   Moon,
+  Send,
   ShieldCheck,
   Sparkles,
   Star,
 } from "lucide-react-native";
 
-import { removeDevoteeAccountStorage } from "@/services/devotee-account";
-import { logoutRequest } from "@/store/devotee-account/actions";
+import {
+  authUserToDevoteeAccount,
+  resendUserEmailVerification,
+  setupUserEmailPassword,
+  verifyUserEmail,
+} from "@/services/auth";
+import {
+  removeDevoteeAccountStorage,
+  saveDevoteeAccount,
+} from "@/services/devotee-account";
+import {
+  loadSavedDevoteeAccountRequest,
+  logoutRequest,
+} from "@/store/devotee-account/actions";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import {
   useAppDispatch,
@@ -59,14 +76,40 @@ const fallbackStats = [
   },
 ];
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type SecurityAction = "setup" | "verify" | "resend";
+
 export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("details");
+  const [securityEmail, setSecurityEmail] = useState("");
+  const [securityPassword, setSecurityPassword] = useState("");
+  const [securityConfirmPassword, setSecurityConfirmPassword] =
+    useState("");
+  const [emailOtp, setEmailOtp] = useState("");
+  const [hasSentEmailOtp, setHasSentEmailOtp] = useState(false);
+  const [localEmailVerified, setLocalEmailVerified] = useState(false);
+  const [securityAction, setSecurityAction] =
+    useState<SecurityAction | null>(null);
   const dispatch = useAppDispatch();
   const account = useAppSelector(selectDevoteeAccount);
+  const accountAny = account as any;
   const profileImageUri =
     account?.profileImage?.uri ||
     account?.profileImageUrl ||
     account?.profile?.profileImageUrl;
+  const isEmailVerified = Boolean(
+    accountAny?.emailVerified ||
+      accountAny?.isEmailVerified ||
+      accountAny?.emailVerifiedAt ||
+      accountAny?.verifiedEmailAt
+  );
+  const hasEmailLoginReady = isEmailVerified || localEmailVerified;
+
+  useEffect(() => {
+    setSecurityEmail(account?.email || "");
+    setLocalEmailVerified(false);
+  }, [account?.email]);
 
   const initials = useMemo(() => {
     const name = account?.name || "Devotee";
@@ -98,6 +141,142 @@ export default function ProfileScreen() {
         },
       ]
     );
+  };
+
+  const validateSecurityForm = () => {
+    const email = securityEmail.trim().toLowerCase();
+    const password = securityPassword.trim();
+
+    if (!emailPattern.test(email)) {
+      Alert.alert(
+        "Check Email",
+        "Please enter a valid email address before continuing."
+      );
+      return false;
+    }
+
+    if (password.length < 8) {
+      Alert.alert(
+        "Password Too Short",
+        "Please create a password with at least 8 characters."
+      );
+      return false;
+    }
+
+    if (password !== securityConfirmPassword.trim()) {
+      Alert.alert(
+        "Password Not Matching",
+        "Please confirm the same password in both fields."
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSetupEmailPassword = async () => {
+    if (!validateSecurityForm()) {
+      return;
+    }
+
+    try {
+      setSecurityAction("setup");
+      await setupUserEmailPassword(
+        securityEmail,
+        securityPassword.trim()
+      );
+      setHasSentEmailOtp(true);
+      Alert.alert(
+        "Code Sent",
+        "We sent a verification code to your email. Enter it here to finish email login setup."
+      );
+    } catch (error) {
+      Alert.alert(
+        "Setup Failed",
+        error instanceof Error
+          ? error.message
+          : "Unable to setup email login."
+      );
+    } finally {
+      setSecurityAction(null);
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    const email = securityEmail.trim().toLowerCase();
+
+    if (!emailPattern.test(email)) {
+      Alert.alert("Check Email", "Please enter a valid email address.");
+      return;
+    }
+
+    if (emailOtp.trim().length < 4) {
+      Alert.alert(
+        "Enter Code",
+        "Please enter the verification code sent to your email."
+      );
+      return;
+    }
+
+    try {
+      setSecurityAction("verify");
+      const response = await verifyUserEmail(email, emailOtp);
+
+      if (response.user) {
+        await saveDevoteeAccount(
+          authUserToDevoteeAccount(response.user)
+        );
+        dispatch(loadSavedDevoteeAccountRequest());
+      }
+
+      setEmailOtp("");
+      setHasSentEmailOtp(false);
+      setLocalEmailVerified(true);
+      setSecurityPassword("");
+      setSecurityConfirmPassword("");
+
+      Alert.alert(
+        "Email Verified",
+        "Your email login is ready. You can now login with email and password."
+      );
+    } catch (error) {
+      Alert.alert(
+        "Verification Failed",
+        error instanceof Error
+          ? error.message
+          : "Unable to verify email."
+      );
+    } finally {
+      setSecurityAction(null);
+    }
+  };
+
+  const handleResendEmailVerification = async () => {
+    const email = securityEmail.trim().toLowerCase();
+
+    if (!emailPattern.test(email)) {
+      Alert.alert("Check Email", "Please enter a valid email address.");
+      return;
+    }
+
+    try {
+      setSecurityAction("resend");
+      await resendUserEmailVerification(email);
+      setHasSentEmailOtp(true);
+      Alert.alert(
+        "Code Sent Again",
+        "Please check your inbox for the latest verification code."
+      );
+    } catch (error) {
+      Alert.alert(
+        "Unable To Resend",
+        error instanceof Error
+          ? error.message
+          : "Unable to resend verification code."
+      );
+    } finally {
+      setSecurityAction(null);
+    }
   };
 
   return (
@@ -227,6 +406,174 @@ export default function ProfileScreen() {
         </View>
       ) : (
         <View style={styles.section}>
+          <View style={styles.securityCard}>
+            <View style={styles.securityHeader}>
+              <View style={styles.securityIcon}>
+                <KeyRound color="#F97316" size={22} />
+              </View>
+              <View style={styles.securityTitleWrap}>
+                <Text style={styles.securityTitle}>Email Login</Text>
+                <Text style={styles.securityDescription}>
+                  Verify your email and create a password for easy login.
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.securityStatus,
+                  hasEmailLoginReady && styles.securityStatusVerified,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.securityStatusText,
+                    hasEmailLoginReady &&
+                      styles.securityStatusTextVerified,
+                  ]}
+                >
+                  {hasEmailLoginReady ? "Verified" : "Pending"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.formGroup}>
+              <Text style={styles.inputLabel}>Email Address</Text>
+              <View style={styles.inputShell}>
+                <Mail color="#A8A29E" size={18} />
+                <TextInput
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  onChangeText={setSecurityEmail}
+                  placeholder="your@email.com"
+                  placeholderTextColor="#A8A29E"
+                  style={styles.securityInput}
+                  value={securityEmail}
+                />
+              </View>
+            </View>
+
+            {!hasEmailLoginReady && (
+              <>
+                <View style={styles.passwordGrid}>
+                  <View style={styles.formGroup}>
+                    <Text style={styles.inputLabel}>Create Password</Text>
+                    <View style={styles.inputShell}>
+                      <KeyRound color="#A8A29E" size={18} />
+                      <TextInput
+                        onChangeText={setSecurityPassword}
+                        placeholder="Minimum 8 characters"
+                        placeholderTextColor="#A8A29E"
+                        secureTextEntry
+                        style={styles.securityInput}
+                        value={securityPassword}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.formGroup}>
+                    <Text style={styles.inputLabel}>
+                      Confirm Password
+                    </Text>
+                    <View style={styles.inputShell}>
+                      <ShieldCheck color="#A8A29E" size={18} />
+                      <TextInput
+                        onChangeText={setSecurityConfirmPassword}
+                        placeholder="Repeat password"
+                        placeholderTextColor="#A8A29E"
+                        secureTextEntry
+                        style={styles.securityInput}
+                        value={securityConfirmPassword}
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                <Pressable
+                  disabled={securityAction === "setup"}
+                  onPress={handleSetupEmailPassword}
+                  style={({ pressed }) => [
+                    styles.primaryButton,
+                    pressed && styles.rowPressed,
+                    securityAction === "setup" &&
+                      styles.disabledButton,
+                  ]}
+                >
+                  <Send color="#FFFFFF" size={18} />
+                  <Text style={styles.primaryButtonText}>
+                    {securityAction === "setup"
+                      ? "Sending Code..."
+                      : "Send Verification Code"}
+                  </Text>
+                </Pressable>
+
+                {hasSentEmailOtp && (
+                  <View style={styles.otpPanel}>
+                    <Text style={styles.inputLabel}>
+                      Email Verification Code
+                    </Text>
+                    <View style={styles.inputShell}>
+                      <CheckCircle2 color="#A8A29E" size={18} />
+                      <TextInput
+                        keyboardType="number-pad"
+                        maxLength={8}
+                        onChangeText={setEmailOtp}
+                        placeholder="Enter code"
+                        placeholderTextColor="#A8A29E"
+                        style={styles.securityInput}
+                        value={emailOtp}
+                      />
+                    </View>
+
+                    <View style={styles.inlineActions}>
+                      <Pressable
+                        disabled={securityAction === "verify"}
+                        onPress={handleVerifyEmail}
+                        style={({ pressed }) => [
+                          styles.verifyButton,
+                          pressed && styles.rowPressed,
+                          securityAction === "verify" &&
+                            styles.disabledButton,
+                        ]}
+                      >
+                        <Text style={styles.verifyButtonText}>
+                          {securityAction === "verify"
+                            ? "Verifying..."
+                            : "Verify Email"}
+                        </Text>
+                      </Pressable>
+
+                      <Pressable
+                        disabled={securityAction === "resend"}
+                        onPress={handleResendEmailVerification}
+                        style={({ pressed }) => [
+                          styles.resendButton,
+                          pressed && styles.rowPressed,
+                          securityAction === "resend" &&
+                            styles.disabledButton,
+                        ]}
+                      >
+                        <Text style={styles.resendButtonText}>
+                          {securityAction === "resend"
+                            ? "Sending..."
+                            : "Resend"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                )}
+              </>
+            )}
+
+            {hasEmailLoginReady && (
+              <View style={styles.verifiedPanel}>
+                <CheckCircle2 color="#15803D" size={18} />
+                <Text style={styles.verifiedPanelText}>
+                  Email and password login is active for this account.
+                </Text>
+              </View>
+            )}
+          </View>
+
           <SettingRow
             description="Manage prayer, event, and family update alerts."
             icon={<Bell size={21} color="#1F2937" />}
@@ -416,10 +763,16 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     lineHeight: 21,
   },
+  disabledButton: {
+    opacity: 0.62,
+  },
   eyebrow: {
     color: "#F97316",
     fontSize: 12,
     fontWeight: "900",
+  },
+  formGroup: {
+    gap: 8,
   },
   header: {
     alignItems: "center",
@@ -470,6 +823,68 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 8,
+  },
+  inlineActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 12,
+  },
+  inputLabel: {
+    color: "#57534E",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  inputShell: {
+    alignItems: "center",
+    backgroundColor: "#FFFBF5",
+    borderColor: "#E7D7BE",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    minHeight: 50,
+    paddingHorizontal: 13,
+  },
+  otpPanel: {
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 4,
+    padding: 12,
+  },
+  passwordGrid: {
+    gap: 12,
+  },
+  primaryButton: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 9,
+    justifyContent: "center",
+    minHeight: 50,
+  },
+  primaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  resendButton: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#FED7AA",
+    borderRadius: 11,
+    borderWidth: 1,
+    flex: 0.42,
+    justifyContent: "center",
+    minHeight: 46,
+  },
+  resendButtonText: {
+    color: "#C2410C",
+    fontSize: 13,
+    fontWeight: "900",
   },
   rowPressed: {
     opacity: 0.84,
@@ -582,6 +997,72 @@ const styles = StyleSheet.create({
   settingTitleDestructive: {
     color: "#DC2626",
   },
+  securityCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7D7BE",
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 14,
+    padding: 15,
+  },
+  securityDescription: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 3,
+  },
+  securityHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 11,
+  },
+  securityIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 13,
+    borderWidth: 1,
+    height: 46,
+    justifyContent: "center",
+    width: 46,
+  },
+  securityInput: {
+    color: "#1F2937",
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "800",
+    minHeight: 48,
+    paddingVertical: 0,
+  },
+  securityStatus: {
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+  },
+  securityStatusText: {
+    color: "#C2410C",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  securityStatusTextVerified: {
+    color: "#15803D",
+  },
+  securityStatusVerified: {
+    backgroundColor: "#F0FDF4",
+    borderColor: "#BBF7D0",
+  },
+  securityTitle: {
+    color: "#1F2937",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  securityTitleWrap: {
+    flex: 1,
+  },
   statBox: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -615,6 +1096,23 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: "900",
   },
+  verifiedPanel: {
+    alignItems: "center",
+    backgroundColor: "#F0FDF4",
+    borderColor: "#BBF7D0",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 9,
+    padding: 12,
+  },
+  verifiedPanelText: {
+    color: "#166534",
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 18,
+  },
   verifiedBadge: {
     alignItems: "center",
     backgroundColor: "#FFF7ED",
@@ -622,5 +1120,18 @@ const styles = StyleSheet.create({
     height: 24,
     justifyContent: "center",
     width: 24,
+  },
+  verifyButton: {
+    alignItems: "center",
+    backgroundColor: "#1F2937",
+    borderRadius: 11,
+    flex: 0.58,
+    justifyContent: "center",
+    minHeight: 46,
+  },
+  verifyButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
   },
 });

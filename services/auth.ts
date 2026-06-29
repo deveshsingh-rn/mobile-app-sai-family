@@ -33,6 +33,40 @@ function getAuthErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function isRouteNotFound(error: unknown) {
+  return (
+    axios.isAxiosError<any>(error) &&
+    error.response?.status === 404 &&
+    error.response?.data?.error?.code === "NOT_FOUND"
+  );
+}
+
+async function postWithLegacyRouteFallback<TResponse>(
+  primaryRoute: string,
+  legacyRoute: string,
+  body: Record<string, string>
+) {
+  try {
+    const { data } = await apiClient.post<TResponse>(
+      primaryRoute,
+      body
+    );
+
+    return data;
+  } catch (error) {
+    if (!isRouteNotFound(error)) {
+      throw error;
+    }
+
+    const { data } = await apiClient.post<TResponse>(
+      legacyRoute,
+      body
+    );
+
+    return data;
+  }
+}
+
 export function authUserToDevoteeAccount(user: any): DevoteeAccount {
   const profile = user?.profile || {};
 
@@ -100,7 +134,8 @@ export async function clearAuthSession() {
 
 export async function sendUserMobileOtp(mobileNumber: string) {
   try {
-    const { data } = await apiClient.post(
+    const data = await postWithLegacyRouteFallback(
+      "/api/auth/mobile/send-otp",
       "/api/auth/user/mobile/send-otp",
       { mobileNumber: mobileNumber.trim() }
     );
@@ -118,7 +153,8 @@ export async function verifyUserMobileOtp(
   otp: string
 ) {
   try {
-    const { data } = await apiClient.post<AuthResponse>(
+    const data = await postWithLegacyRouteFallback<AuthResponse>(
+      "/api/auth/mobile/verify-otp",
       "/api/auth/user/mobile/verify-otp",
       {
         mobileNumber: mobileNumber.trim(),
