@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {
   ActivityIndicator,
+  Alert,
   StatusBar,
   View,
   Text,
@@ -16,7 +17,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   createSanghaGroupPostCommentRequest,
   createSanghaGroupPostRequest,
+  approveSanghaGroupJoinRequestRequest,
   cancelSanghaGroupEventRsvpRequest,
+  declineSanghaGroupJoinRequestRequest,
   fetchSanghaGroupFeedRequest,
   deleteSanghaGroupPostRequest,
   fetchSanghaGroupDetailRequest,
@@ -29,10 +32,13 @@ import {
   joinSanghaGroupRequest,
   leaveSanghaGroupRequest,
   likeSanghaGroupPostRequest,
+  inviteSanghaGroupMemberRequest,
   pinSanghaGroupPostRequest,
+  removeSanghaGroupMemberRequest,
   rsvpSanghaGroupEventRequest,
   unlikeSanghaGroupPostRequest,
   unpinSanghaGroupPostRequest,
+  updateSanghaGroupMemberRequest,
 } from "@/store/sangha/actions";
 import {
   selectIsSanghaActionPending,
@@ -55,6 +61,7 @@ import {
 import {
   SanghaGroupDetail,
   SanghaGroupEvent,
+  SanghaGroupJoinRequest,
   SanghaGroupMember,
   SanghaGroupPost,
 } from "@/store/sangha/types";
@@ -212,6 +219,7 @@ export default function GroupDetailsScreen() {
     if (activeTab === "Members") {
       return (
         <MembersSection
+          canManageGroup={canManageGroup}
           groupId={groupId}
           loading={membersLoading}
           members={members}
@@ -238,7 +246,9 @@ export default function GroupDetailsScreen() {
       <FeedSection
         groupId={groupId}
         canComment={canComment}
+        canManageGroup={canManageGroup}
         canPost={canPost}
+        joinRequests={joinRequests}
         joinRequestCount={joinRequests.length || group?.joinRequestCount || 0}
         loading={feedLoading || postsLoading}
         posts={feed.length ? feed : posts}
@@ -571,15 +581,19 @@ function EmptyCard({ text }: { text: string }) {
 
 function FeedSection({
   canComment,
+  canManageGroup,
   canPost,
   groupId,
+  joinRequests,
   joinRequestCount,
   loading,
   posts,
 }: {
   canComment: boolean;
+  canManageGroup: boolean;
   canPost: boolean;
   groupId: string;
+  joinRequests: SanghaGroupJoinRequest[];
   joinRequestCount: number;
   loading: boolean;
   posts: SanghaGroupPost[];
@@ -709,7 +723,13 @@ function FeedSection({
         </View>
       </View>
 
-      <MemberRequestCard pendingCount={joinRequestCount} />
+      {canManageGroup ? (
+        <MemberRequestCard
+          groupId={groupId}
+          joinRequests={joinRequests}
+          pendingCount={joinRequestCount}
+        />
+      ) : null}
       {loading ? (
         <EmptyCard text="Loading group posts..." />
       ) : null}
@@ -730,56 +750,122 @@ function FeedSection({
 }
 
 function MemberRequestCard({
+  groupId,
+  joinRequests,
   pendingCount,
 }: {
+  groupId: string;
+  joinRequests: SanghaGroupJoinRequest[];
   pendingCount: number;
 }) {
+  const dispatch = useAppDispatch();
+
   return (
-    <View
-      style={{
-        height: 76,
-        borderRadius: 18,
-        backgroundColor: "#FFFFFF",
-        borderWidth: 1,
-        borderColor: "#D6DEE8",
-        paddingHorizontal: 20,
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: 18,
-      }}
-    >
+    <View>
       <View
         style={{
-          width: 42,
-          height: 42,
-          borderRadius: 21,
-          backgroundColor: "#FFF3E8",
-          justifyContent: "center",
+          borderRadius: 18,
+          backgroundColor: "#FFFFFF",
+          borderWidth: 1,
+          borderColor: "#D6DEE8",
+          padding: 16,
+          flexDirection: "row",
           alignItems: "center",
+          marginTop: 18,
         }}
       >
-        <Ionicons name="people" size={21} color="#F97316" />
+        <View
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: 21,
+            backgroundColor: "#FFF3E8",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Ionicons name="people" size={21} color="#F97316" />
+        </View>
+
+        <View style={{ flex: 1, marginLeft: 14 }}>
+          <Text style={{ fontSize: 16, color: "#111827", fontWeight: "900" }}>Member Requests</Text>
+          <Text style={{ marginTop: 2, fontSize: 14, color: "#6B7280", fontWeight: "500" }}>
+            {pendingCount} pending approval{pendingCount === 1 ? "" : "s"}
+          </Text>
+        </View>
       </View>
 
-      <View style={{ flex: 1, marginLeft: 14 }}>
-        <Text style={{ fontSize: 16, color: "#111827", fontWeight: "900" }}>Member Requests</Text>
-        <Text style={{ marginTop: 2, fontSize: 14, color: "#6B7280", fontWeight: "500" }}>
-          {pendingCount} pending approval{pendingCount === 1 ? "" : "s"}
-        </Text>
-      </View>
+      {joinRequests.slice(0, 3).map((request) => {
+        const requesterName =
+          request.requester?.name || request.requesterId || "Sai Family";
 
-      <TouchableOpacity
-        activeOpacity={0.85}
-        style={{
-          height: 38,
-          borderRadius: 19,
-          backgroundColor: "#F3F4F6",
-          paddingHorizontal: 18,
-          justifyContent: "center",
-        }}
-      >
-        <Text style={{ color: "#111827", fontSize: 14, fontWeight: "800" }}>Review</Text>
-      </TouchableOpacity>
+        return (
+          <View
+            key={request.id}
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderColor: "#EEE7DD",
+              borderRadius: 18,
+              borderWidth: 1,
+              marginTop: 10,
+              padding: 14,
+            }}
+          >
+            <Text style={{ color: "#111827", fontSize: 15, fontWeight: "900" }}>
+              {requesterName}
+            </Text>
+            {request.note ? (
+              <Text style={{ color: "#6B7280", fontSize: 13, fontWeight: "600", lineHeight: 20, marginTop: 4 }}>
+                {request.note}
+              </Text>
+            ) : null}
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() =>
+                  dispatch(
+                    approveSanghaGroupJoinRequestRequest({
+                      groupId,
+                      requestId: request.id,
+                    })
+                  )
+                }
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#F97316",
+                  borderRadius: 15,
+                  flex: 1,
+                  height: 38,
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Approve</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() =>
+                  dispatch(
+                    declineSanghaGroupJoinRequestRequest({
+                      groupId,
+                      requestId: request.id,
+                    })
+                  )
+                }
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#F3F4F6",
+                  borderRadius: 15,
+                  flex: 1,
+                  height: 38,
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ color: "#111827", fontSize: 13, fontWeight: "900" }}>Decline</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -987,15 +1073,21 @@ function CommunityPostCard({
 }
 
 function MembersSection({
+  canManageGroup,
   groupId,
   loading,
   members,
 }: {
+  canManageGroup: boolean;
   groupId: string;
   loading: boolean;
   members: SanghaGroupMember[];
 }) {
+  const dispatch = useAppDispatch();
   const [query, setQuery] = useState("");
+  const [inviteUserId, setInviteUserId] = useState("");
+  const [inviteMessage, setInviteMessage] = useState("Join our Sai Family Sangha.");
+  const [showInvite, setShowInvite] = useState(false);
   const trimmedQuery = query.trim().toLowerCase();
   const visibleMembers = trimmedQuery
     ? members.filter((member) =>
@@ -1004,6 +1096,23 @@ function MembersSection({
           .some((value) => value?.toLowerCase().includes(trimmedQuery))
       )
     : members;
+
+  const sendInvite = () => {
+    const userId = inviteUserId.trim();
+
+    if (!userId) {
+      return;
+    }
+
+    dispatch(
+      inviteSanghaGroupMemberRequest({
+        groupId,
+        message: inviteMessage.trim() || undefined,
+        userId,
+      })
+    );
+    setInviteUserId("");
+  };
 
   return (
     <>
@@ -1037,10 +1146,72 @@ function MembersSection({
         </View>
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-          <ActionPill icon="person-add" label="Invite" onPress={() => setQuery("")} />
+          <ActionPill
+            icon="person-add"
+            label="Invite"
+            onPress={() => setShowInvite((current) => !current)}
+          />
           <ActionPill icon="shield-checkmark" label="Admins" onPress={() => setQuery("admin")} />
           <ActionPill icon="funnel" label="Active" onPress={() => setQuery("active")} />
         </View>
+        {showInvite && canManageGroup ? (
+          <View
+            style={{
+              backgroundColor: "#FFF7ED",
+              borderColor: "#FED7AA",
+              borderRadius: 18,
+              borderWidth: 1,
+              marginTop: 14,
+              padding: 12,
+            }}
+          >
+            <TextInput
+              onChangeText={setInviteUserId}
+              placeholder="Devotee user id"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderRadius: 14,
+                color: "#111827",
+                fontSize: 14,
+                fontWeight: "700",
+                height: 42,
+                paddingHorizontal: 12,
+              }}
+              value={inviteUserId}
+            />
+            <TextInput
+              onChangeText={setInviteMessage}
+              placeholder="Invite message"
+              placeholderTextColor="#9CA3AF"
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderRadius: 14,
+                color: "#111827",
+                fontSize: 14,
+                fontWeight: "700",
+                height: 42,
+                marginTop: 8,
+                paddingHorizontal: 12,
+              }}
+              value={inviteMessage}
+            />
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={sendInvite}
+              style={{
+                alignItems: "center",
+                backgroundColor: "#F97316",
+                borderRadius: 14,
+                height: 40,
+                justifyContent: "center",
+                marginTop: 10,
+              }}
+            >
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Send Invite</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </View>
 
       <View style={{ marginTop: 18 }}>
@@ -1098,6 +1269,67 @@ function MembersSection({
             >
               <Feather name="message-circle" size={18} color="#6B7280" />
             </TouchableOpacity>
+            {canManageGroup ? (
+              <View style={{ gap: 8, marginLeft: 8 }}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() =>
+                    dispatch(
+                      updateSanghaGroupMemberRequest({
+                        groupId,
+                        memberId: member.id,
+                        role: member.role === "moderator" ? "member" : "moderator",
+                      })
+                    )
+                  }
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FFF7ED",
+                    borderRadius: 15,
+                    height: 30,
+                    justifyContent: "center",
+                    paddingHorizontal: 10,
+                  }}
+                >
+                  <Text style={{ color: "#9A3412", fontSize: 11, fontWeight: "900" }}>
+                    {member.role === "moderator" ? "Member" : "Mod"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() =>
+                    Alert.alert(
+                      "Remove member",
+                      `Remove ${member.name || "this member"} from the group?`,
+                      [
+                        { style: "cancel", text: "Cancel" },
+                        {
+                          onPress: () =>
+                            dispatch(
+                              removeSanghaGroupMemberRequest({
+                                groupId,
+                                memberId: member.id,
+                              })
+                            ),
+                          style: "destructive",
+                          text: "Remove",
+                        },
+                      ]
+                    )
+                  }
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: "#FEF2F2",
+                    borderRadius: 15,
+                    height: 30,
+                    justifyContent: "center",
+                    paddingHorizontal: 10,
+                  }}
+                >
+                  <Text style={{ color: "#9F1239", fontSize: 11, fontWeight: "900" }}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
         ))}
       </View>

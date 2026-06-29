@@ -3,11 +3,13 @@ import { call, put, takeLatest } from "redux-saga/effects";
 import {
   apiAcceptSanghaInvitation,
   apiAddSanghaRecentSearch,
+  apiApproveSanghaGroupJoinRequest,
   apiBlockSanghaDevotee,
   apiClearSanghaRecentSearches,
   apiCreateSanghaGroup,
   apiArchiveSanghaGroup,
   apiDeclineSanghaInvitation,
+  apiDeclineSanghaGroupJoinRequest,
   apiDisconnectSanghaDevotee,
   apiFetchSanghaDevotees,
   apiFetchSanghaDevoteeProfile,
@@ -17,6 +19,9 @@ import {
   apiFetchSanghaGroupJoinRequests,
   apiFetchSanghaGroupMembership,
   apiFetchSanghaGroupMembers,
+  apiInviteSanghaGroupMember,
+  apiRemoveSanghaGroupMember,
+  apiUpdateSanghaGroupMember,
   apiCreateSanghaGroupPost,
   apiCreateSanghaGroupPostComment,
   apiCreateSanghaGroupEvent,
@@ -52,6 +57,8 @@ import {
   acceptSanghaInvitationSuccess,
   addSanghaRecentSearchFailure,
   addSanghaRecentSearchSuccess,
+  approveSanghaGroupJoinRequestFailure,
+  approveSanghaGroupJoinRequestSuccess,
   blockSanghaDevoteeFailure,
   blockSanghaDevoteeSuccess,
   clearSanghaRecentSearchesFailure,
@@ -62,6 +69,8 @@ import {
   archiveSanghaGroupSuccess,
   declineSanghaInvitationFailure,
   declineSanghaInvitationSuccess,
+  declineSanghaGroupJoinRequestFailure,
+  declineSanghaGroupJoinRequestSuccess,
   createSanghaGroupPostCommentFailure,
   createSanghaGroupPostCommentSuccess,
   createSanghaGroupPostFailure,
@@ -108,6 +117,8 @@ import {
   fetchSanghaRecentSearchesSuccess,
   joinSanghaGroupFailure,
   joinSanghaGroupSuccess,
+  inviteSanghaGroupMemberFailure,
+  inviteSanghaGroupMemberSuccess,
   leaveSanghaGroupFailure,
   leaveSanghaGroupSuccess,
   likeSanghaGroupPostFailure,
@@ -118,6 +129,8 @@ import {
   pinSanghaGroupPostSuccess,
   requestSanghaConnectionFailure,
   requestSanghaConnectionSuccess,
+  removeSanghaGroupMemberFailure,
+  removeSanghaGroupMemberSuccess,
   rsvpSanghaGroupEventFailure,
   rsvpSanghaGroupEventSuccess,
   searchSanghaGroupsFailure,
@@ -130,6 +143,8 @@ import {
   updateSanghaDiscoverySuccess,
   updateSanghaGroupFailure,
   updateSanghaGroupSuccess,
+  updateSanghaGroupMemberFailure,
+  updateSanghaGroupMemberSuccess,
   startSanghaConversationFailure,
   startSanghaConversationSuccess,
   fetchSanghaConversationMessagesFailure,
@@ -393,6 +408,14 @@ function normalizeMembers(response: any, append = false) {
       response?.data?.pagination ||
       null,
   };
+}
+
+function normalizeMember(response: any) {
+  return (
+    response?.member ||
+    response?.data?.member ||
+    response
+  );
 }
 
 function normalizeEvents(response: any, append = false) {
@@ -839,6 +862,86 @@ function* handleFetchGroupJoinRequests(
   }
 }
 
+function* handleInviteGroupMember(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const { groupId, userId, message } = action.payload;
+    const response = yield call(
+      apiInviteSanghaGroupMember,
+      groupId,
+      { message, userId }
+    );
+
+    yield put(
+      inviteSanghaGroupMemberSuccess({
+        groupId,
+        response,
+        userId,
+      })
+    );
+  } catch (error) {
+    yield put(
+      inviteSanghaGroupMemberFailure({
+        error: getErrorMessage(error, "Failed to invite member."),
+        userId: action.payload.userId,
+      })
+    );
+  }
+}
+
+function* handleApproveJoinRequest(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiApproveSanghaGroupJoinRequest,
+      action.payload.groupId,
+      action.payload.requestId
+    );
+
+    yield put(
+      approveSanghaGroupJoinRequestSuccess({
+        requestId: action.payload.requestId,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      approveSanghaGroupJoinRequestFailure({
+        error: getErrorMessage(error, "Failed to approve request."),
+        requestId: action.payload.requestId,
+      })
+    );
+  }
+}
+
+function* handleDeclineJoinRequest(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiDeclineSanghaGroupJoinRequest,
+      action.payload.groupId,
+      action.payload.requestId
+    );
+
+    yield put(
+      declineSanghaGroupJoinRequestSuccess({
+        requestId: action.payload.requestId,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      declineSanghaGroupJoinRequestFailure({
+        error: getErrorMessage(error, "Failed to decline request."),
+        requestId: action.payload.requestId,
+      })
+    );
+  }
+}
+
 function* handleFetchGroupMembers(
   action: any
 ): Generator<any, void, any> {
@@ -860,6 +963,60 @@ function* handleFetchGroupMembers(
       fetchSanghaGroupMembersFailure(
         getErrorMessage(error, "Failed to fetch group members.")
       )
+    );
+  }
+}
+
+function* handleUpdateGroupMember(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiUpdateSanghaGroupMember,
+      action.payload.groupId,
+      action.payload.memberId,
+      { role: action.payload.role }
+    );
+
+    yield put(
+      updateSanghaGroupMemberSuccess({
+        member: normalizeMember(response),
+        memberId: action.payload.memberId,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      updateSanghaGroupMemberFailure({
+        error: getErrorMessage(error, "Failed to update member."),
+        memberId: action.payload.memberId,
+      })
+    );
+  }
+}
+
+function* handleRemoveGroupMember(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiRemoveSanghaGroupMember,
+      action.payload.groupId,
+      action.payload.memberId
+    );
+
+    yield put(
+      removeSanghaGroupMemberSuccess({
+        memberId: action.payload.memberId,
+        response,
+      })
+    );
+  } catch (error) {
+    yield put(
+      removeSanghaGroupMemberFailure({
+        error: getErrorMessage(error, "Failed to remove member."),
+        memberId: action.payload.memberId,
+      })
     );
   }
 }
@@ -1585,8 +1742,28 @@ export function* sanghaSaga() {
     handleFetchGroupJoinRequests
   );
   yield takeLatest(
+    SANGHA_ACTIONS.INVITE_GROUP_MEMBER_REQUEST,
+    handleInviteGroupMember
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.APPROVE_GROUP_JOIN_REQUEST_REQUEST,
+    handleApproveJoinRequest
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.DECLINE_GROUP_JOIN_REQUEST_REQUEST,
+    handleDeclineJoinRequest
+  );
+  yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_REQUEST,
     handleFetchGroupMembers
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.UPDATE_GROUP_MEMBER_REQUEST,
+    handleUpdateGroupMember
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.REMOVE_GROUP_MEMBER_REQUEST,
+    handleRemoveGroupMember
   );
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUP_EVENTS_REQUEST,

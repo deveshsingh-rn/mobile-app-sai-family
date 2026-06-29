@@ -158,6 +158,16 @@ function updateGroup(
   );
 }
 
+function updateMember(
+  members: SanghaState["groupMembers"],
+  memberId: string,
+  changes: Partial<SanghaState["groupMembers"][number]>
+) {
+  return members.map((member) =>
+    member.id === memberId ? { ...member, ...changes } : member
+  );
+}
+
 export function sanghaReducer(
   state: SanghaState = initialSanghaState,
   action: SanghaAction
@@ -555,6 +565,71 @@ export function sanghaReducer(
         groupJoinRequestsLoading: false,
       };
 
+    case SANGHA_ACTIONS.INVITE_GROUP_MEMBER_REQUEST:
+      return {
+        ...state,
+        actionPendingIds: {
+          ...state.actionPendingIds,
+          [action.payload.userId]: true,
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.INVITE_GROUP_MEMBER_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.userId
+        ),
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.INVITE_GROUP_MEMBER_FAILURE:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.userId
+        ),
+        error: action.payload.error,
+      };
+
+    case SANGHA_ACTIONS.APPROVE_GROUP_JOIN_REQUEST_REQUEST:
+    case SANGHA_ACTIONS.DECLINE_GROUP_JOIN_REQUEST_REQUEST:
+      return {
+        ...state,
+        actionPendingIds: {
+          ...state.actionPendingIds,
+          [action.payload.requestId]: true,
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.APPROVE_GROUP_JOIN_REQUEST_SUCCESS:
+    case SANGHA_ACTIONS.DECLINE_GROUP_JOIN_REQUEST_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.requestId
+        ),
+        groupJoinRequests: state.groupJoinRequests.filter(
+          (request) => request.id !== action.payload.requestId
+        ),
+      };
+
+    case SANGHA_ACTIONS.APPROVE_GROUP_JOIN_REQUEST_FAILURE:
+    case SANGHA_ACTIONS.DECLINE_GROUP_JOIN_REQUEST_FAILURE:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.requestId
+        ),
+        error: action.payload.error,
+      };
+
     case SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_REQUEST:
       return {
         ...state,
@@ -578,6 +653,54 @@ export function sanghaReducer(
         ...state,
         error: action.payload,
         groupMembersLoading: false,
+      };
+
+    case SANGHA_ACTIONS.UPDATE_GROUP_MEMBER_REQUEST:
+    case SANGHA_ACTIONS.REMOVE_GROUP_MEMBER_REQUEST:
+      return {
+        ...state,
+        actionPendingIds: {
+          ...state.actionPendingIds,
+          [action.payload.memberId]: true,
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.UPDATE_GROUP_MEMBER_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.memberId
+        ),
+        groupMembers: updateMember(
+          state.groupMembers,
+          action.payload.memberId,
+          action.payload.member
+        ),
+      };
+
+    case SANGHA_ACTIONS.REMOVE_GROUP_MEMBER_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.memberId
+        ),
+        groupMembers: state.groupMembers.filter(
+          (member) => member.id !== action.payload.memberId
+        ),
+      };
+
+    case SANGHA_ACTIONS.UPDATE_GROUP_MEMBER_FAILURE:
+    case SANGHA_ACTIONS.REMOVE_GROUP_MEMBER_FAILURE:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.memberId
+        ),
+        error: action.payload.error,
       };
 
     case SANGHA_ACTIONS.FETCH_GROUP_EVENTS_REQUEST:

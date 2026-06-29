@@ -108,9 +108,9 @@ Audit file: `docs/pillar-4-sangha-api-integration-audit.md`
 
 - [x] Create group screen and wire `POST /api/sangha/groups`.
 - [x] Edit/archive group and wire `PATCH /api/sangha/groups/:id` plus `DELETE /api/sangha/groups/:id`.
-- [ ] Invite member and wire `POST /api/sangha/groups/:id/invitations`.
-- [ ] Join request review UI and wire approve/decline.
-- [ ] Admin member role/remove actions.
+- [x] Invite member and wire `POST /api/sangha/groups/:id/invitations`.
+- [x] Join request review UI and wire approve/decline.
+- [x] Admin member role/remove actions.
 - [ ] Edit group post.
 - [ ] Report direct chat message.
 - [ ] Confirm Event create form sends `groupId` from Sangha route params.

@@ -391,6 +391,78 @@ export const fetchSanghaGroupJoinRequestsFailure = (
     type: SANGHA_ACTIONS.FETCH_GROUP_JOIN_REQUESTS_FAILURE,
   } as const);
 
+export const inviteSanghaGroupMemberRequest = (
+  payload: { groupId: string; message?: string; userId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.INVITE_GROUP_MEMBER_REQUEST,
+  } as const);
+
+export const inviteSanghaGroupMemberSuccess = (
+  payload: { groupId: string; response?: any; userId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.INVITE_GROUP_MEMBER_SUCCESS,
+  } as const);
+
+export const inviteSanghaGroupMemberFailure = (
+  payload: { error: string; userId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.INVITE_GROUP_MEMBER_FAILURE,
+  } as const);
+
+export const approveSanghaGroupJoinRequestRequest = (
+  payload: { groupId: string; requestId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.APPROVE_GROUP_JOIN_REQUEST_REQUEST,
+  } as const);
+
+export const approveSanghaGroupJoinRequestSuccess = (
+  payload: { requestId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.APPROVE_GROUP_JOIN_REQUEST_SUCCESS,
+  } as const);
+
+export const approveSanghaGroupJoinRequestFailure = (
+  payload: { error: string; requestId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.APPROVE_GROUP_JOIN_REQUEST_FAILURE,
+  } as const);
+
+export const declineSanghaGroupJoinRequestRequest = (
+  payload: { groupId: string; requestId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.DECLINE_GROUP_JOIN_REQUEST_REQUEST,
+  } as const);
+
+export const declineSanghaGroupJoinRequestSuccess = (
+  payload: { requestId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.DECLINE_GROUP_JOIN_REQUEST_SUCCESS,
+  } as const);
+
+export const declineSanghaGroupJoinRequestFailure = (
+  payload: { error: string; requestId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.DECLINE_GROUP_JOIN_REQUEST_FAILURE,
+  } as const);
+
 export const fetchSanghaGroupMembersRequest = (
   payload: {
     groupId: string;
@@ -423,6 +495,54 @@ export const fetchSanghaGroupMembersFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.FETCH_GROUP_MEMBERS_FAILURE,
+  } as const);
+
+export const updateSanghaGroupMemberRequest = (
+  payload: { groupId: string; memberId: string; role: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UPDATE_GROUP_MEMBER_REQUEST,
+  } as const);
+
+export const updateSanghaGroupMemberSuccess = (
+  payload: { member: SanghaGroupMember; memberId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UPDATE_GROUP_MEMBER_SUCCESS,
+  } as const);
+
+export const updateSanghaGroupMemberFailure = (
+  payload: { error: string; memberId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UPDATE_GROUP_MEMBER_FAILURE,
+  } as const);
+
+export const removeSanghaGroupMemberRequest = (
+  payload: { groupId: string; memberId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.REMOVE_GROUP_MEMBER_REQUEST,
+  } as const);
+
+export const removeSanghaGroupMemberSuccess = (
+  payload: { memberId: string; response?: any }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.REMOVE_GROUP_MEMBER_SUCCESS,
+  } as const);
+
+export const removeSanghaGroupMemberFailure = (
+  payload: { error: string; memberId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.REMOVE_GROUP_MEMBER_FAILURE,
   } as const);
 
 export const fetchSanghaGroupEventsRequest = (

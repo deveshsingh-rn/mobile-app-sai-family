@@ -232,6 +232,18 @@ export async function apiDeclineSanghaInvitation(
   return data;
 }
 
+export async function apiInviteSanghaGroupMember(
+  groupId: string,
+  payload: { message?: string; userId: string }
+) {
+  const { data } = await apiClient.post(
+    `/api/sangha/groups/${groupId}/invitations`,
+    payload
+  );
+
+  return data;
+}
+
 export async function apiFetchSanghaGroupDetail(
   groupId: string
 ) {
@@ -288,6 +300,28 @@ export async function apiFetchSanghaGroupJoinRequests(
   return data;
 }
 
+export async function apiApproveSanghaGroupJoinRequest(
+  groupId: string,
+  requestId: string
+) {
+  const { data } = await apiClient.post(
+    `/api/sangha/groups/${groupId}/join-requests/${requestId}/approve`
+  );
+
+  return data;
+}
+
+export async function apiDeclineSanghaGroupJoinRequest(
+  groupId: string,
+  requestId: string
+) {
+  const { data } = await apiClient.post(
+    `/api/sangha/groups/${groupId}/join-requests/${requestId}/decline`
+  );
+
+  return data;
+}
+
 export async function apiFetchSanghaGroupMembers(
   groupId: string,
   params: Record<string, any> = {}
@@ -295,6 +329,30 @@ export async function apiFetchSanghaGroupMembers(
   const { data } = await apiClient.get(
     `/api/sangha/groups/${groupId}/members`,
     { params }
+  );
+
+  return data;
+}
+
+export async function apiUpdateSanghaGroupMember(
+  groupId: string,
+  memberId: string,
+  payload: { role: string }
+) {
+  const { data } = await apiClient.patch(
+    `/api/sangha/groups/${groupId}/members/${memberId}`,
+    payload
+  );
+
+  return data;
+}
+
+export async function apiRemoveSanghaGroupMember(
+  groupId: string,
+  memberId: string
+) {
+  const { data } = await apiClient.delete(
+    `/api/sangha/groups/${groupId}/members/${memberId}`
   );
 
   return data;

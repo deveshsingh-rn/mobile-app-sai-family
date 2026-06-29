@@ -22,9 +22,6 @@ Integrated and visible today:
 
 Missing or partial:
 
-- Invite user to group.
-- Join request approve/decline UI and Redux flow.
-- Update member role and remove member.
 - Update post.
 - Report chat message.
 - Live streaming create/detail/start/join/heartbeat/chat/reactions/recording/report/end.
@@ -51,14 +48,14 @@ Missing or partial:
 | `POST /api/users/me/sangha/recent-searches` | Integrated | Hub search |
 | `DELETE /api/users/me/sangha/recent-searches` | Integrated | Hub search |
 | `GET /api/users/me/sangha/invitations` | Integrated | Hub/list screens |
-| `POST /api/sangha/groups/:id/invitations` | Missing | Needs invite-member modal |
+| `POST /api/sangha/groups/:id/invitations` | Integrated | Group Members invite panel |
 | `POST /api/users/me/sangha/invitations/:id/accept` | Integrated | Hub/list screens |
 | `POST /api/users/me/sangha/invitations/:id/decline` | Integrated | Hub/list screens |
 | `POST /api/sangha/groups` | Integrated | `screens/sangha-create-group-screen.tsx` |
 | `GET /api/sangha/groups/:id` | Integrated | `screens/group-details-screen.tsx` |
 | `GET /api/sangha/groups/:id/feed` | Integrated | Group detail Feed tab |
 | `GET /api/sangha/groups/:id/membership` | Integrated | Group detail capabilities |
-| `GET /api/sangha/groups/:id/join-requests` | Partial | Count wired; approve/decline UI missing |
+| `GET /api/sangha/groups/:id/join-requests` | Integrated | Group Feed member requests |
 | `POST /api/events` with `groupId` | Partial | Event create route opens; confirm payload pass-through |
 | `POST /api/sangha/conversations` | Integrated | `screens/sangha-chat-screen.tsx` |
 | `GET /api/sangha/conversations/:id/messages` | Integrated | Chat screen |
@@ -69,10 +66,10 @@ Missing or partial:
 | `POST /api/sangha/groups/:id/join` | Integrated | Group detail join button |
 | `DELETE /api/sangha/groups/:id/membership` | Integrated | Group detail leave button |
 | `GET /api/sangha/groups/:id/members` | Integrated | Group detail Members tab |
-| `PATCH /api/sangha/groups/:id/members/:memberId` | Missing | Needs admin member role action |
-| `DELETE /api/sangha/groups/:id/members/:memberId` | Missing | Needs admin remove member action |
-| `POST /api/sangha/groups/:id/join-requests/:requestId/approve` | Missing | Needs join-request review UI |
-| `POST /api/sangha/groups/:id/join-requests/:requestId/decline` | Missing | Needs join-request review UI |
+| `PATCH /api/sangha/groups/:id/members/:memberId` | Integrated | Group Members admin role action |
+| `DELETE /api/sangha/groups/:id/members/:memberId` | Integrated | Group Members admin remove action |
+| `POST /api/sangha/groups/:id/join-requests/:requestId/approve` | Integrated | Group Feed member requests |
+| `POST /api/sangha/groups/:id/join-requests/:requestId/decline` | Integrated | Group Feed member requests |
 | `DELETE /api/sangha/groups/:id` | Integrated | Edit Sangha archive action |
 | `GET /api/sangha/groups/:id/posts` | Integrated fallback | Group detail old posts fallback |
 | `POST /api/sangha/groups/:id/posts` | Integrated | Group feed composer |
@@ -117,11 +114,11 @@ Missing or partial:
 
 ### Phase B: Group Moderation
 
-- Add join request review section/screen.
-- Wire approve/decline join request.
-- Wire invite user.
-- Wire update member role.
-- Wire remove member.
+- Add join request review section/screen. Done.
+- Wire approve/decline join request. Done.
+- Wire invite user. Done.
+- Wire update member role. Done.
+- Wire remove member. Done.
 
 ### Phase C: Feed Completion
 
