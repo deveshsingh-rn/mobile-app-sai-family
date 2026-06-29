@@ -15,6 +15,10 @@ import {
 import * as ImagePicker from "expo-image-picker";
 
 import {
+  sendUserMobileOtp,
+  verifyUserMobileOtp,
+} from "@/services/auth";
+import {
   clearDevoteeAccountError,
   createDevoteeAccountRequest,
 } from "@/store/devotee-account/actions";
@@ -71,21 +75,33 @@ export default function CreateDevoteeAccountScreen({ onBack, onCreated }: Create
   const isSubmitting = useAppSelector(selectIsCreatingDevoteeAccount);
   const [form, setForm] = useState<DevoteeAccountForm>(INITIAL_FORM);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [mobileVerified, setMobileVerified] = useState(false);
+  const [isVerifyingMobile, setIsVerifyingMobile] = useState(false);
 
   const canSubmit = useMemo(
     () =>
-      form.name.trim() &&
-      form.email.trim() &&
-      form.mobileNumber.trim() &&
-      form.completeAddress.trim() &&
-      form.pincode.trim() &&
-      form.city.trim() &&
-      form.state.trim(),
-    [form]
+      Boolean(
+        form.name.trim() &&
+          form.email.trim() &&
+          form.mobileNumber.trim() &&
+          form.completeAddress.trim() &&
+          form.pincode.trim() &&
+          form.city.trim() &&
+          form.state.trim() &&
+          mobileVerified
+      ),
+    [form, mobileVerified]
   );
 
   const updateField = (key: keyof Omit<DevoteeAccountForm, "profileImage">, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
+    if (key === "mobileNumber") {
+      setMobileVerified(false);
+      setOtpSent(false);
+      setOtp("");
+    }
   };
 
   useEffect(() => {
@@ -133,12 +149,48 @@ export default function CreateDevoteeAccountScreen({ onBack, onCreated }: Create
 
   const handleSubmit = async () => {
     if (!canSubmit || isSubmitting) {
-      Alert.alert("Missing information", "Please fill all required devotee details.");
+      Alert.alert("Missing information", "Please fill all required devotee details and verify your mobile number.");
       return;
     }
 
     setHasSubmitted(true);
     dispatch(createDevoteeAccountRequest(form));
+  };
+
+  const handleSendMobileOtp = async () => {
+    if (!form.mobileNumber.trim()) {
+      Alert.alert("Mobile required", "Please enter your mobile number first.");
+      return;
+    }
+
+    try {
+      setIsVerifyingMobile(true);
+      await sendUserMobileOtp(form.mobileNumber);
+      setOtpSent(true);
+      Alert.alert("OTP sent", "Please enter the OTP sent to your mobile.");
+    } catch (error) {
+      Alert.alert("OTP failed", error instanceof Error ? error.message : "Unable to send OTP.");
+    } finally {
+      setIsVerifyingMobile(false);
+    }
+  };
+
+  const handleVerifyMobileOtp = async () => {
+    if (!form.mobileNumber.trim() || !otp.trim()) {
+      Alert.alert("OTP required", "Please enter mobile number and OTP.");
+      return;
+    }
+
+    try {
+      setIsVerifyingMobile(true);
+      await verifyUserMobileOtp(form.mobileNumber, otp);
+      setMobileVerified(true);
+      Alert.alert("Mobile verified", "You can now create your account.");
+    } catch (error) {
+      Alert.alert("Verification failed", error instanceof Error ? error.message : "Unable to verify OTP.");
+    } finally {
+      setIsVerifyingMobile(false);
+    }
   };
 
   return (
@@ -178,6 +230,49 @@ export default function CreateDevoteeAccountScreen({ onBack, onCreated }: Create
                 style={[styles.input, field.multiline && styles.textArea]}
                 value={form[field.key]}
               />
+              {field.key === "mobileNumber" ? (
+                <View style={styles.otpBox}>
+                  <Pressable
+                    disabled={isVerifyingMobile || mobileVerified}
+                    onPress={handleSendMobileOtp}
+                    style={[
+                      styles.otpButton,
+                      mobileVerified && styles.otpButtonVerified,
+                    ]}
+                  >
+                    {isVerifyingMobile && !otpSent ? (
+                      <ActivityIndicator color="#fffaf0" />
+                    ) : (
+                      <Text style={styles.otpButtonText}>
+                        {mobileVerified ? "Verified" : otpSent ? "Resend OTP" : "Send OTP"}
+                      </Text>
+                    )}
+                  </Pressable>
+                  {otpSent && !mobileVerified ? (
+                    <View style={styles.otpRow}>
+                      <TextInput
+                        keyboardType="number-pad"
+                        onChangeText={setOtp}
+                        placeholder="OTP"
+                        placeholderTextColor="#b79b61"
+                        style={[styles.input, styles.otpInput]}
+                        value={otp}
+                      />
+                      <Pressable
+                        disabled={isVerifyingMobile}
+                        onPress={handleVerifyMobileOtp}
+                        style={styles.verifyButton}
+                      >
+                        {isVerifyingMobile ? (
+                          <ActivityIndicator color="#fffaf0" />
+                        ) : (
+                          <Text style={styles.otpButtonText}>Verify</Text>
+                        )}
+                      </Pressable>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
             </View>
           ))}
         </View>
@@ -260,6 +355,40 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     paddingHorizontal: 18,
     textAlign: "center",
+  },
+  otpBox: {
+    marginTop: 10,
+  },
+  otpButton: {
+    alignItems: "center",
+    backgroundColor: "#8e5d10",
+    borderRadius: 12,
+    height: 44,
+    justifyContent: "center",
+  },
+  otpButtonText: {
+    color: "#fffaf0",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  otpButtonVerified: {
+    backgroundColor: "#15803d",
+  },
+  otpInput: {
+    flex: 1,
+  },
+  otpRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 10,
+  },
+  verifyButton: {
+    alignItems: "center",
+    backgroundColor: "#4e3309",
+    borderRadius: 12,
+    height: 48,
+    justifyContent: "center",
+    paddingHorizontal: 18,
   },
   profileImage: {
     borderColor: "#d9bd7a",

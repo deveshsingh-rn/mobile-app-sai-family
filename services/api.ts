@@ -28,6 +28,8 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
+const AUTH_SESSION_STORAGE_KEY = "sai-family.auth-session";
+
 // Injection method to break circular dependencies
 let injectedStore: any;
 export const injectStore = (store: any) => {
@@ -40,10 +42,27 @@ apiClient.interceptors.request.use(
     try {
       const isAvailable = await SecureStore.isAvailableAsync();
       if (isAvailable) {
+        const authSessionData = await SecureStore.getItemAsync(
+          AUTH_SESSION_STORAGE_KEY
+        );
         const accountData = await SecureStore.getItemAsync('sai-family.devotee-account');
+        const authSession = authSessionData
+          ? JSON.parse(authSessionData)
+          : null;
+        const accessToken = authSession?.tokens?.accessToken;
+        const authUserId = authSession?.user?.id;
+
+        if (accessToken) {
+          if (typeof config.headers.set === 'function') {
+            config.headers.set('Authorization', `Bearer ${accessToken}`);
+          } else {
+            config.headers.Authorization = `Bearer ${accessToken}`;
+          }
+        }
+
         if (accountData) {
           const account = JSON.parse(accountData);
-          const userId = account?.id || account?.authorId;
+          const userId = account?.id || account?.authorId || authUserId;
 
           if (userId) {
             // Injecting x-user-id header. Change to Authorization: `Bearer ${token}` if needed later.
@@ -52,6 +71,12 @@ apiClient.interceptors.request.use(
             } else {
               config.headers['x-user-id'] = userId;
             }
+          }
+        } else if (authUserId) {
+          if (typeof config.headers.set === 'function') {
+            config.headers.set('x-user-id', authUserId);
+          } else {
+            config.headers['x-user-id'] = authUserId;
           }
         }
       }

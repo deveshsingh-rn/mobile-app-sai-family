@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   Platform,
   Pressable,
@@ -7,6 +9,7 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,6 +25,16 @@ import {
   Sparkles,
   Users,
 } from "lucide-react-native";
+
+import {
+  authUserToDevoteeAccount,
+  loginUserWithEmail,
+  sendUserMobileOtp,
+  verifyUserMobileOtp,
+} from "@/services/auth";
+import { saveDevoteeAccount } from "@/services/devotee-account";
+import { loadSavedDevoteeAccountRequest } from "@/store/devotee-account/actions";
+import { useAppDispatch } from "@/store/hooks";
 
 type AuthScreenProps = {
   onContinue: () => void;
@@ -91,9 +104,17 @@ export default function AuthScreen({
   onContinue,
   onCreateAccount,
 }: AuthScreenProps) {
+  const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
   const [activePillar, setActivePillar] =
     useState<PillarId>("experiences");
+  const [loginMode, setLoginMode] = useState<"mobile" | "email">("mobile");
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [mobileOtp, setMobileOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const active = useMemo(
     () =>
@@ -102,6 +123,68 @@ export default function AuthScreen({
     [activePillar]
   );
   const ActiveIcon = active.Icon;
+
+  const completeLogin = async (user: any) => {
+    if (!user?.id) {
+      throw new Error("Login succeeded, but user profile was not returned.");
+    }
+
+    await saveDevoteeAccount(authUserToDevoteeAccount(user));
+    dispatch(loadSavedDevoteeAccountRequest());
+    onContinue();
+  };
+
+  const handleSendOtp = async () => {
+    if (!mobileNumber.trim()) {
+      Alert.alert("Mobile required", "Please enter your mobile number.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await sendUserMobileOtp(mobileNumber);
+      setOtpSent(true);
+      Alert.alert("OTP sent", "Please enter the OTP sent to your mobile.");
+    } catch (error) {
+      Alert.alert("OTP failed", error instanceof Error ? error.message : "Unable to send OTP.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleMobileLogin = async () => {
+    if (!mobileNumber.trim() || !mobileOtp.trim()) {
+      Alert.alert("OTP required", "Please enter mobile number and OTP.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await verifyUserMobileOtp(mobileNumber, mobileOtp);
+      await completeLogin(response.user);
+    } catch (error) {
+      Alert.alert("Login failed", error instanceof Error ? error.message : "Unable to login.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEmailLogin = async () => {
+    if (!email.trim() || !password) {
+      Alert.alert("Login details required", "Please enter email and password.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await loginUserWithEmail(email, password);
+      await completeLogin(response.user);
+    } catch (error) {
+      Alert.alert("Login failed", error instanceof Error ? error.message : "Unable to login.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -228,6 +311,107 @@ export default function AuthScreen({
             </Text>
           </View>
         </View>
+
+        <View style={styles.loginCard}>
+          <View style={styles.segmented}>
+            {(["mobile", "email"] as const).map((mode) => {
+              const activeMode = loginMode === mode;
+
+              return (
+                <Pressable
+                  key={mode}
+                  onPress={() => setLoginMode(mode)}
+                  style={[
+                    styles.segmentButton,
+                    activeMode && styles.segmentButtonActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      activeMode && styles.segmentTextActive,
+                    ]}
+                  >
+                    {mode === "mobile" ? "Mobile OTP" : "Email Password"}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {loginMode === "mobile" ? (
+            <View style={styles.loginForm}>
+              <TextInput
+                keyboardType="phone-pad"
+                onChangeText={setMobileNumber}
+                placeholder="+919876543210"
+                placeholderTextColor="#A8A29E"
+                style={styles.input}
+                value={mobileNumber}
+              />
+              {otpSent ? (
+                <TextInput
+                  keyboardType="number-pad"
+                  onChangeText={setMobileOtp}
+                  placeholder="Enter OTP"
+                  placeholderTextColor="#A8A29E"
+                  style={styles.input}
+                  value={mobileOtp}
+                />
+              ) : null}
+              <Pressable
+                disabled={isSubmitting}
+                onPress={otpSent ? handleMobileLogin : handleSendOtp}
+                style={({ pressed }) => [
+                  styles.loginAction,
+                  pressed && styles.buttonPressed,
+                ]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.loginActionText}>
+                    {otpSent ? "Verify & Login" : "Send OTP"}
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.loginForm}>
+              <TextInput
+                autoCapitalize="none"
+                keyboardType="email-address"
+                onChangeText={setEmail}
+                placeholder="Email"
+                placeholderTextColor="#A8A29E"
+                style={styles.input}
+                value={email}
+              />
+              <TextInput
+                onChangeText={setPassword}
+                placeholder="Password"
+                placeholderTextColor="#A8A29E"
+                secureTextEntry
+                style={styles.input}
+                value={password}
+              />
+              <Pressable
+                disabled={isSubmitting}
+                onPress={handleEmailLogin}
+                style={({ pressed }) => [
+                  styles.loginAction,
+                  pressed && styles.buttonPressed,
+                ]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.loginActionText}>Login</Text>
+                )}
+              </Pressable>
+            </View>
+          )}
+        </View>
       </ScrollView>
 
       <View
@@ -239,13 +423,21 @@ export default function AuthScreen({
         ]}
       >
         <Pressable
-          onPress={onContinue}
+          onPress={
+            loginMode === "mobile"
+              ? otpSent
+                ? handleMobileLogin
+                : handleSendOtp
+              : handleEmailLogin
+          }
           style={({ pressed }) => [
             styles.primaryButton,
             pressed && styles.buttonPressed,
           ]}
         >
-          <Text style={styles.primaryText}>Login</Text>
+          <Text style={styles.primaryText}>
+            {loginMode === "mobile" ? (otpSent ? "Verify OTP" : "Send OTP") : "Login"}
+          </Text>
           <ArrowRight color="#FFFFFF" size={18} />
         </Pressable>
 
@@ -363,6 +555,17 @@ const styles = StyleSheet.create({
     lineHeight: 31,
     marginTop: 12,
   },
+  input: {
+    backgroundColor: "#FAFAF9",
+    borderColor: "#E7D7BE",
+    borderRadius: 12,
+    borderWidth: 1,
+    color: "#1F2937",
+    fontSize: 15,
+    fontWeight: "800",
+    height: 48,
+    paddingHorizontal: 14,
+  },
   kicker: {
     alignItems: "center",
     alignSelf: "flex-start",
@@ -419,6 +622,30 @@ const styles = StyleSheet.create({
   },
   pillarLabelActive: {
     color: "#1F2937",
+  },
+  loginAction: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 12,
+    height: 48,
+    justifyContent: "center",
+  },
+  loginActionText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  loginCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7D7BE",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 14,
+    padding: 14,
+  },
+  loginForm: {
+    gap: 10,
+    marginTop: 12,
   },
   pressed: {
     opacity: 0.86,
@@ -490,6 +717,30 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     fontSize: 15,
     fontWeight: "900",
+  },
+  segmentButton: {
+    alignItems: "center",
+    borderRadius: 10,
+    flex: 1,
+    height: 38,
+    justifyContent: "center",
+  },
+  segmentButtonActive: {
+    backgroundColor: "#1F2937",
+  },
+  segmented: {
+    backgroundColor: "#F6EFD9",
+    borderRadius: 12,
+    flexDirection: "row",
+    padding: 4,
+  },
+  segmentText: {
+    color: "#78716C",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  segmentTextActive: {
+    color: "#FFFFFF",
   },
   sectionHeader: {
     marginBottom: 12,

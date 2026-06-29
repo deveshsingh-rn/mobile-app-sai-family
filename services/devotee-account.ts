@@ -3,6 +3,7 @@ import axios from "axios";
 
 import { DevoteeAccount, DevoteeAccountForm } from "@/store/devotee-account/types";
 import { apiClient } from "./api";
+import { clearAuthSession } from "./auth";
 
 export const DEVOTEE_ACCOUNT_STORAGE_KEY = "sai-family.devotee-account";
 
@@ -130,6 +131,7 @@ export async function saveDevoteeAccount(account: DevoteeAccount) {
     authorId: acc.id || acc.authorId, 
     memberId: acc.memberId,
     name: acc.name,
+    email: acc.email,
     role: acc.role,
     mobileNumber: acc.mobileNumber,
     profileImageUrl: acc.profileImageUrl || acc.profile?.profileImageUrl,
@@ -166,6 +168,7 @@ export async function clearSavedDevoteeAccount() {
   }
 
   await SecureStore.deleteItemAsync(DEVOTEE_ACCOUNT_STORAGE_KEY);
+  await clearAuthSession();
 }
 
 export async function updateDevoteeSettings(accountId: string, settings: Partial<DevoteeAccount>) {
@@ -193,4 +196,5 @@ export async function removeDevoteeAccountStorage() {
   await SecureStore.deleteItemAsync(
     DEVOTEE_ACCOUNT_STORAGE_KEY
   );
+  await clearAuthSession();
 }
