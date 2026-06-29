@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StatusBar,
   Text,
@@ -9,14 +10,23 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { createSanghaGroupRequest } from "@/store/sangha/actions";
+import {
+  archiveSanghaGroupRequest,
+  createSanghaGroupRequest,
+  fetchSanghaGroupDetailRequest,
+  updateSanghaGroupRequest,
+} from "@/store/sangha/actions";
 import {
   selectCreatedSanghaGroup,
   selectCreatingSanghaGroup,
+  selectIsSanghaActionPending,
   selectSanghaError,
+  selectSanghaGroupDetail,
+  selectUpdatedSanghaGroup,
+  selectUpdatingSanghaGroup,
 } from "@/store/sangha/selectors";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
@@ -35,12 +45,26 @@ const privacyOptions = [
   { label: "Invite Only", value: "invite_only" },
 ];
 
-export default function SanghaCreateGroupScreen() {
+export default function SanghaCreateGroupScreen({
+  mode = "create",
+}: {
+  mode?: "create" | "edit";
+}) {
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const dispatch = useAppDispatch();
   const creating = useAppSelector(selectCreatingSanghaGroup);
   const createdGroup = useAppSelector(selectCreatedSanghaGroup);
+  const updating = useAppSelector(selectUpdatingSanghaGroup);
+  const updatedGroup = useAppSelector(selectUpdatedSanghaGroup);
+  const group = useAppSelector(selectSanghaGroupDetail);
   const error = useAppSelector(selectSanghaError);
+  const archiving = useAppSelector((state) =>
+    selectIsSanghaActionPending(state, id)
+  );
+  const submitting = creating || updating || archiving;
   const [submitted, setSubmitted] = useState(false);
+  const [archiveSubmitted, setArchiveSubmitted] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const [name, setName] = useState("");
   const [purpose, setPurpose] = useState("seva");
   const [privacy, setPrivacy] = useState("public");
@@ -54,20 +78,55 @@ export default function SanghaCreateGroupScreen() {
     () =>
       name.trim().length >= 3 &&
       description.trim().length >= 10 &&
-      !creating,
-    [creating, description, name]
+      !submitting,
+    [description, name, submitting]
   );
 
   useEffect(() => {
-    if (!submitted || !createdGroup?.id) {
+    if (mode === "edit" && id) {
+      dispatch(fetchSanghaGroupDetailRequest(id));
+    }
+  }, [dispatch, id, mode]);
+
+  useEffect(() => {
+    if (mode !== "edit" || hydrated || !group) {
       return;
     }
 
-    router.replace({
-      pathname: "/group-details",
-      params: { id: createdGroup.id },
-    });
-  }, [createdGroup?.id, submitted]);
+    setName(group.name || "");
+    setPurpose(group.purpose || "seva");
+    setPrivacy(group.privacy || "public");
+    setDescription(group.description || "");
+    setPurposeText(group.purposeText || "");
+    setGuidelines(group.guidelines || "");
+    setCity(group.city || "");
+    setStateName(group.state || "");
+    setCountry(group.country || "India");
+    setHydrated(true);
+  }, [group, hydrated, mode]);
+
+  useEffect(() => {
+    if (!submitted) {
+      return;
+    }
+
+    if (mode === "create" && createdGroup?.id) {
+      router.replace({
+        pathname: "/group-details",
+        params: { id: createdGroup.id },
+      });
+    }
+
+    if (mode === "edit" && updatedGroup?.id) {
+      router.back();
+    }
+  }, [createdGroup?.id, mode, submitted, updatedGroup?.id]);
+
+  useEffect(() => {
+    if (archiveSubmitted && id && !archiving && !error) {
+      router.replace("/sangha-hub");
+    }
+  }, [archiveSubmitted, archiving, error, id]);
 
   const submit = () => {
     if (!canSubmit) {
@@ -75,20 +134,47 @@ export default function SanghaCreateGroupScreen() {
     }
 
     setSubmitted(true);
-    dispatch(
-      createSanghaGroupRequest({
-        bannerUrl:
-          "https://saifamily21219878.blob.core.windows.net/sai-media/sangha/banner-placeholder.png",
-        city: city.trim() || undefined,
-        country: country.trim() || undefined,
-        description: description.trim(),
-        guidelines: guidelines.trim() || undefined,
-        name: name.trim(),
-        privacy,
-        purpose,
-        purposeText: purposeText.trim() || undefined,
-        state: stateName.trim() || undefined,
-      })
+    const payload = {
+      bannerUrl:
+        "https://saifamily21219878.blob.core.windows.net/sai-media/sangha/banner-placeholder.png",
+      city: city.trim() || undefined,
+      country: country.trim() || undefined,
+      description: description.trim(),
+      guidelines: guidelines.trim() || undefined,
+      name: name.trim(),
+      privacy,
+      purpose,
+      purposeText: purposeText.trim() || undefined,
+      state: stateName.trim() || undefined,
+    };
+
+    if (mode === "edit" && id) {
+      dispatch(updateSanghaGroupRequest({ ...payload, groupId: id }));
+      return;
+    }
+
+    dispatch(createSanghaGroupRequest(payload));
+  };
+
+  const confirmArchive = () => {
+    if (!id || archiving) {
+      return;
+    }
+
+    Alert.alert(
+      "Archive group",
+      "This will archive the Sangha group for members.",
+      [
+        { style: "cancel", text: "Cancel" },
+        {
+          onPress: () => {
+            setArchiveSubmitted(true);
+            dispatch(archiveSanghaGroupRequest(id));
+          },
+          style: "destructive",
+          text: "Archive",
+        },
+      ]
     );
   };
 
@@ -116,10 +202,10 @@ export default function SanghaCreateGroupScreen() {
           </TouchableOpacity>
           <View style={{ flex: 1, marginLeft: 14 }}>
             <Text style={{ color: "#111827", fontSize: 27, fontWeight: "900" }}>
-              Create Sangha
+              {mode === "edit" ? "Edit Sangha" : "Create Sangha"}
             </Text>
             <Text style={{ color: "#6B7280", fontSize: 14, fontWeight: "700", marginTop: 3 }}>
-              Build a focused community space
+              {mode === "edit" ? "Update community details" : "Build a focused community space"}
             </Text>
           </View>
         </View>
@@ -221,14 +307,35 @@ export default function SanghaCreateGroupScreen() {
               marginTop: 18,
             }}
           >
-            {creating ? (
+            {submitting ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "900" }}>
-                Create Group
+                {mode === "edit" ? "Save Changes" : "Create Group"}
               </Text>
             )}
           </TouchableOpacity>
+
+          {mode === "edit" ? (
+            <TouchableOpacity
+              activeOpacity={0.88}
+              disabled={submitting}
+              onPress={confirmArchive}
+              style={{
+                alignItems: "center",
+                borderColor: "#FCA5A5",
+                borderRadius: 18,
+                borderWidth: 1,
+                height: 50,
+                justifyContent: "center",
+                marginTop: 12,
+              }}
+            >
+              <Text style={{ color: "#9F1239", fontSize: 15, fontWeight: "900" }}>
+                Archive Group
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>

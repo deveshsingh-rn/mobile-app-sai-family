@@ -25,6 +25,7 @@ import {
   SanghaConversation,
   SanghaConversationMessage,
   CreateSanghaGroupPayload,
+  UpdateSanghaGroupPayload,
 } from "./types";
 
 export const fetchSanghaHomeRequest = (
@@ -197,6 +198,50 @@ export const createSanghaGroupFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.CREATE_GROUP_FAILURE,
+  } as const);
+
+export const updateSanghaGroupRequest = (
+  payload: UpdateSanghaGroupPayload
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UPDATE_GROUP_REQUEST,
+  } as const);
+
+export const updateSanghaGroupSuccess = (
+  payload: SanghaGroupSummary
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UPDATE_GROUP_SUCCESS,
+  } as const);
+
+export const updateSanghaGroupFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UPDATE_GROUP_FAILURE,
+  } as const);
+
+export const archiveSanghaGroupRequest = (groupId: string) =>
+  ({
+    payload: { groupId },
+    type: SANGHA_ACTIONS.ARCHIVE_GROUP_REQUEST,
+  } as const);
+
+export const archiveSanghaGroupSuccess = (groupId: string) =>
+  ({
+    payload: { groupId },
+    type: SANGHA_ACTIONS.ARCHIVE_GROUP_SUCCESS,
+  } as const);
+
+export const archiveSanghaGroupFailure = (
+  payload: { error: string; groupId: string }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.ARCHIVE_GROUP_FAILURE,
   } as const);
 
 export const fetchSanghaGroupDetailRequest = (

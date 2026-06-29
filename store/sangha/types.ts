@@ -140,6 +140,11 @@ export type CreateSanghaGroupPayload = {
   state?: string;
 };
 
+export type UpdateSanghaGroupPayload =
+  Partial<CreateSanghaGroupPayload> & {
+    groupId: string;
+  };
+
 export type SanghaGroupDetail = SanghaGroupSummary & {
   activePercent?: number;
   canManage?: boolean;
@@ -330,6 +335,8 @@ export type SanghaState = {
   groupsHomeLoading: boolean;
   createdGroup: SanghaGroupSummary | null;
   creatingGroup: boolean;
+  updatedGroup: SanghaGroupSummary | null;
+  updatingGroup: boolean;
   groupDetail: SanghaGroupDetail | null;
   groupDetailLoading: boolean;
   groupEvents: SanghaGroupEvent[];
@@ -397,6 +404,12 @@ export enum SANGHA_ACTIONS {
   CREATE_GROUP_REQUEST = "sangha/CREATE_GROUP_REQUEST",
   CREATE_GROUP_SUCCESS = "sangha/CREATE_GROUP_SUCCESS",
   CREATE_GROUP_FAILURE = "sangha/CREATE_GROUP_FAILURE",
+  UPDATE_GROUP_REQUEST = "sangha/UPDATE_GROUP_REQUEST",
+  UPDATE_GROUP_SUCCESS = "sangha/UPDATE_GROUP_SUCCESS",
+  UPDATE_GROUP_FAILURE = "sangha/UPDATE_GROUP_FAILURE",
+  ARCHIVE_GROUP_REQUEST = "sangha/ARCHIVE_GROUP_REQUEST",
+  ARCHIVE_GROUP_SUCCESS = "sangha/ARCHIVE_GROUP_SUCCESS",
+  ARCHIVE_GROUP_FAILURE = "sangha/ARCHIVE_GROUP_FAILURE",
   FETCH_GROUP_DETAIL_REQUEST = "sangha/FETCH_GROUP_DETAIL_REQUEST",
   FETCH_GROUP_DETAIL_SUCCESS = "sangha/FETCH_GROUP_DETAIL_SUCCESS",
   FETCH_GROUP_DETAIL_FAILURE = "sangha/FETCH_GROUP_DETAIL_FAILURE",
@@ -942,5 +955,11 @@ export type SanghaAction =
         | SANGHA_ACTIONS.MARK_CONVERSATION_READ_FAILURE
         | SANGHA_ACTIONS.CREATE_GROUP_REQUEST
         | SANGHA_ACTIONS.CREATE_GROUP_SUCCESS
-        | SANGHA_ACTIONS.CREATE_GROUP_FAILURE;
+        | SANGHA_ACTIONS.CREATE_GROUP_FAILURE
+        | SANGHA_ACTIONS.UPDATE_GROUP_REQUEST
+        | SANGHA_ACTIONS.UPDATE_GROUP_SUCCESS
+        | SANGHA_ACTIONS.UPDATE_GROUP_FAILURE
+        | SANGHA_ACTIONS.ARCHIVE_GROUP_REQUEST
+        | SANGHA_ACTIONS.ARCHIVE_GROUP_SUCCESS
+        | SANGHA_ACTIONS.ARCHIVE_GROUP_FAILURE;
     };

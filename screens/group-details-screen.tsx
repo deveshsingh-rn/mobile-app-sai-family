@@ -155,6 +155,8 @@ export default function GroupDetailsScreen() {
     membership?.canComment ?? canPost;
   const canCreateEvent =
     membership?.canCreateEvent ?? isActiveMember;
+  const canManageGroup =
+    membership?.canModerate ?? group?.canManage ?? false;
 
   useEffect(() => {
     if (!groupId) {
@@ -336,6 +338,31 @@ export default function GroupDetailsScreen() {
           >
             <Ionicons name="arrow-back" size={22} color="#2B1308" />
           </TouchableOpacity>
+
+          {canManageGroup ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() =>
+                router.push({
+                  pathname: "/sangha-edit-group",
+                  params: { id: groupId },
+                })
+              }
+              style={{
+                position: "absolute",
+                right: 18,
+                top: 18,
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: "rgba(255,255,255,0.9)",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons name="settings-outline" size={21} color="#2B1308" />
+            </TouchableOpacity>
+          ) : null}
 
           <View style={{ position: "absolute", left: 22, right: 22, bottom: 26 }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>

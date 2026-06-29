@@ -22,7 +22,6 @@ Integrated and visible today:
 
 Missing or partial:
 
-- Update/archive group UI and Redux flow.
 - Invite user to group.
 - Join request approve/decline UI and Redux flow.
 - Update member role and remove member.
@@ -66,7 +65,7 @@ Missing or partial:
 | `POST /api/sangha/conversations/:id/messages` | Integrated | Chat screen |
 | `PATCH /api/sangha/conversations/:id/read` | Integrated | Chat screen |
 | `POST /api/sangha/messages/:id/report` | Missing | Needs message actions/report modal |
-| `PATCH /api/sangha/groups/:id` | Missing | Needs edit group screen |
+| `PATCH /api/sangha/groups/:id` | Integrated | `screens/sangha-create-group-screen.tsx` edit mode |
 | `POST /api/sangha/groups/:id/join` | Integrated | Group detail join button |
 | `DELETE /api/sangha/groups/:id/membership` | Integrated | Group detail leave button |
 | `GET /api/sangha/groups/:id/members` | Integrated | Group detail Members tab |
@@ -74,7 +73,7 @@ Missing or partial:
 | `DELETE /api/sangha/groups/:id/members/:memberId` | Missing | Needs admin remove member action |
 | `POST /api/sangha/groups/:id/join-requests/:requestId/approve` | Missing | Needs join-request review UI |
 | `POST /api/sangha/groups/:id/join-requests/:requestId/decline` | Missing | Needs join-request review UI |
-| `DELETE /api/sangha/groups/:id` | Missing | Needs archive group admin action |
+| `DELETE /api/sangha/groups/:id` | Integrated | Edit Sangha archive action |
 | `GET /api/sangha/groups/:id/posts` | Integrated fallback | Group detail old posts fallback |
 | `POST /api/sangha/groups/:id/posts` | Integrated | Group feed composer |
 | `PATCH /api/sangha/groups/:id/posts/:postId` | Missing | Needs edit post action |
@@ -113,8 +112,8 @@ Missing or partial:
 - Add route `app/sangha-create-group.tsx`. Done.
 - Wire `POST /api/sangha/groups`. Done.
 - Add "Create Group" CTA in Sangha Hub and/or Sangha tab.
-- Wire `PATCH /api/sangha/groups/:id`.
-- Wire `DELETE /api/sangha/groups/:id`.
+- Wire `PATCH /api/sangha/groups/:id`. Done.
+- Wire `DELETE /api/sangha/groups/:id`. Done.
 
 ### Phase B: Group Moderation
 

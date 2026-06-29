@@ -15,6 +15,8 @@ export const initialSanghaState: SanghaState = {
   groupsHomeLoading: false,
   createdGroup: null,
   creatingGroup: false,
+  updatedGroup: null,
+  updatingGroup: false,
   groupDetail: null,
   groupDetailLoading: false,
   groupEvents: [],
@@ -143,6 +145,16 @@ function updateEvent(
 ) {
   return events.map((event) =>
     event.id === eventId ? { ...event, ...changes } : event
+  );
+}
+
+function updateGroup(
+  groups: SanghaState["groupsList"],
+  groupId: string,
+  changes: Partial<SanghaState["groupsList"][number]>
+) {
+  return groups.map((group) =>
+    group.id === groupId ? { ...group, ...changes } : group
   );
 }
 
@@ -334,6 +346,77 @@ export function sanghaReducer(
         ...state,
         creatingGroup: false,
         error: action.payload,
+      };
+
+    case SANGHA_ACTIONS.UPDATE_GROUP_REQUEST:
+      return {
+        ...state,
+        error: null,
+        updatedGroup: null,
+        updatingGroup: true,
+      };
+
+    case SANGHA_ACTIONS.UPDATE_GROUP_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        groupDetail:
+          state.groupDetail?.id === action.payload.id
+            ? {
+                ...state.groupDetail,
+                ...action.payload,
+              }
+            : state.groupDetail,
+        groupsList: updateGroup(
+          state.groupsList,
+          action.payload.id,
+          action.payload
+        ),
+        updatedGroup: action.payload,
+        updatingGroup: false,
+      };
+
+    case SANGHA_ACTIONS.UPDATE_GROUP_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        updatingGroup: false,
+      };
+
+    case SANGHA_ACTIONS.ARCHIVE_GROUP_REQUEST:
+      return {
+        ...state,
+        actionPendingIds: {
+          ...state.actionPendingIds,
+          [action.payload.groupId]: true,
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.ARCHIVE_GROUP_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.groupId
+        ),
+        groupDetail:
+          state.groupDetail?.id === action.payload.groupId
+            ? null
+            : state.groupDetail,
+        groupsList: state.groupsList.filter(
+          (group) => group.id !== action.payload.groupId
+        ),
+      };
+
+    case SANGHA_ACTIONS.ARCHIVE_GROUP_FAILURE:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.groupId
+        ),
+        error: action.payload.error,
       };
 
     case SANGHA_ACTIONS.FETCH_GROUP_DETAIL_REQUEST:

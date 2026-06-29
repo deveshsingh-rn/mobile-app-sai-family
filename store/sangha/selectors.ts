@@ -84,6 +84,14 @@ export const selectCreatingSanghaGroup = (
   state: RootState
 ) => selectSanghaState(state).creatingGroup;
 
+export const selectUpdatedSanghaGroup = (
+  state: RootState
+) => selectSanghaState(state).updatedGroup;
+
+export const selectUpdatingSanghaGroup = (
+  state: RootState
+) => selectSanghaState(state).updatingGroup;
+
 export const selectSanghaGroupDetail = (
   state: RootState
 ) => selectSanghaState(state).groupDetail;

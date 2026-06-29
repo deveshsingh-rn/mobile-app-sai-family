@@ -6,6 +6,7 @@ import {
   apiBlockSanghaDevotee,
   apiClearSanghaRecentSearches,
   apiCreateSanghaGroup,
+  apiArchiveSanghaGroup,
   apiDeclineSanghaInvitation,
   apiDisconnectSanghaDevotee,
   apiFetchSanghaDevotees,
@@ -40,6 +41,7 @@ import {
   apiUnlikeSanghaGroupPost,
   apiUnpinSanghaGroupPost,
   apiUpdateSanghaDiscovery,
+  apiUpdateSanghaGroup,
   apiStartSanghaConversation,
   apiFetchSanghaConversationMessages,
   apiSendSanghaConversationMessage,
@@ -56,6 +58,8 @@ import {
   clearSanghaRecentSearchesSuccess,
   createSanghaGroupFailure,
   createSanghaGroupSuccess,
+  archiveSanghaGroupFailure,
+  archiveSanghaGroupSuccess,
   declineSanghaInvitationFailure,
   declineSanghaInvitationSuccess,
   createSanghaGroupPostCommentFailure,
@@ -124,6 +128,8 @@ import {
   unpinSanghaGroupPostSuccess,
   updateSanghaDiscoveryFailure,
   updateSanghaDiscoverySuccess,
+  updateSanghaGroupFailure,
+  updateSanghaGroupSuccess,
   startSanghaConversationFailure,
   startSanghaConversationSuccess,
   fetchSanghaConversationMessagesFailure,
@@ -669,6 +675,45 @@ function* handleCreateSanghaGroup(
       createSanghaGroupFailure(
         getErrorMessage(error, "Failed to create Sangha group.")
       )
+    );
+  }
+}
+
+function* handleUpdateSanghaGroup(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const { groupId, ...payload } = action.payload;
+    const response = yield call(
+      apiUpdateSanghaGroup,
+      groupId,
+      payload
+    );
+
+    yield put(
+      updateSanghaGroupSuccess(normalizeGroup(response))
+    );
+  } catch (error) {
+    yield put(
+      updateSanghaGroupFailure(
+        getErrorMessage(error, "Failed to update Sangha group.")
+      )
+    );
+  }
+}
+
+function* handleArchiveSanghaGroup(
+  action: any
+): Generator<any, void, any> {
+  try {
+    yield call(apiArchiveSanghaGroup, action.payload.groupId);
+    yield put(archiveSanghaGroupSuccess(action.payload.groupId));
+  } catch (error) {
+    yield put(
+      archiveSanghaGroupFailure({
+        error: getErrorMessage(error, "Failed to archive Sangha group."),
+        groupId: action.payload.groupId,
+      })
     );
   }
 }
@@ -1510,6 +1555,14 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.CREATE_GROUP_REQUEST,
     handleCreateSanghaGroup
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.UPDATE_GROUP_REQUEST,
+    handleUpdateSanghaGroup
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.ARCHIVE_GROUP_REQUEST,
+    handleArchiveSanghaGroup
   );
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUP_DETAIL_REQUEST,

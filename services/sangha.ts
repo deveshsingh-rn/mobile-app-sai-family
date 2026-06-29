@@ -181,6 +181,26 @@ export async function apiCreateSanghaGroup(payload: {
   return data;
 }
 
+export async function apiUpdateSanghaGroup(
+  groupId: string,
+  payload: Record<string, any>
+) {
+  const { data } = await apiClient.patch(
+    `/api/sangha/groups/${groupId}`,
+    payload
+  );
+
+  return data;
+}
+
+export async function apiArchiveSanghaGroup(groupId: string) {
+  const { data } = await apiClient.delete(
+    `/api/sangha/groups/${groupId}`
+  );
+
+  return data;
+}
+
 export async function apiFetchSanghaInvitations(
   params: Record<string, any> = {}
 ) {

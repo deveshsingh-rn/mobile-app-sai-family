@@ -107,7 +107,7 @@ Status: Not started
 Audit file: `docs/pillar-4-sangha-api-integration-audit.md`
 
 - [x] Create group screen and wire `POST /api/sangha/groups`.
-- [ ] Edit/archive group and wire `PATCH /api/sangha/groups/:id` plus `DELETE /api/sangha/groups/:id`.
+- [x] Edit/archive group and wire `PATCH /api/sangha/groups/:id` plus `DELETE /api/sangha/groups/:id`.
 - [ ] Invite member and wire `POST /api/sangha/groups/:id/invitations`.
 - [ ] Join request review UI and wire approve/decline.
 - [ ] Admin member role/remove actions.
