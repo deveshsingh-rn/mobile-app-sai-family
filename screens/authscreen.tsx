@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -48,6 +49,8 @@ type PillarId =
   | "sangha";
 
 type Pillar = {
+  accent: string;
+  background: string;
   description: string;
   id: PillarId;
   Icon: React.ComponentType<{
@@ -61,6 +64,8 @@ type Pillar = {
 
 const PILLARS: Pillar[] = [
   {
+    accent: "#C2410C",
+    background: "#FFF7ED",
     description:
       "Share prayers, miracles, dreams, darshan stories, and blessings.",
     Icon: MessageCircleHeart,
@@ -69,6 +74,8 @@ const PILLARS: Pillar[] = [
     title: "Divine experiences",
   },
   {
+    accent: "#0F766E",
+    background: "#ECFDF5",
     description:
       "Discover bhajans, pooja, seva, satsang, and community gatherings.",
     Icon: CalendarDays,
@@ -77,6 +84,8 @@ const PILLARS: Pillar[] = [
     title: "Sacred gatherings",
   },
   {
+    accent: "#7C3AED",
+    background: "#F5F3FF",
     description:
       "Find devotee businesses and trusted services from your community.",
     Icon: Building2,
@@ -85,6 +94,8 @@ const PILLARS: Pillar[] = [
     title: "Devotee services",
   },
   {
+    accent: "#BE185D",
+    background: "#FDF2F8",
     description:
       "Join circles, groups, and seva communities with shared purpose.",
     Icon: Users,
@@ -95,9 +106,9 @@ const PILLARS: Pillar[] = [
 ];
 
 const trustItems = [
-  "Secure devotee profile",
-  "Family-first community",
-  "Event reminders and updates",
+  "Mobile OTP protected",
+  "Private devotee profile",
+  "No login again after verification",
 ];
 
 export default function AuthScreen({
@@ -187,7 +198,10 @@ export default function AuthScreen({
   };
 
   return (
-    <View style={styles.root}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={styles.root}
+    >
       <StatusBar
         backgroundColor="#FAFAF9"
         barStyle="dark-content"
@@ -198,7 +212,7 @@ export default function AuthScreen({
         contentContainerStyle={[
           styles.scrollContent,
           {
-            paddingBottom: insets.bottom + 154,
+            paddingBottom: insets.bottom + 174,
             paddingTop: insets.top + 18,
           },
         ]}
@@ -229,7 +243,7 @@ export default function AuthScreen({
           <View style={styles.heroTextWrap}>
             <View style={styles.kicker}>
               <Sparkles color="#F97316" size={14} />
-              <Text style={styles.kickerText}>Welcome home</Text>
+              <Text style={styles.kickerText}>Om Sai Ram</Text>
             </View>
 
             <Text style={styles.heroTitle}>
@@ -243,76 +257,17 @@ export default function AuthScreen({
           </View>
         </View>
 
-        <View style={styles.trustCard}>
-          {trustItems.map((item) => (
-            <View key={item} style={styles.trustRow}>
-              <CheckCircle2 color="#F97316" size={17} />
-              <Text style={styles.trustText}>{item}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Explore the app</Text>
-          <Text style={styles.sectionText}>
-            Tap a pillar to preview what you can do.
-          </Text>
-        </View>
-
-        <View style={styles.pillarGrid}>
-          {PILLARS.map((pillar) => {
-            const isActive = activePillar === pillar.id;
-            const Icon = pillar.Icon;
-
-            return (
-              <Pressable
-                key={pillar.id}
-                onPress={() => setActivePillar(pillar.id)}
-                style={({ pressed }) => [
-                  styles.pillarCard,
-                  isActive && styles.pillarCardActive,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.pillarIcon,
-                    isActive && styles.pillarIconActive,
-                  ]}
-                >
-                  <Icon
-                    color={isActive ? "#FFFFFF" : "#1F2937"}
-                    size={20}
-                    strokeWidth={2}
-                  />
-                </View>
-                <Text
-                  numberOfLines={1}
-                  style={[
-                    styles.pillarLabel,
-                    isActive && styles.pillarLabelActive,
-                  ]}
-                >
-                  {pillar.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <View style={styles.previewCard}>
-          <View style={styles.previewIcon}>
-            <ActiveIcon color="#F97316" size={23} strokeWidth={2} />
-          </View>
-          <View style={styles.previewCopy}>
-            <Text style={styles.previewTitle}>{active.title}</Text>
-            <Text style={styles.previewDescription}>
-              {active.description}
-            </Text>
-          </View>
-        </View>
-
         <View style={styles.loginCard}>
+          <View style={styles.loginHeader}>
+            <View>
+              <Text style={styles.loginTitle}>Login to continue</Text>
+              <Text style={styles.loginSubtitle}>
+                Use mobile OTP or your verified email password.
+              </Text>
+            </View>
+            <ShieldCheck color="#15803D" size={24} />
+          </View>
+
           <View style={styles.segmented}>
             {(["mobile", "email"] as const).map((mode) => {
               const activeMode = loginMode === mode;
@@ -341,76 +296,151 @@ export default function AuthScreen({
 
           {loginMode === "mobile" ? (
             <View style={styles.loginForm}>
-              <TextInput
-                keyboardType="phone-pad"
-                onChangeText={setMobileNumber}
-                placeholder="+919876543210"
-                placeholderTextColor="#A8A29E"
-                style={styles.input}
-                value={mobileNumber}
-              />
-              {otpSent ? (
+              <View>
+                <Text style={styles.inputLabel}>Mobile number</Text>
                 <TextInput
-                  keyboardType="number-pad"
-                  onChangeText={setMobileOtp}
-                  placeholder="Enter OTP"
+                  keyboardType="phone-pad"
+                  onChangeText={setMobileNumber}
+                  placeholder="+91 98765 43210"
                   placeholderTextColor="#A8A29E"
                   style={styles.input}
-                  value={mobileOtp}
+                  value={mobileNumber}
                 />
+              </View>
+              {otpSent ? (
+                <View>
+                  <Text style={styles.inputLabel}>OTP code</Text>
+                  <TextInput
+                    keyboardType="number-pad"
+                    onChangeText={setMobileOtp}
+                    placeholder="Enter 6 digit OTP"
+                    placeholderTextColor="#A8A29E"
+                    style={styles.input}
+                    value={mobileOtp}
+                  />
+                </View>
               ) : null}
-              <Pressable
-                disabled={isSubmitting}
-                onPress={otpSent ? handleMobileLogin : handleSendOtp}
-                style={({ pressed }) => [
-                  styles.loginAction,
-                  pressed && styles.buttonPressed,
-                ]}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.loginActionText}>
-                    {otpSent ? "Verify & Login" : "Send OTP"}
-                  </Text>
-                )}
-              </Pressable>
+              <Text style={styles.helperText}>
+                {otpSent
+                  ? "OTP sent. Please verify to open your account."
+                  : "We will send an OTP to confirm this is your number."}
+              </Text>
             </View>
           ) : (
             <View style={styles.loginForm}>
-              <TextInput
-                autoCapitalize="none"
-                keyboardType="email-address"
-                onChangeText={setEmail}
-                placeholder="Email"
-                placeholderTextColor="#A8A29E"
-                style={styles.input}
-                value={email}
-              />
-              <TextInput
-                onChangeText={setPassword}
-                placeholder="Password"
-                placeholderTextColor="#A8A29E"
-                secureTextEntry
-                style={styles.input}
-                value={password}
-              />
-              <Pressable
-                disabled={isSubmitting}
-                onPress={handleEmailLogin}
-                style={({ pressed }) => [
-                  styles.loginAction,
-                  pressed && styles.buttonPressed,
-                ]}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.loginActionText}>Login</Text>
-                )}
-              </Pressable>
+              <View>
+                <Text style={styles.inputLabel}>Email address</Text>
+                <TextInput
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  onChangeText={setEmail}
+                  placeholder="your@email.com"
+                  placeholderTextColor="#A8A29E"
+                  style={styles.input}
+                  value={email}
+                />
+              </View>
+              <View>
+                <Text style={styles.inputLabel}>Password</Text>
+                <TextInput
+                  onChangeText={setPassword}
+                  placeholder="Enter password"
+                  placeholderTextColor="#A8A29E"
+                  secureTextEntry
+                  style={styles.input}
+                  value={password}
+                />
+              </View>
+              <Text style={styles.helperText}>
+                Email login works after you verify email and create a password from profile settings.
+              </Text>
             </View>
           )}
+        </View>
+
+        <View style={styles.trustCard}>
+          {trustItems.map((item) => (
+            <View key={item} style={styles.trustRow}>
+              <CheckCircle2 color="#15803D" size={18} />
+              <Text style={styles.trustText}>{item}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Your Sai Family has 4 pillars</Text>
+          <Text style={styles.sectionText}>
+            Tap each card to see how the app supports your daily devotion.
+          </Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.pillarScroller}
+        >
+          {PILLARS.map((pillar, index) => {
+            const isActive = activePillar === pillar.id;
+            const Icon = pillar.Icon;
+
+            return (
+              <Pressable
+                key={pillar.id}
+                onPress={() => setActivePillar(pillar.id)}
+                style={({ pressed }) => [
+                  styles.pillarCard,
+                  {
+                    backgroundColor: pillar.background,
+                    borderColor: isActive ? pillar.accent : "#E7D7BE",
+                  },
+                  isActive && styles.pillarCardActive,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.pillarIcon,
+                    { backgroundColor: pillar.accent },
+                  ]}
+                >
+                  <Icon
+                    color="#FFFFFF"
+                    size={24}
+                    strokeWidth={2}
+                  />
+                </View>
+                <Text style={styles.pillarStep}>0{index + 1}</Text>
+                <Text
+                  numberOfLines={1}
+                  style={styles.pillarLabel}
+                >
+                  {pillar.label}
+                </Text>
+                <Text numberOfLines={2} style={styles.pillarSmallText}>
+                  {pillar.title}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <View
+          style={[
+            styles.previewCard,
+            { backgroundColor: active.background, borderColor: active.accent },
+          ]}
+        >
+          <View style={styles.previewIcon}>
+            <ActiveIcon color={active.accent} size={25} strokeWidth={2} />
+          </View>
+          <View style={styles.previewCopy}>
+            <Text style={[styles.previewTitle, { color: active.accent }]}>
+              {active.title}
+            </Text>
+            <Text style={styles.previewDescription}>
+              {active.description}
+            </Text>
+          </View>
         </View>
       </ScrollView>
 
@@ -423,6 +453,7 @@ export default function AuthScreen({
         ]}
       >
         <Pressable
+          disabled={isSubmitting}
           onPress={
             loginMode === "mobile"
               ? otpSent
@@ -435,10 +466,16 @@ export default function AuthScreen({
             pressed && styles.buttonPressed,
           ]}
         >
-          <Text style={styles.primaryText}>
-            {loginMode === "mobile" ? (otpSent ? "Verify OTP" : "Send OTP") : "Login"}
-          </Text>
-          <ArrowRight color="#FFFFFF" size={18} />
+          {isSubmitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <>
+              <Text style={styles.primaryText}>
+                {loginMode === "mobile" ? (otpSent ? "Verify OTP" : "Send OTP") : "Login"}
+              </Text>
+              <ArrowRight color="#FFFFFF" size={20} />
+            </>
+          )}
         </Pressable>
 
         <Pressable
@@ -453,19 +490,19 @@ export default function AuthScreen({
 
         <Text style={styles.footerText}>Jai Sai Ram</Text>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   bottomBar: {
-    backgroundColor: "rgba(250,250,249,0.97)",
+    backgroundColor: "rgba(250,250,249,0.98)",
     borderTopColor: "#E7D7BE",
     borderTopWidth: 1,
     bottom: 0,
     left: 0,
     paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingTop: 12,
     position: "absolute",
     right: 0,
   },
@@ -473,11 +510,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFF7ED",
     borderColor: "#FED7AA",
-    borderRadius: 12,
+    borderRadius: 15,
     borderWidth: 1,
-    height: 42,
+    height: 46,
     justifyContent: "center",
-    width: 42,
+    width: 46,
   },
   buttonPressed: {
     opacity: 0.88,
@@ -494,7 +531,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     color: "#78716C",
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "900",
     marginTop: 10,
     textAlign: "center",
@@ -510,13 +547,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: "#1F2937",
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "900",
   },
   heroCard: {
     backgroundColor: "#FFFFFF",
     borderColor: "#E7D7BE",
-    borderRadius: 18,
+    borderRadius: 24,
     borderWidth: 1,
     overflow: "hidden",
     shadowColor: "#7C2D12",
@@ -529,42 +566,54 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   heroImage: {
-    height: 180,
-    width: 180,
+    height: 160,
+    width: 160,
   },
   heroImageWrap: {
     alignItems: "center",
     backgroundColor: "#FFF7ED",
-    height: 210,
+    height: 178,
     justifyContent: "center",
   },
   heroText: {
     color: "#6B7280",
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "700",
-    lineHeight: 23,
+    lineHeight: 25,
     marginTop: 10,
   },
   heroTextWrap: {
-    padding: 16,
+    padding: 18,
   },
   heroTitle: {
     color: "#1F2937",
-    fontSize: 25,
+    fontSize: 27,
     fontWeight: "900",
-    lineHeight: 31,
+    lineHeight: 34,
     marginTop: 12,
   },
   input: {
-    backgroundColor: "#FAFAF9",
-    borderColor: "#E7D7BE",
-    borderRadius: 12,
-    borderWidth: 1,
+    backgroundColor: "#FFFFFF",
+    borderColor: "#D6C5A8",
+    borderRadius: 16,
+    borderWidth: 1.2,
     color: "#1F2937",
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "800",
-    height: 48,
-    paddingHorizontal: 14,
+    height: 58,
+    paddingHorizontal: 16,
+  },
+  inputLabel: {
+    color: "#44403C",
+    fontSize: 14,
+    fontWeight: "900",
+    marginBottom: 8,
+  },
+  helperText: {
+    color: "#78716C",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 21,
   },
   kicker: {
     alignItems: "center",
@@ -584,87 +633,107 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   pillarCard: {
-    alignItems: "center",
+    alignItems: "flex-start",
     backgroundColor: "#FFFFFF",
     borderColor: "#E7D7BE",
-    borderRadius: 14,
-    borderWidth: 1,
-    flex: 1,
-    minHeight: 92,
-    minWidth: "47%",
-    padding: 12,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    minHeight: 154,
+    padding: 16,
+    width: 154,
   },
   pillarCardActive: {
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FDBA74",
+    shadowColor: "#7C2D12",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 4,
   },
-  pillarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
+  pillarScroller: {
+    gap: 12,
+    paddingRight: 16,
   },
   pillarIcon: {
     alignItems: "center",
     backgroundColor: "#F6EFD9",
-    borderRadius: 12,
-    height: 42,
-    justifyContent: "center",
-    marginBottom: 9,
-    width: 42,
-  },
-  pillarIconActive: {
-    backgroundColor: "#F97316",
-  },
-  pillarLabel: {
-    color: "#6B7280",
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  pillarLabelActive: {
-    color: "#1F2937",
-  },
-  loginAction: {
-    alignItems: "center",
-    backgroundColor: "#F97316",
-    borderRadius: 12,
+    borderRadius: 16,
     height: 48,
     justifyContent: "center",
+    marginBottom: 14,
+    width: 48,
   },
-  loginActionText: {
-    color: "#FFFFFF",
-    fontSize: 14,
+  pillarLabel: {
+    color: "#1F2937",
+    fontSize: 17,
     fontWeight: "900",
   },
+  pillarSmallText: {
+    color: "#57534E",
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 5,
+  },
+  pillarStep: {
+    color: "#A8A29E",
+    fontSize: 12,
+    fontWeight: "900",
+    marginBottom: 3,
+  },
   loginCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 14,
-    padding: 14,
+    backgroundColor: "#FFFDF8",
+    borderColor: "#E0CFAF",
+    borderRadius: 24,
+    borderWidth: 1.3,
+    marginTop: 16,
+    padding: 18,
+    shadowColor: "#7C2D12",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 3,
   },
   loginForm: {
-    gap: 10,
-    marginTop: 12,
+    gap: 14,
+    marginTop: 16,
+  },
+  loginHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 14,
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  loginSubtitle: {
+    color: "#78716C",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
+    marginTop: 4,
+  },
+  loginTitle: {
+    color: "#1F2937",
+    fontSize: 22,
+    fontWeight: "900",
   },
   pressed: {
     opacity: 0.86,
   },
   previewCard: {
     alignItems: "center",
-    backgroundColor: "#1F2937",
-    borderRadius: 16,
+    borderRadius: 22,
+    borderWidth: 1.5,
     flexDirection: "row",
-    gap: 12,
-    marginTop: 14,
-    padding: 15,
+    gap: 14,
+    marginTop: 16,
+    padding: 16,
   },
   previewCopy: {
     flex: 1,
   },
   previewDescription: {
-    color: "#D6D3D1",
-    fontSize: 13,
+    color: "#44403C",
+    fontSize: 14,
     fontWeight: "700",
     lineHeight: 19,
     marginTop: 4,
@@ -672,28 +741,27 @@ const styles = StyleSheet.create({
   previewIcon: {
     alignItems: "center",
     backgroundColor: "#FFF7ED",
-    borderRadius: 13,
-    height: 48,
+    borderRadius: 16,
+    height: 54,
     justifyContent: "center",
-    width: 48,
+    width: 54,
   },
   previewTitle: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "900",
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: "#1F2937",
-    borderRadius: 12,
+    backgroundColor: "#2B1308",
+    borderRadius: 16,
     flexDirection: "row",
     gap: 8,
-    height: 52,
+    height: 58,
     justifyContent: "center",
   },
   primaryText: {
     color: "#FFFFFF",
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "900",
   },
   root: {
@@ -707,36 +775,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderColor: "#E7D7BE",
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    height: 52,
+    height: 56,
     justifyContent: "center",
     marginTop: 10,
   },
   secondaryText: {
     color: "#1F2937",
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "900",
   },
   segmentButton: {
     alignItems: "center",
-    borderRadius: 10,
+    borderRadius: 14,
     flex: 1,
-    height: 38,
+    height: 48,
     justifyContent: "center",
   },
   segmentButtonActive: {
-    backgroundColor: "#1F2937",
+    backgroundColor: "#2B1308",
   },
   segmented: {
     backgroundColor: "#F6EFD9",
-    borderRadius: 12,
+    borderRadius: 17,
     flexDirection: "row",
     padding: 4,
   },
   segmentText: {
     color: "#78716C",
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "900",
   },
   segmentTextActive: {
@@ -744,37 +812,37 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     marginBottom: 12,
-    marginTop: 18,
+    marginTop: 22,
   },
   sectionText: {
     color: "#6B7280",
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "700",
     marginTop: 4,
   },
   sectionTitle: {
     color: "#1F2937",
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "900",
   },
   secureBadge: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderColor: "#E7D7BE",
-    borderRadius: 12,
+    borderRadius: 15,
     borderWidth: 1,
-    height: 40,
+    height: 44,
     justifyContent: "center",
-    width: 40,
+    width: 44,
   },
   trustCard: {
     backgroundColor: "#FFFFFF",
     borderColor: "#E7D7BE",
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    gap: 10,
-    marginTop: 14,
-    padding: 14,
+    gap: 12,
+    marginTop: 16,
+    padding: 16,
   },
   trustRow: {
     alignItems: "center",
@@ -784,7 +852,7 @@ const styles = StyleSheet.create({
   trustText: {
     color: "#1F2937",
     flex: 1,
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "800",
   },
 });

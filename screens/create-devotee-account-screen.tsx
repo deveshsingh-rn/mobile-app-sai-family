@@ -13,6 +13,11 @@ import {
   View,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import {
+  CheckCircle2,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react-native";
 
 import {
   sendUserMobileOtp,
@@ -94,6 +99,15 @@ export default function CreateDevoteeAccountScreen({ onBack, onCreated }: Create
       ),
     [form, mobileVerified]
   );
+  const completedSteps = useMemo(() => {
+    let count = 0;
+
+    if (form.name.trim() && form.email.trim()) count += 1;
+    if (mobileVerified) count += 1;
+    if (form.completeAddress.trim() && form.city.trim() && form.state.trim()) count += 1;
+
+    return count;
+  }, [form, mobileVerified]);
 
   const updateField = (key: keyof Omit<DevoteeAccountForm, "profileImage">, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -197,14 +211,42 @@ export default function CreateDevoteeAccountScreen({ onBack, onCreated }: Create
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Pressable onPress={onBack} hitSlop={12}>
+          <Pressable onPress={onBack} hitSlop={12} style={styles.backButton}>
             <Text style={styles.back}>Back</Text>
           </Pressable>
           <Text style={styles.brand}>SAI FAMILY</Text>
         </View>
 
-        <Text style={styles.title}>Create Devotee Account</Text>
-        <Text style={styles.description}>Enter your details to receive your Sai Family member ID.</Text>
+        <View style={styles.heroPanel}>
+          <View style={styles.heroIcon}>
+            <UserRound color="#8e5d10" size={26} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Create Devotee Account</Text>
+            <Text style={styles.description}>
+              Verify mobile, complete profile, and receive your Sai Family member ID.
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.stepRow}>
+          {[
+            { label: "Details", done: completedSteps >= 1 },
+            { label: "Mobile OTP", done: mobileVerified },
+            { label: "Profile", done: completedSteps >= 3 },
+          ].map((step, index) => (
+            <View key={step.label} style={styles.stepItem}>
+              <View style={[styles.stepDot, step.done && styles.stepDotDone]}>
+                {step.done ? (
+                  <CheckCircle2 color="#FFFFFF" size={15} />
+                ) : (
+                  <Text style={styles.stepNumber}>{index + 1}</Text>
+                )}
+              </View>
+              <Text style={styles.stepLabel}>{step.label}</Text>
+            </View>
+          ))}
+        </View>
 
         <Pressable style={styles.imagePicker} onPress={pickImage}>
           {form.profileImage ? (
@@ -217,9 +259,20 @@ export default function CreateDevoteeAccountScreen({ onBack, onCreated }: Create
         </Pressable>
 
         <View style={styles.form}>
+          <View style={styles.securityCard}>
+            <ShieldCheck color="#15803d" size={22} />
+            <Text style={styles.securityText}>
+              Mobile verification is required before account creation.
+            </Text>
+          </View>
           {FIELDS.map((field) => (
             <View key={field.key} style={styles.field}>
-              <Text style={styles.label}>{field.label}</Text>
+              <Text style={styles.label}>
+                {field.label}
+                {["name", "email", "mobileNumber", "completeAddress", "pincode", "city", "state"].includes(field.key) ? (
+                  <Text style={styles.required}> *</Text>
+                ) : null}
+              </Text>
               <TextInput
                 autoCapitalize={field.keyboardType === "email-address" ? "none" : "words"}
                 keyboardType={field.keyboardType || "default"}
@@ -244,7 +297,7 @@ export default function CreateDevoteeAccountScreen({ onBack, onCreated }: Create
                       <ActivityIndicator color="#fffaf0" />
                     ) : (
                       <Text style={styles.otpButtonText}>
-                        {mobileVerified ? "Verified" : otpSent ? "Resend OTP" : "Send OTP"}
+                        {mobileVerified ? "Mobile Verified" : otpSent ? "Resend OTP" : "Send OTP"}
                       </Text>
                     )}
                   </Pressable>
@@ -286,7 +339,7 @@ export default function CreateDevoteeAccountScreen({ onBack, onCreated }: Create
             pressed && styles.buttonPressed,
           ]}
         >
-          {isSubmitting ? <ActivityIndicator color="#fffaf0" /> : <Text style={styles.submitText}>Submit Account</Text>}
+          {isSubmitting ? <ActivityIndicator color="#fffaf0" /> : <Text style={styles.submitText}>Create Account</Text>}
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -296,23 +349,31 @@ export default function CreateDevoteeAccountScreen({ onBack, onCreated }: Create
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fffaf0",
+    backgroundColor: "#FAFAF9",
   },
   content: {
-    paddingBottom: 42,
-    paddingHorizontal: 24,
-    paddingTop: 58,
+    paddingBottom: 46,
+    paddingHorizontal: 18,
+    paddingTop: 54,
   },
   header: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 30,
+    marginBottom: 18,
   },
   back: {
-    color: "#8e5d10",
+    color: "#2B1308",
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "900",
+  },
+  backButton: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7D7BE",
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
   brand: {
     color: "#6d4810",
@@ -321,33 +382,58 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
   },
   title: {
-    color: "#4e3309",
-    fontSize: 31,
-    fontWeight: "800",
-    lineHeight: 38,
+    color: "#2B1308",
+    fontSize: 27,
+    fontWeight: "900",
+    lineHeight: 34,
   },
   description: {
-    color: "#79571b",
+    color: "#6B5B47",
     fontSize: 15,
-    fontWeight: "500",
+    fontWeight: "700",
     lineHeight: 23,
-    marginTop: 10,
+    marginTop: 7,
+  },
+  heroIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 56,
+    justifyContent: "center",
+    width: 56,
+  },
+  heroPanel: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7D7BE",
+    borderRadius: 24,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 14,
+    padding: 16,
+    shadowColor: "#7C2D12",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 14,
+    elevation: 3,
   },
   imagePicker: {
     alignSelf: "center",
-    marginBottom: 28,
-    marginTop: 28,
+    marginBottom: 20,
+    marginTop: 20,
   },
   imagePlaceholder: {
     alignItems: "center",
     backgroundColor: "#fffdf8",
     borderColor: "#d9bd7a",
-    borderRadius: 70,
+    borderRadius: 62,
     borderStyle: "dashed",
     borderWidth: 1.4,
-    height: 140,
+    height: 124,
     justifyContent: "center",
-    width: 140,
+    width: 124,
   },
   imageText: {
     color: "#8e5d10",
@@ -362,13 +448,13 @@ const styles = StyleSheet.create({
   otpButton: {
     alignItems: "center",
     backgroundColor: "#8e5d10",
-    borderRadius: 12,
-    height: 44,
+    borderRadius: 16,
+    height: 50,
     justifyContent: "center",
   },
   otpButtonText: {
     color: "#fffaf0",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "900",
   },
   otpButtonVerified: {
@@ -385,38 +471,99 @@ const styles = StyleSheet.create({
   verifyButton: {
     alignItems: "center",
     backgroundColor: "#4e3309",
-    borderRadius: 12,
-    height: 48,
+    borderRadius: 16,
+    height: 54,
     justifyContent: "center",
     paddingHorizontal: 18,
   },
   profileImage: {
     borderColor: "#d9bd7a",
-    borderRadius: 70,
+    borderRadius: 62,
     borderWidth: 2,
-    height: 140,
-    width: 140,
+    height: 124,
+    width: 124,
   },
   form: {
-    gap: 14,
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7D7BE",
+    borderRadius: 24,
+    borderWidth: 1,
+    gap: 16,
+    padding: 16,
   },
   field: {
-    gap: 7,
+    gap: 8,
   },
   label: {
-    color: "#6d4810",
-    fontSize: 13,
-    fontWeight: "800",
+    color: "#44403C",
+    fontSize: 14,
+    fontWeight: "900",
   },
   input: {
-    backgroundColor: "#fffdf8",
-    borderColor: "#dfc684",
-    borderRadius: 8,
+    backgroundColor: "#FAFAF9",
+    borderColor: "#D6C5A8",
+    borderRadius: 16,
+    borderWidth: 1.2,
+    color: "#2B1308",
+    fontSize: 16,
+    fontWeight: "700",
+    minHeight: 56,
+    paddingHorizontal: 16,
+  },
+  required: {
+    color: "#C2410C",
+  },
+  securityCard: {
+    alignItems: "center",
+    backgroundColor: "#F0FDF4",
+    borderColor: "#BBF7D0",
+    borderRadius: 18,
     borderWidth: 1,
-    color: "#3f2b0c",
-    fontSize: 15,
-    minHeight: 50,
-    paddingHorizontal: 14,
+    flexDirection: "row",
+    gap: 10,
+    padding: 14,
+  },
+  securityText: {
+    color: "#166534",
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 20,
+  },
+  stepDot: {
+    alignItems: "center",
+    backgroundColor: "#E7D7BE",
+    borderRadius: 15,
+    height: 30,
+    justifyContent: "center",
+    width: 30,
+  },
+  stepDotDone: {
+    backgroundColor: "#15803d",
+  },
+  stepItem: {
+    alignItems: "center",
+    flex: 1,
+    gap: 7,
+  },
+  stepLabel: {
+    color: "#57534E",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  stepNumber: {
+    color: "#2B1308",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  stepRow: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7D7BE",
+    borderRadius: 20,
+    borderWidth: 1,
+    flexDirection: "row",
+    marginTop: 14,
+    padding: 14,
   },
   textArea: {
     minHeight: 96,
@@ -425,9 +572,9 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     alignItems: "center",
-    backgroundColor: "#8e5d10",
-    borderRadius: 8,
-    height: 54,
+    backgroundColor: "#2B1308",
+    borderRadius: 18,
+    height: 58,
     justifyContent: "center",
     marginTop: 28,
   },
@@ -440,7 +587,7 @@ const styles = StyleSheet.create({
   },
   submitText: {
     color: "#fffaf0",
-    fontSize: 16,
-    fontWeight: "800",
+    fontSize: 17,
+    fontWeight: "900",
   },
 });
