@@ -19,9 +19,9 @@ const API_BASE_URL =
   Constants.expoConfig?.extra?.apiBaseUrl ||
   fallbackApiBaseUrl;
 
-console.log(`[API] Initializing client with baseURL: ${API_BASE_URL}`);
-console.log(`[API] Platform: ${Platform.OS}`);
-console.log(`[API] Development: ${__DEV__}`);
+// console.log(`[API] Initializing client with baseURL: ${API_BASE_URL}`);
+// console.log(`[API] Platform: ${Platform.OS}`);
+// console.log(`[API] Development: ${__DEV__}`);
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -96,12 +96,12 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling globally
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`[API Response] <-- ${response.status} ${response.config.url}`);
+    // console.log(`[API Response] <-- ${response.status} ${response.config.url}`);
     return response;
   },
   (error) => {
     if (error.response?.status === 401) {
-      console.log('[API] Unauthorized access - redirect to login / clear token');
+      // console.log('[API] Unauthorized access - redirect to login / clear token');
       
       // Protect against logging out if backend returns 401 from YouTube API failure
       const isVideoUploadError = error.config?.url === '/api/experiences' && error.config?.method === 'post';
@@ -122,7 +122,7 @@ apiClient.interceptors.response.use(
         isNetworkError: !error.response,
       };
 
-      console.error('[API Response Error]', errorDetails);
+      // console.error('[API Response Error]', errorDetails);
 
       // Network error hints
       if (!error.response) {
