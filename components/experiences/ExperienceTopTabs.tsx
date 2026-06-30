@@ -133,12 +133,12 @@ export function ExperienceTopTabs({
 
 const styles = StyleSheet.create({
   wrapper: {
-    paddingBottom: 10,
+    paddingBottom: 12,
   },
 
   content: {
     paddingHorizontal: 16,
-    gap: 8,
+    gap: 10,
   },
 
   pressable: {
@@ -156,8 +156,8 @@ const styles = StyleSheet.create({
   },
 
   activeTab: {
-    minWidth: 96,
-    height: 40,
+    minWidth: 102,
+    height: 44,
 
     paddingHorizontal: 18,
 
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
 
-    backgroundColor: "#1F2937",
+    backgroundColor: "#23201D",
 
     shadowColor: "#7C2D12",
 
@@ -182,8 +182,8 @@ const styles = StyleSheet.create({
   },
 
   inactiveTab: {
-    minWidth: 96,
-    height: 40,
+    minWidth: 102,
+    height: 44,
 
     paddingHorizontal: 18,
 
@@ -196,8 +196,7 @@ const styles = StyleSheet.create({
 
     borderWidth: 1,
 
-    borderColor:
-      "#E7D7BE",
+    borderColor: "#E7D7BE",
 
     backgroundColor: "#FFFFFF",
   },
@@ -205,14 +204,14 @@ const styles = StyleSheet.create({
   activeText: {
     color: "#fff",
 
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "900",
   },
 
   inactiveText: {
     color: "#6B7280",
 
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "800",
   },
 });

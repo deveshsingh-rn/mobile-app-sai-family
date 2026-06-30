@@ -468,8 +468,8 @@ const styles = StyleSheet.create({
   },
 
   fixedTop: {
-    backgroundColor: "#FAFAF9",
-    borderBottomColor: "#E7D7BE",
+    backgroundColor: "#FFFCF7",
+    borderBottomColor: "#E9D8BD",
     borderBottomWidth: 1,
     paddingTop: 54,
     zIndex: 10,
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingBottom: 12,
+    paddingBottom: 14,
     paddingHorizontal: 16,
   },
 
@@ -493,11 +493,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFF7ED",
     borderColor: "#FED7AA",
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    height: 42,
+    height: 44,
     justifyContent: "center",
-    width: 42,
+    width: 44,
   },
 
   eyebrow: {
@@ -508,21 +508,21 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     color: "#1F2937",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "900",
   },
 
   primaryAction: {
     alignItems: "center",
-    backgroundColor: "#1F2937",
-    borderRadius: 12,
-    height: 40,
+    backgroundColor: "#23201D",
+    borderRadius: 14,
+    height: 44,
     justifyContent: "center",
-    width: 40,
+    width: 44,
   },
 
   searchWrap: {
-    paddingBottom: 14,
+    paddingBottom: 16,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
@@ -531,38 +531,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderColor: "#E7D7BE",
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
-    minHeight: 52,
-    paddingHorizontal: 14,
+    minHeight: 56,
+    paddingHorizontal: 15,
   },
 
   input: {
     color: "#1F2937",
     flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
     marginLeft: 10,
-    minHeight: 50,
+    minHeight: 54,
     paddingVertical: 0,
   },
 
   clearButton: {
     alignItems: "center",
-    height: 34,
+    height: 38,
     justifyContent: "center",
-    width: 34,
+    width: 38,
   },
 
   micButton: {
     alignItems: "center",
     backgroundColor: "#FFF7ED",
-    borderRadius: 17,
-    height: 34,
+    borderRadius: 19,
+    height: 38,
     justifyContent: "center",
     marginLeft: 6,
-    width: 34,
+    width: 38,
   },
 
   micButtonActive: {
@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
 
   listContent: {
     paddingBottom: 120,
-    paddingTop: 14,
+    paddingTop: 16,
   },
 
   stateBox: {
@@ -596,14 +596,14 @@ const styles = StyleSheet.create({
 
   stateTitle: {
     color: "#1F2937",
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: 19,
+    fontWeight: "900",
     textAlign: "center",
   },
 
   stateText: {
     color: "#6B7280",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
     lineHeight: 22,
     marginTop: 8,

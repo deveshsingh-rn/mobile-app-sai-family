@@ -91,7 +91,7 @@ export function CategoryChips({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    gap: 8,
+    gap: 10,
   },
 
   pressable: {
@@ -109,12 +109,12 @@ const styles = StyleSheet.create({
   },
 
   chip: {
-    height: 36,
+    height: 40,
 
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
 
     borderRadius: 999,
-    lineHeight: 36,
+    lineHeight: 40,
     overflow: "hidden",
     textAlign: "center",
   },
@@ -132,14 +132,14 @@ const styles = StyleSheet.create({
   activeText: {
     color: "#fff",
 
-    fontSize: 13,
-    fontWeight: "800",
+    fontSize: 14,
+    fontWeight: "900",
   },
 
   inactiveText: {
     color: "#7c5a21",
 
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "800",
   },
 });

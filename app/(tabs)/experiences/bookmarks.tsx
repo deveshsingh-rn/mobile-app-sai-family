@@ -324,8 +324,8 @@ const styles = StyleSheet.create({
   },
 
   fixedTop: {
-    backgroundColor: "#FAFAF9",
-    borderBottomColor: "#E7D7BE",
+    backgroundColor: "#FFFCF7",
+    borderBottomColor: "#E9D8BD",
     borderBottomWidth: 1,
     paddingTop: 54,
     zIndex: 10,
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingBottom: 12,
+    paddingBottom: 14,
     paddingHorizontal: 16,
   },
 
@@ -349,11 +349,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFF7ED",
     borderColor: "#FED7AA",
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    height: 42,
+    height: 44,
     justifyContent: "center",
-    width: 42,
+    width: 44,
   },
 
   eyebrow: {
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     color: "#1F2937",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "900",
   },
 
@@ -377,25 +377,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderColor: "#E7D7BE",
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    height: 40,
+    height: 44,
     justifyContent: "center",
-    width: 40,
+    width: 44,
   },
 
   primaryAction: {
     alignItems: "center",
-    backgroundColor: "#1F2937",
-    borderRadius: 12,
-    height: 40,
+    backgroundColor: "#23201D",
+    borderRadius: 14,
+    height: 44,
     justifyContent: "center",
-    width: 40,
+    width: 44,
   },
 
   content: {
     paddingBottom: 120,
-    paddingTop: 14,
+    paddingTop: 16,
   },
 
   errorText: {
@@ -426,14 +426,14 @@ const styles = StyleSheet.create({
 
   stateTitle: {
     color: "#1F2937",
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "900",
     textAlign: "center",
   },
 
   stateText: {
     color: "#6B7280",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
     lineHeight: 22,
     marginTop: 8,

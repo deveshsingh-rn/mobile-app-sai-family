@@ -475,11 +475,11 @@ const styles = StyleSheet.create({
   fixedTop: {
     paddingTop: 54,
 
-    backgroundColor: "#FAFAF9",
+    backgroundColor: "#FFFCF7",
 
     borderBottomWidth: 1,
 
-    borderBottomColor: "#E7D7BE",
+    borderBottomColor: "#E9D8BD",
   },
 
   header: {
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
 
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 14,
   },
 
   headerLeft: {
@@ -502,11 +502,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFF7ED",
     borderColor: "#FED7AA",
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    height: 42,
+    height: 44,
     justifyContent: "center",
-    width: 42,
+    width: 44,
   },
 
   eyebrow: {
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
   title: {
     color: "#1F2937",
 
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "900",
   },
 
@@ -531,32 +531,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderColor: "#E7D7BE",
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    height: 40,
+    height: 44,
     justifyContent: "center",
-    width: 40,
+    width: 44,
   },
 
   primaryAction: {
     alignItems: "center",
-    backgroundColor: "#1F2937",
-    borderRadius: 12,
-    height: 40,
+    backgroundColor: "#23201D",
+    borderRadius: 14,
+    height: 44,
     justifyContent: "center",
-    width: 40,
+    width: 44,
   },
 
   heroPanel: {
     alignItems: "center",
     backgroundColor: "#FFF7ED",
     borderColor: "#FED7AA",
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
-    marginBottom: 12,
+    marginBottom: 14,
     marginHorizontal: 16,
-    padding: 14,
+    padding: 16,
   },
 
   heroTextWrap: {
@@ -565,14 +565,14 @@ const styles = StyleSheet.create({
 
   heroTitle: {
     color: "#1F2937",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "900",
-    lineHeight: 20,
+    lineHeight: 22,
   },
 
   heroMeta: {
     color: "#6B7280",
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     marginTop: 4,
   },
@@ -580,11 +580,11 @@ const styles = StyleSheet.create({
   heroBadge: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 11,
-    height: 38,
+    borderRadius: 13,
+    height: 42,
     justifyContent: "center",
     marginLeft: 12,
-    width: 38,
+    width: 42,
   },
 
   categoriesWrapper: {
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    paddingTop: 14,
+    paddingTop: 16,
     paddingBottom: 120,
   },
 
@@ -612,12 +612,15 @@ const styles = StyleSheet.create({
     marginTop: 100,
 
     alignItems: "center",
+    paddingHorizontal: 28,
   },
 
   emptyText: {
     color: "#6B7280",
 
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "800",
+    lineHeight: 23,
+    textAlign: "center",
   },
 });

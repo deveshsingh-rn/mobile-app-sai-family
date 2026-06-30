@@ -86,6 +86,9 @@ export function ExperienceCard({
     });
   };
 
+  const authorInitial =
+    item.authorName?.charAt(0)?.toUpperCase() || "S";
+
   return (
     <Pressable
       onPress={handleOpenDetail}
@@ -112,9 +115,7 @@ export function ExperienceCard({
             <Text
               style={styles.avatarText}
             >
-              {item.authorName?.charAt(
-                0
-              )}
+              {authorInitial}
             </Text>
           </LinearGradient>
 
@@ -122,15 +123,17 @@ export function ExperienceCard({
             style={styles.headerInfo}
           >
             <Text
+              numberOfLines={1}
               style={styles.name}
             >
-              {item.authorName}
+              {item.authorName || "Sai Devotee"}
             </Text>
 
             <Text
+              numberOfLines={1}
               style={styles.handle}
             >
-              @{item.authorHandle}
+              @{item.authorHandle || "saifamily"}
             </Text>
           </View>
 
@@ -335,9 +338,9 @@ export function ExperienceCard({
 const styles = StyleSheet.create({
   card: {
     marginHorizontal: 16,
-    marginBottom: 14,
-    padding: 16,
-    borderRadius: 14,
+    marginBottom: 16,
+    padding: 17,
+    borderRadius: 18,
 
     overflow: "hidden",
 
@@ -345,14 +348,14 @@ const styles = StyleSheet.create({
 
     borderWidth: 1,
 
-    borderColor: "#E7D7BE",
+    borderColor: "#E9D8BD",
     shadowColor: "#7C2D12",
     shadowOffset: {
       width: 0,
       height: 8,
     },
-    shadowOpacity: 0.06,
-    shadowRadius: 18,
+    shadowOpacity: 0.07,
+    shadowRadius: 20,
     elevation: 2,
   },
   cardNoBorder: {
@@ -366,24 +369,25 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: "row",
     alignItems: "center",
+    flexDirection: "row",
+    minHeight: 48,
   },
 
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
 
     alignItems: "center",
     justifyContent: "center",
   },
 
   avatarText: {
-    color: "#5d3902",
+    color: "#6B3F05",
 
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "900",
   },
 
   headerInfo: {
@@ -394,16 +398,16 @@ const styles = StyleSheet.create({
   name: {
     color: "#1F2937",
 
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "900",
   },
 
   handle: {
     marginTop: 2,
 
-    color: "#6B7280",
+    color: "#78716C",
 
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
   },
 
@@ -412,8 +416,9 @@ const styles = StyleSheet.create({
     borderColor: "#FED7AA",
     borderRadius: 999,
     borderWidth: 1,
+    maxWidth: 112,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
   },
 
   categoryText: {
@@ -424,20 +429,20 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    marginTop: 14,
+    marginTop: 16,
 
     color: "#1F2937",
 
-    fontSize: 15,
-    lineHeight: 23,
-    fontWeight: "600",
+    fontSize: 16,
+    lineHeight: 25,
+    fontWeight: "700",
   },
 
   readMore: {
     color: "#F97316",
     fontSize: 13,
     fontWeight: "900",
-    marginTop: 6,
+    marginTop: 8,
   },
 
   locationRow: {
@@ -448,7 +453,7 @@ const styles = StyleSheet.create({
   },
 
   locationText: {
-    color: "#6B7280",
+    color: "#78716C",
     flex: 1,
     fontSize: 12,
     fontWeight: "700",
@@ -457,11 +462,11 @@ const styles = StyleSheet.create({
   mediaContainer: {
     width: "100%",
     height: 280,
-    marginTop: 14,
-    borderRadius: 12,
+    marginTop: 16,
+    borderRadius: 16,
     overflow: "hidden",
     position: "relative",
-    backgroundColor: "#F6EFD9",
+    backgroundColor: "#F8F0DC",
   },
 
   media: {
@@ -488,22 +493,24 @@ const styles = StyleSheet.create({
   },
 
   actions: {
-    marginTop: 14,
+    marginTop: 15,
     borderTopColor: "#F1E4CE",
     borderTopWidth: 1,
-    paddingTop: 12,
+    paddingTop: 13,
 
     flexDirection: "row",
     alignItems: "center",
-    justifyContent:
-      "space-between",
+    justifyContent: "space-between",
   },
 
   actionButton: {
-    flexDirection: "row",
     alignItems: "center",
+    borderRadius: 999,
+    flexDirection: "row",
     gap: 6,
-    minHeight: 30,
+    minHeight: 38,
+    minWidth: 42,
+    paddingHorizontal: 5,
   },
 
   actionText: {

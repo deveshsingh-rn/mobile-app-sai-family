@@ -427,7 +427,7 @@ export default function PremiumPostScreen() {
             onChangeText={setContent}
             multiline
             textAlignVertical="top"
-            placeholder="Share your divine experience..."
+            placeholder="Write your experience in your own words..."
             placeholderTextColor="#b78c56"
             style={styles.input}
           />
@@ -685,14 +685,14 @@ const styles = StyleSheet.create({
   fixedTop: {
     paddingTop: 55,
     zIndex: 20,
-    backgroundColor: "#FAFAF9",
-    borderBottomColor: "#E7D7BE",
+    backgroundColor: "#FFFCF7",
+    borderBottomColor: "#E9D8BD",
     borderBottomWidth: 1,
   },
 
   header: {
     paddingHorizontal: 18,
-    paddingBottom: 14,
+    paddingBottom: 15,
     flexDirection: "row",
     alignItems: "center",
     justifyContent:
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     color: "#1F2937",
-    fontSize: 21,
+    fontSize: 23,
     fontWeight: "900",
   },
 
@@ -715,11 +715,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFF7ED",
     borderColor: "#FED7AA",
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    height: 42,
+    height: 44,
     justifyContent: "center",
-    width: 42,
+    width: 44,
   },
 
   eyebrow: {
@@ -730,11 +730,11 @@ const styles = StyleSheet.create({
 
   primaryAction: {
     alignItems: "center",
-    backgroundColor: "#1F2937",
-    borderRadius: 12,
-    height: 40,
+    backgroundColor: "#23201D",
+    borderRadius: 14,
+    height: 44,
     justifyContent: "center",
-    width: 40,
+    width: 44,
   },
 
   body: {
@@ -742,20 +742,20 @@ const styles = StyleSheet.create({
   },
 
   bodyContent: {
-    padding: 16,
+    padding: 17,
     paddingBottom: 160,
   },
 
   card: {
-    borderRadius: 14,
+    borderRadius: 18,
     overflow: "hidden",
-    padding: 16,
+    padding: 17,
 
     backgroundColor: "#FFFFFF",
 
     borderWidth: 1,
 
-    borderColor: "#E7D7BE",
+    borderColor: "#E9D8BD",
   },
 
   userRow: {
@@ -764,9 +764,9 @@ const styles = StyleSheet.create({
   },
 
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -783,7 +783,7 @@ const styles = StyleSheet.create({
 
   userName: {
     color: "#1F2937",
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "900",
   },
 
@@ -796,25 +796,30 @@ const styles = StyleSheet.create({
 
   publicText: {
     color: "#F97316",
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "800",
   },
 
   input: {
+    backgroundColor: "#FFFBF5",
+    borderColor: "#E9D8BD",
+    borderRadius: 16,
+    borderWidth: 1,
     marginTop: 18,
-    minHeight: 150,
+    minHeight: 170,
+    padding: 14,
 
     color: "#1F2937",
-    fontSize: 19,
-    lineHeight: 29,
-    fontWeight: "600",
+    fontSize: 18,
+    lineHeight: 28,
+    fontWeight: "700",
   },
 
   sectionLabel: {
     marginTop: 24,
     color: "#1F2937",
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "900",
     textTransform: "uppercase",
   },
 
@@ -827,7 +832,7 @@ const styles = StyleSheet.create({
   categoryChip: {
     borderRadius: 999,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 11,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E7D7BE",
@@ -840,7 +845,7 @@ const styles = StyleSheet.create({
 
   categoryText: {
     color: "#6B7280",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "800",
   },
 
@@ -850,14 +855,14 @@ const styles = StyleSheet.create({
 
   mediaContainer: {
     marginTop: 18,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
   },
 
   media: {
     width: "100%",
     height: 280,
-    borderRadius: 12,
+    borderRadius: 16,
   },
 
   closeButton: {
@@ -900,7 +905,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
 
-    borderRadius: 12,
+    borderRadius: 16,
 
     padding: 18,
 
@@ -914,14 +919,14 @@ const styles = StyleSheet.create({
 
   audioTitle: {
     color: "#1F2937",
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "900",
   },
 
   audioName: {
     marginTop: 4,
     color: "#6B7280",
-    fontSize: 13,
+    fontSize: 14,
   },
 
   locationPill: {
@@ -932,7 +937,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
 
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 9,
 
     flexDirection: "row",
     alignItems: "center",
@@ -946,8 +951,8 @@ const styles = StyleSheet.create({
     marginLeft: 6,
 
     color: "#C2410C",
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "800",
   },
 
   toolbar: {
@@ -959,7 +964,7 @@ const styles = StyleSheet.create({
 
     paddingHorizontal: 18,
 
-    paddingTop: 14,
+    paddingTop: 15,
 
     paddingBottom:
       Platform.OS === "ios"
@@ -968,20 +973,19 @@ const styles = StyleSheet.create({
 
     borderTopWidth: 1,
 
-    borderTopColor:
-      "#E7D7BE",
+    borderTopColor: "#E7D7BE",
   },
 
   actions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 12,
   },
 
   actionButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
 
     alignItems: "center",
     justifyContent: "center",
@@ -990,7 +994,7 @@ const styles = StyleSheet.create({
 
     borderWidth: 1,
 
-    borderColor: "#E7D7BE",
+    borderColor: "#E9D8BD",
   },
 
   postButton: {
@@ -1010,14 +1014,14 @@ const styles = StyleSheet.create({
   },
 
   postGradient: {
-    paddingHorizontal: 34,
-    paddingVertical: 14,
+    paddingHorizontal: 36,
+    paddingVertical: 15,
     borderRadius: 999,
   },
 
   postText: {
     color: "#fff",
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "900",
   },
 });
