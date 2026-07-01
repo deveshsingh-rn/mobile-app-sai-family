@@ -48,10 +48,10 @@ export async function createDevoteeAccount(
     form.language.trim() || "en"
   );
 
-  console.log(
-    "PROFILE IMAGE =>",
-    JSON.stringify(form.profileImage, null, 2)
-  );
+  // console.log(
+  //   "PROFILE IMAGE =>",
+  //   JSON.stringify(form.profileImage, null, 2)
+  // );
 
   if (
     form.profileImage?.uri &&

@@ -1,5 +1,19 @@
+/**
+ * Sai Family — Onboarding (retention redesign)
+ * ────────────────────────────────────────────────────────────
+ * 3 slides, not 4:
+ *   1. Welcome         → emotional hook, single "Begin" CTA, no skip
+ *   2. Personalize     → interactive multi-select, the retention lever
+ *   3. Ready           → payoff — shows the user their curated experience
+ *
+ * onDone accepts optional interests[] so the parent can persist
+ * selections for feed ranking / notification prefs.
+ * ────────────────────────────────────────────────────────────
+ */
+
 import { useState } from "react";
 import {
+  Image,
   ImageSourcePropType,
   Pressable,
   StyleSheet,
@@ -12,8 +26,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   ArrowLeft,
   ArrowRight,
+  BookOpen,
+  Building2,
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  HandHeart,
   HeartHandshake,
   Sparkles,
+  Star,
+  Users,
 } from "lucide-react-native";
 import Animated, {
   Extrapolation,
@@ -24,92 +46,148 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-const SLIDES = [
-  {
-    image: require("../assets/images/saibaba1.png"),
-    kicker: "Welcome",
-    title: "Sai Family",
-    description:
-      "A peaceful home for devotion, community, events, and daily Sai inspiration.",
-    chips: ["Daily blessings", "Devotee family"],
-  },
-  {
-    image: require("../assets/images/splash-icon.png"),
-    kicker: "Experience",
-    title: "Share Divine Moments",
-    description:
-      "Post prayers, miracles, dreams, darshan stories, and blessings with your family.",
-    chips: ["Leela feed", "Comments"],
-  },
-  {
-    image: require("../assets/images/icon.png"),
-    kicker: "Community",
-    title: "Stay Connected",
-    description:
-      "Discover events, Sangha groups, devotees, and trusted local services in one place.",
-    chips: ["Events", "Sangha"],
-  },
-  {
-    image: require("../assets/images/saibaba.png"),
-    kicker: "Begin",
-    title: "Start Your Journey",
-    description:
-      "Create your devotee account and carry your Sai Family profile with calm clarity.",
-    chips: ["Secure profile", "Push updates"],
-  },
+/* ─── Theme ──────────────────────────────────────────────── */
+const C = {
+  bg: "#FAFAF7",
+  surface: "#FFFFFF",
+  ink: "#1C1917",
+  inkSecondary: "#57534E",
+  inkTertiary: "#A8A29E",
+  separator: "#EFEAE0",
+  saffron: "#C2410C",
+  saffronText: "#9A3412",
+  saffronBg: "#FFF7ED",
+  saffronBorder: "#FED7AA",
+  maroon: "#2B1308",
+  green: "#15803D",
+};
+
+/* ─── Interests (drive personalization) ──────────────────── */
+type InterestId =
+  | "blessings"
+  | "events"
+  | "sangha"
+  | "teachings"
+  | "seva"
+  | "directory";
+
+type Interest = {
+  id: InterestId;
+  title: string;
+  subtitle: string;
+  Icon: React.ComponentType<{
+    color?: string;
+    size?: number;
+    strokeWidth?: number;
+  }>;
+};
+
+const INTERESTS: Interest[] = [
+  { id: "blessings", title: "Daily blessings", subtitle: "Prayers & darshan", Icon: Star },
+  { id: "events", title: "Sacred events", subtitle: "Bhajans & satsangs", Icon: CalendarDays },
+  { id: "sangha", title: "Community", subtitle: "Devotee bonds", Icon: Users },
+  { id: "teachings", title: "Baba's wisdom", subtitle: "Teachings & quotes", Icon: BookOpen },
+  { id: "seva", title: "Seva & service", subtitle: "Give back", Icon: HandHeart },
+  { id: "directory", title: "Devotee services", subtitle: "Trusted businesses", Icon: Building2 },
 ];
 
 type OnboardingScreenProps = {
-  onDone: () => void;
+  /** Called on completion. Receives selected interests (may be empty). */
+  onDone: (interests?: InterestId[]) => void;
 };
 
-type SlideProps = {
-  chips: string[];
-  description: string;
-  image: ImageSourcePropType;
-  index: number;
-  kicker: string;
-  progress: SharedValue<number>;
-  title: string;
-  width: number;
-};
-
-function OnboardingSlide({
-  chips,
-  description,
+/* ═══════════════════════════════════════════════════════════
+   SLIDE 1 — Welcome (emotional hook)
+   ═══════════════════════════════════════════════════════════ */
+function WelcomeSlide({
   image,
   index,
-  kicker,
   progress,
-  title,
   width,
-}: SlideProps) {
-  const imageSize = Math.min(width * 0.58, 246);
-
+}: {
+  image: ImageSourcePropType;
+  index: number;
+  progress: SharedValue<number>;
+  width: number;
+}) {
   const animatedStyle = useAnimatedStyle(() => {
     const distance = progress.value - index;
-
     return {
-      opacity: interpolate(
-        distance,
-        [-1, 0, 1],
-        [0.18, 1, 0.18],
-        Extrapolation.CLAMP
-      ),
+      opacity: interpolate(distance, [-1, 0, 1], [0.2, 1, 0.2], Extrapolation.CLAMP),
       transform: [
         {
           translateX: interpolate(
             distance,
             [-1, 0, 1],
-            [width * 0.16, 0, -width * 0.16],
+            [width * 0.15, 0, -width * 0.15],
             Extrapolation.CLAMP
           ),
         },
         {
-          scale: interpolate(
+          scale: interpolate(distance, [-1, 0, 1], [0.96, 1, 0.96], Extrapolation.CLAMP),
+        },
+      ],
+    };
+  });
+
+  return (
+    <Animated.View style={[styles.slide, { width }, animatedStyle]}>
+      <View style={styles.welcomeBody}>
+        <View style={styles.imageStack}>
+          <LinearGradient
+            colors={[C.saffronBg, "#FDF5E6"]}
+            style={styles.imageHalo}
+          />
+          <View style={styles.saffronRing}>
+            <View style={styles.innerDashedRing} />
+            <View style={styles.imageWell}>
+              <Image resizeMode="contain" source={image} style={styles.welcomeImage} />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.kicker}>
+          <Sparkles color={C.saffronText} size={11} strokeWidth={2.3} />
+          <Text style={styles.kickerText}>OM SAI RAM</Text>
+        </View>
+
+        <Text style={styles.welcomeTitle}>Welcome home,{"\n"}devotee</Text>
+        <Text style={styles.welcomeSubtitle}>
+          Your peaceful space for devotion, community, and sacred connection.
+        </Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SLIDE 2 — Personalize (retention lever)
+   ═══════════════════════════════════════════════════════════ */
+function PersonalizeSlide({
+  image,
+  index,
+  onToggle,
+  progress,
+  selected,
+  width,
+}: {
+  image: ImageSourcePropType;
+  index: number;
+  onToggle: (id: InterestId) => void;
+  progress: SharedValue<number>;
+  selected: InterestId[];
+  width: number;
+}) {
+  const animatedStyle = useAnimatedStyle(() => {
+    const distance = progress.value - index;
+    return {
+      opacity: interpolate(distance, [-1, 0, 1], [0.2, 1, 0.2], Extrapolation.CLAMP),
+      transform: [
+        {
+          translateX: interpolate(
             distance,
             [-1, 0, 1],
-            [0.96, 1, 0.96],
+            [width * 0.15, 0, -width * 0.15],
             Extrapolation.CLAMP
           ),
         },
@@ -119,439 +197,777 @@ function OnboardingSlide({
 
   return (
     <Animated.View style={[styles.slide, { width }, animatedStyle]}>
-      <View style={styles.artStage}>
-        <LinearGradient
-          colors={["#FFF7ED", "#F6EFD9"]}
-          style={styles.artHalo}
-        />
-        <View style={styles.imageFrame}>
-          <Animated.Image
-            resizeMode="contain"
-            source={image}
-            style={[
-              styles.slideImage,
-              {
-                height: imageSize,
-                width: imageSize,
-              },
-            ]}
-          />
-        </View>
-      </View>
-
-      <View style={styles.copyPanel}>
-        <View style={styles.kickerRow}>
-          <Sparkles color="#F97316" size={15} />
-          <Text style={styles.kicker}>{kicker}</Text>
-        </View>
-
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
-
-        <View style={styles.chipRow}>
-          {chips.map((chip) => (
-            <View key={chip} style={styles.chip}>
-              <Text style={styles.chipText}>{chip}</Text>
+      <View style={styles.personalizeBody}>
+        <View style={styles.personalizeHeader}>
+          <View style={styles.smallImageRing}>
+            <View style={styles.smallImageWell}>
+              <Image resizeMode="contain" source={image} style={styles.smallImage} />
             </View>
-          ))}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.slideEyebrow}>PERSONALIZE</Text>
+            <Text style={styles.slideTitle}>How can we serve{"\n"}your journey?</Text>
+          </View>
+        </View>
+
+        <Text style={styles.slideText}>
+          Pick what matters to you. We'll shape your feed, notifications, and
+          events around it.
+        </Text>
+
+        <View style={styles.counterRow}>
+          <Text style={styles.counterLabel}>CHOOSE ANY</Text>
+          <View
+            style={[
+              styles.counterChip,
+              selected.length > 0 && styles.counterChipActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.counterChipText,
+                selected.length > 0 && styles.counterChipTextActive,
+              ]}
+            >
+              {selected.length} selected
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.interestGrid}>
+          {INTERESTS.map((interest) => {
+            const isSel = selected.includes(interest.id);
+            const Icon = interest.Icon;
+            return (
+              <Pressable
+                key={interest.id}
+                onPress={() => onToggle(interest.id)}
+                style={({ pressed }) => [
+                  styles.interestCard,
+                  isSel && styles.interestCardSelected,
+                  pressed && { opacity: 0.85 },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.interestIcon,
+                    isSel && { backgroundColor: C.saffron },
+                  ]}
+                >
+                  <Icon
+                    color={isSel ? "#FFFFFF" : C.saffron}
+                    size={17}
+                    strokeWidth={2}
+                  />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.interestTitle,
+                      isSel && { color: C.saffronText },
+                    ]}
+                  >
+                    {interest.title}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.interestSubtitle}>
+                    {interest.subtitle}
+                  </Text>
+                </View>
+                {isSel ? (
+                  <View style={styles.interestCheck}>
+                    <Check color="#FFFFFF" size={11} strokeWidth={2.5} />
+                  </View>
+                ) : null}
+              </Pressable>
+            );
+          })}
         </View>
       </View>
     </Animated.View>
   );
 }
 
-type IndicatorDotProps = {
+/* ═══════════════════════════════════════════════════════════
+   SLIDE 3 — Ready (payoff)
+   ═══════════════════════════════════════════════════════════ */
+function ReadySlide({
+  image,
+  index,
+  progress,
+  selected,
+  width,
+}: {
+  image: ImageSourcePropType;
   index: number;
   progress: SharedValue<number>;
-};
-
-function IndicatorDot({ index, progress }: IndicatorDotProps) {
+  selected: InterestId[];
+  width: number;
+}) {
   const animatedStyle = useAnimatedStyle(() => {
-    const active = interpolate(
-      progress.value,
-      [index - 1, index, index + 1],
-      [0, 1, 0],
-      Extrapolation.CLAMP
-    );
-
+    const distance = progress.value - index;
     return {
-      backgroundColor: active > 0.5 ? "#F97316" : "#E7D7BE",
-      opacity: interpolate(active, [0, 1], [0.7, 1]),
-      width: interpolate(active, [0, 1], [8, 28]),
+      opacity: interpolate(distance, [-1, 0, 1], [0.2, 1, 0.2], Extrapolation.CLAMP),
+      transform: [
+        {
+          translateX: interpolate(
+            distance,
+            [-1, 0, 1],
+            [width * 0.15, 0, -width * 0.15],
+            Extrapolation.CLAMP
+          ),
+        },
+      ],
     };
   });
 
-  return <Animated.View style={[styles.dot, animatedStyle]} />;
+  const selectedItems = INTERESTS.filter((i) => selected.includes(i.id));
+  const preview = selectedItems.slice(0, 3);
+  const extraCount = selectedItems.length - preview.length;
+
+  return (
+    <Animated.View style={[styles.slide, { width }, animatedStyle]}>
+      <View style={styles.readyBody}>
+        <View style={styles.readyImageStack}>
+          <View style={styles.readyImageRing}>
+            <View style={styles.readyImageWell}>
+              <Image resizeMode="contain" source={image} style={styles.readyImage} />
+            </View>
+          </View>
+          <View style={styles.readyCheckBadge}>
+            <Check color="#FFFFFF" size={16} strokeWidth={2.5} />
+          </View>
+        </View>
+
+        <View style={{ alignItems: "center", marginBottom: 20 }}>
+          <Text style={styles.readyEyebrow}>READY TO BEGIN</Text>
+          <Text style={styles.readyTitle}>Your Sai Family{"\n"}is ready</Text>
+        </View>
+
+        {selectedItems.length > 0 ? (
+          <>
+            <Text style={styles.previewLabel}>
+              YOUR PERSONALIZED EXPERIENCE
+            </Text>
+            {preview.map((item) => {
+              const Icon = item.Icon;
+              return (
+                <View key={item.id} style={styles.previewCard}>
+                  <View style={styles.previewIcon}>
+                    <Icon color={C.saffron} size={15} strokeWidth={2} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.previewTitle}>{item.title}</Text>
+                    <Text style={styles.previewSubtitle}>
+                      Curated for you daily
+                    </Text>
+                  </View>
+                  <CheckCircle2 color={C.green} size={16} strokeWidth={2.2} />
+                </View>
+              );
+            })}
+            {extraCount > 0 ? (
+              <Text style={styles.extraCount}>+ {extraCount} more</Text>
+            ) : null}
+          </>
+        ) : (
+          <Text style={styles.readyFallback}>
+            Create your account to unlock daily blessings, sacred events, and
+            your devotee community.
+          </Text>
+        )}
+      </View>
+    </Animated.View>
+  );
 }
 
-export default function OnboardingScreen({
-  onDone,
-}: OnboardingScreenProps) {
+/* ═══════════════════════════════════════════════════════════
+   ROOT
+   ═══════════════════════════════════════════════════════════ */
+export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
   const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [selected, setSelected] = useState<InterestId[]>([]);
   const progress = useSharedValue(0);
-  const isFirstSlide = activeIndex === 0;
-  const isLastSlide = activeIndex === SLIDES.length - 1;
+
+  const image = require("../assets/images/saibaba1.png");
+
+  const isFirst = activeIndex === 0;
+  const isLast = activeIndex === 2;
+  const isPersonalize = activeIndex === 1;
+  const primaryDisabled = isPersonalize && selected.length === 0;
 
   const sliderStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateX: -progress.value * width,
-      },
-    ],
+    transform: [{ translateX: -progress.value * width }],
+  }));
+
+  const progressBarStyle = useAnimatedStyle(() => ({
+    width: `${((progress.value + 1) / 3) * 100}%`,
   }));
 
   const moveTo = (index: number) => {
     setActiveIndex(index);
-    progress.value = withTiming(index, {
-      duration: 420,
-    });
+    progress.value = withTiming(index, { duration: 420 });
+  };
+
+  const toggleInterest = (id: InterestId) => {
+    setSelected((current) =>
+      current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
+    );
   };
 
   const handleBack = () => {
-    if (!isFirstSlide) {
-      moveTo(activeIndex - 1);
-    }
+    if (!isFirst) moveTo(activeIndex - 1);
   };
 
   const handleNext = () => {
-    if (isLastSlide) {
-      onDone();
+    if (primaryDisabled) return;
+    if (isLast) {
+      onDone(selected.length > 0 ? selected : undefined);
       return;
     }
-
     moveTo(activeIndex + 1);
   };
+
+  const handleSkip = () => {
+    onDone(selected.length > 0 ? selected : undefined);
+  };
+
+  const primaryLabel = isFirst
+    ? "Begin"
+    : isPersonalize
+    ? selected.length > 0
+      ? `Continue with ${selected.length} selection${selected.length > 1 ? "s" : ""}`
+      : "Select at least one to continue"
+    : "Get Started";
 
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#FAFAF9", "#FFF7ED", "#FAFAF9"]}
+        colors={[C.bg, C.saffronBg, C.bg]}
         style={StyleSheet.absoluteFill}
       />
 
+      {/* ── Header (contextual) ── */}
       <View style={styles.header}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandMark}>
-            <HeartHandshake color="#1F2937" size={19} />
-          </View>
-          <View>
-            <Text style={styles.brandEyebrow}>Sai Family</Text>
-            <Text style={styles.brand}>Devotion App</Text>
-          </View>
-        </View>
-
-        <Pressable onPress={onDone} hitSlop={12} style={styles.skipButton}>
-          <Text style={styles.skip}>Skip</Text>
-        </Pressable>
+        {isFirst ? (
+          <>
+            <View style={styles.brandRow}>
+              <View style={styles.brandMark}>
+                <HeartHandshake color={C.saffron} size={16} strokeWidth={2} />
+              </View>
+              <View>
+                <Text style={styles.brandEyebrow}>Welcome to</Text>
+                <Text style={styles.brand}>Sai Family</Text>
+              </View>
+            </View>
+            <Text style={styles.stepCount}>{activeIndex + 1} / 3</Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.headerBrand}>SAI FAMILY</Text>
+            <View style={styles.headerRight}>
+              <Text style={styles.stepCount}>{activeIndex + 1} / 3</Text>
+              <Pressable onPress={handleSkip} hitSlop={12}>
+                <Text style={styles.skip}>Skip</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
       </View>
 
+      {/* ── Progress bar ── */}
+      <View style={styles.progressWrap}>
+        <View style={styles.progressTrack}>
+          <Animated.View style={[styles.progressBar, progressBarStyle]} />
+        </View>
+      </View>
+
+      {/* ── Slider ── */}
       <Animated.View
-        style={[
-          styles.slider,
-          {
-            width: width * SLIDES.length,
-          },
-          sliderStyle,
-        ]}
+        style={[styles.slider, { width: width * 3 }, sliderStyle]}
       >
-        {SLIDES.map((slide, index) => (
-          <OnboardingSlide
-            key={slide.title}
-            chips={slide.chips}
-            description={slide.description}
-            image={slide.image}
-            index={index}
-            kicker={slide.kicker}
-            progress={progress}
-            title={slide.title}
-            width={width}
-          />
-        ))}
+        <WelcomeSlide image={image} index={0} progress={progress} width={width} />
+        <PersonalizeSlide
+          image={image}
+          index={1}
+          onToggle={toggleInterest}
+          progress={progress}
+          selected={selected}
+          width={width}
+        />
+        <ReadySlide
+          image={image}
+          index={2}
+          progress={progress}
+          selected={selected}
+          width={width}
+        />
       </Animated.View>
 
+      {/* ── Footer ── */}
       <View style={styles.footer}>
-        <View style={styles.progressCard}>
-          <View style={styles.progressTop}>
-            <Text style={styles.progressText}>
-              {activeIndex + 1} of {SLIDES.length}
-            </Text>
-            <View style={styles.indicator}>
-              {SLIDES.map((slide, index) => (
-                <IndicatorDot
-                  key={slide.title}
-                  index={index}
-                  progress={progress}
-                />
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.buttonRow}>
+        <View style={styles.buttonRow}>
+          {!isFirst ? (
             <Pressable
-              disabled={isFirstSlide}
               onPress={handleBack}
               style={({ pressed }) => [
                 styles.backButton,
-                isFirstSlide && styles.backButtonDisabled,
-                pressed && !isFirstSlide && styles.buttonPressed,
-              ]}
-            >
-              <ArrowLeft
-                color={isFirstSlide ? "#D6D3D1" : "#1F2937"}
-                size={18}
-              />
-            </Pressable>
-
-            <Pressable
-              onPress={handleNext}
-              style={({ pressed }) => [
-                styles.nextButton,
                 pressed && styles.buttonPressed,
               ]}
             >
-              <Text style={styles.nextText}>
-                {isLastSlide ? "Get Started" : "Next"}
-              </Text>
-              <ArrowRight color="#FFFFFF" size={18} />
+              <ArrowLeft color={C.ink} size={18} strokeWidth={2.2} />
             </Pressable>
-          </View>
+          ) : null}
+
+          <Pressable
+            disabled={primaryDisabled}
+            onPress={handleNext}
+            style={({ pressed }) => [
+              styles.primaryButton,
+              primaryDisabled && styles.primaryDisabled,
+              pressed && !primaryDisabled && styles.buttonPressed,
+            ]}
+          >
+            <Text
+              style={[
+                styles.primaryText,
+                primaryDisabled && styles.primaryTextDisabled,
+              ]}
+            >
+              {primaryLabel}
+            </Text>
+            {!primaryDisabled ? (
+              <ArrowRight color="#FFFFFF" size={18} strokeWidth={2.2} />
+            ) : null}
+          </Pressable>
         </View>
       </View>
     </View>
   );
 }
 
+/* ═══════════════════════════════════════════════════════════ */
 const styles = StyleSheet.create({
-  artHalo: {
-    borderRadius: 999,
-    height: 255,
-    position: "absolute",
-    width: 255,
-  },
-  artStage: {
-    alignItems: "center",
-    height: 292,
-    justifyContent: "center",
-    marginBottom: 12,
-    width: "100%",
-  },
-  backButton: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
-    borderRadius: 12,
-    borderWidth: 1,
-    height: 52,
-    justifyContent: "center",
-    width: 56,
-  },
-  backButtonDisabled: {
-    backgroundColor: "#FAFAF9",
-  },
-  brand: {
-    color: "#1F2937",
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  brandEyebrow: {
-    color: "#F97316",
-    fontSize: 11,
-    fontWeight: "900",
-  },
-  brandMark: {
-    alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
-    borderRadius: 12,
-    borderWidth: 1,
-    height: 40,
-    justifyContent: "center",
-    width: 40,
-  },
-  brandRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10,
-  },
-  buttonPressed: {
-    opacity: 0.88,
-    transform: [
-      {
-        scale: 0.99,
-      },
-    ],
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 18,
-  },
-  chip: {
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    justifyContent: "center",
-    marginTop: 18,
-  },
-  chipText: {
-    color: "#C2410C",
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  container: {
-    backgroundColor: "#FAFAF9",
-    flex: 1,
-    overflow: "hidden",
-  },
-  copyPanel: {
-    alignItems: "center",
-    paddingHorizontal: 28,
-  },
-  description: {
-    color: "#6B7280",
-    fontSize: 15,
-    fontWeight: "700",
-    lineHeight: 23,
-    marginTop: 10,
-    maxWidth: 330,
-    textAlign: "center",
-  },
-  dot: {
-    borderRadius: 4,
-    height: 8,
-  },
-  footer: {
-    paddingBottom: 30,
-    paddingHorizontal: 16,
-  },
+  container: { backgroundColor: C.bg, flex: 1, overflow: "hidden" },
+
+  /* Header */
   header: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingTop: 58,
     zIndex: 2,
   },
-  imageFrame: {
+  brandRow: { alignItems: "center", flexDirection: "row", gap: 10 },
+  brandMark: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
-    borderRadius: 28,
+    backgroundColor: C.saffronBg,
+    borderColor: C.saffronBorder,
+    borderRadius: 10,
     borderWidth: 1,
-    height: 272,
+    height: 34,
     justifyContent: "center",
-    shadowColor: "#7C2D12",
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 22,
-    width: 272,
-    elevation: 4,
+    width: 34,
   },
-  indicator: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 7,
+  brandEyebrow: {
+    color: C.inkSecondary,
+    fontSize: 10.5,
+    fontWeight: "500",
+    letterSpacing: 0.3,
   },
-  kicker: {
-    color: "#F97316",
+  brand: { color: C.ink, fontSize: 15, fontWeight: "700" },
+  headerBrand: {
+    color: C.inkSecondary,
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: "600",
+    letterSpacing: 0.4,
   },
-  kickerRow: {
-    alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+  headerRight: { alignItems: "center", flexDirection: "row", gap: 14 },
+  stepCount: { color: C.inkTertiary, fontSize: 12, fontWeight: "500" },
+  skip: { color: C.inkSecondary, fontSize: 13, fontWeight: "600" },
+
+  /* Progress bar */
+  progressWrap: {
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 6,
+    zIndex: 2,
   },
-  nextButton: {
+  progressTrack: {
+    backgroundColor: C.separator,
+    borderRadius: 100,
+    height: 3,
+    overflow: "hidden",
+  },
+  progressBar: {
+    backgroundColor: C.saffron,
+    borderRadius: 100,
+    height: "100%",
+  },
+
+  /* Slider */
+  slider: { flex: 1, flexDirection: "row" },
+  slide: { justifyContent: "flex-start", paddingHorizontal: 22, paddingTop: 12 },
+
+  /* Slide 1 */
+  welcomeBody: {
     alignItems: "center",
-    backgroundColor: "#1F2937",
-    borderRadius: 12,
     flex: 1,
-    flexDirection: "row",
-    gap: 8,
-    height: 52,
     justifyContent: "center",
+    paddingBottom: 40,
   },
-  nextText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "900",
+  imageStack: {
+    alignItems: "center",
+    height: 220,
+    justifyContent: "center",
+    marginBottom: 24,
+    width: 220,
   },
-  progressCard: {
+  imageHalo: {
+    borderRadius: 999,
+    height: 220,
+    opacity: 0.6,
+    position: "absolute",
+    width: 220,
+  },
+  saffronRing: {
+    alignItems: "center",
+    backgroundColor: C.saffronBg,
+    borderColor: C.saffronBorder,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    height: 172,
+    justifyContent: "center",
+    width: 172,
+  },
+  innerDashedRing: {
+    borderColor: C.saffron,
+    borderRadius: 100,
+    borderStyle: "dashed",
+    borderWidth: 0.5,
+    bottom: 8,
+    left: 8,
+    opacity: 0.5,
+    position: "absolute",
+    right: 8,
+    top: 8,
+  },
+  imageWell: {
+    alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
-    borderRadius: 16,
+    borderRadius: 100,
+    height: 154,
+    justifyContent: "center",
+    overflow: "hidden",
+    width: 154,
+  },
+  welcomeImage: { height: 148, width: 148 },
+  kicker: {
+    alignItems: "center",
+    backgroundColor: C.saffronBg,
+    borderColor: C.saffronBorder,
+    borderRadius: 100,
     borderWidth: 1,
-    padding: 14,
-    shadowColor: "#7C2D12",
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 18,
-    elevation: 3,
+    flexDirection: "row",
+    gap: 5,
+    marginBottom: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
-  progressText: {
-    color: "#6B7280",
-    fontSize: 12,
-    fontWeight: "900",
+  kickerText: {
+    color: C.saffronText,
+    fontSize: 10.5,
+    fontWeight: "700",
+    letterSpacing: 3,
   },
-  progressTop: {
+  welcomeTitle: {
+    color: C.ink,
+    fontFamily: "Georgia",
+    fontSize: 30,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    lineHeight: 36,
+    textAlign: "center",
+  },
+  welcomeSubtitle: {
+    color: C.inkSecondary,
+    fontSize: 15,
+    fontWeight: "400",
+    lineHeight: 22,
+    marginTop: 12,
+    maxWidth: 300,
+    textAlign: "center",
+  },
+
+  /* Slide 2 */
+  personalizeBody: { flex: 1, paddingTop: 4 },
+  personalizeHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    paddingBottom: 14,
+  },
+  smallImageRing: {
+    alignItems: "center",
+    backgroundColor: C.saffronBg,
+    borderColor: C.saffronBorder,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    height: 56,
+    justifyContent: "center",
+    width: 56,
+  },
+  smallImageWell: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 100,
+    height: 46,
+    justifyContent: "center",
+    overflow: "hidden",
+    width: 46,
+  },
+  smallImage: { height: 44, width: 44 },
+  slideEyebrow: {
+    color: C.saffronText,
+    fontSize: 10.5,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+  },
+  slideTitle: {
+    color: C.ink,
+    fontFamily: "Georgia",
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+    lineHeight: 27,
+    marginTop: 2,
+  },
+  slideText: {
+    color: C.inkSecondary,
+    fontSize: 14,
+    fontWeight: "400",
+    lineHeight: 21,
+    marginBottom: 16,
+  },
+  counterRow: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
+    marginBottom: 10,
   },
-  skip: {
-    color: "#1F2937",
-    fontSize: 13,
-    fontWeight: "900",
+  counterLabel: {
+    color: C.inkSecondary,
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.6,
   },
-  skipButton: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
-    borderRadius: 999,
+  counterChip: {
+    borderColor: C.separator,
+    borderRadius: 100,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
   },
-  slide: {
-    justifyContent: "center",
-    paddingBottom: 12,
-    paddingHorizontal: 0,
+  counterChipActive: {
+    backgroundColor: C.saffronBg,
+    borderColor: C.saffronBorder,
   },
-  slideImage: {
-    maxHeight: 235,
-    maxWidth: 235,
-  },
-  slider: {
-    flex: 1,
+  counterChipText: { color: C.inkTertiary, fontSize: 11, fontWeight: "600" },
+  counterChipTextActive: { color: C.saffronText },
+  interestGrid: { flexDirection: "row", flexWrap: "wrap", gap: 9 },
+  interestCard: {
+    alignItems: "center",
+    backgroundColor: C.surface,
+    borderColor: C.separator,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    flexBasis: "48%",
     flexDirection: "row",
+    flexGrow: 1,
+    gap: 11,
+    padding: 11,
+    position: "relative",
   },
-  title: {
-    color: "#1F2937",
-    fontSize: 33,
-    fontWeight: "900",
-    lineHeight: 39,
-    marginTop: 16,
+  interestCardSelected: { backgroundColor: C.saffronBg, borderColor: C.saffron },
+  interestIcon: {
+    alignItems: "center",
+    backgroundColor: C.saffronBg,
+    borderRadius: 10,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  interestTitle: {
+    color: C.ink,
+    fontSize: 12.5,
+    fontWeight: "600",
+    letterSpacing: -0.1,
+  },
+  interestSubtitle: {
+    color: C.inkSecondary,
+    fontSize: 10.5,
+    fontWeight: "400",
+    marginTop: 1,
+  },
+  interestCheck: {
+    alignItems: "center",
+    backgroundColor: C.saffron,
+    borderRadius: 11,
+    height: 22,
+    justifyContent: "center",
+    position: "absolute",
+    right: -6,
+    top: -6,
+    width: 22,
+  },
+
+  /* Slide 3 */
+  readyBody: { flex: 1, paddingTop: 6 },
+  readyImageStack: {
+    alignSelf: "center",
+    height: 120,
+    marginBottom: 18,
+    position: "relative",
+    width: 120,
+  },
+  readyImageRing: {
+    alignItems: "center",
+    backgroundColor: C.saffronBg,
+    borderColor: C.saffronBorder,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    height: 108,
+    justifyContent: "center",
+    width: 108,
+  },
+  readyImageWell: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 100,
+    height: 92,
+    justifyContent: "center",
+    overflow: "hidden",
+    width: 92,
+  },
+  readyImage: { height: 88, width: 88 },
+  readyCheckBadge: {
+    alignItems: "center",
+    backgroundColor: C.green,
+    borderColor: C.bg,
+    borderRadius: 100,
+    borderWidth: 3,
+    bottom: 2,
+    height: 34,
+    justifyContent: "center",
+    position: "absolute",
+    right: 2,
+    width: 34,
+  },
+  readyEyebrow: {
+    color: C.green,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.5,
+  },
+  readyTitle: {
+    color: C.ink,
+    fontFamily: "Georgia",
+    fontSize: 26,
+    fontWeight: "700",
+    letterSpacing: -0.4,
+    lineHeight: 32,
+    marginTop: 6,
     textAlign: "center",
   },
+  previewLabel: {
+    color: C.inkSecondary,
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.6,
+    marginBottom: 8,
+  },
+  previewCard: {
+    alignItems: "center",
+    backgroundColor: C.surface,
+    borderColor: C.separator,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 8,
+    padding: 12,
+  },
+  previewIcon: {
+    alignItems: "center",
+    backgroundColor: C.saffronBg,
+    borderRadius: 8,
+    height: 32,
+    justifyContent: "center",
+    width: 32,
+  },
+  previewTitle: { color: C.ink, fontSize: 13, fontWeight: "600" },
+  previewSubtitle: {
+    color: C.inkSecondary,
+    fontSize: 11.5,
+    fontWeight: "400",
+    marginTop: 1,
+  },
+  extraCount: {
+    color: C.inkSecondary,
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 4,
+    textAlign: "center",
+  },
+  readyFallback: {
+    color: C.inkSecondary,
+    fontSize: 14,
+    fontWeight: "400",
+    lineHeight: 22,
+    paddingHorizontal: 12,
+    textAlign: "center",
+  },
+
+  /* Footer */
+  footer: {
+    borderTopColor: C.separator,
+    borderTopWidth: 1,
+    paddingBottom: 30,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    zIndex: 2,
+  },
+  buttonRow: { flexDirection: "row", gap: 10 },
+  backButton: {
+    alignItems: "center",
+    backgroundColor: C.surface,
+    borderColor: C.separator,
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 54,
+    justifyContent: "center",
+    width: 56,
+  },
+  primaryButton: {
+    alignItems: "center",
+    backgroundColor: C.maroon,
+    borderRadius: 14,
+    flex: 1,
+    flexDirection: "row",
+    gap: 8,
+    height: 54,
+    justifyContent: "center",
+    paddingHorizontal: 14,
+  },
+  primaryDisabled: { backgroundColor: C.separator },
+  primaryText: {
+    color: "#FFFFFF",
+    fontSize: 15.5,
+    fontWeight: "600",
+    letterSpacing: 0.1,
+  },
+  primaryTextDisabled: { color: C.inkTertiary },
+  buttonPressed: { opacity: 0.9, transform: [{ scale: 0.985 }] },
 });

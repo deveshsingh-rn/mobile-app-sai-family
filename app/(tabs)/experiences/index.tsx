@@ -1,11 +1,13 @@
 import React, {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -51,6 +53,7 @@ import {
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 
 const LIMIT = 10;
+const HEADER_SCROLL_THRESHOLD = 12;
 
 const CATEGORIES = [
   {
@@ -107,6 +110,14 @@ export default function HomeScreen() {
     useState(false);
 
   const [activeViewableId, setActiveViewableId] = useState<string | null>(null);
+  const [areHeaderActionsVisible, setAreHeaderActionsVisible] =
+    useState(true);
+
+  const headerActionsProgress = useRef(
+    new Animated.Value(1)
+  ).current;
+  const areHeaderActionsVisibleRef = useRef(true);
+  const lastScrollYRef = useRef(0);
 
   // ───────────────── INITIAL FETCH ─────────────────
 
@@ -206,6 +217,59 @@ export default function HomeScreen() {
         );
       },
       [dispatch]
+    );
+
+  const animateHeaderActions = useCallback(
+    (visible: boolean) => {
+      if (
+        areHeaderActionsVisibleRef.current ===
+        visible
+      ) {
+        return;
+      }
+
+      areHeaderActionsVisibleRef.current =
+        visible;
+      setAreHeaderActionsVisible(visible);
+
+      Animated.timing(headerActionsProgress, {
+        duration: 180,
+        toValue: visible ? 1 : 0,
+        useNativeDriver: false,
+      }).start();
+    },
+    [headerActionsProgress]
+  );
+
+  const handleFeedScroll =
+    useCallback(
+      (event: any) => {
+        const currentY = Math.max(
+          event.nativeEvent.contentOffset.y,
+          0
+        );
+        const diff =
+          currentY -
+          lastScrollYRef.current;
+
+        if (currentY < 20) {
+          animateHeaderActions(true);
+        } else if (
+          diff >
+          HEADER_SCROLL_THRESHOLD
+        ) {
+          animateHeaderActions(false);
+        } else if (
+          diff <
+          -HEADER_SCROLL_THRESHOLD
+        ) {
+          animateHeaderActions(true);
+        }
+
+        lastScrollYRef.current =
+          currentY;
+      },
+      [animateHeaderActions]
     );
 
   // ───────────────── ACTIONS ─────────────────
@@ -359,9 +423,44 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <View style={styles.headerActions}>
+          <Animated.View
+            pointerEvents={
+              areHeaderActionsVisible
+                ? "auto"
+                : "none"
+            }
+            style={[
+              styles.headerActions,
+              {
+                maxWidth:
+                  headerActionsProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 96],
+                  }),
+                opacity: headerActionsProgress,
+                transform: [
+                  {
+                    translateX:
+                      headerActionsProgress.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [16, 0],
+                      }),
+                  },
+                  {
+                    scale:
+                      headerActionsProgress.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.92, 1],
+                      }),
+                  },
+                ],
+              },
+            ]}
+          >
             <Pressable
-              onPress={() => router.push("/(tabs)/experiences/search" as any)}
+              onPress={() =>
+                router.push("/(tabs)/experiences/search" as any)
+              }
               style={styles.headerAction}
             >
               <Search
@@ -371,7 +470,9 @@ export default function HomeScreen() {
               />
             </Pressable>
             <Pressable
-              onPress={() => router.push("/(tabs)/experiences/post" as any)}
+              onPress={() =>
+                router.push("/(tabs)/experiences/post" as any)
+              }
               style={styles.primaryAction}
             >
               <PenLine
@@ -380,7 +481,7 @@ export default function HomeScreen() {
                 strokeWidth={2}
               />
             </Pressable>
-          </View>
+          </Animated.View>
         </View>
 
         <View style={styles.heroPanel}>
@@ -439,6 +540,7 @@ export default function HomeScreen() {
           handleLoadMore
         }
         onEndReachedThreshold={0.4}
+        onScroll={handleFeedScroll}
         ListFooterComponent={
           renderFooter
         }
@@ -456,6 +558,7 @@ export default function HomeScreen() {
         }
         viewabilityConfig={viewabilityConfig}
         onViewableItemsChanged={onViewableItemsChanged}
+        scrollEventThrottle={16}
       />
     </View>
   );
@@ -521,6 +624,7 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     gap: 8,
+    overflow: "hidden",
   },
 
   headerAction: {
