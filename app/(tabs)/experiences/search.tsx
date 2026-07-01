@@ -27,6 +27,7 @@ import {
 
 import {
   ExperienceCard,
+  ExperienceCardSkeleton,
   ExperienceTopTabs,
 } from "@/components/experiences";
 
@@ -277,12 +278,7 @@ export default function SearchExperiencesScreen() {
         MIN_QUERY_LENGTH
     ) {
       return (
-        <View style={styles.stateBox}>
-          <ActivityIndicator
-            color="#b97813"
-            size="large"
-          />
-        </View>
+        <ExperienceCardSkeleton count={2} />
       );
     }
 

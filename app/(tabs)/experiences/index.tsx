@@ -27,6 +27,7 @@ import {
 import {
   CategoryChips,
   ExperienceCard,
+  ExperienceCardSkeleton,
   ExperienceTopTabs,
 } from "@/components/experiences";
 
@@ -318,12 +319,7 @@ export default function HomeScreen() {
   const renderEmpty = () => {
     if (loading) {
       return (
-        <View style={styles.loader}>
-          <ActivityIndicator
-            size="large"
-            color="#b97813"
-          />
-        </View>
+        <ExperienceCardSkeleton count={3} />
       );
     }
 

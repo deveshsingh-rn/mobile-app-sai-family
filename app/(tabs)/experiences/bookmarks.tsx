@@ -23,6 +23,7 @@ import {
 
 import {
   ExperienceCard,
+  ExperienceCardSkeleton,
   ExperienceTopTabs,
 } from "@/components/experiences";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
@@ -207,12 +208,7 @@ export default function BookmarkedExperiencesScreen() {
   const renderEmpty = () => {
     if (loading) {
       return (
-        <View style={styles.stateBox}>
-          <ActivityIndicator
-            color="#b97813"
-            size="large"
-          />
-        </View>
+        <ExperienceCardSkeleton count={3} />
       );
     }
 
