@@ -418,14 +418,14 @@ function PillarAccordionCard({
 
   return (
     <Pressable
-      activeOpacity={0.92}
       onPress={handlePress}
-      style={[
+      style={({ pressed }) => [
         styles.pillarCard,
         {
           backgroundColor: isOpen ? pillar.bgSoft : C.surface,
           borderColor: isOpen ? pillar.accent : C.separator,
         },
+        pressed && styles.pillarCardPressed,
       ]}
     >
       {isOpen ? (
@@ -759,7 +759,7 @@ export default function AuthScreen({
                     keyboardType="phone-pad"
                     maxLength={15}
                     onChangeText={setPhoneNumber}
-                    placeholder="98765 43210"
+                    placeholder="9696340330"
                     placeholderTextColor={C.inkTertiary}
                     style={styles.phoneInput}
                     value={phoneNumber}
@@ -772,9 +772,9 @@ export default function AuthScreen({
                   <Text style={styles.inputLabel}>ONE-TIME PASSWORD</Text>
                   <TextInput
                     keyboardType="number-pad"
-                    maxLength={6}
+                    maxLength={4}
                     onChangeText={setMobileOtp}
-                    placeholder="6-digit code"
+                    placeholder="4-digit code"
                     placeholderTextColor={C.inkTertiary}
                     style={styles.input}
                     value={mobileOtp}
@@ -1204,6 +1204,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     overflow: "hidden",
     position: "relative",
+  },
+  pillarCardPressed: {
+    opacity: 0.92,
   },
   pillarRibbon: {
     bottom: 0,

@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { Provider } from 'react-redux';
 import 'react-native-reanimated';
 
@@ -46,6 +47,7 @@ function AppLayoutContent() {
       if (devoteeAccount) {
         setShowOnboarding(false);
         setShowAuth(false);
+        setShowCreateAccount(false);
       } else {
         // User has logged out, so we need to force the Auth screen to show again
         setShowAuth(true);
@@ -75,15 +77,37 @@ function AppLayoutContent() {
     return <SaiBabaSplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
-  if (showOnboarding) {
-    return <OnboardingScreen onDone={() => setShowOnboarding(false)} />;
+  if (!hasHydratedDevoteeAccount) {
+    return (
+      <View
+        style={{
+          alignItems: 'center',
+          backgroundColor: '#FFF7ED',
+          flex: 1,
+          justifyContent: 'center',
+        }}
+      >
+        <ActivityIndicator color="#F97316" size="large" />
+      </View>
+    );
   }
 
   if (devoteeAccount && showDevoteeProfile) {
     return <DevoteeProfileScreen account={devoteeAccount} onContinue={() => setShowDevoteeProfile(false)} />;
   }
 
-  if (showCreateAccount) {
+  if (!devoteeAccount && showOnboarding) {
+    return (
+      <OnboardingScreen
+        onDone={() => {
+          setShowOnboarding(false);
+          setShowAuth(true);
+        }}
+      />
+    );
+  }
+
+  if (!devoteeAccount && showCreateAccount) {
     return (
       <CreateDevoteeAccountScreen
         onBack={() => setShowCreateAccount(false)}
@@ -96,7 +120,7 @@ function AppLayoutContent() {
     );
   }
 
-  if (showAuth) {
+  if (!devoteeAccount && showAuth) {
     return (
       <AuthScreen
         onContinue={() => setShowAuth(false)}
