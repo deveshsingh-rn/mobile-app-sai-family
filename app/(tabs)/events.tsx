@@ -880,9 +880,10 @@ function EventProductSections({
 }) {
   return (
     <View style={[styles.productWrap, compact && styles.productWrapCompact]}>
+      <EventQuickActions />
       <EventTypeGuide home={home} loading={loading} />
       <TrendingThisWeek home={home} loading={loading} />
-      <EventQuickActions />
+      
       <WeekScheduler home={home} loading={loading} />
       <TopOrganisers home={home} loading={loading} />
     </View>

@@ -283,6 +283,22 @@ const hasDraftContent = (form: EventFormState) =>
       form.bannerUrl.trim()
   );
 
+const isFormCompleteForAutosave = (form: EventFormState) => {
+  if (
+    !form.title.trim() ||
+    !form.description.trim() ||
+    !form.address.trim() ||
+    !form.startAt.trim() ||
+    !form.endAt.trim() ||
+    !form.latitude.trim() ||
+    !form.longitude.trim()
+  ) {
+    return false;
+  }
+
+  return validateCreateEventPayload(toPayload(form)).isValid;
+};
+
 const getInitialDate = () => {
   const date = new Date();
   date.setMinutes(0, 0, 0);
@@ -566,7 +582,7 @@ export default function EventFormScreen({
   useEffect(() => {
     if (
       mode !== "create" ||
-      !hasDraftContent(form) ||
+      !isFormCompleteForAutosave(form) ||
       draftSaving ||
       publishingDraft ||
       uploadingMedia ||
@@ -1229,7 +1245,9 @@ export default function EventFormScreen({
                 ? "Saving draft..."
                 : draftId
                   ? "Draft saved automatically"
-                  : "Draft autosaves after you start writing"}
+                  : isFormCompleteForAutosave(form)
+                    ? "Ready to autosave"
+                    : "Autosave starts after required details are complete"}
             </Text>
           </View>
         ) : null}
