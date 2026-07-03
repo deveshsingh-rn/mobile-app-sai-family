@@ -12,6 +12,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
   ViewToken,
 } from "react-native";
@@ -22,7 +23,6 @@ import { router } from "expo-router";
 import {
   PenLine,
   Search,
-  Sparkles,
   UserCircle2,
 } from "lucide-react-native";
 
@@ -53,7 +53,8 @@ import {
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 
 const LIMIT = 10;
-const HEADER_SCROLL_THRESHOLD = 12;
+const HEADER_SCROLL_THRESHOLD = 18;
+const HEADER_ANIMATION_MS = 150;
 
 const CATEGORIES = [
   {
@@ -84,6 +85,8 @@ const CATEGORIES = [
 
 export default function HomeScreen() {
   const dispatch = useAppDispatch();
+  const { width: screenWidth } =
+    useWindowDimensions();
 
   const feed = useAppSelector(
     selectExperiencesFeed
@@ -110,13 +113,15 @@ export default function HomeScreen() {
     useState(false);
 
   const [activeViewableId, setActiveViewableId] = useState<string | null>(null);
-  const [areHeaderActionsVisible, setAreHeaderActionsVisible] =
+  const [isHeaderIntroMounted, setIsHeaderIntroMounted] =
+    useState(true);
+  const [isHeaderIntroVisible, setIsHeaderIntroVisible] =
     useState(true);
 
-  const headerActionsProgress = useRef(
+  const headerIntroProgress = useRef(
     new Animated.Value(1)
   ).current;
-  const areHeaderActionsVisibleRef = useRef(true);
+  const isHeaderIntroVisibleRef = useRef(true);
   const lastScrollYRef = useRef(0);
 
   // ───────────────── INITIAL FETCH ─────────────────
@@ -219,26 +224,42 @@ export default function HomeScreen() {
       [dispatch]
     );
 
-  const animateHeaderActions = useCallback(
+  const animateHeaderIntro = useCallback(
     (visible: boolean) => {
       if (
-        areHeaderActionsVisibleRef.current ===
+        isHeaderIntroVisibleRef.current ===
         visible
       ) {
         return;
       }
 
-      areHeaderActionsVisibleRef.current =
+      isHeaderIntroVisibleRef.current =
         visible;
-      setAreHeaderActionsVisible(visible);
+      setIsHeaderIntroVisible(visible);
 
-      Animated.timing(headerActionsProgress, {
-        duration: 180,
-        toValue: visible ? 1 : 0,
-        useNativeDriver: false,
-      }).start();
+      if (visible) {
+        setIsHeaderIntroMounted(true);
+        headerIntroProgress.setValue(0);
+
+        Animated.timing(headerIntroProgress, {
+          duration: HEADER_ANIMATION_MS,
+          toValue: 1,
+          useNativeDriver: true,
+        }).start();
+        return;
+      }
+
+      Animated.timing(headerIntroProgress, {
+        duration: HEADER_ANIMATION_MS,
+        toValue: 0,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setIsHeaderIntroMounted(false);
+        }
+      });
     },
-    [headerActionsProgress]
+    [headerIntroProgress]
   );
 
   const handleFeedScroll =
@@ -253,23 +274,23 @@ export default function HomeScreen() {
           lastScrollYRef.current;
 
         if (currentY < 20) {
-          animateHeaderActions(true);
+          animateHeaderIntro(true);
         } else if (
           diff >
           HEADER_SCROLL_THRESHOLD
         ) {
-          animateHeaderActions(false);
+          animateHeaderIntro(false);
         } else if (
           diff <
           -HEADER_SCROLL_THRESHOLD
         ) {
-          animateHeaderActions(true);
+          animateHeaderIntro(true);
         }
 
         lastScrollYRef.current =
           currentY;
       },
-      [animateHeaderActions]
+      [animateHeaderIntro]
     );
 
   // ───────────────── ACTIONS ─────────────────
@@ -403,104 +424,99 @@ export default function HomeScreen() {
       {/* HEADER */}
 
       <View style={styles.fixedTop}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.headerIcon}>
-              <UserCircle2
-                size={23}
-                color="#1F2937"
-                strokeWidth={1.8}
-              />
-            </View>
-
-            <View>
-              <Text style={styles.eyebrow}>
-                Sai Family
-              </Text>
-              <Text style={styles.title}>
-                Experiences
-              </Text>
-            </View>
-          </View>
-
+        {isHeaderIntroMounted && (
           <Animated.View
             pointerEvents={
-              areHeaderActionsVisible
+              isHeaderIntroVisible
                 ? "auto"
                 : "none"
             }
             style={[
-              styles.headerActions,
+              styles.headerIntroContent,
               {
-                maxWidth:
-                  headerActionsProgress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0, 96],
-                  }),
-                opacity: headerActionsProgress,
+                opacity: headerIntroProgress,
                 transform: [
                   {
                     translateX:
-                      headerActionsProgress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [16, 0],
-                      }),
-                  },
-                  {
-                    scale:
-                      headerActionsProgress.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.92, 1],
-                      }),
+                        headerIntroProgress.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [
+                            screenWidth * 0.5,
+                            0,
+                          ],
+                        }),
                   },
                 ],
               },
             ]}
           >
-            <Pressable
-              onPress={() =>
-                router.push("/(tabs)/experiences/search" as any)
-              }
-              style={styles.headerAction}
-            >
-              <Search
-                size={18}
-                color="#1F2937"
-                strokeWidth={2}
-              />
-            </Pressable>
-            <Pressable
-              onPress={() =>
-                router.push("/(tabs)/experiences/post" as any)
-              }
-              style={styles.primaryAction}
-            >
-              <PenLine
-                size={17}
-                color="#FFFFFF"
-                strokeWidth={2}
-              />
-            </Pressable>
-          </Animated.View>
-        </View>
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <View style={styles.headerIcon}>
+                  <UserCircle2
+                    size={23}
+                    color="#1F2937"
+                    strokeWidth={1.8}
+                  />
+                </View>
 
-        <View style={styles.heroPanel}>
-          <View style={styles.heroTextWrap}>
-            <Text style={styles.heroTitle}>
-              Share blessings, prayers, dreams, and darshan stories.
-            </Text>
-            <Text style={styles.heroMeta}>
-              {feed.length || 0} live posts in your family feed
-            </Text>
-          </View>
-          <View style={styles.heroBadge}>
-            <Sparkles
-              size={18}
-              color="#F97316"
-              strokeWidth={2}
-            />
-          </View>
-        </View>
+                <View>
+                  <Text style={styles.eyebrow}>
+                    Sai Family
+                  </Text>
+                  <Text style={styles.title}>
+                    Experiences
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.headerActions}>
+                <Pressable
+                  onPress={() =>
+                    router.push("/(tabs)/experiences/search" as any)
+                  }
+                  style={styles.headerAction}
+                >
+                  <Search
+                    size={18}
+                    color="#1F2937"
+                    strokeWidth={2}
+                  />
+                </Pressable>
+                <Pressable
+                  onPress={() =>
+                    router.push("/(tabs)/experiences/post" as any)
+                  }
+                  style={styles.primaryAction}
+                >
+                  <PenLine
+                    size={17}
+                    color="#FFFFFF"
+                    strokeWidth={2}
+                  />
+                </Pressable>
+              </View>
+            </View>
+
+            {/* <View style={styles.heroPanel}>
+              <View style={styles.heroTextWrap}>
+                <Text style={styles.heroTitle}>
+                  Share blessings, prayers, dreams, and darshan stories.
+                </Text>
+                <Text style={styles.heroMeta}>
+                  {feed.length || 0} live posts in your family feed
+                </Text>
+              </View>
+              <View style={styles.heroBadge}>
+                <Sparkles
+                  size={18}
+                  color="#F97316"
+                  strokeWidth={2}
+                />
+              </View>
+            </View> */}
+          </Animated.View>
+        )}
 
         <ExperienceTopTabs activeTab="feed" />
 
@@ -572,13 +588,12 @@ const styles = StyleSheet.create({
   },
 
   fixedTop: {
-    paddingTop: 54,
-
     backgroundColor: "#FFFCF7",
 
     borderBottomWidth: 1,
 
     borderBottomColor: "#E9D8BD",
+    paddingTop: 54,
   },
 
   header: {
@@ -589,6 +604,21 @@ const styles = StyleSheet.create({
 
     paddingHorizontal: 16,
     paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E9D8BD",
+    backdropFilter: "blur(10px)",
+    shadowColor: "#ed9a1e",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+
+  headerIntroContent: {
+    overflow: "hidden",
   },
 
   headerLeft: {

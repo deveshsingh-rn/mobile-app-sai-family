@@ -338,6 +338,7 @@ function CountryPickerModal({
                 placeholderTextColor={C.inkTertiary}
                 style={styles.searchField}
                 value={query}
+                returnKeyType="done"
               />
               {query.length > 0 ? (
                 <Pressable onPress={() => setQuery("")} hitSlop={8}>
@@ -760,6 +761,7 @@ export default function AuthScreen({
                     maxLength={15}
                     onChangeText={setPhoneNumber}
                     placeholder="9696340330"
+                    returnKeyType="done"
                     placeholderTextColor={C.inkTertiary}
                     style={styles.phoneInput}
                     value={phoneNumber}
@@ -776,6 +778,7 @@ export default function AuthScreen({
                     onChangeText={setMobileOtp}
                     placeholder="4-digit code"
                     placeholderTextColor={C.inkTertiary}
+                    returnKeyType="done"
                     style={styles.input}
                     value={mobileOtp}
                   />
@@ -796,6 +799,7 @@ export default function AuthScreen({
                   autoCapitalize="none"
                   keyboardType="email-address"
                   onChangeText={setEmail}
+                  returnKeyType="done"
                   placeholder="your@email.com"
                   placeholderTextColor={C.inkTertiary}
                   style={styles.input}
@@ -808,6 +812,7 @@ export default function AuthScreen({
                   onChangeText={setPassword}
                   placeholder="Enter password"
                   placeholderTextColor={C.inkTertiary}
+                  returnKeyType="done"
                   secureTextEntry
                   style={styles.input}
                   value={password}

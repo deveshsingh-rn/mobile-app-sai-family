@@ -7,6 +7,8 @@ import React, {
 import {
   ActivityIndicator,
   Image,
+  InputAccessoryView,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -29,6 +31,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 
 import {
+  Check,
   Globe2,
   Image as ImageIcon,
   MapPin,
@@ -63,6 +66,8 @@ type SelectedMedia = {
   name?: string;
 };
 
+const COMPOSER_ACCESSORY_ID = "experience-post-composer-accessory";
+
 export default function PremiumPostScreen() {
   const dispatch = useDispatch();
 
@@ -92,6 +97,9 @@ export default function PremiumPostScreen() {
 
   const [selectedCategory, setSelectedCategory] =
     useState("miracles");
+
+  const [isComposerFocused, setIsComposerFocused] =
+    useState(false);
 
   const isDisabled = useMemo(() => {
     return (
@@ -251,14 +259,20 @@ export default function PremiumPostScreen() {
     router.push("/experiences");
   };
 
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
+    setIsComposerFocused(false);
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={
         Platform.OS === "ios"
           ? "padding"
-          : undefined
+          : "height"
       }
+      keyboardVerticalOffset={0}
     >
       {/* ───────────────── BACKGROUND ───────────────── */}
 
@@ -310,6 +324,11 @@ export default function PremiumPostScreen() {
         style={styles.body}
         contentContainerStyle={
           styles.bodyContent
+        }
+        keyboardDismissMode={
+          Platform.OS === "ios"
+            ? "interactive"
+            : "on-drag"
         }
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={
@@ -426,6 +445,19 @@ export default function PremiumPostScreen() {
             value={content}
             onChangeText={setContent}
             multiline
+            inputAccessoryViewID={
+              Platform.OS === "ios"
+                ? COMPOSER_ACCESSORY_ID
+                : undefined
+            }
+            onBlur={() =>
+              setIsComposerFocused(false)
+            }
+            onFocus={() =>
+              setIsComposerFocused(true)
+            }
+            onSubmitEditing={dismissKeyboard}
+            returnKeyType="done"
             textAlignVertical="top"
             placeholder="Write your experience in your own words..."
             placeholderTextColor="#b78c56"
@@ -560,6 +592,24 @@ export default function PremiumPostScreen() {
 
       {/* ───────────────── TOOLBAR ───────────────── */}
 
+      {Platform.OS !== "ios" && isComposerFocused && (
+        <View style={styles.androidDoneBar}>
+          <Pressable
+            onPress={dismissKeyboard}
+            style={styles.keyboardDoneButton}
+          >
+            <Check
+              color="#FFFFFF"
+              size={16}
+              strokeWidth={2.5}
+            />
+            <Text style={styles.keyboardDoneText}>
+              Done
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
       <BlurView
         intensity={80}
         tint="light"
@@ -650,6 +700,33 @@ export default function PremiumPostScreen() {
           </LinearGradient>
         </Pressable>
       </BlurView>
+
+      {Platform.OS === "ios" && (
+        <InputAccessoryView
+          nativeID={
+            COMPOSER_ACCESSORY_ID
+          }
+        >
+          <View style={styles.keyboardAccessory}>
+            <Text style={styles.keyboardAccessoryHint}>
+              Experience note
+            </Text>
+            <Pressable
+              onPress={dismissKeyboard}
+              style={styles.keyboardDoneButton}
+            >
+              <Check
+                color="#FFFFFF"
+                size={16}
+                strokeWidth={2.5}
+              />
+              <Text style={styles.keyboardDoneText}>
+                Done
+              </Text>
+            </Pressable>
+          </View>
+        </InputAccessoryView>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -982,6 +1059,22 @@ const styles = StyleSheet.create({
     gap: 12,
   },
 
+  androidDoneBar: {
+    alignItems: "flex-end",
+    backgroundColor: "rgba(255,252,247,0.96)",
+    borderTopColor: "#E7D7BE",
+    borderTopWidth: 1,
+    bottom:
+      Platform.OS === "ios"
+        ? 102
+        : 84,
+    left: 0,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    position: "absolute",
+    right: 0,
+  },
+
   actionButton: {
     width: 50,
     height: 50,
@@ -1011,6 +1104,39 @@ const styles = StyleSheet.create({
 
   disabledButton: {
     opacity: 0.5,
+  },
+
+  keyboardAccessory: {
+    alignItems: "center",
+    backgroundColor: "#FFFCF7",
+    borderTopColor: "#E7D7BE",
+    borderTopWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+
+  keyboardAccessoryHint: {
+    color: "#78716C",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  keyboardDoneButton: {
+    alignItems: "center",
+    backgroundColor: "#23201D",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 6,
+    minHeight: 38,
+    paddingHorizontal: 14,
+  },
+
+  keyboardDoneText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "900",
   },
 
   postGradient: {
