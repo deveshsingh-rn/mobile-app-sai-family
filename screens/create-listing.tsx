@@ -20,6 +20,8 @@ import {
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as Location from 'expo-location';
 import {
   Ionicons,
   MaterialCommunityIcons,
@@ -52,7 +54,14 @@ import type {
 } from '@/store/directory/types';
 import { validateDirectoryListingPayload } from '@/store/directory/validation';
 
-const steps = ['Identity', 'Details', 'Contact', 'Media'];
+const steps = [
+  'Basic',
+  'Contact',
+  'Location',
+  'Services',
+  'Media',
+  'Review',
+];
 
 const theme = {
   accent: '#F97316',
@@ -64,10 +73,106 @@ const theme = {
   text: '#111827',
 };
 
+const DIRECTORY_IMAGE_MAX_SIZE = 1600;
+const DIRECTORY_IMAGE_QUALITY = 0.78;
+
 type SelectedImage = {
   mimeType?: string;
   name: string;
   uri: string;
+};
+
+type PickedImageAsset = ImagePicker.ImagePickerAsset;
+
+const trimOrUndefined = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : undefined;
+};
+
+const parseList = (value: string) =>
+  value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const normalizeUrl = (value: string) => {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `https://${trimmed}`;
+};
+
+const getDirectoryImageResizeAction = (
+  width?: number,
+  height?: number
+) => {
+  if (!width || !height) {
+    return null;
+  }
+
+  const longestSide = Math.max(width, height);
+
+  if (longestSide <= DIRECTORY_IMAGE_MAX_SIZE) {
+    return null;
+  }
+
+  if (width >= height) {
+    return {
+      resize: {
+        width: DIRECTORY_IMAGE_MAX_SIZE,
+      },
+    };
+  }
+
+  return {
+    resize: {
+      height: DIRECTORY_IMAGE_MAX_SIZE,
+    },
+  };
+};
+
+const optimizeDirectoryImage = async (
+  asset: PickedImageAsset
+): Promise<SelectedImage> => {
+  const fallbackName =
+    asset.fileName ||
+    `directory-${Date.now()}.${asset.uri.split('.').pop() || 'jpg'}`;
+
+  try {
+    const resizeAction = getDirectoryImageResizeAction(
+      asset.width,
+      asset.height
+    );
+    const optimized = await ImageManipulator.manipulateAsync(
+      asset.uri,
+      resizeAction ? [resizeAction] : [],
+      {
+        compress: DIRECTORY_IMAGE_QUALITY,
+        format: ImageManipulator.SaveFormat.WEBP,
+      }
+    );
+
+    return {
+      mimeType: 'image/webp',
+      name: fallbackName.replace(/\.[^.]+$/, '.webp'),
+      uri: optimized.uri,
+    };
+  } catch (error) {
+    console.warn('[Directory Image Optimization Failed]', error);
+
+    return {
+      mimeType: asset.mimeType || 'image/jpeg',
+      name: fallbackName,
+      uri: asset.uri,
+    };
+  }
 };
 
 const CreateListingScreen = () => {
@@ -94,12 +199,24 @@ const CreateListingScreen = () => {
   const [homeService, setHomeService] = useState(true);
   const [phone, setPhone] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
+  const [email, setEmail] = useState('');
+  const [websiteUrl, setWebsiteUrl] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
+  const [stateName, setStateName] = useState('');
+  const [country, setCountry] = useState('India');
+  const [pincode, setPincode] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [subcategories, setSubcategories] = useState('');
+  const [specialties, setSpecialties] = useState('');
+  const [tags, setTags] = useState('');
+  const [serviceAreas, setServiceAreas] = useState('');
   const [recommended, setRecommended] = useState(true);
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
+  const [loadingLocation, setLoadingLocation] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [pendingSubmitPayload, setPendingSubmitPayload] =
     useState<DirectoryCreateListingPayload | null>(null);
@@ -141,8 +258,27 @@ const CreateListingScreen = () => {
     setHomeService(Boolean(detail.homeServiceAvailable));
     setPhone(detail.phoneNumber || '');
     setWhatsapp(detail.whatsappNumber || '');
+    setEmail(detail.email || '');
+    setWebsiteUrl(detail.websiteUrl || '');
     setAddress(detail.address || '');
     setCity(detail.city || '');
+    setStateName(detail.state || '');
+    setCountry(detail.country || 'India');
+    setPincode(detail.pincode || '');
+    setLatitude(
+      detail.latitude !== undefined && detail.latitude !== null
+        ? String(detail.latitude)
+        : ''
+    );
+    setLongitude(
+      detail.longitude !== undefined && detail.longitude !== null
+        ? String(detail.longitude)
+        : ''
+    );
+    setSubcategories((detail.subcategories || []).join(', '));
+    setSpecialties((detail.specialties || []).join(', '));
+    setTags((detail.tags || []).join(', '));
+    setServiceAreas((detail.serviceAreas || []).join(', '));
     setRecommended(
       detail.communityRecommendationEnabled !== false
     );
@@ -194,6 +330,14 @@ const CreateListingScreen = () => {
         experience.replace(/[^\d]/g, ''),
         10
       );
+      const latitudeValue = Number.parseFloat(latitude.trim());
+      const longitudeValue = Number.parseFloat(longitude.trim());
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedWebsite = normalizeUrl(websiteUrl);
+      const subcategoryItems = parseList(subcategories);
+      const specialtyItems = parseList(specialties);
+      const tagItems = parseList(tags);
+      const serviceAreaItems = parseList(serviceAreas);
 
       const payload: Partial<DirectoryCreateListingPayload> = {
         address: address.trim(),
@@ -201,11 +345,32 @@ const CreateListingScreen = () => {
         categoryId: selectedCategoryId,
         city: city.trim(),
         communityRecommendationEnabled: recommended,
+        country: trimOrUndefined(country) || 'India',
         description: description.trim(),
+        email: normalizedEmail || undefined,
         homeServiceAvailable: homeService,
-        phoneNumber: phone.trim(),
-        tagline: tagline.trim(),
-        whatsappNumber: whatsapp.trim(),
+        latitude: Number.isFinite(latitudeValue)
+          ? latitudeValue
+          : undefined,
+        longitude: Number.isFinite(longitudeValue)
+          ? longitudeValue
+          : undefined,
+        phoneNumber: trimOrUndefined(phone),
+        pincode: trimOrUndefined(pincode),
+        serviceAreas: serviceAreaItems.length
+          ? serviceAreaItems
+          : undefined,
+        specialties: specialtyItems.length
+          ? specialtyItems
+          : undefined,
+        state: trimOrUndefined(stateName),
+        subcategories: subcategoryItems.length
+          ? subcategoryItems
+          : undefined,
+        tagline: trimOrUndefined(tagline),
+        tags: tagItems.length ? tagItems : undefined,
+        websiteUrl: normalizedWebsite,
+        whatsappNumber: trimOrUndefined(whatsapp),
         yearsOfExperience: Number.isFinite(yearsOfExperience)
           ? yearsOfExperience
           : undefined,
@@ -216,6 +381,10 @@ const CreateListingScreen = () => {
           Object.entries(payload).filter(([, value]) => {
             if (typeof value === 'string') {
               return value.trim().length > 0;
+            }
+
+            if (Array.isArray(value)) {
+              return value.length > 0;
             }
 
             return value !== undefined && value !== null;
@@ -229,13 +398,24 @@ const CreateListingScreen = () => {
       address,
       businessName,
       city,
+      country,
       description,
+      email,
       experience,
       homeService,
+      latitude,
+      longitude,
       phone,
+      pincode,
       recommended,
       selectedCategoryId,
+      serviceAreas,
+      specialties,
+      stateName,
+      subcategories,
       tagline,
+      tags,
+      websiteUrl,
       whatsapp,
     ]
   );
@@ -247,34 +427,142 @@ const CreateListingScreen = () => {
     if (targetStep >= 1) {
       if (!payload.businessName) {
         nextErrors.businessName = 'Business name is required.';
+      } else if (
+        payload.businessName.length < 2 ||
+        payload.businessName.length > 120
+      ) {
+        nextErrors.businessName =
+          'Business name must be 2 to 120 characters.';
       }
 
       if (!payload.categoryId) {
-        nextErrors.categoryId = 'Category is required.';
+        nextErrors.categoryId = 'Please select a category.';
+      }
+
+      if (!payload.description || payload.description.length < 20) {
+        nextErrors.description =
+          'Description must be at least 20 characters.';
+      } else if (payload.description.length > 3000) {
+        nextErrors.description =
+          'Description can be up to 3000 characters.';
+      }
+
+      if (payload.tagline && payload.tagline.length > 160) {
+        nextErrors.tagline =
+          'Tagline can be up to 160 characters.';
       }
     }
 
     if (targetStep >= 2) {
-      if (!payload.description || payload.description.length < 20) {
-        nextErrors.description =
-          'Description must be at least 20 characters.';
+      if (!payload.phoneNumber && !payload.whatsappNumber) {
+        nextErrors.phoneNumber =
+          'Enter phone or WhatsApp number.';
+      }
+
+      if (
+        payload.phoneNumber &&
+        (payload.phoneNumber.length < 6 ||
+          payload.phoneNumber.length > 30)
+      ) {
+        nextErrors.phoneNumber =
+          'Phone number must be 6 to 30 characters.';
+      }
+
+      if (
+        payload.whatsappNumber &&
+        (payload.whatsappNumber.length < 6 ||
+          payload.whatsappNumber.length > 30)
+      ) {
+        nextErrors.whatsappNumber =
+          'WhatsApp number must be 6 to 30 characters.';
+      }
+
+      if (
+        payload.email &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)
+      ) {
+        nextErrors.email = 'Enter a valid email address.';
+      }
+
+      if (
+        payload.websiteUrl &&
+        !/^https?:\/\/.+/i.test(payload.websiteUrl)
+      ) {
+        nextErrors.websiteUrl =
+          'Enter a valid website URL including https://.';
       }
     }
 
     if (targetStep >= 3) {
-      if (!payload.phoneNumber && !payload.whatsappNumber) {
-        nextErrors.phoneNumber =
-          'Phone or WhatsApp number is required.';
-      }
-
       if (!payload.address || payload.address.length < 5) {
         nextErrors.address =
           'Address must be at least 5 characters.';
+      } else if (payload.address.length > 500) {
+        nextErrors.address =
+          'Address can be up to 500 characters.';
       }
 
       if (!payload.city || payload.city.length < 2) {
         nextErrors.city = 'City is required.';
+      } else if (payload.city.length > 100) {
+        nextErrors.city = 'City can be up to 100 characters.';
       }
+
+      if (payload.state && payload.state.length > 100) {
+        nextErrors.state = 'State can be up to 100 characters.';
+      }
+
+      if (payload.country && payload.country.length > 100) {
+        nextErrors.country =
+          'Country can be up to 100 characters.';
+      }
+
+      if (
+        payload.pincode &&
+        !/^\d{4,10}$/.test(payload.pincode)
+      ) {
+        nextErrors.pincode =
+          'Pincode must be 4 to 10 digits.';
+      }
+
+      if (
+        (payload.latitude === undefined) !==
+        (payload.longitude === undefined)
+      ) {
+        nextErrors.latitude =
+          'Latitude and longitude must be added together.';
+      }
+
+      if (
+        latitude.trim() &&
+        !Number.isFinite(Number.parseFloat(latitude.trim()))
+      ) {
+        nextErrors.latitude =
+          'Latitude must be between -90 and 90.';
+      }
+
+      if (
+        longitude.trim() &&
+        !Number.isFinite(Number.parseFloat(longitude.trim()))
+      ) {
+        nextErrors.longitude =
+          'Longitude must be between -180 and 180.';
+      }
+    }
+
+    if (targetStep >= 4) {
+      const validation = validateDirectoryListingPayload(payload);
+      [
+        'yearsOfExperience',
+        'subcategories',
+        'specialties',
+        'tags',
+        'serviceAreas',
+      ].forEach((field) => {
+        if (validation.errors[field]) {
+          nextErrors[field] = validation.errors[field];
+        }
+      });
     }
 
     return nextErrors;
@@ -290,7 +578,7 @@ const CreateListingScreen = () => {
 
     setValidationErrors({});
 
-    if (step < 4) {
+    if (step < steps.length) {
       setStep(step + 1);
       return;
     }
@@ -308,8 +596,8 @@ const CreateListingScreen = () => {
   };
 
   const pickImage = async () => {
-    if (images.length >= 4) {
-      Alert.alert('Media', 'You can add up to 4 images from this form.');
+    if (images.length >= 10) {
+      Alert.alert('Media', 'You can add up to 10 images from this form.');
       return;
     }
 
@@ -327,7 +615,7 @@ const CreateListingScreen = () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsMultipleSelection: false,
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.85,
+      quality: 0.7,
     });
 
     if (result.canceled || !result.assets?.[0]) {
@@ -335,23 +623,92 @@ const CreateListingScreen = () => {
     }
 
     const asset = result.assets[0];
-    const name =
-      asset.fileName ||
-      `directory-${Date.now()}.${asset.uri.split('.').pop() || 'jpg'}`;
+    const optimizedImage = await optimizeDirectoryImage(asset);
 
     setImages((current) => [
       ...current,
-      {
-        mimeType: asset.mimeType || 'image/jpeg',
-        name,
-        uri: asset.uri,
-      },
+      optimizedImage,
     ]);
   };
 
   const removeImage = (index: number) => {
     setImages((current) => current.filter((_, i) => i !== index));
   };
+
+  const handleUseCurrentLocation = useCallback(async () => {
+    const permission = await Location.requestForegroundPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        'Location needed',
+        'Please allow location access to fill your business location.'
+      );
+      return;
+    }
+
+    setLoadingLocation(true);
+
+    try {
+      const current = await Location.getCurrentPositionAsync({});
+      const reverse = await Location.reverseGeocodeAsync({
+        latitude: current.coords.latitude,
+        longitude: current.coords.longitude,
+      });
+      const place = reverse[0];
+
+      setLatitude(current.coords.latitude.toFixed(6));
+      setLongitude(current.coords.longitude.toFixed(6));
+
+      if (place?.city) {
+        setCity(place.city);
+      } else if (place?.district) {
+        setCity(place.district);
+      }
+
+      if (place?.region) {
+        setStateName(place.region);
+      }
+
+      if (place?.country) {
+        setCountry(place.country);
+      }
+
+      if (place?.postalCode) {
+        setPincode(place.postalCode);
+      }
+
+      const nextAddress = [
+        place?.name,
+        place?.street,
+        place?.subregion,
+      ]
+        .filter(Boolean)
+        .join(', ');
+
+      if (nextAddress && !address.trim()) {
+        setAddress(nextAddress);
+      }
+
+      setValidationErrors((currentErrors) => {
+        const nextErrors = { ...currentErrors };
+        delete nextErrors.latitude;
+        delete nextErrors.longitude;
+        delete nextErrors.address;
+        delete nextErrors.city;
+        delete nextErrors.state;
+        delete nextErrors.country;
+        delete nextErrors.pincode;
+        return nextErrors;
+      });
+    } catch {
+      Alert.alert(
+        'Location',
+        'Could not read your current location. Please try again.'
+      );
+    } finally {
+      setLoadingLocation(false);
+    }
+  }, [address]);
 
   const extractUploadedUrls = useCallback(() => {
     if (!uploadedMedia) {
@@ -455,6 +812,17 @@ const CreateListingScreen = () => {
 
   const submitListing = () => {
     const payload = toPayload() as DirectoryCreateListingPayload;
+    const stepErrors = getStepErrors(steps.length);
+
+    if (Object.keys(stepErrors).length) {
+      setValidationErrors(stepErrors);
+      Alert.alert(
+        'Check listing details',
+        Object.values(stepErrors)[0]
+      );
+      return;
+    }
+
     const validation = validateDirectoryListingPayload(payload);
 
     if (!validation.isValid) {
@@ -637,14 +1005,7 @@ const CreateListingScreen = () => {
               backgroundColor: '#FFFFFF',
               borderRadius: 100,
               height: '100%',
-              width:
-                step === 1
-                  ? '25%'
-                  : step === 2
-                  ? '50%'
-                  : step === 3
-                  ? '75%'
-                  : '100%',
+              width: `${(step / steps.length) * 100}%`,
             }}
           />
         </View>
@@ -1045,8 +1406,8 @@ const CreateListingScreen = () => {
           size={34}
           color={theme.accent}
         />,
-        'Business Identity',
-        'Set the name and category devotees will see in Directory.'
+        'Basic Details',
+        'Add the name, category, and clear description devotees will see first.'
       )}
 
       {renderInput(
@@ -1166,28 +1527,24 @@ const CreateListingScreen = () => {
         setTagline,
         'tagline'
       )}
+
+      {renderInput(
+        'DESCRIPTION',
+        'Write about your services, quality, and trust...',
+        description,
+        setDescription,
+        'description',
+        true
+      )}
     </>
   );
 
   const renderDetails = () => (
     <>
       {renderStepIntro(
-        <Feather
-          name="file-text"
-          size={31}
-          color="#2563EB"
-        />,
-        'Business Details',
-        'Describe your services, experience, and what makes your work trustworthy.'
-      )}
-
-      {renderInput(
-        'DESCRIPTION',
-        'Write about your services...',
-        description,
-        setDescription,
-        'description',
-        true
+        <Feather name="briefcase" size={31} color="#2563EB" />,
+        'Services',
+        'Help devotees understand what you provide and where you can serve.'
       )}
 
       {renderInput(
@@ -1196,6 +1553,38 @@ const CreateListingScreen = () => {
         experience,
         setExperience,
         'yearsOfExperience'
+      )}
+
+      {renderInput(
+        'SUBCATEGORIES',
+        'e.g. Tuition, Vedic Classes',
+        subcategories,
+        setSubcategories,
+        'subcategories'
+      )}
+
+      {renderInput(
+        'SPECIALTIES',
+        'e.g. Home delivery, Custom orders',
+        specialties,
+        setSpecialties,
+        'specialties'
+      )}
+
+      {renderInput(
+        'SERVICE AREAS',
+        'e.g. Pune, Pimpri, Wakad',
+        serviceAreas,
+        setServiceAreas,
+        'serviceAreas'
+      )}
+
+      {renderInput(
+        'TAGS',
+        'e.g. trusted, affordable, family-run',
+        tags,
+        setTags,
+        'tags'
       )}
 
       <View
@@ -1255,8 +1644,76 @@ const CreateListingScreen = () => {
 
       {renderInput('PHONE NUMBER', '+91 9876543210', phone, setPhone, 'phoneNumber')}
       {renderInput('WHATSAPP NUMBER', '+91 9876543210', whatsapp, setWhatsapp, 'whatsappNumber')}
+      {renderInput('EMAIL (OPTIONAL)', 'business@example.com', email, setEmail, 'email')}
+      {renderInput('WEBSITE (OPTIONAL)', 'https://yourbusiness.com', websiteUrl, setWebsiteUrl, 'websiteUrl')}
+    </>
+  );
+
+  const renderLocation = () => (
+    <>
+      {renderStepIntro(
+        <Ionicons name="location-outline" size={32} color="#EA580C" />,
+        'Location',
+        'Add accurate location details so nearby devotees can find you.'
+      )}
+
       {renderInput('ADDRESS', 'Enter your business address', address, setAddress, 'address')}
       {renderInput('CITY', 'e.g. Delhi', city, setCity, 'city')}
+      {renderInput('STATE (OPTIONAL)', 'e.g. Maharashtra', stateName, setStateName, 'state')}
+      {renderInput('COUNTRY', 'India', country, setCountry, 'country')}
+      {renderInput('PINCODE (OPTIONAL)', 'e.g. 411001', pincode, setPincode, 'pincode')}
+
+      <TouchableOpacity
+        activeOpacity={0.88}
+        disabled={loadingLocation}
+        onPress={handleUseCurrentLocation}
+        style={{
+          alignItems: 'center',
+          backgroundColor: loadingLocation ? '#FED7AA' : '#FFF7ED',
+          borderColor: '#FDBA74',
+          borderRadius: 18,
+          borderWidth: 1,
+          flexDirection: 'row',
+          justifyContent: 'center',
+          marginTop: 18,
+          minHeight: 54,
+          paddingHorizontal: 16,
+        }}>
+        {loadingLocation ? (
+          <ActivityIndicator color={theme.accent} size="small" />
+        ) : (
+          <Ionicons
+            name="locate-outline"
+            size={21}
+            color={theme.accent}
+          />
+        )}
+
+        <Text
+          style={{
+            color: theme.accentDark,
+            fontSize: 15,
+            fontWeight: '900',
+            marginLeft: 9,
+          }}>
+          {loadingLocation
+            ? 'Reading Location'
+            : 'Use Current Location'}
+        </Text>
+      </TouchableOpacity>
+
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: 10,
+        }}>
+        <View style={{ flex: 1 }}>
+          {renderInput('LATITUDE', '18.5204', latitude, setLatitude, 'latitude')}
+        </View>
+        <View style={{ flex: 1 }}>
+          {renderInput('LONGITUDE', '73.8567', longitude, setLongitude, 'longitude')}
+        </View>
+      </View>
     </>
   );
 
@@ -1275,7 +1732,7 @@ const CreateListingScreen = () => {
           justifyContent: 'space-between',
           marginTop: 26,
         }}>
-        {[0, 1, 2, 3].map((index) => {
+        {Array.from({ length: Math.min(10, images.length + 1) }).map((_, index) => {
           const image = images[index];
 
           return (
@@ -1400,6 +1857,89 @@ const CreateListingScreen = () => {
     </>
   );
 
+  const renderReviewRow = (label: string, value?: string | number | null) => (
+    <View
+      style={{
+        borderBottomColor: '#F3E8D8',
+        borderBottomWidth: 1,
+        paddingVertical: 12,
+      }}>
+      <Text
+        style={{
+          color: theme.muted,
+          fontSize: 11,
+          fontWeight: '900',
+          letterSpacing: 0.6,
+          textTransform: 'uppercase',
+        }}>
+        {label}
+      </Text>
+      <Text
+        style={{
+          color: value ? theme.text : '#9CA3AF',
+          fontSize: 15,
+          fontWeight: '800',
+          lineHeight: 21,
+          marginTop: 5,
+        }}>
+        {value || 'Not added'}
+      </Text>
+    </View>
+  );
+
+  const renderReview = () => {
+    const payload = toPayload();
+
+    return (
+      <>
+        {renderStepIntro(
+          <Ionicons
+            name="shield-checkmark-outline"
+            size={33}
+            color="#0F766E"
+          />,
+          'Review Listing',
+          'Please check everything once. After submission, your listing may go for community review.'
+        )}
+
+        <View
+          style={{
+            backgroundColor: '#F8FAFC',
+            borderColor: '#E2E8F0',
+            borderRadius: 18,
+            borderWidth: 1,
+            marginTop: 18,
+            paddingHorizontal: 14,
+          }}>
+          {renderReviewRow('Business', payload.businessName)}
+          {renderReviewRow('Category', selectedCategory?.name)}
+          {renderReviewRow('Description', payload.description)}
+          {renderReviewRow(
+            'Contact',
+            payload.phoneNumber || payload.whatsappNumber
+          )}
+          {renderReviewRow('Email', payload.email)}
+          {renderReviewRow('Website', payload.websiteUrl)}
+          {renderReviewRow(
+            'Location',
+            [payload.address, payload.city, payload.state, payload.country]
+              .filter(Boolean)
+              .join(', ')
+          )}
+          {renderReviewRow(
+            'Services',
+            [
+              ...(payload.specialties || []),
+              ...(payload.serviceAreas || []),
+              ...(payload.tags || []),
+            ].join(', ')
+          )}
+          {renderReviewRow('Photos', `${images.length} selected`)}
+        </View>
+      </>
+    );
+  };
+
   const busy = creating || uploadingMedia;
 
   return (
@@ -1448,9 +1988,11 @@ const CreateListingScreen = () => {
               shadowRadius: 10,
             }}>
             {step === 1 && renderIdentity()}
-            {step === 2 && renderDetails()}
-            {step === 3 && renderContact()}
-            {step === 4 && renderMedia()}
+            {step === 2 && renderContact()}
+            {step === 3 && renderLocation()}
+            {step === 4 && renderDetails()}
+            {step === 5 && renderMedia()}
+            {step === 6 && renderReview()}
           </View>
 
           {error ? (
@@ -1507,7 +2049,7 @@ const CreateListingScreen = () => {
                 fontWeight: '900',
                 marginLeft: busy ? 10 : 0,
               }}>
-              {step === 4
+              {step === steps.length
                 ? uploadingMedia
                   ? 'Uploading Media'
                   : creating
@@ -1520,7 +2062,7 @@ const CreateListingScreen = () => {
 
             {!busy ? (
               <Ionicons
-                name={step === 4 ? 'checkmark' : 'arrow-forward'}
+                name={step === steps.length ? 'checkmark' : 'arrow-forward'}
                 size={21}
                 color="#FFFFFF"
                 style={{

@@ -70,7 +70,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow Sai Family to use your location to fill event coordinates."
+          "locationWhenInUsePermission": "Allow Sai Family to use your location to fill event and directory coordinates."
         }
       ],
       "@react-native-community/datetimepicker"

@@ -106,7 +106,42 @@ function ownerMemberSince(
 }
 
 function normalizePhone(value?: string | null) {
-  return value?.replace(/[^\d+]/g, '') || '';
+  const cleaned = value?.replace(/[^\d+]/g, '') || '';
+
+  if (/^\d{10}$/.test(cleaned)) {
+    return `+91${cleaned}`;
+  }
+
+  return cleaned;
+}
+
+async function openExternalUrl(
+  url: string,
+  fallbackUrl?: string
+) {
+  try {
+    const canOpen = await Linking.canOpenURL(url);
+
+    if (canOpen) {
+      await Linking.openURL(url);
+      return;
+    }
+
+    if (fallbackUrl) {
+      await Linking.openURL(fallbackUrl);
+      return;
+    }
+
+    Alert.alert(
+      'Cannot open app',
+      'Please check that the required app is installed on this phone.'
+    );
+  } catch {
+    Alert.alert(
+      'Cannot open app',
+      'Please try again, or contact this business another way.'
+    );
+  }
 }
 
 function EmptyDetail({
@@ -337,7 +372,7 @@ const BusinessDetailsScreen = () => {
       const phone = normalizePhone(listing.phoneNumber);
 
       if (phone) {
-        await Linking.openURL(`tel:${phone}`);
+        await openExternalUrl(`tel:${phone}`);
       }
     }
 
@@ -347,14 +382,15 @@ const BusinessDetailsScreen = () => {
       ).replace(/^\+/, '');
 
       if (phone) {
-        await Linking.openURL(
-          `whatsapp://send?phone=${phone}`
+        await openExternalUrl(
+          `whatsapp://send?phone=${phone}`,
+          `https://wa.me/${phone}`
         );
       }
     }
 
     if (channel === 'in_app' && listing.email) {
-      await Linking.openURL(`mailto:${listing.email}`);
+      await openExternalUrl(`mailto:${listing.email}`);
     }
   };
 

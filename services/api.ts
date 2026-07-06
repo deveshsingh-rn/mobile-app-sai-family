@@ -25,16 +25,10 @@ const API_BASE_URL =
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 60000,
 });
 
 const AUTH_SESSION_STORAGE_KEY = "sai-family.auth-session";
-
-// Injection method to break circular dependencies
-let injectedStore: any;
-export const injectStore = (store: any) => {
-  injectedStore = store;
-};
 
 // Request interceptor to add auth credentials globally
 apiClient.interceptors.request.use(
@@ -100,16 +94,6 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
-      // console.log('[API] Unauthorized access - redirect to login / clear token');
-      
-      // Protect against logging out if backend returns 401 from YouTube API failure
-      const isVideoUploadError = error.config?.url === '/api/experiences' && error.config?.method === 'post';
-      if (injectedStore && !isVideoUploadError) {
-        injectedStore.dispatch({ type: 'devotee-account/LOGOUT_REQUEST' });
-      }
-    }
-
     if (axios.isAxiosError(error)) {
       const errorDetails = {
         message: error.message,

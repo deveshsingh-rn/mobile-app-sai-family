@@ -231,11 +231,13 @@ export type DirectoryCreateListingPayload = {
   latitude?: number;
   logoUrl?: string | null;
   longitude?: number;
+  openingHours?: Record<string, unknown> | null;
   phoneNumber?: string;
   pincode?: string;
   serviceAreas?: string[];
   specialties?: string[];
   state?: string;
+  subcategories?: string[];
   tagline?: string;
   tags?: string[];
   websiteUrl?: string;

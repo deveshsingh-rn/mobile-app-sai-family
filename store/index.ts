@@ -2,7 +2,6 @@ import { legacy_createStore as createStore, applyMiddleware, compose } from 'red
 import createSagaMiddleware from 'redux-saga';
 import { rootReducer } from './root-reducer';
 import { rootSaga } from './root-saga';
-import { injectStore } from '@/services/api';
 
 const sagaMiddleware = createSagaMiddleware();
 
@@ -33,4 +32,3 @@ const configureStore = () => {
 };
 
 export const store = configureStore();
-injectStore(store);
