@@ -37,6 +37,7 @@ export type DirectoryOwnerSummary = {
   avatarUrl?: string | null;
   badge?: string | null;
   city?: string | null;
+  handle?: string | null;
   id: string;
   memberId?: string | null;
   memberSince?: string | null;
@@ -68,6 +69,7 @@ export type DirectoryListing = {
   canDelete?: boolean;
   canEdit?: boolean;
   canVerify?: boolean;
+  category?: DirectoryCategory | null;
   categoryId?: string;
   categoryName?: string;
   categorySlug?: string;
@@ -85,9 +87,12 @@ export type DirectoryListing = {
   latitude?: number | null;
   logoUrl?: string | null;
   longitude?: number | null;
+  openingHours?: Record<string, unknown> | null;
   owner?: DirectoryOwnerSummary | null;
   ownerAvatarUrl?: string | null;
+  ownerDevoteeBadge?: string | null;
   ownerMemberId?: string | null;
+  ownerMemberSince?: string | null;
   ownerName?: string | null;
   ownerUserId?: string;
   phoneNumber?: string | null;
@@ -107,6 +112,8 @@ export type DirectoryListing = {
   tagline?: string | null;
   tags?: string[];
   updatedAt?: string;
+  verifiedAt?: string | null;
+  verifiedBy?: string | null;
   verificationStatus?: DirectoryVerificationStatus;
   viewCount?: number;
   websiteUrl?: string | null;

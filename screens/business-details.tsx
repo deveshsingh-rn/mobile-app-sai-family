@@ -21,6 +21,8 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   router,
   useLocalSearchParams,
@@ -34,6 +36,7 @@ import {
   recommendDirectoryListingRequest,
   reportDirectoryListingRequest,
   selectDirectoryDetail,
+  selectDirectoryDetailRecentReviews,
   selectDirectoryDetailSimilarListings,
   selectDirectoryDetailReviewSummary,
   selectDirectoryError,
@@ -55,6 +58,28 @@ type ContactAction = {
   channel: DirectoryContactPayload['channel'];
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
+};
+
+const palette = {
+  accent: '#F97316',
+  amberSoft: '#FFF7ED',
+  background: '#F4EFE7',
+  border: '#EFE2D0',
+  card: '#FFFCF8',
+  green: '#16A34A',
+  ink: '#111827',
+  muted: '#6B7280',
+};
+
+const iosShadow = {
+  elevation: 4,
+  shadowColor: '#7C2D12',
+  shadowOffset: {
+    height: 10,
+    width: 0,
+  },
+  shadowOpacity: 0.08,
+  shadowRadius: 18,
 };
 
 function getParam(value?: string | string[]) {
@@ -92,7 +117,8 @@ function ownerName(listing?: DirectoryListing | null) {
 function ownerMemberSince(
   listing?: DirectoryListing | null
 ) {
-  const value = listing?.owner?.memberSince;
+  const value =
+    listing?.owner?.memberSince || listing?.ownerMemberSince;
 
   if (!value) {
     return 'Community member';
@@ -103,6 +129,91 @@ function ownerMemberSince(
   return Number.isFinite(year)
     ? `Member since ${year}`
     : 'Community member';
+}
+
+function formatDisplayDate(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+
+  if (!Number.isFinite(date.getTime())) {
+    return null;
+  }
+
+  return date.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatStatus(value?: string | null) {
+  if (!value) {
+    return 'Not available';
+  }
+
+  return value
+    .split('_')
+    .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
+    .join(' ');
+}
+
+function joinLocation(listing: DirectoryListing) {
+  return [
+    listing.address,
+    listing.city,
+    listing.state,
+    listing.country,
+    listing.pincode,
+  ]
+    .filter(Boolean)
+    .join(', ');
+}
+
+function getOpeningHourRows(
+  openingHours?: Record<string, unknown> | null
+) {
+  if (!openingHours || typeof openingHours !== 'object') {
+    return [];
+  }
+
+  const dayLabels: Record<string, string> = {
+    fri: 'Friday',
+    mon: 'Monday',
+    sat: 'Saturday',
+    sun: 'Sunday',
+    thu: 'Thursday',
+    tue: 'Tuesday',
+    wed: 'Wednesday',
+  };
+
+  return Object.entries(dayLabels)
+    .map(([key, label]) => {
+      const value = openingHours[key];
+
+      if (!value || typeof value !== 'object') {
+        return null;
+      }
+
+      const day = value as {
+        close?: string;
+        closed?: boolean;
+        open?: string;
+      };
+
+      return {
+        label,
+        value: day.closed
+          ? 'Closed'
+          : [day.open, day.close].filter(Boolean).join(' - '),
+      };
+    })
+    .filter(
+      (item): item is { label: string; value: string } =>
+        Boolean(item?.value)
+    );
 }
 
 function normalizePhone(value?: string | null) {
@@ -219,6 +330,9 @@ const BusinessDetailsScreen = () => {
   const reviewSummary = useAppSelector(
     selectDirectoryDetailReviewSummary
   );
+  const recentReviews = useAppSelector(
+    selectDirectoryDetailRecentReviews
+  );
   const similarListings = useAppSelector(
     selectDirectoryDetailSimilarListings
   );
@@ -262,6 +376,18 @@ const BusinessDetailsScreen = () => {
         .slice(0, 8),
     [listing]
   );
+  const subcategories = listing?.subcategories || [];
+  const tags = listing?.tags || [];
+  const serviceAreas = listing?.serviceAreas || [];
+  const openingHourRows = getOpeningHourRows(listing?.openingHours);
+  const contactSummary = [
+    listing?.phoneNumber ? `Phone: ${listing.phoneNumber}` : null,
+    listing?.whatsappNumber
+      ? `WhatsApp: ${listing.whatsappNumber}`
+      : null,
+    listing?.email ? `Email: ${listing.email}` : null,
+    listing?.websiteUrl ? `Website: ${listing.websiteUrl}` : null,
+  ].filter(Boolean);
   const rating =
     reviewSummary?.averageRating ??
     listing?.averageRating ??
@@ -326,6 +452,29 @@ const BusinessDetailsScreen = () => {
       message: `Sai Directory: ${listing.businessName}`,
       title: listing.businessName,
     });
+  };
+
+  const handleOpenMap = async () => {
+    if (!listing) {
+      return;
+    }
+
+    const query =
+      listing.latitude != null && listing.longitude != null
+        ? `${listing.latitude},${listing.longitude}`
+        : joinLocation(listing);
+
+    if (!query) {
+      Alert.alert(
+        'Location unavailable',
+        'This listing has not added a map location yet.'
+      );
+      return;
+    }
+
+    await openExternalUrl(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+    );
   };
 
   const handleReport = () => {
@@ -437,10 +586,166 @@ const BusinessDetailsScreen = () => {
     );
   }
 
+  const renderSection = (
+    title: string,
+    children: React.ReactNode,
+    action?: React.ReactNode
+  ) => (
+    <View
+      style={{
+        marginTop: 18,
+        paddingHorizontal: 16,
+      }}>
+      <View
+        style={{
+          alignItems: 'center',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+          paddingHorizontal: 2,
+        }}>
+        <Text
+          style={{
+            color: palette.ink,
+            fontSize: 19,
+            fontWeight: '900',
+          }}>
+          {title}
+        </Text>
+        {action}
+      </View>
+      {children}
+    </View>
+  );
+
+  const renderInfoRow = (
+    icon: keyof typeof Ionicons.glyphMap,
+    label: string,
+    value?: string | number | null,
+    onPress?: () => void
+  ) => {
+    const content = (
+      <View
+        style={{
+          alignItems: 'center',
+          borderBottomColor: '#F3E9DC',
+          borderBottomWidth: 1,
+          flexDirection: 'row',
+          paddingVertical: 14,
+        }}>
+        <View
+          style={{
+            alignItems: 'center',
+            backgroundColor: '#FFF2E5',
+            borderColor: '#FED7AA',
+            borderRadius: 18,
+            borderWidth: 1,
+            height: 36,
+            justifyContent: 'center',
+            width: 36,
+          }}>
+          <Ionicons name={icon} size={18} color={palette.accent} />
+        </View>
+        <View
+          style={{
+            flex: 1,
+            marginLeft: 12,
+          }}>
+          <Text
+            style={{
+              color: '#6B7280',
+              fontSize: 11,
+              fontWeight: '800',
+              textTransform: 'uppercase',
+            }}>
+            {label}
+          </Text>
+          <Text
+            style={{
+              color: value ? palette.ink : '#9CA3AF',
+              fontSize: 15,
+              fontWeight: '700',
+              lineHeight: 21,
+              marginTop: 3,
+            }}>
+            {value || 'Not added'}
+          </Text>
+        </View>
+        {onPress ? (
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color="#CBD5E1"
+          />
+        ) : null}
+      </View>
+    );
+
+    if (onPress) {
+      return (
+        <TouchableOpacity activeOpacity={0.82} onPress={onPress}>
+          {content}
+        </TouchableOpacity>
+      );
+    }
+
+    return content;
+  };
+
+  const renderChipGroup = (
+    title: string,
+    values: string[],
+    fallback?: string
+  ) => (
+    <View
+      style={{
+        marginTop: 18,
+      }}>
+      <Text
+        style={{
+          color: '#111827',
+          fontSize: 14,
+          fontWeight: '900',
+        }}>
+        {title}
+      </Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          marginTop: 12,
+        }}>
+        {(values.length ? values : fallback ? [fallback] : []).map((item) => (
+          <View
+            key={`${title}-${item}`}
+            style={{
+              backgroundColor: '#FFF9F0',
+              borderColor: '#F4DDC3',
+              borderRadius: 22,
+              borderWidth: 1,
+              marginBottom: 9,
+              marginRight: 9,
+              paddingHorizontal: 14,
+              paddingVertical: 9,
+            }}>
+            <Text
+              style={{
+                color: '#7C2D12',
+                fontSize: 14,
+                fontWeight: '800',
+              }}>
+              {item}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView
       style={{
-        backgroundColor: '#F7F7F7',
+        backgroundColor: palette.background,
         flex: 1,
       }}>
       <StatusBar
@@ -452,14 +757,14 @@ const BusinessDetailsScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 40,
+          paddingBottom: 54,
         }}>
         <View>
           {banner ? (
             <Image
               source={{ uri: banner }}
               style={{
-                height: 320,
+                height: 360,
                 width: '100%',
               }}
               resizeMode="cover"
@@ -469,7 +774,7 @@ const BusinessDetailsScreen = () => {
               style={{
                 alignItems: 'center',
                 backgroundColor: '#F8EFE3',
-                height: 320,
+                height: 360,
                 justifyContent: 'center',
                 width: '100%',
               }}>
@@ -481,10 +786,15 @@ const BusinessDetailsScreen = () => {
             </View>
           )}
 
-          <View
+          <LinearGradient
+            colors={[
+              'rgba(17,24,39,0.12)',
+              'rgba(17,24,39,0.18)',
+              'rgba(17,24,39,0.66)',
+            ]}
+            locations={[0, 0.42, 1]}
             style={{
-              backgroundColor: 'rgba(0,0,0,0.22)',
-              height: 320,
+              height: 360,
               position: 'absolute',
               width: '100%',
             }}
@@ -505,17 +815,27 @@ const BusinessDetailsScreen = () => {
               onPress={() => router.back()}
               style={{
                 alignItems: 'center',
-                backgroundColor: 'rgba(255,255,255,0.92)',
-                borderRadius: 21,
-                height: 42,
+                borderRadius: 22,
+                height: 44,
+                overflow: 'hidden',
                 justifyContent: 'center',
-                width: 42,
+                width: 44,
               }}>
+              <BlurView
+                intensity={35}
+                tint="light"
+                style={{
+                  alignItems: 'center',
+                  height: '100%',
+                  justifyContent: 'center',
+                  width: '100%',
+                }}>
               <Ionicons
                 name="arrow-back"
                 size={22}
                 color="#111827"
               />
+              </BlurView>
             </TouchableOpacity>
 
             <View
@@ -528,13 +848,22 @@ const BusinessDetailsScreen = () => {
                 onPress={handleBookmark}
                 style={{
                   alignItems: 'center',
-                  backgroundColor: 'rgba(255,255,255,0.92)',
                   borderRadius: 21,
                   height: 42,
                   justifyContent: 'center',
                   marginRight: 10,
+                  overflow: 'hidden',
                   width: 42,
                 }}>
+                <BlurView
+                  intensity={34}
+                  tint="light"
+                  style={{
+                    alignItems: 'center',
+                    height: '100%',
+                    justifyContent: 'center',
+                    width: '100%',
+                  }}>
                 <Ionicons
                   name={
                     listing.bookmarkedByMe
@@ -548,6 +877,7 @@ const BusinessDetailsScreen = () => {
                       : '#374151'
                   }
                 />
+                </BlurView>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -555,17 +885,27 @@ const BusinessDetailsScreen = () => {
                 onPress={handleShare}
                 style={{
                   alignItems: 'center',
-                  backgroundColor: 'rgba(255,255,255,0.92)',
                   borderRadius: 21,
                   height: 42,
                   justifyContent: 'center',
+                  overflow: 'hidden',
                   width: 42,
                 }}>
+                <BlurView
+                  intensity={34}
+                  tint="light"
+                  style={{
+                    alignItems: 'center',
+                    height: '100%',
+                    justifyContent: 'center',
+                    width: '100%',
+                  }}>
                 <Ionicons
                   name="share-social-outline"
                   size={21}
                   color="#374151"
                 />
+                </BlurView>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -574,18 +914,28 @@ const BusinessDetailsScreen = () => {
                 onPress={handleReport}
                 style={{
                   alignItems: 'center',
-                  backgroundColor: 'rgba(255,255,255,0.92)',
                   borderRadius: 21,
                   height: 42,
                   justifyContent: 'center',
                   marginLeft: 10,
+                  overflow: 'hidden',
                   width: 42,
                 }}>
+                <BlurView
+                  intensity={34}
+                  tint="light"
+                  style={{
+                    alignItems: 'center',
+                    height: '100%',
+                    justifyContent: 'center',
+                    width: '100%',
+                  }}>
                 <Ionicons
                   name="flag-outline"
                   size={20}
                   color="#374151"
                 />
+                </BlurView>
               </TouchableOpacity>
             </View>
           </View>
@@ -594,10 +944,12 @@ const BusinessDetailsScreen = () => {
             style={{
               alignItems: 'center',
               backgroundColor: '#FFFFFF',
-              borderRadius: 22,
-              bottom: -28,
+              borderColor: 'rgba(255,255,255,0.78)',
+              borderRadius: 28,
+              borderWidth: 4,
+              bottom: -34,
               elevation: 4,
-              height: 74,
+              height: 86,
               justifyContent: 'center',
               left: 16,
               position: 'absolute',
@@ -608,15 +960,15 @@ const BusinessDetailsScreen = () => {
               },
               shadowOpacity: 0.08,
               shadowRadius: 10,
-              width: 74,
+              width: 86,
             }}>
             {logo ? (
               <Image
                 source={{ uri: logo }}
                 style={{
                   borderRadius: 22,
-                  height: 44,
-                  width: 44,
+                  height: 58,
+                  width: 58,
                 }}
               />
             ) : (
@@ -631,19 +983,22 @@ const BusinessDetailsScreen = () => {
 
         <View
           style={{
-            backgroundColor: '#FFFFFF',
-            marginTop: 0,
-            paddingTop: 44,
+            backgroundColor: palette.background,
+            borderTopLeftRadius: 34,
+            borderTopRightRadius: 34,
+            marginTop: -26,
+            paddingTop: 58,
           }}>
           <View
             style={{
-              paddingHorizontal: 16,
+              paddingHorizontal: 18,
             }}>
             <Text
               style={{
-                color: '#111827',
-                fontSize: 20,
-                fontWeight: '800',
+                color: palette.ink,
+                fontSize: 28,
+                fontWeight: '900',
+                lineHeight: 34,
               }}>
               {listing.businessName}
             </Text>
@@ -652,31 +1007,89 @@ const BusinessDetailsScreen = () => {
               style={{
                 color: '#6B7280',
                 fontSize: 16,
-                fontWeight: '500',
+                fontWeight: '700',
+                lineHeight: 23,
                 marginTop: 6,
               }}>
               {listing.tagline ||
                 listing.categoryName ||
                 'Trusted community service'}
             </Text>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                marginTop: 14,
+              }}>
+              <View
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: isVerified ? '#ECFDF5' : '#F8FAFC',
+                  borderColor: isVerified ? '#BBF7D0' : '#E2E8F0',
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  flexDirection: 'row',
+                  marginRight: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 7,
+                }}>
+                <Ionicons
+                  name={isVerified ? 'shield-checkmark' : 'shield-outline'}
+                  size={15}
+                  color={isVerified ? '#16A34A' : '#64748B'}
+                />
+                <Text
+                  style={{
+                    color: isVerified ? '#15803D' : '#64748B',
+                    fontSize: 12,
+                    fontWeight: '900',
+                    marginLeft: 6,
+                  }}>
+                  {isVerified ? 'Verified' : 'Listed'}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  backgroundColor: '#FFF7ED',
+                  borderColor: '#FED7AA',
+                  borderRadius: 999,
+                  borderWidth: 1,
+                  paddingHorizontal: 12,
+                  paddingVertical: 7,
+                }}>
+                <Text
+                  style={{
+                    color: '#C2410C',
+                    fontSize: 12,
+                    fontWeight: '900',
+                  }}>
+                  {listing.categoryName ||
+                    listing.category?.name ||
+                    'Directory'}
+                </Text>
+              </View>
+            </View>
           </View>
 
           <View
             style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
-              marginTop: 24,
-              paddingHorizontal: 14,
+              marginTop: 22,
+              paddingHorizontal: 16,
             }}>
             <View
               style={{
                 alignItems: 'center',
-                backgroundColor: '#FFFFFF',
-                borderColor: '#E5E7EB',
-                borderRadius: 18,
+                backgroundColor: palette.card,
+                borderColor: palette.border,
+                borderRadius: 22,
                 borderWidth: 1,
-                height: 82,
+                height: 88,
                 justifyContent: 'center',
+                ...iosShadow,
                 width: '31%',
               }}>
               <Ionicons
@@ -693,7 +1106,7 @@ const BusinessDetailsScreen = () => {
                 style={{
                   color: '#1F2937',
                   fontSize: 14,
-                  fontWeight: '700',
+                  fontWeight: '900',
                   marginTop: 10,
                 }}>
                 {isVerified ? 'Sai Verified' : 'Listed'}
@@ -703,12 +1116,13 @@ const BusinessDetailsScreen = () => {
             <View
               style={{
                 alignItems: 'center',
-                backgroundColor: '#EEF4FF',
-                borderColor: '#D7E4FF',
-                borderRadius: 18,
+                backgroundColor: '#EFF6FF',
+                borderColor: '#BFDBFE',
+                borderRadius: 22,
                 borderWidth: 1,
-                height: 82,
+                height: 88,
                 justifyContent: 'center',
+                ...iosShadow,
                 width: '31%',
               }}>
               <MaterialCommunityIcons
@@ -740,12 +1154,13 @@ const BusinessDetailsScreen = () => {
               }
               style={{
                 alignItems: 'center',
-                backgroundColor: '#FFFBEA',
+                backgroundColor: '#FFFBEB',
                 borderColor: '#FCE7A5',
-                borderRadius: 18,
+                borderRadius: 22,
                 borderWidth: 1,
-                height: 82,
+                height: 88,
                 justifyContent: 'center',
+                ...iosShadow,
                 width: '31%',
               }}>
               <Text
@@ -777,17 +1192,22 @@ const BusinessDetailsScreen = () => {
 
           <View
             style={{
-              marginTop: 36,
-              paddingHorizontal: 16,
+              backgroundColor: palette.card,
+              borderColor: palette.border,
+              borderRadius: 28,
+              borderWidth: 1,
+              marginHorizontal: 16,
+              marginTop: 24,
+              padding: 18,
+              ...iosShadow,
             }}>
             <Text
               style={{
-                color: '#111827',
-                fontSize: 15,
-                fontWeight: '800',
-                letterSpacing: 1,
+                color: palette.ink,
+                fontSize: 16,
+                fontWeight: '900',
               }}>
-              SPECIALTIES
+              About this business
             </Text>
 
             <View
@@ -803,8 +1223,8 @@ const BusinessDetailsScreen = () => {
                 <View
                   key={item}
                   style={{
-                    backgroundColor: '#F8F8F8',
-                    borderColor: '#E5E7EB',
+                    backgroundColor: '#FFF7ED',
+                    borderColor: '#FED7AA',
                     borderRadius: 24,
                     borderWidth: 1,
                     marginBottom: 10,
@@ -814,9 +1234,9 @@ const BusinessDetailsScreen = () => {
                   }}>
                   <Text
                     style={{
-                      color: '#4B5563',
+                      color: '#9A3412',
                       fontSize: 15,
-                      fontWeight: '500',
+                      fontWeight: '800',
                     }}>
                     {item}
                   </Text>
@@ -827,9 +1247,9 @@ const BusinessDetailsScreen = () => {
             <Text
               style={{
                 color: '#4B5563',
-                fontSize: 17,
-                fontWeight: '400',
-                lineHeight: 31,
+                fontSize: 16,
+                fontWeight: '600',
+                lineHeight: 26,
                 marginTop: 12,
               }}>
               {expanded ||
@@ -861,13 +1281,16 @@ const BusinessDetailsScreen = () => {
 
           <View
             style={{
-              borderBottomColor: '#F5F5F5',
-              borderBottomWidth: 10,
+              backgroundColor: '#FFFFFF',
+              borderColor: '#EFE2D0',
+              borderRadius: 28,
+              borderWidth: 1,
               flexDirection: 'row',
               justifyContent: 'space-between',
-              marginTop: 28,
-              paddingBottom: 20,
-              paddingHorizontal: 14,
+              marginHorizontal: 16,
+              marginTop: 18,
+              padding: 10,
+              ...iosShadow,
             }}>
             {contactActions.map((item) => (
               <TouchableOpacity
@@ -877,33 +1300,46 @@ const BusinessDetailsScreen = () => {
                 onPress={() => handleContact(item.channel)}
                 style={{
                   alignItems: 'center',
-                  backgroundColor: '#FFFFFF',
-                  borderColor: '#E5E7EB',
-                  borderRadius: 18,
+                  backgroundColor:
+                    item.channel === 'whatsapp'
+                      ? '#ECFDF5'
+                      : item.channel === 'call'
+                      ? '#FFF7ED'
+                      : '#F8FAFC',
+                  borderColor:
+                    item.channel === 'whatsapp'
+                      ? '#BBF7D0'
+                      : item.channel === 'call'
+                      ? '#FED7AA'
+                      : '#E2E8F0',
+                  borderRadius: 21,
                   borderWidth: 1,
-                  elevation: 1,
                   height: 72,
                   justifyContent: 'center',
-                  shadowColor: '#000',
-                  shadowOffset: {
-                    height: 3,
-                    width: 0,
-                  },
-                  shadowOpacity: 0.03,
-                  shadowRadius: 6,
                   width: '31%',
                 }}>
                 <Ionicons
                   name={item.icon}
                   size={21}
-                  color="#374151"
+                  color={
+                    item.channel === 'whatsapp'
+                      ? '#16A34A'
+                      : item.channel === 'call'
+                      ? palette.accent
+                      : '#475569'
+                  }
                 />
 
                 <Text
                   style={{
-                    color: '#111827',
+                    color:
+                      item.channel === 'whatsapp'
+                        ? '#15803D'
+                        : item.channel === 'call'
+                        ? '#C2410C'
+                        : '#334155',
                     fontSize: 14,
-                    fontWeight: '600',
+                    fontWeight: '900',
                     marginTop: 8,
                   }}>
                   {item.label}
@@ -912,18 +1348,234 @@ const BusinessDetailsScreen = () => {
             ))}
           </View>
 
+          {renderSection(
+            'Business Snapshot',
+            <View
+              style={{
+                backgroundColor: palette.card,
+                borderColor: palette.border,
+                borderRadius: 26,
+                borderWidth: 1,
+                paddingHorizontal: 16,
+                ...iosShadow,
+              }}>
+              {renderInfoRow(
+                'albums-outline',
+                'Category',
+                listing.categoryName ||
+                  listing.category?.name ||
+                  'Community listing'
+              )}
+              {renderInfoRow(
+                'ribbon-outline',
+                'Verification',
+                `${formatStatus(listing.verificationStatus)}${
+                  listing.verifiedAt
+                    ? ` · ${formatDisplayDate(listing.verifiedAt)}`
+                    : ''
+                }`
+              )}
+              {renderInfoRow(
+                'briefcase-outline',
+                'Experience',
+                listing.yearsOfExperience != null
+                  ? `${listing.yearsOfExperience} years`
+                  : null
+              )}
+              {renderInfoRow(
+                'home-outline',
+                'Home Service',
+                listing.homeServiceAvailable
+                  ? 'Available'
+                  : 'Not available'
+              )}
+              {renderInfoRow(
+                'time-outline',
+                'Response Time',
+                listing.responseTimeLabel ||
+                  'Usually responds soon'
+              )}
+              {renderInfoRow(
+                'calendar-outline',
+                'Published',
+                formatDisplayDate(listing.publishedAt)
+              )}
+            </View>
+          )}
+
+          {renderSection(
+            'Contact & Web',
+            <View
+              style={{
+                backgroundColor: palette.card,
+                borderColor: palette.border,
+                borderRadius: 26,
+                borderWidth: 1,
+                paddingHorizontal: 16,
+                ...iosShadow,
+              }}>
+              {renderInfoRow(
+                'call-outline',
+                'Phone',
+                listing.phoneNumber,
+                listing.phoneNumber
+                  ? () => handleContact('call')
+                  : undefined
+              )}
+              {renderInfoRow(
+                'logo-whatsapp',
+                'WhatsApp',
+                listing.whatsappNumber,
+                listing.whatsappNumber || listing.phoneNumber
+                  ? () => handleContact('whatsapp')
+                  : undefined
+              )}
+              {renderInfoRow(
+                'mail-outline',
+                'Email',
+                listing.email,
+                listing.email
+                  ? () => handleContact('in_app')
+                  : undefined
+              )}
+              {renderInfoRow(
+                'globe-outline',
+                'Website',
+                listing.websiteUrl,
+                listing.websiteUrl
+                  ? () => openExternalUrl(listing.websiteUrl || '')
+                  : undefined
+              )}
+              {!contactSummary.length ? (
+                <Text
+                  style={{
+                    color: '#9CA3AF',
+                    fontSize: 14,
+                    fontWeight: '700',
+                    paddingVertical: 16,
+                    textAlign: 'center',
+                  }}>
+                  Contact details are not available yet.
+                </Text>
+              ) : null}
+            </View>
+          )}
+
+          {renderSection(
+            'Location',
+            <View
+              style={{
+                backgroundColor: palette.card,
+                borderColor: palette.border,
+                borderRadius: 26,
+                borderWidth: 1,
+                paddingHorizontal: 16,
+                ...iosShadow,
+              }}>
+              {renderInfoRow(
+                'location-outline',
+                'Address',
+                joinLocation(listing),
+                handleOpenMap
+              )}
+              {renderInfoRow('business-outline', 'City', listing.city)}
+              {renderInfoRow('map-outline', 'State', listing.state)}
+              {renderInfoRow('earth-outline', 'Country', listing.country)}
+              {renderInfoRow('mail-open-outline', 'Pincode', listing.pincode)}
+              {renderInfoRow(
+                'navigate-outline',
+                'Coordinates',
+                listing.latitude != null && listing.longitude != null
+                  ? `${listing.latitude}, ${listing.longitude}`
+                  : null,
+                listing.latitude != null && listing.longitude != null
+                  ? handleOpenMap
+                  : undefined
+              )}
+            </View>,
+            <TouchableOpacity
+              activeOpacity={0.82}
+              onPress={handleOpenMap}>
+              <Text
+                style={{
+                  color: '#F97316',
+                  fontSize: 14,
+                  fontWeight: '900',
+                }}>
+                Open Map
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {renderSection(
+            'Services & Tags',
+            <View
+              style={{
+                backgroundColor: palette.card,
+                borderColor: palette.border,
+                borderRadius: 26,
+                borderWidth: 1,
+                padding: 16,
+                ...iosShadow,
+              }}>
+              {listing.category?.description ? (
+                <Text
+                  style={{
+                    color: '#6B7280',
+                    fontSize: 15,
+                    fontWeight: '600',
+                    lineHeight: 23,
+                  }}>
+                  {listing.category.description}
+                </Text>
+              ) : null}
+              {renderChipGroup(
+                'Subcategories',
+                subcategories,
+                listing.categoryName || undefined
+              )}
+              {renderChipGroup('Specialties', listing.specialties || [])}
+              {renderChipGroup('Service Areas', serviceAreas)}
+              {renderChipGroup('Tags', tags)}
+            </View>
+          )}
+
+          {openingHourRows.length > 0
+            ? renderSection(
+                'Opening Hours',
+                <View
+                  style={{
+                    backgroundColor: palette.card,
+                    borderColor: palette.border,
+                    borderRadius: 26,
+                    borderWidth: 1,
+                    paddingHorizontal: 16,
+                    ...iosShadow,
+                  }}>
+                  {openingHourRows.map((item) =>
+                    renderInfoRow(
+                      'time-outline',
+                      item.label,
+                      item.value
+                    )
+                  )}
+                </View>
+              )
+            : null}
+
           <View
             style={{
-              paddingHorizontal: 14,
-              paddingTop: 28,
+              paddingHorizontal: 16,
+              paddingTop: 20,
             }}>
             <View
               style={{
-                backgroundColor: '#FFFFFF',
-                borderColor: '#ECECEC',
-                borderRadius: 28,
+                backgroundColor: palette.card,
+                borderColor: palette.border,
+                borderRadius: 30,
                 borderWidth: 1,
                 padding: 18,
+                ...iosShadow,
               }}>
               <View
                 style={{
@@ -1005,7 +1657,8 @@ const BusinessDetailsScreen = () => {
                         marginLeft: 5,
                       }}>
                       {listing.owner?.badge ||
-                        'Shirdi Sai Devotee'}
+                        listing.ownerDevoteeBadge ||
+                        'Sai Family Member'}
                     </Text>
                   </View>
 
@@ -1018,6 +1671,28 @@ const BusinessDetailsScreen = () => {
                     }}>
                     {ownerMemberSince(listing)}
                   </Text>
+
+                  {listing.owner?.memberId ||
+                  listing.ownerMemberId ||
+                  listing.owner?.handle ? (
+                    <Text
+                      style={{
+                        color: '#6B7280',
+                        fontSize: 13,
+                        fontWeight: '700',
+                        marginTop: 5,
+                      }}>
+                      {[
+                        listing.owner?.memberId ||
+                          listing.ownerMemberId,
+                        listing.owner?.handle
+                          ? `@${listing.owner.handle}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
 
@@ -1058,24 +1733,74 @@ const BusinessDetailsScreen = () => {
                     'Usually responds soon'}
                 </Text>
               </View>
+
+              <View
+                style={{
+                  backgroundColor: '#F1F1F1',
+                  height: 1,
+                  marginVertical: 18,
+                }}
+              />
+
+              <View
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  justifyContent: 'space-between',
+                }}>
+                {[
+                  ['Views', listing.viewCount || 0],
+                  ['Enquiries', listing.enquiryCount || 0],
+                  ['Shares', listing.shareCount || 0],
+                  ['Bookmarks', listing.bookmarkCount || 0],
+                ].map(([label, value]) => (
+                  <View
+                    key={label}
+                    style={{
+                      alignItems: 'center',
+                      backgroundColor: '#F8FAFC',
+                      borderColor: '#E2E8F0',
+                      borderRadius: 16,
+                      borderWidth: 1,
+                      marginTop: 8,
+                      paddingVertical: 12,
+                      width: '48%',
+                    }}>
+                    <Text
+                      style={{
+                        color: '#111827',
+                        fontSize: 18,
+                        fontWeight: '900',
+                      }}>
+                      {value}
+                    </Text>
+                    <Text
+                      style={{
+                        color: '#6B7280',
+                        fontSize: 12,
+                        fontWeight: '800',
+                        marginTop: 3,
+                      }}>
+                      {label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
           </View>
 
-          {similarListings.length > 0 ? (
-            <View
-              style={{
-                borderTopColor: '#F5F5F5',
-                borderTopWidth: 10,
-                marginTop: 30,
-                paddingHorizontal: 14,
-                paddingTop: 26,
-              }}>
+	          {similarListings.length > 0 ? (
+	            <View
+	              style={{
+	                marginTop: 22,
+	                paddingHorizontal: 16,
+	              }}>
               <Text
                 style={{
-                  color: '#111827',
-                  fontSize: 20,
-                  fontWeight: '900',
-                }}>
+	                  color: palette.ink,
+	                  fontSize: 19,
+	                  fontWeight: '900',
+	                }}>
                 Similar Community Listings
               </Text>
 
@@ -1101,15 +1826,16 @@ const BusinessDetailsScreen = () => {
                           },
                         })
                       }
-                      style={{
-                        backgroundColor: '#FFF7ED',
-                        borderColor: '#FED7AA',
-                        borderRadius: 22,
-                        borderWidth: 1,
-                        marginRight: 14,
-                        padding: 14,
-                        width: 220,
-                      }}>
+	                      style={{
+	                        backgroundColor: palette.card,
+	                        borderColor: palette.border,
+	                        borderRadius: 24,
+	                        borderWidth: 1,
+	                        marginRight: 14,
+	                        padding: 14,
+	                        ...iosShadow,
+	                        width: 220,
+	                      }}>
                       <View
                         style={{
                           alignItems: 'center',
@@ -1128,8 +1854,10 @@ const BusinessDetailsScreen = () => {
                           <View
                             style={{
                               alignItems: 'center',
-                              backgroundColor: '#FFFFFF',
-                              borderRadius: 18,
+	                              backgroundColor: '#FFF7ED',
+	                              borderColor: '#FED7AA',
+	                              borderRadius: 18,
+	                              borderWidth: 1,
                               height: 52,
                               justifyContent: 'center',
                               width: 52,
@@ -1177,6 +1905,206 @@ const BusinessDetailsScreen = () => {
               </ScrollView>
             </View>
           ) : null}
+
+          {renderSection(
+            'Reviews & Rating',
+	            <View
+	              style={{
+	                backgroundColor: palette.card,
+	                borderColor: palette.border,
+	                borderRadius: 28,
+	                borderWidth: 1,
+	                padding: 16,
+	                ...iosShadow,
+	              }}>
+              <View
+                style={{
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                }}>
+                <View
+                  style={{
+                    alignItems: 'center',
+                    backgroundColor: '#FFFBEA',
+                    borderColor: '#FDE68A',
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    height: 72,
+                    justifyContent: 'center',
+                    width: 72,
+                  }}>
+                  <Text
+                    style={{
+                      color: '#D97706',
+                      fontSize: 25,
+                      fontWeight: '900',
+                    }}>
+                    {rating.toFixed(1)}
+                  </Text>
+                  <Text
+                    style={{
+                      color: '#B45309',
+                      fontSize: 11,
+                      fontWeight: '900',
+                    }}>
+                    STAR
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    flex: 1,
+                    marginLeft: 14,
+                  }}>
+                  <Text
+                    style={{
+                      color: '#111827',
+                      fontSize: 17,
+                      fontWeight: '900',
+                    }}>
+                    {reviewCount} community reviews
+                  </Text>
+                  <Text
+                    style={{
+                      color: '#6B7280',
+                      fontSize: 13,
+                      fontWeight: '600',
+                      lineHeight: 20,
+                      marginTop: 4,
+                    }}>
+                    {reviewSummary?.canReview
+                      ? 'You can add your experience for this business.'
+                      : reviewSummary?.reviewGateReason
+                      ? `Review status: ${formatStatus(
+                          reviewSummary.reviewGateReason
+                        )}`
+                      : 'Reviews from devotees will appear here.'}
+                  </Text>
+                </View>
+              </View>
+
+              {reviewSummary?.distribution ? (
+                <View
+                  style={{
+                    marginTop: 18,
+                  }}>
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const count =
+                      reviewSummary.distribution?.[String(star)] || 0;
+                    const maxCount = Math.max(
+                      ...Object.values(
+                        reviewSummary.distribution || {}
+                      ),
+                      1
+                    );
+
+                    return (
+                      <View
+                        key={star}
+                        style={{
+                          alignItems: 'center',
+                          flexDirection: 'row',
+                          marginTop: 7,
+                        }}>
+                        <Text
+                          style={{
+                            color: '#6B7280',
+                            fontSize: 12,
+                            fontWeight: '900',
+                            width: 34,
+                          }}>
+                          {star}★
+                        </Text>
+                        <View
+                          style={{
+                            backgroundColor: '#F3F4F6',
+                            borderRadius: 100,
+                            flex: 1,
+                            height: 8,
+                            overflow: 'hidden',
+                          }}>
+                          <View
+                            style={{
+                              backgroundColor: '#F59E0B',
+                              height: '100%',
+                              width: `${(count / maxCount) * 100}%`,
+                            }}
+                          />
+                        </View>
+                        <Text
+                          style={{
+                            color: '#6B7280',
+                            fontSize: 12,
+                            fontWeight: '800',
+                            marginLeft: 8,
+                            width: 24,
+                          }}>
+                          {count}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
+
+              {recentReviews.length > 0 ? (
+                <View
+                  style={{
+                    marginTop: 18,
+                  }}>
+                  {recentReviews.slice(0, 3).map((review) => (
+                    <View
+                      key={review.id}
+                      style={{
+                        borderTopColor: '#F3F4F6',
+                        borderTopWidth: 1,
+                        paddingTop: 14,
+                        marginTop: 14,
+                      }}>
+                      <Text
+                        style={{
+                          color: '#111827',
+                          fontSize: 14,
+                          fontWeight: '900',
+                        }}>
+                        {review.reviewerName || 'Sai Devotee'} ·{' '}
+                        {review.rating}★
+                      </Text>
+                      <Text
+                        style={{
+                          color: '#4B5563',
+                          fontSize: 14,
+                          fontWeight: '600',
+                          lineHeight: 21,
+                          marginTop: 6,
+                        }}>
+                        {review.content}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </View>,
+            <TouchableOpacity
+              activeOpacity={0.82}
+              onPress={() =>
+                router.push({
+                  pathname: '/directory/business-review',
+                  params: {
+                    id: listing.id,
+                  },
+                })
+              }>
+              <Text
+                style={{
+                  color: '#F97316',
+                  fontSize: 14,
+                  fontWeight: '900',
+                }}>
+                Open
+              </Text>
+            </TouchableOpacity>
+          )}
 
           <View
             style={{
@@ -1276,18 +2204,43 @@ const BusinessDetailsScreen = () => {
                 horizontal
                 showsHorizontalScrollIndicator={false}>
                 {gallery.map((item) => (
-                  <Image
+                  <View
                     key={item.id || item.url}
-                    source={{
-                      uri: item.url,
-                    }}
                     style={{
-                      borderRadius: 22,
-                      height: 128,
                       marginRight: 14,
                       width: 190,
-                    }}
-                  />
+                    }}>
+                    <Image
+                      source={{
+                        uri: item.url,
+                      }}
+                      style={{
+                        borderRadius: 22,
+                        height: 128,
+                        width: 190,
+                      }}
+                    />
+                    <View
+                      style={{
+                        backgroundColor: 'rgba(17,24,39,0.72)',
+                        borderRadius: 12,
+                        left: 10,
+                        paddingHorizontal: 10,
+                        paddingVertical: 5,
+                        position: 'absolute',
+                        top: 10,
+                      }}>
+                      <Text
+                        style={{
+                          color: '#FFFFFF',
+                          fontSize: 11,
+                          fontWeight: '900',
+                          textTransform: 'uppercase',
+                        }}>
+                        {item.type || 'gallery'}
+                      </Text>
+                    </View>
+                  </View>
                 ))}
               </ScrollView>
             ) : (
