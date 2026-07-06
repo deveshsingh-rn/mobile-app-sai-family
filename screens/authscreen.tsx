@@ -774,9 +774,9 @@ export default function AuthScreen({
                   <Text style={styles.inputLabel}>ONE-TIME PASSWORD</Text>
                   <TextInput
                     keyboardType="number-pad"
-                    maxLength={4}
+                    maxLength={6}
                     onChangeText={setMobileOtp}
-                    placeholder="4-digit code"
+                    placeholder="6-digit code"
                     placeholderTextColor={C.inkTertiary}
                     returnKeyType="done"
                     style={styles.input}

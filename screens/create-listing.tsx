@@ -8,6 +8,9 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   ScrollView,
   StatusBar,
   Switch,
@@ -33,6 +36,7 @@ import {
   fetchDirectoryDetailRequest,
   fetchDirectoryCategoriesRequest,
   selectDirectoryCategories,
+  selectDirectoryCategoriesLoading,
   selectDirectoryDetail,
   selectDirectoryError,
   selectDirectoryUploadedMedia,
@@ -74,6 +78,7 @@ const CreateListingScreen = () => {
   const listingId = Array.isArray(id) ? id[0] : id;
   const isEditMode = Boolean(listingId);
   const categories = useAppSelector(selectDirectoryCategories);
+  const categoriesLoading = useAppSelector(selectDirectoryCategoriesLoading);
   const detail = useAppSelector(selectDirectoryDetail);
   const creating = useAppSelector(selectIsCreatingDirectoryListing);
   const uploadingMedia = useAppSelector(selectIsUploadingDirectoryMedia);
@@ -93,6 +98,8 @@ const CreateListingScreen = () => {
   const [city, setCity] = useState('');
   const [recommended, setRecommended] = useState(true);
   const [images, setImages] = useState<SelectedImage[]>([]);
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [pendingSubmitPayload, setPendingSubmitPayload] =
     useState<DirectoryCreateListingPayload | null>(null);
@@ -159,6 +166,27 @@ const CreateListingScreen = () => {
       null,
     [categories, selectedCategoryId]
   );
+
+  const filteredCategories = useMemo(() => {
+    const query = categorySearch.trim().toLowerCase();
+
+    if (!query) {
+      return categories;
+    }
+
+    return categories.filter((item) => {
+      const searchableText = [
+        item.name,
+        item.slug,
+        item.description,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return searchableText.includes(query);
+    });
+  }, [categories, categorySearch]);
 
   const toPayload = useCallback(
     (includePartial = false): Partial<DirectoryCreateListingPayload> => {
@@ -575,7 +603,7 @@ const CreateListingScreen = () => {
               letterSpacing: -0.2,
               textAlign: 'center',
             }}>
-            {isEditMode ? 'Edit Listing' : 'Create Listing'}
+            {isEditMode ? 'Edit Listing' : 'Create Listing here'}
           </Text>
           <Text
             style={{
@@ -727,6 +755,8 @@ const CreateListingScreen = () => {
           placeholder={placeholder}
           placeholderTextColor="#C7CBD3"
           multiline={multiline}
+          returnKeyType={multiline ? 'default' : 'done'}
+          blurOnSubmit={!multiline}
           style={{
             color: '#111827',
             fontSize: 15,
@@ -738,6 +768,273 @@ const CreateListingScreen = () => {
       </View>
       {renderError(field)}
     </View>
+  );
+
+  const renderCategoryPickerModal = () => (
+    <Modal
+      visible={categoryPickerOpen}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setCategoryPickerOpen(false)}>
+      <View
+        style={{
+          backgroundColor: 'rgba(17,24,39,0.38)',
+          flex: 1,
+          justifyContent: 'flex-end',
+        }}>
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setCategoryPickerOpen(false)}
+          style={{
+            flex: 1,
+          }}
+        />
+
+        <View
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            maxHeight: '78%',
+            paddingBottom: 18,
+            paddingHorizontal: 18,
+            paddingTop: 12,
+          }}>
+          <View
+            style={{
+              alignSelf: 'center',
+              backgroundColor: '#E5E7EB',
+              borderRadius: 100,
+              height: 5,
+              marginBottom: 16,
+              width: 48,
+            }}
+          />
+
+          <View
+            style={{
+              alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+            }}>
+            <View
+              style={{
+                flex: 1,
+                paddingRight: 16,
+              }}>
+              <Text
+                style={{
+                  color: theme.text,
+                  fontSize: 22,
+                  fontWeight: '900',
+                }}>
+                Choose Category
+              </Text>
+              <Text
+                style={{
+                  color: theme.muted,
+                  fontSize: 13,
+                  fontWeight: '600',
+                  lineHeight: 19,
+                  marginTop: 4,
+                }}>
+                Select the closest match so devotees can find you faster.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setCategoryPickerOpen(false)}
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#F3F4F6',
+                borderRadius: 18,
+                height: 38,
+                justifyContent: 'center',
+                width: 38,
+              }}>
+              <Ionicons name="close" size={21} color="#374151" />
+            </TouchableOpacity>
+          </View>
+
+          <View
+            style={{
+              alignItems: 'center',
+              backgroundColor: '#FFF7ED',
+              borderColor: '#FED7AA',
+              borderRadius: 18,
+              borderWidth: 1,
+              flexDirection: 'row',
+              height: 50,
+              marginTop: 16,
+              paddingHorizontal: 14,
+            }}>
+            <Ionicons name="search" size={19} color="#9A3412" />
+            <TextInput
+              value={categorySearch}
+              onChangeText={setCategorySearch}
+              placeholder="Search category"
+              placeholderTextColor="#C7A186"
+              returnKeyType="search"
+              style={{
+                color: theme.text,
+                flex: 1,
+                fontSize: 15,
+                fontWeight: '700',
+                marginLeft: 10,
+              }}
+            />
+          </View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingTop: 14,
+            }}>
+            {categoriesLoading ? (
+              <View
+                style={{
+                  alignItems: 'center',
+                  paddingVertical: 26,
+                }}>
+                <ActivityIndicator color={theme.accent} />
+                <Text
+                  style={{
+                    color: theme.muted,
+                    fontSize: 13,
+                    fontWeight: '700',
+                    marginTop: 10,
+                  }}>
+                  Loading categories
+                </Text>
+              </View>
+            ) : null}
+
+            {!categoriesLoading && !filteredCategories.length ? (
+              <View
+                style={{
+                  alignItems: 'center',
+                  paddingVertical: 26,
+                }}>
+                <MaterialCommunityIcons
+                  name="store-search-outline"
+                  size={34}
+                  color="#D97706"
+                />
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 16,
+                    fontWeight: '900',
+                    marginTop: 10,
+                  }}>
+                  No category found
+                </Text>
+                <Text
+                  style={{
+                    color: theme.muted,
+                    fontSize: 13,
+                    fontWeight: '600',
+                    lineHeight: 19,
+                    marginTop: 4,
+                    textAlign: 'center',
+                  }}>
+                  Try another word or choose from all categories.
+                </Text>
+              </View>
+            ) : null}
+
+            {filteredCategories.map((item) => {
+              const active = selectedCategoryId === item.id;
+
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  activeOpacity={0.86}
+                  onPress={() => {
+                    setSelectedCategoryId(item.id);
+                    setCategoryPickerOpen(false);
+                    setCategorySearch('');
+                    setValidationErrors((current) => {
+                      const next = { ...current };
+                      delete next.categoryId;
+                      return next;
+                    });
+                  }}
+                  style={{
+                    alignItems: 'center',
+                    backgroundColor: active ? '#FFF7ED' : '#FFFFFF',
+                    borderColor: active ? '#FDBA74' : '#E5E7EB',
+                    borderRadius: 18,
+                    borderWidth: 1,
+                    flexDirection: 'row',
+                    marginBottom: 10,
+                    minHeight: 70,
+                    paddingHorizontal: 14,
+                    paddingVertical: 12,
+                  }}>
+                  <View
+                    style={{
+                      alignItems: 'center',
+                      backgroundColor: active ? theme.accent : '#F3F4F6',
+                      borderRadius: 18,
+                      height: 40,
+                      justifyContent: 'center',
+                      width: 40,
+                    }}>
+                    <MaterialCommunityIcons
+                      name="storefront-outline"
+                      size={21}
+                      color={active ? '#FFFFFF' : '#6B7280'}
+                    />
+                  </View>
+
+                  <View
+                    style={{
+                      flex: 1,
+                      marginLeft: 12,
+                    }}>
+                    <Text
+                      style={{
+                        color: theme.text,
+                        fontSize: 15,
+                        fontWeight: '900',
+                      }}>
+                      {item.name}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: theme.muted,
+                        fontSize: 12,
+                        fontWeight: '600',
+                        marginTop: 3,
+                      }}>
+                      {item.description ||
+                        `${item.listingCount || 0} listings in community`}
+                    </Text>
+                  </View>
+
+                  {active ? (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={24}
+                      color={theme.accent}
+                    />
+                  ) : (
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color="#CBD5E1"
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 
   const renderIdentity = () => (
@@ -775,44 +1072,79 @@ const CreateListingScreen = () => {
           CATEGORY
         </Text>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}>
-          {categories.map((item) => {
-            const active = selectedCategoryId === item.id;
+        <TouchableOpacity
+          activeOpacity={0.86}
+          onPress={() => setCategoryPickerOpen(true)}
+          style={{
+            alignItems: 'center',
+            backgroundColor: '#FFFCF8',
+            borderColor: validationErrors.categoryId
+              ? '#FCA5A5'
+              : '#F3D7B8',
+            borderRadius: 18,
+            borderWidth: 1,
+            flexDirection: 'row',
+            minHeight: 68,
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+          }}>
+          <View
+            style={{
+              alignItems: 'center',
+              backgroundColor: selectedCategory
+                ? '#FFF1E6'
+                : '#F3F4F6',
+              borderRadius: 20,
+              height: 42,
+              justifyContent: 'center',
+              width: 42,
+            }}>
+            {categoriesLoading ? (
+              <ActivityIndicator color={theme.accent} size="small" />
+            ) : (
+              <MaterialCommunityIcons
+                name="shape-outline"
+                size={22}
+                color={selectedCategory ? theme.accent : '#9CA3AF'}
+              />
+            )}
+          </View>
 
-            return (
-              <TouchableOpacity
-                key={item.id}
-                activeOpacity={0.85}
-                onPress={() => setSelectedCategoryId(item.id)}
-                style={{
-                  alignItems: 'center',
-                  backgroundColor: active
-                    ? theme.accent
-                    : '#FFFCF8',
-                  borderColor: active
-                    ? theme.accent
-                    : theme.border,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  height: 42,
-                  justifyContent: 'center',
-                  marginRight: 10,
-                  paddingHorizontal: 16,
-                }}>
-                <Text
-                  style={{
-                    color: active ? '#FFFFFF' : '#374151',
-                    fontSize: 14,
-                    fontWeight: '800',
-                  }}>
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+          <View
+            style={{
+              flex: 1,
+              marginLeft: 12,
+            }}>
+            <Text
+              style={{
+                color: selectedCategory ? theme.text : '#9CA3AF',
+                fontSize: 16,
+                fontWeight: '900',
+              }}>
+              {selectedCategory?.name ||
+                (categoriesLoading
+                  ? 'Loading categories'
+                  : 'Select business category')}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={{
+                color: theme.muted,
+                fontSize: 12,
+                fontWeight: '600',
+                marginTop: 4,
+              }}>
+              {selectedCategory?.description ||
+                'This controls where your listing appears'}
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-down"
+            size={22}
+            color="#9CA3AF"
+          />
+        </TouchableOpacity>
         {renderError('categoryId')}
         {!categories.length ? (
           <Text
@@ -1083,114 +1415,124 @@ const CreateListingScreen = () => {
 
       {renderHeader()}
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: 30,
-          paddingHorizontal: 16,
-          paddingTop: 18,
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+        style={{
+          flex: 1,
         }}>
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderColor: '#EFE4D3',
-            borderRadius: 24,
-            borderWidth: 1,
-            elevation: 2,
-            paddingBottom: 22,
-            paddingHorizontal: 18,
-            paddingTop: 20,
-            shadowColor: '#000',
-            shadowOffset: {
-              height: 4,
-              width: 0,
-            },
-            shadowOpacity: 0.04,
-            shadowRadius: 10,
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            paddingBottom: 30,
+            paddingHorizontal: 16,
+            paddingTop: 18,
           }}>
-          {step === 1 && renderIdentity()}
-          {step === 2 && renderDetails()}
-          {step === 3 && renderContact()}
-          {step === 4 && renderMedia()}
-        </View>
-
-        {error ? (
           <View
             style={{
-              backgroundColor: '#FEF2F2',
-              borderColor: '#FECACA',
-              borderRadius: 16,
+              backgroundColor: theme.card,
+              borderColor: '#EFE4D3',
+              borderRadius: 24,
               borderWidth: 1,
-              marginTop: 22,
-              padding: 14,
+              elevation: 2,
+              paddingBottom: 22,
+              paddingHorizontal: 18,
+              paddingTop: 20,
+              shadowColor: '#000',
+              shadowOffset: {
+                height: 4,
+                width: 0,
+              },
+              shadowOpacity: 0.04,
+              shadowRadius: 10,
             }}>
+            {step === 1 && renderIdentity()}
+            {step === 2 && renderDetails()}
+            {step === 3 && renderContact()}
+            {step === 4 && renderMedia()}
+          </View>
+
+          {error ? (
+            <View
+              style={{
+                backgroundColor: '#FEF2F2',
+                borderColor: '#FECACA',
+                borderRadius: 16,
+                borderWidth: 1,
+                marginTop: 22,
+                padding: 14,
+              }}>
+              <Text
+                style={{
+                  color: '#DC2626',
+                  fontSize: 13,
+                  fontWeight: '800',
+                  lineHeight: 20,
+                  textAlign: 'center',
+                }}>
+                {error}
+              </Text>
+            </View>
+          ) : null}
+
+          <TouchableOpacity
+            activeOpacity={0.9}
+            disabled={busy}
+            onPress={nextStep}
+            style={{
+              alignItems: 'center',
+              backgroundColor: busy ? '#FDBA74' : theme.accent,
+              borderRadius: 20,
+              elevation: 5,
+              flexDirection: 'row',
+              height: 58,
+              justifyContent: 'center',
+              marginTop: 20,
+              shadowColor: theme.accentDark,
+              shadowOffset: {
+                height: 7,
+                width: 0,
+              },
+              shadowOpacity: 0.22,
+              shadowRadius: 10,
+            }}>
+            {busy ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : null}
             <Text
               style={{
-                color: '#DC2626',
-                fontSize: 13,
-                fontWeight: '800',
-                lineHeight: 20,
-                textAlign: 'center',
+                color: '#FFFFFF',
+                fontSize: 17,
+                fontWeight: '900',
+                marginLeft: busy ? 10 : 0,
               }}>
-              {error}
+              {step === 4
+                ? uploadingMedia
+                  ? 'Uploading Media'
+                  : creating
+                  ? 'Submitting'
+                  : isEditMode
+                  ? 'Save Listing'
+                  : 'Submit Listing'
+                : 'Continue'}
             </Text>
-          </View>
-        ) : null}
 
-        <TouchableOpacity
-          activeOpacity={0.9}
-          disabled={busy}
-          onPress={nextStep}
-          style={{
-            alignItems: 'center',
-            backgroundColor: busy ? '#FDBA74' : theme.accent,
-            borderRadius: 20,
-            elevation: 5,
-            flexDirection: 'row',
-            height: 58,
-            justifyContent: 'center',
-            marginTop: 20,
-            shadowColor: theme.accentDark,
-            shadowOffset: {
-              height: 7,
-              width: 0,
-            },
-            shadowOpacity: 0.22,
-            shadowRadius: 10,
-          }}>
-          {busy ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : null}
-          <Text
-            style={{
-              color: '#FFFFFF',
-              fontSize: 17,
-              fontWeight: '900',
-              marginLeft: busy ? 10 : 0,
-            }}>
-            {step === 4
-              ? uploadingMedia
-                ? 'Uploading Media'
-                : creating
-                ? 'Submitting'
-                : isEditMode
-                ? 'Save Listing'
-                : 'Submit Listing'
-              : 'Continue'}
-          </Text>
+            {!busy ? (
+              <Ionicons
+                name={step === 4 ? 'checkmark' : 'arrow-forward'}
+                size={21}
+                color="#FFFFFF"
+                style={{
+                  marginLeft: 8,
+                }}
+              />
+            ) : null}
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
-          {!busy ? (
-            <Ionicons
-              name={step === 4 ? 'checkmark' : 'arrow-forward'}
-              size={21}
-              color="#FFFFFF"
-              style={{
-                marginLeft: 8,
-              }}
-            />
-          ) : null}
-        </TouchableOpacity>
-      </ScrollView>
+      {renderCategoryPickerModal()}
     </SafeAreaView>
   );
 };
