@@ -24,6 +24,7 @@ import {
 } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DirectoryListSkeleton } from '@/components/ui/Skeleton';
 import {
   fetchDirectoryListingsRequest,
   selectDirectoryError,
@@ -421,19 +422,9 @@ export default function DirectoryDiscoveryListScreen() {
         {loading && listings.length === 0 ? (
           <View
             style={{
-              alignItems: 'center',
-              paddingVertical: 44,
+              paddingTop: 4,
             }}>
-            <ActivityIndicator color="#F97316" />
-            <Text
-              style={{
-                color: '#6B7280',
-                fontSize: 14,
-                fontWeight: '700',
-                marginTop: 12,
-              }}>
-              Loading listings...
-            </Text>
+            <DirectoryListSkeleton count={5} />
           </View>
         ) : null}
 

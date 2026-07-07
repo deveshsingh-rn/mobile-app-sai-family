@@ -3,7 +3,6 @@ import React, {
   useEffect,
 } from 'react';
 import {
-  ActivityIndicator,
   Image,
   RefreshControl,
   ScrollView,
@@ -22,6 +21,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DirectoryHomeSkeleton } from '@/components/ui/Skeleton';
 import {
   fetchDirectoryHomeRequest,
   selectDirectoryError,
@@ -467,7 +467,7 @@ function FeaturedBusinessCard({
         style={{
           backgroundColor: '#F6E5C6',
           borderRadius: 90,
-          height: 180,
+          height: 160,
           position: 'absolute',
           right: -20,
           top: -30,
@@ -1024,22 +1024,9 @@ export default function DirectoryScreen() {
           {loading && !home ? (
             <View
               style={{
-                alignItems: 'center',
-                paddingVertical: 34,
+                paddingTop: 4,
               }}>
-              <ActivityIndicator
-                color="#F97316"
-                size="small"
-              />
-              <Text
-                style={{
-                  color: '#6B7280',
-                  fontSize: 14,
-                  fontWeight: '700',
-                  marginTop: 12,
-                }}>
-                Loading trusted listings...
-              </Text>
+              <DirectoryHomeSkeleton />
             </View>
           ) : null}
 
@@ -1232,15 +1219,23 @@ export default function DirectoryScreen() {
           <View
             style={{
               marginTop: 34,
-              paddingHorizontal: 24,
+              // paddingHorizontal: 24,
             }}>
-            <View
+            {/* <View
               style={{
                 alignItems: 'center',
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 marginBottom: 22,
-              }}>
+              }}> */}
+              <View
+                style={{
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginBottom: 18,
+                  paddingHorizontal: 24,
+                }}>
               <Text
                 style={{
                   color: '#111111',
@@ -1277,7 +1272,7 @@ export default function DirectoryScreen() {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{
-                  paddingBottom: 4,
+                  paddingLeft: 24,
                 }}>
                 {nearbyListings.map((listing) => (
                   <FeaturedBusinessCard
@@ -1297,7 +1292,7 @@ export default function DirectoryScreen() {
               </View>
             ) : null}
 
-            {nearbyListings.length > 0 ? (
+            {/* {nearbyListings.length > 0 ? (
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={() =>
@@ -1327,7 +1322,7 @@ export default function DirectoryScreen() {
                   Load more businesses
                 </Text>
               </TouchableOpacity>
-            ) : null}
+            ) : null} */}
           </View>
         </View>
       </ScrollView>

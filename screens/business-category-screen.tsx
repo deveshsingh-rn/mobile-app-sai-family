@@ -24,6 +24,7 @@ import {
 } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DirectoryListSkeleton } from '@/components/ui/Skeleton';
 import {
   fetchDirectoryListingsRequest,
   selectDirectoryError,
@@ -509,22 +510,9 @@ export default function BusinessCategoryScreen() {
         {loading && listings.length === 0 ? (
           <View
             style={{
-              alignItems: 'center',
-              paddingVertical: 42,
+              paddingTop: 4,
             }}>
-            <ActivityIndicator
-              color="#F97316"
-              size="small"
-            />
-            <Text
-              style={{
-                color: '#6B7280',
-                fontSize: 14,
-                fontWeight: '700',
-                marginTop: 12,
-              }}>
-              Loading trusted listings...
-            </Text>
+            <DirectoryListSkeleton count={5} />
           </View>
         ) : null}
 

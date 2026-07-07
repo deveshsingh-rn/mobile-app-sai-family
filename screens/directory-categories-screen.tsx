@@ -3,7 +3,6 @@ import React, {
   useEffect,
 } from 'react';
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -21,6 +20,7 @@ import {
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DirectoryCategoryGridSkeleton } from '@/components/ui/Skeleton';
 import {
   fetchDirectoryCategoriesRequest,
   selectDirectoryCategories,
@@ -287,19 +287,9 @@ export default function DirectoryCategoriesScreen() {
         {loading && categories.length === 0 ? (
           <View
             style={{
-              alignItems: 'center',
-              paddingVertical: 44,
+              paddingTop: 8,
             }}>
-            <ActivityIndicator color="#F97316" />
-            <Text
-              style={{
-                color: '#6B7280',
-                fontSize: 14,
-                fontWeight: '700',
-                marginTop: 12,
-              }}>
-              Loading categories...
-            </Text>
+            <DirectoryCategoryGridSkeleton count={10} />
           </View>
         ) : null}
 
