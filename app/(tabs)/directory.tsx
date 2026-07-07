@@ -88,6 +88,51 @@ const CATEGORY_STYLES: Record<
   },
 };
 
+const BACKEND_ICON_MAP: Record<
+  string,
+  {
+    icon: string;
+    iconType:
+      | 'Feather'
+      | 'FontAwesome6'
+      | 'Ionicons'
+      | 'MaterialCommunityIcons';
+  }
+> = {
+  'briefcase-business': {
+    icon: 'briefcase',
+    iconType: 'Feather',
+  },
+  'building-2': {
+    icon: 'building',
+    iconType: 'FontAwesome6',
+  },
+  'graduation-cap': {
+    icon: 'graduation-cap',
+    iconType: 'FontAwesome6',
+  },
+  landmark: {
+    icon: 'landmark',
+    iconType: 'FontAwesome6',
+  },
+  mountain: {
+    icon: 'terrain',
+    iconType: 'MaterialCommunityIcons',
+  },
+  'person-standing': {
+    icon: 'person',
+    iconType: 'Ionicons',
+  },
+  'shopping-bag': {
+    icon: 'shopping-bag',
+    iconType: 'Feather',
+  },
+  utensils: {
+    icon: 'utensils',
+    iconType: 'FontAwesome6',
+  },
+};
+
 function normalizeKey(value?: string | null) {
   return (value || '')
     .toLowerCase()
@@ -98,6 +143,9 @@ function normalizeKey(value?: string | null) {
 
 function getCategoryStyle(item: DirectoryCategory) {
   const key = normalizeKey(item.slug || item.name);
+  const backendIcon = item.icon
+    ? BACKEND_ICON_MAP[item.icon]
+    : null;
 
   return {
     color:
@@ -105,11 +153,17 @@ function getCategoryStyle(item: DirectoryCategory) {
       CATEGORY_STYLES[key]?.color ||
       '#F97316',
     icon:
-      item.icon ||
+      backendIcon?.icon ||
       CATEGORY_STYLES[key]?.icon ||
       'storefront',
     iconType:
-      (item.iconFamily as any) ||
+      backendIcon?.iconType ||
+      (item.iconFamily &&
+      ['Ionicons', 'Feather', 'FontAwesome6', 'MaterialCommunityIcons'].includes(
+        item.iconFamily
+      )
+        ? (item.iconFamily as any)
+        : undefined) ||
       CATEGORY_STYLES[key]?.iconType ||
       'MaterialCommunityIcons',
   };
@@ -639,265 +693,6 @@ function FeaturedBusinessCard({
   );
 }
 
-function NearbyBusinessCard({
-  listing,
-}: {
-  listing: DirectoryListing;
-}) {
-  const image = listingImage(listing);
-  const helperText =
-    listing.homeServiceAvailable
-      ? 'Home visits available'
-      : listing.responseTimeLabel || 'Contact for details';
-  const tags = listingTags(listing);
-
-  return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPress={() => openListing(listing)}
-      style={{
-        backgroundColor: '#FFFFFF',
-        borderRadius: 30,
-        elevation: 2,
-        marginBottom: 24,
-        padding: 18,
-        shadowColor: '#000',
-        shadowOffset: {
-          height: 4,
-          width: 0,
-        },
-        shadowOpacity: 0.03,
-        shadowRadius: 8,
-      }}>
-      <View
-        style={{
-          flexDirection: 'row',
-        }}>
-        {image ? (
-          <Image
-            source={{
-              uri: image,
-            }}
-            style={{
-              borderRadius: 26,
-              height: 96,
-              width: 96,
-            }}
-          />
-        ) : (
-          <View
-            style={{
-              alignItems: 'center',
-              backgroundColor: '#F3F4F6',
-              borderRadius: 26,
-              height: 96,
-              justifyContent: 'center',
-              width: 96,
-            }}>
-            <Ionicons
-              name="business"
-              size={34}
-              color="#9CA3AF"
-            />
-          </View>
-        )}
-
-        {listing.verificationStatus === 'verified' && (
-          <View
-            style={{
-              backgroundColor: '#22C55E',
-              borderColor: '#FFFFFF',
-              borderRadius: 9,
-              borderWidth: 3,
-              height: 18,
-              left: 84,
-              position: 'absolute',
-              top: 72,
-              width: 18,
-            }}
-          />
-        )}
-
-        <View
-          style={{
-            flex: 1,
-            marginLeft: 18,
-          }}>
-          <View
-            style={{
-              alignItems: 'flex-start',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-            }}>
-            <Text
-              numberOfLines={1}
-              style={{
-                color: '#111111',
-                flex: 1,
-                fontSize: 18,
-                fontWeight: '800',
-                marginRight: 10,
-              }}>
-              {listing.businessName}
-            </Text>
-
-            <View
-              style={{
-                alignItems: 'center',
-                backgroundColor: '#FFF9F2',
-                borderColor: '#FDE7CF',
-                borderRadius: 16,
-                borderWidth: 1,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-              }}>
-              <Text
-                style={{
-                  color: '#F97316',
-                  fontSize: 13,
-                  fontWeight: '700',
-                }}>
-                ॐ Sai Devotee
-              </Text>
-
-              <Text
-                style={{
-                  color: '#6B7280',
-                  fontSize: 13,
-                  fontWeight: '500',
-                  marginTop: 3,
-                }}>
-                {formatDistance(listing.distanceKm)}
-              </Text>
-            </View>
-          </View>
-
-          <Text
-            numberOfLines={1}
-            style={{
-              color: '#6B7280',
-              fontSize: 16,
-              fontWeight: '500',
-              marginTop: 12,
-            }}>
-              {listing.tagline ||
-              listing.description ||
-              listing.categoryName ||
-              'Trusted community service'}
-          </Text>
-
-          <Text
-            numberOfLines={1}
-            style={{
-              color: '#9CA3AF',
-              fontSize: 12,
-              fontWeight: '800',
-              marginTop: 7,
-            }}>
-            {listing.ownerName ||
-              listing.owner?.name ||
-              'Sai Family member'}
-          </Text>
-
-          <View
-            style={{
-              alignItems: 'center',
-              flexDirection: 'row',
-              marginTop: 16,
-            }}>
-            <Ionicons
-              name="star"
-              size={18}
-              color="#FBBF24"
-            />
-
-            <Text
-              style={{
-                color: '#4B5563',
-                fontSize: 16,
-                fontWeight: '600',
-                marginLeft: 6,
-              }}>
-              {(listing.averageRating || 0).toFixed(1)}
-            </Text>
-
-            <Text
-              style={{
-                color: '#9CA3AF',
-                fontSize: 13,
-                fontWeight: '700',
-                marginLeft: 5,
-              }}>
-              ({listing.reviewCount || 0})
-            </Text>
-
-            <View
-              style={{
-                backgroundColor: '#D1D5DB',
-                borderRadius: 3,
-                height: 5,
-                marginHorizontal: 14,
-                width: 5,
-              }}
-            />
-
-            <Ionicons
-              name={
-                listing.homeServiceAvailable
-                  ? 'home'
-                  : 'call'
-              }
-              size={16}
-              color="#6B7280"
-            />
-
-            <Text
-              numberOfLines={1}
-              style={{
-                color: '#6B7280',
-                flex: 1,
-                fontSize: 15,
-                fontWeight: '500',
-                marginLeft: 6,
-              }}>
-              {helperText}
-            </Text>
-          </View>
-
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              marginTop: 10,
-            }}>
-            {tags.map((tag) => (
-              <View
-                key={`${listing.id}-${tag}`}
-                style={{
-                  backgroundColor: '#FFF7ED',
-                  borderRadius: 999,
-                  marginRight: 6,
-                  marginTop: 6,
-                  paddingHorizontal: 9,
-                  paddingVertical: 5,
-                }}>
-                <Text
-                  style={{
-                    color: '#9A3412',
-                    fontSize: 11,
-                    fontWeight: '900',
-                  }}>
-                  {tag}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
 export default function DirectoryScreen() {
   const dispatch = useAppDispatch();
   const home = useAppSelector(selectDirectoryHome);
@@ -923,6 +718,9 @@ export default function DirectoryScreen() {
   const popularCategories = home?.popularCategories || [];
   const trendingListings = home?.trendingListings || [];
   const stats = home?.stats;
+  const homeCategories = (
+    popularCategories.length ? popularCategories : categories
+  ).slice(0, 8);
 
   return (
     <SafeAreaView
@@ -954,7 +752,7 @@ export default function DirectoryScreen() {
                   fontWeight: '800',
                   letterSpacing: -0.5,
                 }}>
-                Sai Directory devesh
+                Sai Directory
               </Text>
 
               <Text
@@ -1251,13 +1049,43 @@ export default function DirectoryScreen() {
 
           <View
             style={{
+              alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              marginBottom: 18,
+              paddingHorizontal: 24,
+            }}>
+            <Text
+              style={{
+                color: '#111111',
+                fontSize: 20,
+                fontWeight: '800',
+              }}>
+              Popular Categories
+            </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => router.push('/directory/categories')}>
+              <Text
+                style={{
+                  color: '#F97316',
+                  fontSize: 15,
+                  fontWeight: '900',
+                }}>
+                See all
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View
+            style={{
               flexDirection: 'row',
               flexWrap: 'wrap',
               justifyContent: 'space-between',
               paddingHorizontal: 24,
             }}>
-             
-            {categories.map((item) => (
+            {homeCategories.map((item) => (
               <CategoryItem
                 key={item.id}
                 item={item}
@@ -1265,90 +1093,8 @@ export default function DirectoryScreen() {
             ))}
           </View>
 
-          {!loading && categories.length === 0 ? (
+          {!loading && homeCategories.length === 0 ? (
             <EmptySection message="No directory categories are available yet." />
-          ) : null}
-
-          {popularCategories.length > 0 ? (
-            <View
-              style={{
-                marginBottom: 24,
-                paddingHorizontal: 24,
-              }}>
-              <Text
-                style={{
-                  color: '#111111',
-                  fontSize: 20,
-                  fontWeight: '800',
-                  marginBottom: 14,
-                }}>
-                Popular Categories
-              </Text>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}>
-                {popularCategories.map((item) => {
-                  const style = getCategoryStyle(item);
-
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      activeOpacity={0.86}
-                      onPress={() =>
-                        router.push({
-                          pathname: '/directory/category',
-                          params: {
-                            category: item.name,
-                            categoryId: item.id,
-                            categorySlug: item.slug,
-                          },
-                        })
-                      }
-                      style={{
-                        alignItems: 'center',
-                        backgroundColor: '#FFFFFF',
-                        borderColor: '#E7DDCD',
-                        borderRadius: 22,
-                        borderWidth: 1,
-                        flexDirection: 'row',
-                        marginRight: 12,
-                        paddingHorizontal: 14,
-                        paddingVertical: 12,
-                      }}>
-                      {renderIcon(
-                        style.iconType,
-                        style.icon,
-                        style.color,
-                        22
-                      )}
-                      <View
-                        style={{
-                          marginLeft: 10,
-                        }}>
-                        <Text
-                          style={{
-                            color: '#111827',
-                            fontSize: 14,
-                            fontWeight: '900',
-                          }}>
-                          {item.name}
-                        </Text>
-                        <Text
-                          style={{
-                            color: '#6B7280',
-                            fontSize: 12,
-                            fontWeight: '700',
-                            marginTop: 2,
-                          }}>
-                          {compactNumber(item.listingCount)} listings
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
           ) : null}
 
           <View
@@ -1422,7 +1168,6 @@ export default function DirectoryScreen() {
             <View
               style={{
                 marginTop: 34,
-                paddingHorizontal: 24,
               }}>
               <View
                 style={{
@@ -1430,6 +1175,7 @@ export default function DirectoryScreen() {
                   flexDirection: 'row',
                   justifyContent: 'space-between',
                   marginBottom: 18,
+                  paddingHorizontal: 24,
                 }}>
                 <Text
                   style={{
@@ -1448,12 +1194,19 @@ export default function DirectoryScreen() {
                 />
               </View>
 
-              {trendingListings.slice(0, 3).map((listing) => (
-                <NearbyBusinessCard
-                  key={`trending-${listing.id}`}
-                  listing={listing}
-                />
-              ))}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingLeft: 24,
+                }}>
+                {trendingListings.slice(0, 6).map((listing) => (
+                  <FeaturedBusinessCard
+                    key={`trending-${listing.id}`}
+                    listing={listing}
+                  />
+                ))}
+              </ScrollView>
             </View>
           ) : null}
 
@@ -1473,12 +1226,21 @@ export default function DirectoryScreen() {
               Devotees Near You
             </Text>
 
-            {nearbyListings.map((listing) => (
-              <NearbyBusinessCard
-                key={listing.id}
-                listing={listing}
-              />
-            ))}
+            {nearbyListings.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingBottom: 4,
+                }}>
+                {nearbyListings.map((listing) => (
+                  <FeaturedBusinessCard
+                    key={listing.id}
+                    listing={listing}
+                  />
+                ))}
+              </ScrollView>
+            ) : null}
 
             {!loading && nearbyListings.length === 0 ? (
               <View
