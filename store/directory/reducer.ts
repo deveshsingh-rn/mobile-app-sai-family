@@ -152,6 +152,16 @@ export function directoryReducer(
       return {
         ...state,
         error: null,
+        listings:
+          !action.payload?.offset ||
+          action.payload.offset === 0
+            ? []
+            : state.listings,
+        listingsPagination:
+          !action.payload?.offset ||
+          action.payload.offset === 0
+            ? null
+            : state.listingsPagination,
         listingsLoading: true,
       };
 

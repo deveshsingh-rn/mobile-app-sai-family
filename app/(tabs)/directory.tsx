@@ -1132,7 +1132,12 @@ export default function DirectoryScreen() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() =>
-                router.push('/directory/business-search')
+                router.push({
+                  pathname: '/directory/discovery-list',
+                  params: {
+                    mode: 'featured',
+                  },
+                })
               }>
               <Text
                 style={{
@@ -1187,11 +1192,25 @@ export default function DirectoryScreen() {
                   Trending This Week
                 </Text>
 
-                <Ionicons
-                  name="trending-up"
-                  size={22}
-                  color="#F97316"
-                />
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/directory/discovery-list',
+                      params: {
+                        mode: 'trending',
+                      },
+                    })
+                  }>
+                  <Text
+                    style={{
+                      color: '#F97316',
+                      fontSize: 15,
+                      fontWeight: '900',
+                    }}>
+                    See all
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               <ScrollView
@@ -1215,16 +1234,43 @@ export default function DirectoryScreen() {
               marginTop: 34,
               paddingHorizontal: 24,
             }}>
-            <Text
+            <View
               style={{
-                color: '#111111',
-                fontSize: 22,
-                fontWeight: '800',
-                letterSpacing: -0.4,
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
                 marginBottom: 22,
               }}>
-              Devotees Near You
-            </Text>
+              <Text
+                style={{
+                  color: '#111111',
+                  fontSize: 22,
+                  fontWeight: '800',
+                  letterSpacing: -0.4,
+                }}>
+                Devotees Near You
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() =>
+                  router.push({
+                    pathname: '/directory/discovery-list',
+                    params: {
+                      mode: 'nearby',
+                    },
+                  })
+                }>
+                <Text
+                  style={{
+                    color: '#F97316',
+                    fontSize: 15,
+                    fontWeight: '900',
+                  }}>
+                  See all
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {nearbyListings.length > 0 ? (
               <ScrollView
@@ -1255,7 +1301,12 @@ export default function DirectoryScreen() {
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={() =>
-                  router.push('/directory/business-search')
+                  router.push({
+                    pathname: '/directory/discovery-list',
+                    params: {
+                      mode: 'nearby',
+                    },
+                  })
                 }
                 style={{
                   alignItems: 'center',

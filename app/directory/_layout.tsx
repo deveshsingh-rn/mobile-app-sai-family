@@ -13,6 +13,7 @@ export default function DirectoryLayout() {
       <Stack.Screen name="categories" />
       <Stack.Screen name="category" />
       <Stack.Screen name="create-listing" />
+      <Stack.Screen name="discovery-list" />
       <Stack.Screen name="my-listings" />
       <Stack.Screen name="saved-listings" />
     </Stack>
