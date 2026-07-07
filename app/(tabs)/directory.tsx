@@ -933,18 +933,6 @@ export default function DirectoryScreen() {
         barStyle="dark-content"
       />
 
-      <ScrollView
-        refreshControl={
-          <RefreshControl
-            refreshing={loading}
-            tintColor="#F97316"
-            onRefresh={loadDirectoryHome}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: 30,
-        }}>
         <View
           style={{
             paddingHorizontal: 24,
@@ -964,7 +952,7 @@ export default function DirectoryScreen() {
                   fontWeight: '800',
                   letterSpacing: -0.5,
                 }}>
-                Sai Directory
+                Sai Directory devesh
               </Text>
 
               <Text
@@ -1018,8 +1006,8 @@ export default function DirectoryScreen() {
               borderRadius: 33,
               elevation: 2,
               flexDirection: 'row',
-              height: 66,
-              marginTop: 28,
+              height: 56,
+              marginVertical: 8,
               paddingHorizontal: 22,
               shadowColor: '#000',
               shadowOffset: {
@@ -1072,6 +1060,26 @@ export default function DirectoryScreen() {
               />
             </TouchableOpacity>
           </TouchableOpacity>
+          </View>
+
+
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            tintColor="#F97316"
+            onRefresh={loadDirectoryHome}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: 30,
+        }}>
+          <View
+            style={{
+              paddingHorizontal: 24,
+              paddingTop: 18,
+            }}>
 
           <View
             style={{
