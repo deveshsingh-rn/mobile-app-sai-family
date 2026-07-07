@@ -402,6 +402,8 @@ function FeaturedBusinessCard({
       style={{
         backgroundColor: '#F8EFE3',
         borderRadius: 30,
+        borderColor: '#bcb4ac',
+        borderWidth: 1,
         marginRight: 18,
         overflow: 'hidden',
         padding: 22,
@@ -1254,6 +1256,7 @@ export default function DirectoryScreen() {
               justifyContent: 'space-between',
               paddingHorizontal: 24,
             }}>
+             
             {categories.map((item) => (
               <CategoryItem
                 key={item.id}
