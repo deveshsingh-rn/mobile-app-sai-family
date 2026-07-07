@@ -100,6 +100,43 @@ function formatLocation(item: DirectoryListing) {
     .join(', ') || 'Location not added';
 }
 
+function compactNumber(value?: number | null) {
+  const count = value || 0;
+
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}k`;
+  }
+
+  return String(count);
+}
+
+function formatDate(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+
+  if (!Number.isFinite(date.getTime())) {
+    return null;
+  }
+
+  return date.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function listingTags(item: DirectoryListing) {
+  return [
+    ...(item.specialties || []),
+    ...(item.serviceAreas || []),
+    ...(item.tags || []),
+    ...(item.subcategories || []),
+  ].slice(0, 3);
+}
+
 function EmptyState({
   mode,
 }: {
@@ -197,6 +234,8 @@ function ListingCard({
     selectIsDirectoryListingActionPending(state, item.id)
   );
   const isSaved = mode === 'saved';
+  const tags = listingTags(item);
+  const verified = item.verificationStatus === 'verified';
 
   return (
     <TouchableOpacity
@@ -298,8 +337,25 @@ function ListingCard({
               fontSize: 13,
               fontWeight: '700',
               marginTop: 5,
-            }}>
+          }}>
             {item.categoryName || 'Directory listing'}
+          </Text>
+
+          <Text
+            numberOfLines={1}
+            style={{
+              color: '#9CA3AF',
+              fontSize: 12,
+              fontWeight: '800',
+              marginTop: 5,
+            }}>
+            {[
+              item.ownerName || item.owner?.name,
+              verified ? 'Verified' : item.verificationStatus,
+              formatDate(item.publishedAt || item.createdAt),
+            ]
+              .filter(Boolean)
+              .join(' • ')}
           </Text>
 
           <View
@@ -333,6 +389,16 @@ function ListingCard({
               }}>
               {item.reviewCount || 0} reviews
             </Text>
+
+            <Text
+              style={{
+                color: '#9CA3AF',
+                fontSize: 12,
+                fontWeight: '700',
+                marginLeft: 8,
+              }}>
+              {compactNumber(item.recommendationCount)} recommends
+            </Text>
           </View>
 
           <View
@@ -358,7 +424,78 @@ function ListingCard({
               {formatLocation(item)}
             </Text>
           </View>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              marginTop: 9,
+            }}>
+            {tags.map((tag) => (
+              <View
+                key={`${item.id}-${tag}`}
+                style={{
+                  backgroundColor: '#FFF7ED',
+                  borderRadius: 999,
+                  marginRight: 6,
+                  marginTop: 5,
+                  paddingHorizontal: 9,
+                  paddingVertical: 5,
+                }}>
+                <Text
+                  style={{
+                    color: '#9A3412',
+                    fontSize: 11,
+                    fontWeight: '900',
+                  }}>
+                  {tag}
+                </Text>
+              </View>
+            ))}
+          </View>
         </View>
+      </View>
+
+      <View
+        style={{
+          borderTopColor: '#F3E8DA',
+          borderTopWidth: 1,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          marginTop: 14,
+          paddingTop: 12,
+        }}>
+        {[
+          ['Views', item.viewCount],
+          ['Enquiries', item.enquiryCount],
+          ['Shares', item.shareCount],
+          ['Bookmarks', item.bookmarkCount],
+        ].map(([label, value]) => (
+          <View
+            key={label}
+            style={{
+              alignItems: 'center',
+              flex: 1,
+            }}>
+            <Text
+              style={{
+                color: '#111827',
+                fontSize: 14,
+                fontWeight: '900',
+              }}>
+              {compactNumber(value as number)}
+            </Text>
+            <Text
+              style={{
+                color: '#9CA3AF',
+                fontSize: 10,
+                fontWeight: '800',
+                marginTop: 2,
+              }}>
+              {label}
+            </Text>
+          </View>
+        ))}
       </View>
 
       <View

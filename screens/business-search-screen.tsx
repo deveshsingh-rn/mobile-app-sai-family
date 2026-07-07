@@ -160,6 +160,25 @@ function listingSubtitle(listing: DirectoryListing) {
   return bits.join(' • ') || 'Trusted community service';
 }
 
+function compactNumber(value?: number | null) {
+  const count = value || 0;
+
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)}k`;
+  }
+
+  return String(count);
+}
+
+function listingTags(listing: DirectoryListing) {
+  return [
+    ...(listing.specialties || []),
+    ...(listing.serviceAreas || []),
+    ...(listing.tags || []),
+    ...(listing.subcategories || []),
+  ].slice(0, 3);
+}
+
 function openListing(listing: DirectoryListing) {
   router.push({
     pathname: '/directory/business-details',
@@ -175,6 +194,8 @@ function SearchResultCard({
   item: DirectoryListing;
 }) {
   const image = listingImage(item);
+  const verified = item.verificationStatus === 'verified';
+  const tags = listingTags(item);
 
   return (
     <TouchableOpacity
@@ -251,6 +272,84 @@ function SearchResultCard({
           }}>
           {listingSubtitle(item)}
         </Text>
+
+        <View
+          style={{
+            alignItems: 'center',
+            flexDirection: 'row',
+            marginTop: 8,
+          }}>
+          {verified ? (
+            <View
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#ECFDF5',
+                borderRadius: 999,
+                flexDirection: 'row',
+                marginRight: 8,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+              }}>
+              <Ionicons
+                name="shield-checkmark"
+                size={12}
+                color="#16A34A"
+              />
+              <Text
+                style={{
+                  color: '#15803D',
+                  fontSize: 11,
+                  fontWeight: '900',
+                  marginLeft: 4,
+                }}>
+                Verified
+              </Text>
+            </View>
+          ) : null}
+
+          <Text
+            numberOfLines={1}
+            style={{
+              color: '#9CA3AF',
+              flex: 1,
+              fontSize: 11,
+              fontWeight: '800',
+            }}>
+            {compactNumber(item.recommendationCount)} recommends ·{' '}
+            {compactNumber(item.viewCount)} views
+          </Text>
+        </View>
+
+        {tags.length > 0 ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              marginTop: 7,
+            }}>
+            {tags.map((tag) => (
+              <View
+                key={`${item.id}-${tag}`}
+                style={{
+                  backgroundColor: '#FFF7ED',
+                  borderRadius: 999,
+                  marginRight: 6,
+                  marginTop: 5,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                }}>
+                <Text
+                  style={{
+                    color: '#9A3412',
+                    fontSize: 10,
+                    fontWeight: '900',
+                  }}>
+                  {tag}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
       </View>
 
       <Ionicons

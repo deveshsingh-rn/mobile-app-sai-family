@@ -172,7 +172,9 @@ export type DirectoryHomeResult = {
   nearbyListings?: DirectoryListing[];
   popularCategories?: DirectoryCategory[];
   stats?: {
+    categoryCount?: number;
     categories?: number;
+    city?: string | null;
     totalListings?: number;
     verifiedListings?: number;
   };
