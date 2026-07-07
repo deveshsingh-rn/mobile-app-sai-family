@@ -46,6 +46,8 @@ export type DevoteeAccount = DevoteeAccountForm & {
   };
   profileImageUrl?: string;
   role?: string;
+  emailVerified?: boolean;
+  isEmailVerified?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };

@@ -7,6 +7,7 @@ import {
   clearSavedDevoteeAccount,
   updateDevoteeSettings,
 } from "@/services/devotee-account";
+import { resetProductAnalytics } from "@/services/product-analytics";
 
 import {
   createDevoteeAccountFailure,
@@ -61,6 +62,7 @@ function* createDevoteeAccountWorker(
 function* handleLogout() {
   try {
     yield call(clearSavedDevoteeAccount);
+    yield call(resetProductAnalytics);
 
     yield put(logoutSuccess());
   } catch (error) {

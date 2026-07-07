@@ -1,5 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -12,6 +12,12 @@ import CreateDevoteeAccountScreen from '@/screens/create-devotee-account-screen'
 import DevoteeProfileScreen from '@/screens/devotee-profile-screen';
 import OnboardingScreen from '@/screens/onboarding';
 import SaiBabaSplashScreen from '@/screens/splashscreen';
+import {
+  identifyProductUser,
+  initProductAnalytics,
+  trackProductEvent,
+  trackProductScreen,
+} from '@/services/product-analytics';
 import { loadSavedDevoteeAccountRequest } from '@/store/devotee-account/actions';
 import {
   selectDevoteeAccount,
@@ -28,6 +34,7 @@ export const unstable_settings = {
 
 function AppLayoutContent() {
   const colorScheme = useColorScheme();
+  const pathname = usePathname();
   const dispatch = useAppDispatch();
   const devoteeAccount = useAppSelector(selectDevoteeAccount);
   const hasHydratedDevoteeAccount = useAppSelector(selectHasHydratedDevoteeAccount);
@@ -43,6 +50,10 @@ function AppLayoutContent() {
   }, [dispatch]);
 
   useEffect(() => {
+    void initProductAnalytics();
+  }, []);
+
+  useEffect(() => {
     if (hasHydratedDevoteeAccount) {
       if (devoteeAccount) {
         setShowOnboarding(false);
@@ -54,6 +65,65 @@ function AppLayoutContent() {
       }
     }
   }, [devoteeAccount, hasHydratedDevoteeAccount]);
+
+  useEffect(() => {
+    if (!hasHydratedDevoteeAccount || !devoteeAccount) {
+      return;
+    }
+
+    const userId = devoteeAccount.id || devoteeAccount.authorId;
+
+    if (!userId) {
+      return;
+    }
+
+    void identifyProductUser(userId, {
+      account_status: "active",
+      city: devoteeAccount.city || null,
+      country: devoteeAccount.country || null,
+      email_verified: Boolean(
+        devoteeAccount.emailVerified ||
+          devoteeAccount.isEmailVerified
+      ),
+      language: devoteeAccount.language || null,
+    });
+  }, [
+    devoteeAccount,
+    hasHydratedDevoteeAccount,
+  ]);
+
+  useEffect(() => {
+    let screenName = "App";
+
+    if (showSplash) {
+      screenName = "Splash";
+    } else if (!hasHydratedDevoteeAccount) {
+      screenName = "Auth Hydration";
+    } else if (devoteeAccount && showDevoteeProfile) {
+      screenName = "Devotee Profile Intro";
+    } else if (!devoteeAccount && showOnboarding) {
+      screenName = "Onboarding";
+    } else if (!devoteeAccount && showCreateAccount) {
+      screenName = "Create Devotee Account";
+    } else if (!devoteeAccount && showAuth) {
+      screenName = "Auth";
+    } else if (pathname) {
+      screenName = pathname;
+    }
+
+    trackProductScreen(screenName, {
+      is_logged_in: Boolean(devoteeAccount),
+    });
+  }, [
+    devoteeAccount,
+    hasHydratedDevoteeAccount,
+    pathname,
+    showAuth,
+    showCreateAccount,
+    showDevoteeProfile,
+    showOnboarding,
+    showSplash,
+  ]);
 
   useEffect(() => {
     const userId = devoteeAccount?.id || devoteeAccount?.authorId;
@@ -100,6 +170,7 @@ function AppLayoutContent() {
     return (
       <OnboardingScreen
         onDone={() => {
+          trackProductEvent("Onboarding Completed");
           setShowOnboarding(false);
           setShowAuth(true);
         }}
@@ -112,6 +183,9 @@ function AppLayoutContent() {
       <CreateDevoteeAccountScreen
         onBack={() => setShowCreateAccount(false)}
         onCreated={(account) => {
+          trackProductEvent("Account Created", {
+            has_profile_image: Boolean(account.profileImageUrl),
+          });
           setShowCreateAccount(false);
           setShowAuth(false);
           setShowDevoteeProfile(true);

@@ -57,6 +57,7 @@ import {
   verifyUserMobileOtp,
 } from "@/services/auth";
 import { saveDevoteeAccount } from "@/services/devotee-account";
+import { trackProductEvent } from "@/services/product-analytics";
 import { loadSavedDevoteeAccountRequest } from "@/store/devotee-account/actions";
 import { useAppDispatch } from "@/store/hooks";
 
@@ -574,6 +575,11 @@ export default function AuthScreen({
     try {
       setIsSubmitting(true);
       await sendUserMobileOtp(fullMobileNumber);
+      trackProductEvent("OTP Requested", {
+        auth_step: "otp_requested",
+        country_code: selectedCountry.code,
+        method: "mobile_otp",
+      });
       setOtpSent(true);
       Alert.alert("OTP sent", "Please enter the OTP sent to your mobile.");
     } catch (error) {
@@ -595,6 +601,10 @@ export default function AuthScreen({
       setIsSubmitting(true);
       const response = await verifyUserMobileOtp(fullMobileNumber, mobileOtp);
       await completeLogin(response.user);
+      trackProductEvent("Login Completed", {
+        country_code: selectedCountry.code,
+        method: "mobile_otp",
+      });
     } catch (error) {
       Alert.alert(
         "Login failed",
@@ -614,6 +624,9 @@ export default function AuthScreen({
       setIsSubmitting(true);
       const response = await loginUserWithEmail(email, password);
       await completeLogin(response.user);
+      trackProductEvent("Login Completed", {
+        method: "email_password",
+      });
     } catch (error) {
       Alert.alert(
         "Login failed",
