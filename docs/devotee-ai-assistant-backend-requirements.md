@@ -607,18 +607,56 @@ Current mobile voice:
 
 ## Backend Done Criteria
 
-- [ ] `POST /api/ai/devotee-question` works with auth.
-- [ ] OpenAI API key is only on backend.
-- [ ] Request validation exists.
-- [ ] Rate limit exists.
-- [ ] Safety prompt exists.
+- [x] `POST /api/ai/devotee-question` works with auth.
+- [x] OpenAI API key is only on backend.
+- [x] Request validation exists.
+- [x] Rate limit exists.
+- [x] Safety prompt exists.
 - [ ] Response comes under 2.5 seconds for normal questions.
 - [ ] Error shape matches app API error style.
 - [ ] Logs have latency/model/status, no secrets.
-- [ ] Conversation records are stored or deliberately disabled.
-- [ ] Backend env controls model names and max output tokens.
+- [x] Conversation records are stored or deliberately disabled.
+- [x] Backend env controls model names and max output tokens.
 - [ ] Backend endpoint tested from Postman.
 - [ ] Mobile Ask Sai screen receives answer and can speak it.
+
+## Phase 1 Backend Implementation
+
+Implemented endpoints:
+
+```http
+POST /api/ai/devotee-question
+GET /api/ai/devotee-conversations?limit=20&offset=0
+GET /api/ai/devotee-conversations/:conversationId
+DELETE /api/ai/devotee-conversations/:conversationId
+POST /api/ai/devotee-messages/:messageId/feedback
+```
+
+Implemented storage:
+
+- `AiConversation`
+- `AiMessage`
+- `AiFeedback`
+
+Implemented config:
+
+```bash
+OPENAI_API_KEY=
+OPENAI_BASE_URL=https://api.openai.com/v1
+AI_TEXT_MODEL=gpt-4.1-mini
+AI_COMPLEX_TEXT_MODEL=gpt-4.1
+AI_TTS_MODEL=gpt-4o-mini-tts
+AI_TRANSCRIPTION_MODEL=gpt-4o-mini-transcribe
+AI_REQUEST_TIMEOUT_MS=12000
+AI_MAX_OUTPUT_TOKENS=350
+AI_DAILY_USER_LIMIT=50
+```
+
+Not implemented yet:
+
+- `POST /api/ai/devotee-question/stream`
+- `POST /api/ai/devotee-question/:messageId/speech`
+- `POST /api/ai/devotee-question/transcribe`
 
 ## Future Premium Experience
 
@@ -633,4 +671,3 @@ After MVP:
 - app-aware answers using events/directory/sangha data
 - admin prompt controls
 - dashboard for most asked questions
-
