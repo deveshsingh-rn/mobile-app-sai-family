@@ -12,6 +12,7 @@ import {
 
 export type ExperienceTopTabKey =
   | "feed"
+  | "ask"
   | "search"
   | "post"
   | "category"
@@ -30,6 +31,12 @@ const EXPERIENCE_TABS = [
     href: "/(tabs)",
     key: "feed",
     label: "Feed",
+  },
+
+  {
+    href: "/(tabs)/experiences/ask-sai",
+    key: "ask",
+    label: "Ask Sai",
   },
 
   {

@@ -11,6 +11,8 @@ export type ProductAnalyticsEventName =
   | "Login Completed"
   | "Logout Completed"
   | "Account Created"
+  | "Devotee Question Asked"
+  | "Devotee Answer Spoken"
   | "Experience Post Created"
   | "Event RSVP Completed"
   | "Directory Listing Opened"
