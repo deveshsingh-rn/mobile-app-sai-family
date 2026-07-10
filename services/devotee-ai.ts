@@ -26,10 +26,10 @@ export type AskDevoteeQuestionResponse = {
   answer: string;
   cached?: boolean;
   conversationId?: string;
-  latencyMs?: number;
+  latencyMs?: number | null;
   messageId?: string;
-  model?: string;
-  safetyNote?: string;
+  model?: string | null;
+  safetyNote?: string | null;
 };
 
 export type DevoteeAiConversation = {
@@ -86,11 +86,11 @@ type BackendDevoteeAiResponse = {
   answer?: string;
   cached?: boolean;
   conversationId?: string;
-  latencyMs?: number;
+  latencyMs?: number | null;
   messageId?: string;
-  model?: string;
+  model?: string | null;
   reply?: string;
-  safetyNote?: string;
+  safetyNote?: string | null;
   text?: string;
   message?: string;
 };

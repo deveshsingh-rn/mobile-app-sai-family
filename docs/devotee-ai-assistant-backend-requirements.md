@@ -157,7 +157,7 @@ Content-Type: application/json
   "conversationId": "cm-ai-conv-123",
   "messageId": "cm-ai-msg-456",
   "safetyNote": "For medical, legal, financial, or emergency matters, please contact a qualified professional.",
-  "model": "gpt-4.1-mini",
+  "model": "gpt-4o",
   "latencyMs": 840,
   "cached": false
 }
@@ -357,7 +357,7 @@ DELETE /api/ai/devotee-conversations/:conversationId
       "id": "cm-ai-msg-456",
       "role": "assistant",
       "content": "A gentle way to begin is with one small prayer each morning. Sit quietly for two minutes, remember Sai, and choose one kind action for the day.",
-      "model": "gpt-4.1-mini",
+      "model": "gpt-4o",
       "latencyMs": 840,
       "cached": false,
       "safetyStatus": "allowed",
@@ -804,8 +804,8 @@ OPENAI_BASE_URL=https://api.openai.com/v1
 AZURE_OPENAI_API_KEY=
 AZURE_OPENAI_ENDPOINT=
 AZURE_OPENAI_API_VERSION=v1
-AI_TEXT_MODEL=gpt-4.1-mini
-AI_COMPLEX_TEXT_MODEL=gpt-4.1
+AI_TEXT_MODEL=gpt-4o
+AI_COMPLEX_TEXT_MODEL=gpt-4o
 AI_TTS_MODEL=gpt-4o-mini-tts
 AI_TRANSCRIPTION_MODEL=gpt-4o-mini-transcribe
 AI_REQUEST_TIMEOUT_MS=12000
@@ -836,6 +836,42 @@ Important:
 - `AI_TEXT_MODEL` must be the Azure deployment name, not only the base model family name, unless both are identical in Azure.
 - Do not commit `AZURE_OPENAI_API_KEY` or `OPENAI_API_KEY`.
 - Since the key was shared in chat, rotate it in Azure before using it for production.
+
+### Frontend/Postman Auth Test Flow
+
+The AI API requires:
+
+```http
+Authorization: Bearer <accessToken>
+```
+
+Testing order:
+
+1. Run `POST /api/auth/user/mobile/verify-otp` or email login.
+2. Confirm Postman environment has `accessToken` populated.
+3. Run `POST /api/ai/devotee-question`.
+4. Store `conversationId` and `messageId` from the response.
+5. Use `messageId` for feedback and `conversationId` for history/detail.
+
+If frontend receives:
+
+```json
+{
+  "error": {
+    "code": "UNAUTHENTICATED",
+    "message": "Authenticated user is required"
+  }
+}
+```
+
+then the request is missing a valid bearer token, the token expired, or the app is not attaching the header correctly.
+
+Token lifetime:
+
+- Access tokens are short lived: `JWT_ACCESS_TTL_SECONDS=900`.
+- Refresh tokens keep the user logged in for 90 days: `JWT_REFRESH_TTL_DAYS=90`.
+- Mobile should silently call `POST /api/auth/refresh-token` to rotate tokens.
+- Do not make the access token itself 90 days unless there is a strong product/security reason.
 
 ## Future Premium Experience
 

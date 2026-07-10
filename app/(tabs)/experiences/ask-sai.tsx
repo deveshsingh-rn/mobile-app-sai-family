@@ -211,7 +211,7 @@ export default function AskSaiScreen() {
         trackProductEvent("Devotee Question Asked", {
           cached: Boolean(response.cached),
           has_answer: true,
-          latency_ms: response.latencyMs || null,
+          latency_ms: response.latencyMs ?? null,
           pillar: "experiences",
         });
       } catch (error) {
@@ -264,7 +264,7 @@ export default function AskSaiScreen() {
                 answer: assistantMessage.content,
                 cached: assistantMessage.cached,
                 conversationId: detail.conversation.id,
-                latencyMs: assistantMessage.latencyMs || undefined,
+                latencyMs: assistantMessage.latencyMs ?? undefined,
                 messageId: assistantMessage.id,
                 model: assistantMessage.model || undefined,
               }
