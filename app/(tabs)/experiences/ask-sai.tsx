@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   History,
+  Mic,
   Mic2,
   Pause,
   Plus,
@@ -55,6 +56,12 @@ const SUGGESTED_QUESTIONS = [
   "What should I do before attending a Sai event?",
 ];
 
+async function getSpeechRecognitionModule() {
+  const speechRecognition = await import("expo-speech-recognition");
+
+  return speechRecognition.ExpoSpeechRecognitionModule;
+}
+
 export default function AskSaiScreen() {
   const insets = useSafeAreaInsets();
   const [question, setQuestion] = useState("");
@@ -72,8 +79,10 @@ export default function AskSaiScreen() {
   );
   const [authMessage, setAuthMessage] = useState("");
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
 
   const canSubmit = useMemo(
     () => question.trim().length >= 3 && !isSubmitting,
@@ -129,6 +138,32 @@ export default function AskSaiScreen() {
     setSafetyNote("");
   }, [stopSpeech]);
 
+  const speakText = useCallback(
+    async (text: string) => {
+      const textToSpeak = text.trim();
+
+      if (!textToSpeak) {
+        return;
+      }
+
+      await Speech.stop();
+      setIsSpeaking(true);
+      Speech.speak(textToSpeak, {
+        language: "en-IN",
+        pitch: 1,
+        rate: 0.9,
+        onDone: () => setIsSpeaking(false),
+        onError: () => setIsSpeaking(false),
+        onStopped: () => setIsSpeaking(false),
+      });
+
+      trackProductEvent("Devotee Answer Spoken", {
+        pillar: "experiences",
+      });
+    },
+    []
+  );
+
   const speakAnswer = useCallback(async () => {
     if (!answer.trim()) {
       return;
@@ -141,23 +176,14 @@ export default function AskSaiScreen() {
       return;
     }
 
-    setIsSpeaking(true);
-    Speech.speak(answer, {
-      language: "en-IN",
-      pitch: 1,
-      rate: 0.9,
-      onDone: () => setIsSpeaking(false),
-      onError: () => setIsSpeaking(false),
-      onStopped: () => setIsSpeaking(false),
-    });
-
-    trackProductEvent("Devotee Answer Spoken", {
-      pillar: "experiences",
-    });
-  }, [answer, isSpeaking, stopSpeech]);
+    await speakText(answer);
+  }, [answer, isSpeaking, speakText, stopSpeech]);
 
   const submitQuestion = useCallback(
-    async (nextQuestion?: string) => {
+    async (
+      nextQuestion?: string,
+      options?: { speak?: boolean }
+    ) => {
       const questionToAsk = (nextQuestion || question).trim();
 
       if (questionToAsk.length < 3) {
@@ -208,6 +234,10 @@ export default function AskSaiScreen() {
         setSafetyNote(response.safetyNote || "");
         void loadConversations();
 
+        if (options?.speak) {
+          await speakText(response.answer);
+        }
+
         trackProductEvent("Devotee Question Asked", {
           cached: Boolean(response.cached),
           has_answer: true,
@@ -237,8 +267,133 @@ console.log("devesh", message)
         setIsSubmitting(false);
       }
     },
-    [conversationId, loadConversations, question, stopSpeech]
+    [conversationId, loadConversations, question, speakText, stopSpeech]
   );
+
+  useEffect(() => {
+    let isMounted = true;
+    let resultSubscription: { remove: () => void } | undefined;
+    let errorSubscription: { remove: () => void } | undefined;
+    let endSubscription: { remove: () => void } | undefined;
+
+    void getSpeechRecognitionModule()
+      .then((ExpoSpeechRecognitionModule) => {
+        if (!isMounted) {
+          return;
+        }
+
+        resultSubscription = ExpoSpeechRecognitionModule.addListener(
+          "result",
+          (event: {
+            isFinal: boolean;
+            results?: { transcript?: string }[];
+          }) => {
+            const transcript = event.results?.[0]?.transcript?.trim();
+
+            if (!transcript) {
+              return;
+            }
+
+            setQuestion(transcript);
+            setVoiceError("");
+
+            if (event.isFinal) {
+              setIsListening(false);
+              void submitQuestion(transcript, { speak: true });
+            }
+          }
+        );
+
+        errorSubscription = ExpoSpeechRecognitionModule.addListener(
+          "error",
+          (event: { message?: string }) => {
+            setIsListening(false);
+            setVoiceError(
+              event.message ||
+                "Voice input is unavailable. Please type your question."
+            );
+          }
+        );
+
+        endSubscription = ExpoSpeechRecognitionModule.addListener(
+          "end",
+          () => {
+            setIsListening(false);
+          }
+        );
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        setVoiceError(
+          "Voice input needs a custom development build. Please type your question for now."
+        );
+      });
+
+    return () => {
+      isMounted = false;
+      resultSubscription?.remove();
+      errorSubscription?.remove();
+      endSubscription?.remove();
+    };
+  }, [submitQuestion]);
+
+  const handleVoiceQuestion = useCallback(async () => {
+    if (isListening) {
+      try {
+        const ExpoSpeechRecognitionModule =
+          await getSpeechRecognitionModule();
+        ExpoSpeechRecognitionModule.stop();
+      } catch {
+        // Nothing else to do; the fallback text is already visible.
+      }
+
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      await stopSpeech();
+
+      const ExpoSpeechRecognitionModule =
+        await getSpeechRecognitionModule();
+
+      const permissions =
+        await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+
+      if (!permissions.granted) {
+        setVoiceError(
+          "Please allow microphone and speech recognition permissions to ask by voice."
+        );
+        return;
+      }
+
+      if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
+        setVoiceError(
+          "Voice input is not available on this device. Please type your question."
+        );
+        return;
+      }
+
+      setVoiceError("");
+      setIsListening(true);
+
+      ExpoSpeechRecognitionModule.start({
+        addsPunctuation: true,
+        continuous: false,
+        interimResults: true,
+        lang: "en-IN",
+        maxAlternatives: 1,
+      });
+    } catch {
+      setIsListening(false);
+      setVoiceError(
+        "Voice input needs a custom development build. Please type your question for now."
+      );
+    }
+  }, [isListening, stopSpeech]);
 
   const openConversation = useCallback(
     async (id: string) => {
@@ -489,24 +644,58 @@ console.log("devesh", message)
               value={question}
             />
 
-            <Pressable
-              disabled={!canSubmit}
-              onPress={() => submitQuestion()}
-              style={({ pressed }) => [
-                styles.askButton,
-                pressed && styles.pressed,
-                !canSubmit && styles.disabledButton,
-              ]}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <>
-                  <Send color="#FFFFFF" size={18} strokeWidth={2.4} />
-                  <Text style={styles.askButtonText}>Ask now</Text>
-                </>
-              )}
-            </Pressable>
+            {voiceError ? (
+              <Text style={styles.voiceError}>{voiceError}</Text>
+            ) : isListening ? (
+              <Text style={styles.listeningText}>
+                Listening... speak your question clearly.
+              </Text>
+            ) : null}
+
+            <View style={styles.inputActions}>
+              <Pressable
+                disabled={isSubmitting}
+                onPress={handleVoiceQuestion}
+                style={({ pressed }) => [
+                  styles.micButton,
+                  isListening && styles.micButtonActive,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Mic
+                  color={isListening ? "#FFFFFF" : "#B45309"}
+                  size={20}
+                  strokeWidth={2.5}
+                />
+                <Text
+                  style={[
+                    styles.micButtonText,
+                    isListening && styles.micButtonTextActive,
+                  ]}
+                >
+                  {isListening ? "Stop" : "Speak"}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                disabled={!canSubmit}
+                onPress={() => submitQuestion()}
+                style={({ pressed }) => [
+                  styles.askButton,
+                  pressed && styles.pressed,
+                  !canSubmit && styles.disabledButton,
+                ]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Send color="#FFFFFF" size={18} strokeWidth={2.4} />
+                    <Text style={styles.askButtonText}>Ask now</Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.suggestionsBlock}>
@@ -833,15 +1022,58 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingTop: 14,
   },
+  voiceError: {
+    color: "#B91C1C",
+    fontSize: 12,
+    fontWeight: "800",
+    lineHeight: 18,
+    marginTop: 10,
+  },
+  listeningText: {
+    color: "#B45309",
+    fontSize: 12,
+    fontWeight: "900",
+    lineHeight: 18,
+    marginTop: 10,
+  },
+  inputActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  micButton: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#F1DEC0",
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    height: 54,
+    justifyContent: "center",
+    paddingHorizontal: 15,
+  },
+  micButtonActive: {
+    backgroundColor: "#B45309",
+    borderColor: "#B45309",
+  },
+  micButtonText: {
+    color: "#B45309",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  micButtonTextActive: {
+    color: "#FFFFFF",
+  },
   askButton: {
     alignItems: "center",
     backgroundColor: "#C2410C",
     borderRadius: 18,
+    flex: 1,
     flexDirection: "row",
     gap: 9,
     height: 54,
     justifyContent: "center",
-    marginTop: 14,
   },
   askButtonText: {
     color: "#FFFFFF",
