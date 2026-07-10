@@ -31,7 +31,10 @@ import {
 } from "lucide-react-native";
 
 import { ExperienceTopTabs } from "@/components/experiences";
-import { askDevoteeQuestion } from "@/services/devotee-ai";
+import {
+  AskDevoteeQuestionResponse,
+  askDevoteeQuestion,
+} from "@/services/devotee-ai";
 import { trackProductEvent } from "@/services/product-analytics";
 
 const SUGGESTED_QUESTIONS = [
@@ -45,6 +48,9 @@ export default function AskSaiScreen() {
   const insets = useSafeAreaInsets();
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
+  const [conversationId, setConversationId] = useState<string | undefined>();
+  const [lastResponse, setLastResponse] =
+    useState<AskDevoteeQuestionResponse | null>(null);
   const [safetyNote, setSafetyNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -108,19 +114,27 @@ export default function AskSaiScreen() {
         await stopSpeech();
         setIsSubmitting(true);
         setAnswer("");
+        setLastResponse(null);
         setSafetyNote("");
 
         const response = await askDevoteeQuestion({
+          conversationId,
+          locale: "en-IN",
           pillar: "experiences",
           question: questionToAsk,
+          voice: false,
         });
 
         setQuestion(questionToAsk);
         setAnswer(response.answer);
+        setConversationId(response.conversationId || conversationId);
+        setLastResponse(response);
         setSafetyNote(response.safetyNote || "");
 
         trackProductEvent("Devotee Question Asked", {
+          cached: Boolean(response.cached),
           has_answer: true,
+          latency_ms: response.latencyMs || null,
           pillar: "experiences",
         });
       } catch (error) {
@@ -139,7 +153,7 @@ export default function AskSaiScreen() {
         setIsSubmitting(false);
       }
     },
-    [question, stopSpeech]
+    [conversationId, question, stopSpeech]
   );
 
   return (
@@ -259,6 +273,30 @@ export default function AskSaiScreen() {
               </View>
 
               <Text style={styles.answerText}>{answer}</Text>
+
+              <View style={styles.metaRow}>
+                {typeof lastResponse?.latencyMs === "number" ? (
+                  <View style={styles.metaPill}>
+                    <Text style={styles.metaText}>
+                      {lastResponse.latencyMs} ms
+                    </Text>
+                  </View>
+                ) : null}
+
+                {lastResponse?.cached ? (
+                  <View style={styles.metaPill}>
+                    <Text style={styles.metaText}>Cached</Text>
+                  </View>
+                ) : null}
+
+                {lastResponse?.model ? (
+                  <View style={styles.metaPill}>
+                    <Text style={styles.metaText}>
+                      {lastResponse.model}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
 
               {safetyNote ? (
                 <Text style={styles.safetyNote}>{safetyNote}</Text>
@@ -455,6 +493,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     lineHeight: 25,
+  },
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 16,
+  },
+  metaPill: {
+    backgroundColor: "rgba(255, 247, 237, 0.12)",
+    borderColor: "rgba(253, 230, 138, 0.24)",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  metaText: {
+    color: "#FDE68A",
+    fontSize: 11,
+    fontWeight: "900",
   },
   safetyNote: {
     color: "#FDE68A",

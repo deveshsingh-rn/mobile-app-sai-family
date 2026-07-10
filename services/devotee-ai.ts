@@ -5,23 +5,34 @@ import { apiClient } from "./api";
 const DEFAULT_DEVOTEE_AI_ENDPOINT = "/api/ai/devotee-question";
 
 export type AskDevoteeQuestionPayload = {
+  conversationId?: string;
+  locale?: string;
   question: string;
   pillar?: "experiences" | "events" | "directory" | "sangha";
+  voice?: boolean;
 };
 
 export type AskDevoteeQuestionResponse = {
   answer: string;
+  cached?: boolean;
   conversationId?: string;
+  latencyMs?: number;
+  messageId?: string;
+  model?: string;
   safetyNote?: string;
 };
 
 type BackendDevoteeAiResponse = {
   answer?: string;
+  cached?: boolean;
+  conversationId?: string;
+  latencyMs?: number;
+  messageId?: string;
+  model?: string;
   reply?: string;
+  safetyNote?: string;
   text?: string;
   message?: string;
-  conversationId?: string;
-  safetyNote?: string;
 };
 
 function getAiEndpoint() {
@@ -64,8 +75,11 @@ export async function askDevoteeQuestion(
       await apiClient.post<BackendDevoteeAiResponse>(
         getAiEndpoint(),
         {
+          conversationId: payload.conversationId,
+          locale: payload.locale || "en-IN",
           pillar: payload.pillar || "experiences",
           question,
+          voice: payload.voice || false,
         }
       );
 
@@ -81,7 +95,11 @@ export async function askDevoteeQuestion(
 
     return {
       answer,
+      cached: data.cached,
       conversationId: data.conversationId,
+      latencyMs: data.latencyMs,
+      messageId: data.messageId,
+      model: data.model,
       safetyNote: data.safetyNote,
     };
   } catch (error) {
