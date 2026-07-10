@@ -3,12 +3,19 @@ import axios from "axios";
 import { apiClient } from "./api";
 
 const DEFAULT_DEVOTEE_AI_ENDPOINT = "/api/ai/devotee-question";
+const AI_BASE_PATH = "/api/ai";
+
+export type DevoteeAiPillar =
+  | "experiences"
+  | "events"
+  | "directory"
+  | "sangha";
 
 export type AskDevoteeQuestionPayload = {
   conversationId?: string;
   locale?: string;
   question: string;
-  pillar?: "experiences" | "events" | "directory" | "sangha";
+  pillar?: DevoteeAiPillar;
   voice?: boolean;
 };
 
@@ -20,6 +27,56 @@ export type AskDevoteeQuestionResponse = {
   messageId?: string;
   model?: string;
   safetyNote?: string;
+};
+
+export type DevoteeAiConversation = {
+  id: string;
+  title: string;
+  pillar?: DevoteeAiPillar | string;
+  lastMessageAt?: string;
+  messageCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type DevoteeAiMessage = {
+  id: string;
+  cached?: boolean;
+  content: string;
+  createdAt?: string;
+  latencyMs?: number | null;
+  model?: string | null;
+  role: "user" | "assistant";
+  safetyStatus?: string | null;
+};
+
+export type DevoteeAiPagination = {
+  hasMore?: boolean;
+  limit: number;
+  offset: number;
+  total?: number;
+};
+
+export type DevoteeAiConversationListResponse = {
+  items: DevoteeAiConversation[];
+  pagination?: DevoteeAiPagination;
+};
+
+export type DevoteeAiConversationDetailResponse = {
+  conversation: DevoteeAiConversation;
+  messages: DevoteeAiMessage[];
+};
+
+export type DevoteeAiFeedbackRating =
+  | "helpful"
+  | "not_helpful";
+
+export type DevoteeAiFeedback = {
+  id: string;
+  createdAt?: string;
+  messageId: string;
+  rating: DevoteeAiFeedbackRating;
+  reason?: string | null;
 };
 
 type BackendDevoteeAiResponse = {
@@ -102,6 +159,100 @@ export async function askDevoteeQuestion(
       model: data.model,
       safetyNote: data.safetyNote,
     };
+  } catch (error) {
+    throw new Error(getAiErrorMessage(error));
+  }
+}
+
+export async function fetchDevoteeAiConversations(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<DevoteeAiConversationListResponse> {
+  try {
+    const { data } =
+      await apiClient.get<DevoteeAiConversationListResponse>(
+        `${AI_BASE_PATH}/devotee-conversations`,
+        {
+          params: {
+            limit: params?.limit || 20,
+            offset: params?.offset || 0,
+          },
+        }
+      );
+
+    return {
+      items: Array.isArray(data.items) ? data.items : [],
+      pagination: data.pagination,
+    };
+  } catch (error) {
+    throw new Error(getAiErrorMessage(error));
+  }
+}
+
+export async function fetchDevoteeAiConversationDetail(
+  conversationId: string
+): Promise<DevoteeAiConversationDetailResponse> {
+  if (!conversationId) {
+    throw new Error("Conversation id is required.");
+  }
+
+  try {
+    const { data } =
+      await apiClient.get<DevoteeAiConversationDetailResponse>(
+        `${AI_BASE_PATH}/devotee-conversations/${conversationId}`
+      );
+
+    return {
+      conversation: data.conversation,
+      messages: Array.isArray(data.messages) ? data.messages : [],
+    };
+  } catch (error) {
+    throw new Error(getAiErrorMessage(error));
+  }
+}
+
+export async function deleteDevoteeAiConversation(
+  conversationId: string
+) {
+  if (!conversationId) {
+    throw new Error("Conversation id is required.");
+  }
+
+  try {
+    const { data } = await apiClient.delete<{
+      id?: string;
+      success?: boolean;
+    }>(`${AI_BASE_PATH}/devotee-conversations/${conversationId}`);
+
+    return data;
+  } catch (error) {
+    throw new Error(getAiErrorMessage(error));
+  }
+}
+
+export async function submitDevoteeAiFeedback(
+  messageId: string,
+  payload: {
+    rating: DevoteeAiFeedbackRating;
+    reason?: string;
+  }
+): Promise<DevoteeAiFeedback> {
+  if (!messageId) {
+    throw new Error("AI answer id is required.");
+  }
+
+  try {
+    const { data } = await apiClient.post<{
+      feedback: DevoteeAiFeedback;
+    }>(
+      `${AI_BASE_PATH}/devotee-messages/${messageId}/feedback`,
+      {
+        rating: payload.rating,
+        reason: payload.reason,
+      }
+    );
+
+    return data.feedback;
   } catch (error) {
     throw new Error(getAiErrorMessage(error));
   }

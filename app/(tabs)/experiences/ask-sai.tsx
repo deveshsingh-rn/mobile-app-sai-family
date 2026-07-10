@@ -23,17 +23,28 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
+  History,
   Mic2,
   Pause,
+  Plus,
   Send,
   Sparkles,
+  ThumbsDown,
+  ThumbsUp,
+  Trash2,
   Volume2,
 } from "lucide-react-native";
 
 import { ExperienceTopTabs } from "@/components/experiences";
 import {
   AskDevoteeQuestionResponse,
+  deleteDevoteeAiConversation,
+  DevoteeAiConversation,
+  DevoteeAiMessage,
+  fetchDevoteeAiConversationDetail,
+  fetchDevoteeAiConversations,
   askDevoteeQuestion,
+  submitDevoteeAiFeedback,
 } from "@/services/devotee-ai";
 import { trackProductEvent } from "@/services/product-analytics";
 
@@ -49,9 +60,17 @@ export default function AskSaiScreen() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [conversationId, setConversationId] = useState<string | undefined>();
+  const [conversations, setConversations] = useState<DevoteeAiConversation[]>(
+    []
+  );
+  const [messages, setMessages] = useState<DevoteeAiMessage[]>([]);
   const [lastResponse, setLastResponse] =
     useState<AskDevoteeQuestionResponse | null>(null);
   const [safetyNote, setSafetyNote] = useState("");
+  const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(
+    null
+  );
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -66,10 +85,40 @@ export default function AskSaiScreen() {
     };
   }, []);
 
+  const loadConversations = useCallback(async () => {
+    try {
+      setIsLoadingHistory(true);
+      const response = await fetchDevoteeAiConversations({
+        limit: 8,
+        offset: 0,
+      });
+      setConversations(response.items);
+    } catch (error) {
+      console.warn("[AskSai] Unable to load conversations", error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadConversations();
+  }, [loadConversations]);
+
   const stopSpeech = useCallback(async () => {
     await Speech.stop();
     setIsSpeaking(false);
   }, []);
+
+  const resetConversation = useCallback(() => {
+    void stopSpeech();
+    setAnswer("");
+    setConversationId(undefined);
+    setFeedbackMessageId(null);
+    setLastResponse(null);
+    setMessages([]);
+    setQuestion("");
+    setSafetyNote("");
+  }, [stopSpeech]);
 
   const speakAnswer = useCallback(async () => {
     if (!answer.trim()) {
@@ -114,7 +163,9 @@ export default function AskSaiScreen() {
         await stopSpeech();
         setIsSubmitting(true);
         setAnswer("");
+        setFeedbackMessageId(null);
         setLastResponse(null);
+        setMessages([]);
         setSafetyNote("");
 
         const response = await askDevoteeQuestion({
@@ -128,8 +179,25 @@ export default function AskSaiScreen() {
         setQuestion(questionToAsk);
         setAnswer(response.answer);
         setConversationId(response.conversationId || conversationId);
+        setFeedbackMessageId(response.messageId || null);
         setLastResponse(response);
+        setMessages([
+          {
+            content: questionToAsk,
+            id: `${Date.now()}-user`,
+            role: "user",
+          },
+          {
+            cached: response.cached,
+            content: response.answer,
+            id: response.messageId || `${Date.now()}-assistant`,
+            latencyMs: response.latencyMs,
+            model: response.model,
+            role: "assistant",
+          },
+        ]);
         setSafetyNote(response.safetyNote || "");
+        void loadConversations();
 
         trackProductEvent("Devotee Question Asked", {
           cached: Boolean(response.cached),
@@ -153,7 +221,123 @@ export default function AskSaiScreen() {
         setIsSubmitting(false);
       }
     },
-    [conversationId, question, stopSpeech]
+    [conversationId, loadConversations, question, stopSpeech]
+  );
+
+  const openConversation = useCallback(
+    async (id: string) => {
+      try {
+        await stopSpeech();
+        setIsLoadingHistory(true);
+        const detail = await fetchDevoteeAiConversationDetail(id);
+        const assistantMessage = [...detail.messages]
+          .reverse()
+          .find((message) => message.role === "assistant");
+        const userMessage = [...detail.messages]
+          .reverse()
+          .find((message) => message.role === "user");
+
+        setConversationId(detail.conversation.id);
+        setMessages(detail.messages);
+        setQuestion(userMessage?.content || detail.conversation.title || "");
+        setAnswer(assistantMessage?.content || "");
+        setFeedbackMessageId(assistantMessage?.id || null);
+        setLastResponse(
+          assistantMessage
+            ? {
+                answer: assistantMessage.content,
+                cached: assistantMessage.cached,
+                conversationId: detail.conversation.id,
+                latencyMs: assistantMessage.latencyMs || undefined,
+                messageId: assistantMessage.id,
+                model: assistantMessage.model || undefined,
+              }
+            : null
+        );
+        setSafetyNote("");
+
+        trackProductEvent("Devotee Conversation Opened", {
+          pillar: detail.conversation.pillar || "experiences",
+        });
+      } catch (error) {
+        Alert.alert(
+          "Conversation",
+          error instanceof Error
+            ? error.message
+            : "Unable to open this conversation."
+        );
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    },
+    [stopSpeech]
+  );
+
+  const deleteCurrentConversation = useCallback(() => {
+    if (!conversationId) {
+      return;
+    }
+
+    Alert.alert(
+      "Delete conversation?",
+      "This will remove this Sai assistant conversation from your history.",
+      [
+        { style: "cancel", text: "Cancel" },
+        {
+          style: "destructive",
+          text: "Delete",
+          onPress: async () => {
+            try {
+              await deleteDevoteeAiConversation(conversationId);
+              resetConversation();
+              await loadConversations();
+              trackProductEvent("Devotee Conversation Deleted", {
+                pillar: "experiences",
+              });
+            } catch (error) {
+              Alert.alert(
+                "Delete failed",
+                error instanceof Error
+                  ? error.message
+                  : "Unable to delete this conversation."
+              );
+            }
+          },
+        },
+      ]
+    );
+  }, [conversationId, loadConversations, resetConversation]);
+
+  const sendFeedback = useCallback(
+    async (rating: "helpful" | "not_helpful") => {
+      if (!feedbackMessageId) {
+        return;
+      }
+
+      try {
+        await submitDevoteeAiFeedback(feedbackMessageId, {
+          rating,
+          reason:
+            rating === "helpful"
+              ? "Helpful and easy to understand."
+              : "Needs improvement for this devotee.",
+        });
+
+        Alert.alert("Thank you", "Your feedback helps improve Sai assistant.");
+        trackProductEvent("Devotee Answer Feedback Sent", {
+          pillar: "experiences",
+          rating,
+        });
+      } catch (error) {
+        Alert.alert(
+          "Feedback failed",
+          error instanceof Error
+            ? error.message
+            : "Unable to save feedback."
+        );
+      }
+    },
+    [feedbackMessageId]
   );
 
   return (
@@ -189,6 +373,33 @@ export default function AskSaiScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.heroPanel}>
+            <View style={styles.heroActions}>
+              <Pressable
+                onPress={resetConversation}
+                style={({ pressed }) => [
+                  styles.smallActionButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Plus color="#B45309" size={16} strokeWidth={2.4} />
+                <Text style={styles.smallActionText}>New</Text>
+              </Pressable>
+
+              {conversationId ? (
+                <Pressable
+                  onPress={deleteCurrentConversation}
+                  style={({ pressed }) => [
+                    styles.smallActionButton,
+                    styles.deleteActionButton,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Trash2 color="#B91C1C" size={16} strokeWidth={2.4} />
+                  <Text style={styles.deleteActionText}>Delete</Text>
+                </Pressable>
+              ) : null}
+            </View>
+
             <Text style={styles.heroTitle}>
               Ask with faith. Receive a calm, practical reply.
             </Text>
@@ -197,6 +408,49 @@ export default function AskSaiScreen() {
               medical, legal, or emergency matters, please speak with the right
               professional.
             </Text>
+          </View>
+
+          <View style={styles.historyBlock}>
+            <View style={styles.historyHeader}>
+              <View style={styles.historyTitleRow}>
+                <History color="#B45309" size={18} strokeWidth={2.4} />
+                <Text style={styles.sectionTitle}>Recent guidance</Text>
+              </View>
+              {isLoadingHistory ? (
+                <ActivityIndicator color="#B45309" size="small" />
+              ) : null}
+            </View>
+
+            {conversations.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.historyScroller}
+              >
+                {conversations.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    onPress={() => openConversation(item.id)}
+                    style={({ pressed }) => [
+                      styles.historyCard,
+                      item.id === conversationId && styles.activeHistoryCard,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <Text numberOfLines={2} style={styles.historyTitle}>
+                      {item.title || "Sai guidance"}
+                    </Text>
+                    <Text style={styles.historyMeta}>
+                      {item.messageCount || 0} messages
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            ) : (
+              <Text style={styles.emptyHistoryText}>
+                Your recent questions will appear here.
+              </Text>
+            )}
           </View>
 
           <View style={styles.card}>
@@ -301,6 +555,56 @@ export default function AskSaiScreen() {
               {safetyNote ? (
                 <Text style={styles.safetyNote}>{safetyNote}</Text>
               ) : null}
+
+              {feedbackMessageId ? (
+                <View style={styles.feedbackRow}>
+                  <Text style={styles.feedbackTitle}>Was this helpful?</Text>
+                  <View style={styles.feedbackActions}>
+                    <Pressable
+                      onPress={() => sendFeedback("helpful")}
+                      style={({ pressed }) => [
+                        styles.feedbackButton,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <ThumbsUp color="#FFFFFF" size={16} strokeWidth={2.4} />
+                      <Text style={styles.feedbackText}>Yes</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => sendFeedback("not_helpful")}
+                      style={({ pressed }) => [
+                        styles.feedbackButton,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <ThumbsDown color="#FFFFFF" size={16} strokeWidth={2.4} />
+                      <Text style={styles.feedbackText}>No</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          {messages.length > 2 ? (
+            <View style={styles.threadCard}>
+              <Text style={styles.threadTitle}>Conversation</Text>
+              {messages.map((message) => (
+                <View
+                  key={message.id}
+                  style={[
+                    styles.messageBubble,
+                    message.role === "assistant"
+                      ? styles.assistantBubble
+                      : styles.userBubble,
+                  ]}
+                >
+                  <Text style={styles.messageRole}>
+                    {message.role === "assistant" ? "Sai assistant" : "You"}
+                  </Text>
+                  <Text style={styles.messageText}>{message.content}</Text>
+                </View>
+              ))}
             </View>
           ) : null}
         </ScrollView>
@@ -368,6 +672,37 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 20,
   },
+  heroActions: {
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "flex-end",
+    marginBottom: 14,
+  },
+  smallActionButton: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#F1DEC0",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  smallActionText: {
+    color: "#B45309",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  deleteActionButton: {
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
+  },
+  deleteActionText: {
+    color: "#B91C1C",
+    fontSize: 12,
+    fontWeight: "900",
+  },
   heroTitle: {
     color: "#23201D",
     fontSize: 22,
@@ -380,6 +715,54 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 21,
     marginTop: 10,
+  },
+  historyBlock: {
+    marginTop: 18,
+  },
+  historyHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  historyTitleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  historyScroller: {
+    gap: 10,
+    paddingRight: 18,
+  },
+  historyCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F0DFC6",
+    borderRadius: 18,
+    borderWidth: 1,
+    minHeight: 86,
+    padding: 14,
+    width: 210,
+  },
+  activeHistoryCard: {
+    backgroundColor: "#FFF7ED",
+    borderColor: "#B45309",
+  },
+  historyTitle: {
+    color: "#23201D",
+    fontSize: 14,
+    fontWeight: "900",
+    lineHeight: 19,
+  },
+  historyMeta: {
+    color: "#8B735F",
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 10,
+  },
+  emptyHistoryText: {
+    color: "#8B735F",
+    fontSize: 13,
+    fontWeight: "700",
   },
   card: {
     backgroundColor: "#FFFFFF",
@@ -519,5 +902,72 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     lineHeight: 19,
     marginTop: 14,
+  },
+  feedbackRow: {
+    borderTopColor: "rgba(255, 247, 237, 0.14)",
+    borderTopWidth: 1,
+    marginTop: 18,
+    paddingTop: 16,
+  },
+  feedbackTitle: {
+    color: "#FFF7ED",
+    fontSize: 13,
+    fontWeight: "900",
+    marginBottom: 10,
+  },
+  feedbackActions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  feedbackButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.14)",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 7,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+  },
+  feedbackText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  threadCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F0DFC6",
+    borderRadius: 22,
+    borderWidth: 1,
+    marginTop: 16,
+    padding: 16,
+  },
+  threadTitle: {
+    color: "#23201D",
+    fontSize: 17,
+    fontWeight: "900",
+    marginBottom: 12,
+  },
+  messageBubble: {
+    borderRadius: 18,
+    marginBottom: 10,
+    padding: 13,
+  },
+  assistantBubble: {
+    backgroundColor: "#FFF7ED",
+  },
+  userBubble: {
+    backgroundColor: "#F7FBFF",
+  },
+  messageRole: {
+    color: "#B45309",
+    fontSize: 11,
+    fontWeight: "900",
+    marginBottom: 5,
+  },
+  messageText: {
+    color: "#374151",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
   },
 });
