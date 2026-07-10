@@ -122,6 +122,12 @@ export async function getSavedAuthSession() {
   return value ? (JSON.parse(value) as AuthSession) : null;
 }
 
+export async function hasSavedAuthAccessToken() {
+  const session = await getSavedAuthSession();
+
+  return Boolean(session?.tokens?.accessToken);
+}
+
 export async function clearAuthSession() {
   const isAvailable = await SecureStore.isAvailableAsync();
 

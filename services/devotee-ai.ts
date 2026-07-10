@@ -1,9 +1,12 @@
 import axios from "axios";
 
+import { hasSavedAuthAccessToken } from "./auth";
 import { apiClient } from "./api";
 
 const DEFAULT_DEVOTEE_AI_ENDPOINT = "/api/ai/devotee-question";
 const AI_BASE_PATH = "/api/ai";
+const AUTH_REQUIRED_MESSAGE =
+  "Please login again to use Ask Sai. This feature needs a secure login session.";
 
 export type DevoteeAiPillar =
   | "experiences"
@@ -101,6 +104,10 @@ function getAiEndpoint() {
 
 function getAiErrorMessage(error: unknown) {
   if (axios.isAxiosError<any>(error)) {
+    if (error.response?.status === 401) {
+      return AUTH_REQUIRED_MESSAGE;
+    }
+
     if (error.response?.status === 404) {
       return "The Sai assistant API is not ready on the backend yet.";
     }
@@ -118,6 +125,14 @@ function getAiErrorMessage(error: unknown) {
     : "Unable to get Sai assistant reply.";
 }
 
+async function assertAiAuthSession() {
+  const hasToken = await hasSavedAuthAccessToken();
+
+  if (!hasToken) {
+    throw new Error(AUTH_REQUIRED_MESSAGE);
+  }
+}
+
 export async function askDevoteeQuestion(
   payload: AskDevoteeQuestionPayload
 ): Promise<AskDevoteeQuestionResponse> {
@@ -128,6 +143,8 @@ export async function askDevoteeQuestion(
   }
 
   try {
+    await assertAiAuthSession();
+
     const { data } =
       await apiClient.post<BackendDevoteeAiResponse>(
         getAiEndpoint(),
@@ -169,6 +186,8 @@ export async function fetchDevoteeAiConversations(params?: {
   offset?: number;
 }): Promise<DevoteeAiConversationListResponse> {
   try {
+    await assertAiAuthSession();
+
     const { data } =
       await apiClient.get<DevoteeAiConversationListResponse>(
         `${AI_BASE_PATH}/devotee-conversations`,
@@ -197,6 +216,8 @@ export async function fetchDevoteeAiConversationDetail(
   }
 
   try {
+    await assertAiAuthSession();
+
     const { data } =
       await apiClient.get<DevoteeAiConversationDetailResponse>(
         `${AI_BASE_PATH}/devotee-conversations/${conversationId}`
@@ -219,6 +240,8 @@ export async function deleteDevoteeAiConversation(
   }
 
   try {
+    await assertAiAuthSession();
+
     const { data } = await apiClient.delete<{
       id?: string;
       success?: boolean;
@@ -242,6 +265,8 @@ export async function submitDevoteeAiFeedback(
   }
 
   try {
+    await assertAiAuthSession();
+
     const { data } = await apiClient.post<{
       feedback: DevoteeAiFeedback;
     }>(

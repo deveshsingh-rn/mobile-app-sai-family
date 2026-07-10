@@ -331,6 +331,158 @@ DELETE /api/ai/devotee-conversations/:conversationId
 }
 ```
 
+### Conversation Detail Response
+
+```json
+{
+  "conversation": {
+    "id": "cm-ai-conv-123",
+    "title": "How can I keep faith during a difficult time?",
+    "pillar": "experiences",
+    "createdAt": "2026-07-10T06:09:50.000Z",
+    "updatedAt": "2026-07-10T06:10:30.000Z"
+  },
+  "messages": [
+    {
+      "id": "cm-ai-msg-455",
+      "role": "user",
+      "content": "How can I keep faith during a difficult time?",
+      "model": null,
+      "latencyMs": null,
+      "cached": false,
+      "safetyStatus": "allowed",
+      "createdAt": "2026-07-10T06:09:50.000Z"
+    },
+    {
+      "id": "cm-ai-msg-456",
+      "role": "assistant",
+      "content": "A gentle way to begin is with one small prayer each morning. Sit quietly for two minutes, remember Sai, and choose one kind action for the day.",
+      "model": "gpt-4.1-mini",
+      "latencyMs": 840,
+      "cached": false,
+      "safetyStatus": "allowed",
+      "createdAt": "2026-07-10T06:10:30.000Z"
+    }
+  ]
+}
+```
+
+### Delete Conversation Response
+
+```json
+{
+  "success": true,
+  "id": "cm-ai-conv-123"
+}
+```
+
+## API 6: Answer Feedback
+
+```http
+POST /api/ai/devotee-messages/:messageId/feedback
+```
+
+### Request
+
+```json
+{
+  "rating": "helpful",
+  "reason": "Helpful and easy to understand."
+}
+```
+
+Validation:
+
+| Field | Required | Rule |
+| --- | --- | --- |
+| `rating` | yes | `helpful`, `not_helpful` |
+| `reason` | no | string, max 500 |
+
+### Success Response
+
+```json
+{
+  "feedback": {
+    "id": "cm-ai-feedback-123",
+    "messageId": "cm-ai-msg-456",
+    "rating": "helpful",
+    "reason": "Helpful and easy to understand.",
+    "createdAt": "2026-07-10T06:12:00.000Z"
+  }
+}
+```
+
+## Frontend Response Models
+
+Recommended TypeScript types:
+
+```ts
+export type AiPillar = "experiences" | "events" | "directory" | "sangha";
+export type AiMessageRole = "user" | "assistant";
+export type AiSafetyStatus = "allowed" | "blocked" | "redirected";
+export type AiFeedbackRating = "helpful" | "not_helpful";
+
+export interface AskDevoteeQuestionResponse {
+  answer: string;
+  conversationId: string;
+  messageId: string;
+  safetyNote?: string | null;
+  model?: string | null;
+  latencyMs: number | null;
+  cached: boolean;
+}
+
+export interface AiConversationListItem {
+  id: string;
+  title: string;
+  pillar: AiPillar;
+  lastMessageAt: string;
+  messageCount: number;
+}
+
+export interface AiConversationListResponse {
+  items: AiConversationListItem[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
+export interface AiMessage {
+  id: string;
+  role: AiMessageRole;
+  content: string;
+  model?: string | null;
+  latencyMs?: number | null;
+  cached: boolean;
+  safetyStatus: AiSafetyStatus;
+  createdAt: string;
+}
+
+export interface AiConversationDetailResponse {
+  conversation: {
+    id: string;
+    title: string;
+    pillar: AiPillar;
+    createdAt: string;
+    updatedAt: string;
+  };
+  messages: AiMessage[];
+}
+
+export interface AiFeedbackResponse {
+  feedback: {
+    id: string;
+    messageId: string;
+    rating: AiFeedbackRating;
+    reason?: string | null;
+    createdAt: string;
+  };
+}
+```
+
 ## Required Backend Services
 
 Recommended architecture:
@@ -440,7 +592,12 @@ Recommended model strategy:
 Backend should keep model names in env/config, not mobile app.
 
 ```bash
+AI_PROVIDER=openai
 OPENAI_API_KEY=
+OPENAI_BASE_URL=https://api.openai.com/v1
+AZURE_OPENAI_API_KEY=
+AZURE_OPENAI_ENDPOINT=
+AZURE_OPENAI_API_VERSION=v1
 AI_TEXT_MODEL=
 AI_COMPLEX_TEXT_MODEL=
 AI_TTS_MODEL=
@@ -641,8 +798,12 @@ Implemented storage:
 Implemented config:
 
 ```bash
+AI_PROVIDER=openai
 OPENAI_API_KEY=
 OPENAI_BASE_URL=https://api.openai.com/v1
+AZURE_OPENAI_API_KEY=
+AZURE_OPENAI_ENDPOINT=
+AZURE_OPENAI_API_VERSION=v1
 AI_TEXT_MODEL=gpt-4.1-mini
 AI_COMPLEX_TEXT_MODEL=gpt-4.1
 AI_TTS_MODEL=gpt-4o-mini-tts
@@ -657,6 +818,24 @@ Not implemented yet:
 - `POST /api/ai/devotee-question/stream`
 - `POST /api/ai/devotee-question/:messageId/speech`
 - `POST /api/ai/devotee-question/transcribe`
+
+### Azure OpenAI Production Config
+
+For the current Azure OpenAI resource, use:
+
+```bash
+AI_PROVIDER=azure_openai
+AZURE_OPENAI_ENDPOINT=https://sai-family-openai.openai.azure.com
+AZURE_OPENAI_API_VERSION=v1
+AZURE_OPENAI_API_KEY=<store in .env/Jenkins/Azure secret>
+AI_TEXT_MODEL=<azure-deployment-name>
+```
+
+Important:
+
+- `AI_TEXT_MODEL` must be the Azure deployment name, not only the base model family name, unless both are identical in Azure.
+- Do not commit `AZURE_OPENAI_API_KEY` or `OPENAI_API_KEY`.
+- Since the key was shared in chat, rotate it in Azure before using it for production.
 
 ## Future Premium Experience
 

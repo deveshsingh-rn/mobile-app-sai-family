@@ -70,6 +70,7 @@ export default function AskSaiScreen() {
   const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(
     null
   );
+  const [authMessage, setAuthMessage] = useState("");
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -92,9 +93,17 @@ export default function AskSaiScreen() {
         limit: 8,
         offset: 0,
       });
+      setAuthMessage("");
       setConversations(response.items);
     } catch (error) {
-      console.warn("[AskSai] Unable to load conversations", error);
+      const message =
+        error instanceof Error ? error.message : "Unable to load guidance.";
+
+      if (message.toLowerCase().includes("login again")) {
+        setAuthMessage(message);
+      } else {
+        console.warn("[AskSai] Unable to load conversations", error);
+      }
     } finally {
       setIsLoadingHistory(false);
     }
@@ -206,11 +215,18 @@ export default function AskSaiScreen() {
           pillar: "experiences",
         });
       } catch (error) {
-        Alert.alert(
-          "Sai assistant",
+        const message =
           error instanceof Error
             ? error.message
-            : "Unable to get reply right now."
+            : "Unable to get reply right now.";
+
+        if (message.toLowerCase().includes("login again")) {
+          setAuthMessage(message);
+        }
+
+        Alert.alert(
+          "Sai assistant",
+          message
         );
 
         trackProductEvent("Devotee Question Asked", {
@@ -409,6 +425,13 @@ export default function AskSaiScreen() {
               professional.
             </Text>
           </View>
+
+          {authMessage ? (
+            <View style={styles.authCard}>
+              <Text style={styles.authTitle}>Secure login needed</Text>
+              <Text style={styles.authText}>{authMessage}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.historyBlock}>
             <View style={styles.historyHeader}>
@@ -715,6 +738,26 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 21,
     marginTop: 10,
+  },
+  authCard: {
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
+    borderRadius: 18,
+    borderWidth: 1,
+    marginTop: 14,
+    padding: 14,
+  },
+  authTitle: {
+    color: "#991B1B",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  authText: {
+    color: "#7F1D1D",
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 19,
+    marginTop: 5,
   },
   historyBlock: {
     marginTop: 18,
