@@ -184,7 +184,7 @@ export default function AskSaiScreen() {
           question: questionToAsk,
           voice: false,
         });
-
+    console.log("devesh response", response)
         setQuestion(questionToAsk);
         setAnswer(response.answer);
         setConversationId(response.conversationId || conversationId);
@@ -223,7 +223,7 @@ export default function AskSaiScreen() {
         if (message.toLowerCase().includes("login again")) {
           setAuthMessage(message);
         }
-
+console.log("devesh", message)
         Alert.alert(
           "Sai assistant",
           message

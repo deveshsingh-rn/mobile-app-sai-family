@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { InternalAxiosRequestConfig } from 'axios';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
@@ -30,28 +31,123 @@ export const apiClient = axios.create({
 
 const AUTH_SESSION_STORAGE_KEY = "sai-family.auth-session";
 
+type StoredAuthSession = {
+  tokens?: {
+    accessToken?: string;
+    refreshToken?: string;
+  };
+  user?: any;
+};
+
+type RetriableAxiosRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
+
+let refreshTokenPromise: Promise<string | null> | null = null;
+
+async function getStoredAuthSession() {
+  const isAvailable = await SecureStore.isAvailableAsync();
+
+  if (!isAvailable) {
+    return null;
+  }
+
+  const authSessionData = await SecureStore.getItemAsync(
+    AUTH_SESSION_STORAGE_KEY
+  );
+
+  return authSessionData
+    ? (JSON.parse(authSessionData) as StoredAuthSession)
+    : null;
+}
+
+async function saveStoredAuthSession(session: StoredAuthSession) {
+  const isAvailable = await SecureStore.isAvailableAsync();
+
+  if (!isAvailable) {
+    return;
+  }
+
+  await SecureStore.setItemAsync(
+    AUTH_SESSION_STORAGE_KEY,
+    JSON.stringify(session)
+  );
+}
+
+function setHeader(
+  config: InternalAxiosRequestConfig,
+  key: string,
+  value: string
+) {
+  if (typeof config.headers.set === 'function') {
+    config.headers.set(key, value);
+    return;
+  }
+
+  config.headers[key] = value;
+}
+
+function isAuthRoute(url?: string) {
+  return Boolean(url?.startsWith('/api/auth/'));
+}
+
+async function refreshAccessToken() {
+  if (refreshTokenPromise) {
+    return refreshTokenPromise;
+  }
+
+  refreshTokenPromise = (async () => {
+    try {
+      const session = await getStoredAuthSession();
+      const refreshToken = session?.tokens?.refreshToken;
+
+      if (!refreshToken) {
+        return null;
+      }
+
+      const { data } = await axios.post<StoredAuthSession>(
+        `${API_BASE_URL}/api/auth/refresh-token`,
+        { refreshToken },
+        { timeout: 30000 }
+      );
+
+      const nextSession: StoredAuthSession = {
+        ...session,
+        ...data,
+        tokens: {
+          ...session?.tokens,
+          ...data.tokens,
+        },
+        user: data.user || session?.user,
+      };
+
+      await saveStoredAuthSession(nextSession);
+
+      return nextSession.tokens?.accessToken || null;
+    } catch (error) {
+      console.error('[API] Token refresh failed:', error);
+      return null;
+    } finally {
+      refreshTokenPromise = null;
+    }
+  })();
+
+  return refreshTokenPromise;
+}
+
 // Request interceptor to add auth credentials globally
 apiClient.interceptors.request.use(
   async (config) => {
     try {
       const isAvailable = await SecureStore.isAvailableAsync();
       if (isAvailable) {
-        const authSessionData = await SecureStore.getItemAsync(
-          AUTH_SESSION_STORAGE_KEY
-        );
+        const authSession = await getStoredAuthSession();
         const accountData = await SecureStore.getItemAsync('sai-family.devotee-account');
-        const authSession = authSessionData
-          ? JSON.parse(authSessionData)
-          : null;
         const accessToken = authSession?.tokens?.accessToken;
         const authUserId = authSession?.user?.id;
 
         if (accessToken) {
-          if (typeof config.headers.set === 'function') {
-            config.headers.set('Authorization', `Bearer ${accessToken}`);
-          } else {
-            config.headers.Authorization = `Bearer ${accessToken}`;
-          }
+          setHeader(config, 'Authorization', `Bearer ${accessToken}`);
         }
 
         if (accountData) {
@@ -60,18 +156,10 @@ apiClient.interceptors.request.use(
 
           if (userId) {
             // Injecting x-user-id header. Change to Authorization: `Bearer ${token}` if needed later.
-            if (typeof config.headers.set === 'function') {
-              config.headers.set('x-user-id', userId);
-            } else {
-              config.headers['x-user-id'] = userId;
-            }
+            setHeader(config, 'x-user-id', userId);
           }
         } else if (authUserId) {
-          if (typeof config.headers.set === 'function') {
-            config.headers.set('x-user-id', authUserId);
-          } else {
-            config.headers['x-user-id'] = authUserId;
-          }
+          setHeader(config, 'x-user-id', authUserId);
         }
       }
     } catch (err) {
@@ -95,6 +183,32 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     if (axios.isAxiosError(error)) {
+      const originalRequest =
+        error.config as RetriableAxiosRequestConfig | undefined;
+
+      if (
+        error.response?.status === 401 &&
+        originalRequest &&
+        !originalRequest._retry &&
+        !isAuthRoute(originalRequest.url)
+      ) {
+        originalRequest._retry = true;
+
+        return refreshAccessToken().then((accessToken) => {
+          if (!accessToken) {
+            return Promise.reject(error);
+          }
+
+          setHeader(
+            originalRequest,
+            'Authorization',
+            `Bearer ${accessToken}`
+          );
+
+          return apiClient(originalRequest);
+        });
+      }
+
       const errorDetails = {
         message: error.message,
         code: error.code,

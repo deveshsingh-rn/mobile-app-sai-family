@@ -34,6 +34,8 @@ const MIXPANEL_SERVER_URL =
   "https://api.mixpanel.com";
 const ANALYTICS_ENABLED =
   process.env.EXPO_PUBLIC_ANALYTICS_ENABLED !== "false";
+const MIXPANEL_DEBUG_LOGS =
+  process.env.EXPO_PUBLIC_MIXPANEL_DEBUG_LOGS === "true";
 
 let mixpanelInstance: Mixpanel | null = null;
 let initPromise: Promise<Mixpanel | null> | null = null;
@@ -114,7 +116,7 @@ async function getMixpanel() {
 
         mixpanel.setServerURL(MIXPANEL_SERVER_URL);
         mixpanel.setUseIpAddressForGeolocation(false);
-        mixpanel.setLoggingEnabled(__DEV__);
+        mixpanel.setLoggingEnabled(MIXPANEL_DEBUG_LOGS);
 
         await mixpanel.init(false, getSuperProperties(), MIXPANEL_SERVER_URL);
 
