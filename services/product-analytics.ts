@@ -16,6 +16,7 @@ export type ProductAnalyticsEventName =
   | "Devotee Answer Feedback Sent"
   | "Devotee Conversation Deleted"
   | "Devotee Conversation Opened"
+  | "Devotee Voice Session Started"
   | "Experience Post Created"
   | "Event RSVP Completed"
   | "Directory Listing Opened"

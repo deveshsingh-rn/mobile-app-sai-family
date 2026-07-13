@@ -2,6 +2,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -39,10 +40,12 @@ import {
 import { ExperienceTopTabs } from "@/components/experiences";
 import {
   AskDevoteeQuestionResponse,
+  createDevoteeAiVoiceSocket,
   createDevoteeAiVoiceSession,
   deleteDevoteeAiConversation,
   DevoteeAiConversation,
   DevoteeAiMessage,
+  DevoteeAiVoiceServerEvent,
   DevoteeAiVoiceSession,
   DevoteeAiVoiceState,
   fetchDevoteeAiConversationDetail,
@@ -60,6 +63,7 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 const FULL_DUPLEX_VOICE_ENABLED =
+  process.env.EXPO_PUBLIC_AI_VOICE_ENABLED === "true" ||
   process.env.EXPO_PUBLIC_VOICE_AI_ENABLED === "true";
 const VOICE_PROVIDER =
   process.env.EXPO_PUBLIC_AI_VOICE_PROVIDER === "mock"
@@ -67,6 +71,30 @@ const VOICE_PROVIDER =
     : "elevenlabs";
 const ELEVENLABS_VOICE_ID =
   process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID || undefined;
+
+const createVoiceTurnId = () =>
+  `turn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const getVoiceErrorMessage = (code?: string, fallback?: string) => {
+  switch (code) {
+    case "UNAUTHENTICATED":
+      return "Please login again to use voice guidance.";
+    case "VOICE_AI_DISABLED":
+      return "Voice assistant is not available right now.";
+    case "VOICE_SESSION_RATE_LIMITED":
+      return "Please try voice guidance again after some time.";
+    case "VOICE_SESSION_ALREADY_ACTIVE":
+      return "Another voice session is already active. Please stop it first.";
+    case "VOICE_STT_NOT_CONFIGURED":
+      return "Voice listening is not ready yet.";
+    case "VOICE_TTS_NOT_CONFIGURED":
+      return "Voice response is not ready yet.";
+    case "VOICE_TTS_FAILED":
+      return "Voice response failed. Please try again.";
+    default:
+      return fallback || "Voice guidance is unavailable right now.";
+  }
+};
 
 async function getSpeechRecognitionModule() {
   const speechRecognition = await import("expo-speech-recognition");
@@ -76,6 +104,12 @@ async function getSpeechRecognitionModule() {
 
 export default function AskSaiScreen() {
   const insets = useSafeAreaInsets();
+  const voiceSocketRef =
+    useRef<ReturnType<typeof createDevoteeAiVoiceSocket> | null>(null);
+  const activeVoiceTurnIdRef = useRef<string | null>(null);
+  const voiceAnswerBufferRef = useRef("");
+  const voiceFinalTranscriptRef = useRef("");
+  const voiceHadAudioChunksRef = useRef(false);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [conversationId, setConversationId] = useState<string | undefined>();
@@ -96,7 +130,13 @@ export default function AskSaiScreen() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceSession, setVoiceSession] =
     useState<DevoteeAiVoiceSession | null>(null);
+  const [voiceConnectionState, setVoiceConnectionState] =
+    useState<DevoteeAiVoiceState>("idle");
   const [voiceError, setVoiceError] = useState("");
+  const [activeVoiceTurnId, setActiveVoiceTurnId] =
+    useState<string | null>(null);
+  const [voicePartialTranscript, setVoicePartialTranscript] = useState("");
+  const [voiceFinalTranscript, setVoiceFinalTranscript] = useState("");
 
   const canSubmit = useMemo(
     () => question.trim().length >= 3 && !isSubmitting,
@@ -106,6 +146,10 @@ export default function AskSaiScreen() {
   const voiceAiState: DevoteeAiVoiceState = useMemo(() => {
     if (voiceError) {
       return "error";
+    }
+
+    if (voiceConnectionState !== "idle") {
+      return voiceConnectionState;
     }
 
     if (isListening) {
@@ -121,10 +165,41 @@ export default function AskSaiScreen() {
     }
 
     return "idle";
-  }, [isListening, isSpeaking, isSubmitting, voiceError]);
+  }, [
+    isListening,
+    isSpeaking,
+    isSubmitting,
+    voiceConnectionState,
+    voiceError,
+  ]);
+
+  const isVoiceControlActive =
+    isListening || voiceConnectionState !== "idle";
+
+  const voiceStateLabel = useMemo(() => {
+    switch (voiceAiState) {
+      case "connecting":
+        return "Connecting";
+      case "listening":
+        return "Listening";
+      case "thinking":
+        return "Thinking";
+      case "speaking":
+        return "Speaking";
+      case "interrupted":
+        return "Interrupted";
+      case "error":
+        return "Needs setup";
+      default:
+        return "Ready";
+    }
+  }, [voiceAiState]);
 
   useEffect(() => {
     return () => {
+      voiceSocketRef.current?.close();
+      voiceSocketRef.current = null;
+      activeVoiceTurnIdRef.current = null;
       void Speech.stop();
     };
   }, []);
@@ -161,8 +236,22 @@ export default function AskSaiScreen() {
     setIsSpeaking(false);
   }, []);
 
+  const closeVoiceSession = useCallback(() => {
+    voiceSocketRef.current?.close();
+    voiceSocketRef.current = null;
+    activeVoiceTurnIdRef.current = null;
+    voiceAnswerBufferRef.current = "";
+    voiceFinalTranscriptRef.current = "";
+    voiceHadAudioChunksRef.current = false;
+    setActiveVoiceTurnId(null);
+    setIsListening(false);
+    setVoiceConnectionState("idle");
+    setVoicePartialTranscript("");
+  }, []);
+
   const resetConversation = useCallback(() => {
     void stopSpeech();
+    closeVoiceSession();
     setAnswer("");
     setConversationId(undefined);
     setFeedbackMessageId(null);
@@ -170,7 +259,9 @@ export default function AskSaiScreen() {
     setMessages([]);
     setQuestion("");
     setSafetyNote("");
-  }, [stopSpeech]);
+    setVoiceFinalTranscript("");
+    setVoiceSession(null);
+  }, [closeVoiceSession, stopSpeech]);
 
   const speakText = useCallback(
     async (text: string) => {
@@ -212,6 +303,126 @@ export default function AskSaiScreen() {
 
     await speakText(answer);
   }, [answer, isSpeaking, speakText, stopSpeech]);
+
+  const handleVoiceServerEvent = useCallback(
+    (event: DevoteeAiVoiceServerEvent) => {
+      const eventTurnId = "turnId" in event ? event.turnId : undefined;
+
+      if (
+        eventTurnId &&
+        activeVoiceTurnIdRef.current &&
+        eventTurnId !== activeVoiceTurnIdRef.current
+      ) {
+        return;
+      }
+
+      switch (event.type) {
+        case "state":
+          setVoiceConnectionState(event.state);
+          break;
+
+        case "transcript_partial":
+          setVoicePartialTranscript(event.text);
+          setVoiceConnectionState("listening");
+          break;
+
+        case "transcript_final":
+          voiceFinalTranscriptRef.current = event.text;
+          setVoiceFinalTranscript(event.text);
+          setVoicePartialTranscript("");
+          setQuestion(event.text);
+          setVoiceConnectionState("thinking");
+          break;
+
+        case "answer_delta":
+          voiceAnswerBufferRef.current += event.text;
+          setAnswer(voiceAnswerBufferRef.current);
+          setVoiceConnectionState("speaking");
+          break;
+
+        case "audio_chunk":
+          voiceHadAudioChunksRef.current = true;
+          setVoiceConnectionState("speaking");
+          break;
+
+        case "stop_playback":
+          void stopSpeech();
+          setVoiceConnectionState("interrupted");
+          break;
+
+        case "turn_complete": {
+          const finalQuestion = voiceFinalTranscriptRef.current || question;
+          const finalAnswer = voiceAnswerBufferRef.current.trim();
+
+          if (event.conversationId) {
+            setConversationId(event.conversationId);
+          }
+
+          if (event.messageId) {
+            setFeedbackMessageId(event.messageId);
+          }
+
+          if (finalQuestion || finalAnswer) {
+            setMessages([
+              ...(finalQuestion
+                ? [
+                    {
+                      content: finalQuestion,
+                      id: `${event.turnId}-user`,
+                      role: "user" as const,
+                    },
+                  ]
+                : []),
+              ...(finalAnswer
+                ? [
+                    {
+                      content: finalAnswer,
+                      id: event.messageId || `${event.turnId}-assistant`,
+                      latencyMs: event.latency?.totalMs,
+                      role: "assistant" as const,
+                    },
+                  ]
+                : []),
+            ]);
+            setLastResponse(
+              finalAnswer
+                ? {
+                    answer: finalAnswer,
+                    conversationId: event.conversationId || conversationId,
+                    latencyMs: event.latency?.totalMs,
+                    messageId: event.messageId,
+                    model: voiceSession?.providers?.llm,
+                  }
+                : null
+            );
+          }
+
+          if (finalAnswer && !voiceHadAudioChunksRef.current) {
+            void speakText(finalAnswer);
+          }
+
+          activeVoiceTurnIdRef.current = null;
+          setActiveVoiceTurnId(null);
+          setVoiceConnectionState("idle");
+          void loadConversations();
+          break;
+        }
+
+        case "error":
+          setVoiceConnectionState("error");
+          setVoiceError(getVoiceErrorMessage(event.code, event.message));
+          break;
+      }
+    },
+    [
+      conversationId,
+      loadConversations,
+      question,
+      speakText,
+      stopSpeech,
+      voiceSession?.providers?.llm,
+    ]
+  );
 
   const submitQuestion = useCallback(
     async (
@@ -375,6 +586,14 @@ console.log("devesh response", conversationId, response)
   }, [submitQuestion]);
 
   const handleVoiceQuestion = useCallback(async () => {
+    if (
+      FULL_DUPLEX_VOICE_ENABLED &&
+      (voiceSocketRef.current || voiceConnectionState !== "idle")
+    ) {
+      closeVoiceSession();
+      return;
+    }
+
     if (isListening) {
       try {
         const ExpoSpeechRecognitionModule =
@@ -393,6 +612,13 @@ console.log("devesh response", conversationId, response)
 
       if (FULL_DUPLEX_VOICE_ENABLED) {
         setVoiceError("");
+        setVoiceConnectionState("connecting");
+        setVoicePartialTranscript("");
+        setVoiceFinalTranscript("");
+        voiceFinalTranscriptRef.current = "";
+        voiceAnswerBufferRef.current = "";
+        voiceHadAudioChunksRef.current = false;
+
         const session = await createDevoteeAiVoiceSession({
           conversationId,
           locale: "hi-IN",
@@ -401,10 +627,62 @@ console.log("devesh response", conversationId, response)
           ttsVoiceId: ELEVENLABS_VOICE_ID,
           voiceProvider: VOICE_PROVIDER,
         });
+
         setVoiceSession(session);
+        setConversationId(session.conversationId || conversationId);
+
+        const turnId = createVoiceTurnId();
+        activeVoiceTurnIdRef.current = turnId;
+        setActiveVoiceTurnId(turnId);
+
+        let socketClient:
+          | ReturnType<typeof createDevoteeAiVoiceSocket>
+          | null = null;
+
+        socketClient = createDevoteeAiVoiceSocket(session, {
+          onClose: () => {
+            voiceSocketRef.current = null;
+            activeVoiceTurnIdRef.current = null;
+            setActiveVoiceTurnId(null);
+            setIsListening(false);
+            setVoiceConnectionState((currentState) =>
+              currentState === "error" ? "error" : "idle"
+            );
+          },
+          onError: () => {
+            setIsListening(false);
+            setVoiceConnectionState("error");
+            setVoiceError(
+              "Voice connection failed. Please try again or type your question."
+            );
+          },
+          onEvent: handleVoiceServerEvent,
+          onOpen: () => {
+            setIsListening(true);
+            setVoiceConnectionState("listening");
+            socketClient?.send({
+              audio: {
+                channels: session.audio?.channels || 1,
+                chunkMs: session.audio?.chunkMs || 100,
+                format: "pcm_s16le",
+                sampleRate: session.audio?.sampleRate || 16000,
+              },
+              turnId,
+              type: "start",
+            });
+          },
+        });
+
+        voiceSocketRef.current = socketClient;
         setVoiceError(
-          `${session.providers?.tts || VOICE_PROVIDER} voice session is ready. Install raw PCM mic streaming to start live ElevenLabs playback.`
+          session.providers?.stt === "mock"
+            ? "Voice session connected in mock mode. Backend can now send test transcript and answer events."
+            : "Voice session connected. Native mic streaming is required for live speech audio."
         );
+        trackProductEvent("Devotee Voice Session Started", {
+          pillar: "experiences",
+          provider: session.providers?.tts || VOICE_PROVIDER,
+        });
         return;
       }
 
@@ -444,7 +722,14 @@ console.log("devesh response", conversationId, response)
         "Voice input needs a custom development build. Please type your question for now."
       );
     }
-  }, [conversationId, isListening, stopSpeech]);
+  }, [
+    closeVoiceSession,
+    conversationId,
+    handleVoiceServerEvent,
+    isListening,
+    stopSpeech,
+    voiceConnectionState,
+  ]);
 
   const openConversation = useCallback(
     async (id: string) => {
@@ -700,15 +985,7 @@ console.log("devesh response", conversationId, response)
                     voiceAiState !== "idle" && styles.voiceStateTextActive,
                   ]}
                 >
-                  {voiceAiState === "idle"
-                    ? "Ready"
-                    : voiceAiState === "listening"
-                      ? "Listening"
-                      : voiceAiState === "thinking"
-                        ? "Thinking"
-                        : voiceAiState === "speaking"
-                          ? "Speaking"
-                          : "Needs setup"}
+                  {voiceStateLabel}
                 </Text>
               </View>
             </View>
@@ -731,15 +1008,32 @@ console.log("devesh response", conversationId, response)
               </Text>
             ) : null}
 
+            {voicePartialTranscript || voiceFinalTranscript ? (
+              <View style={styles.voiceTranscriptCard}>
+                <Text style={styles.voiceTranscriptLabel}>
+                  {voicePartialTranscript ? "Listening" : "Heard"}
+                </Text>
+                <Text style={styles.voiceTranscriptText}>
+                  {voicePartialTranscript || voiceFinalTranscript}
+                </Text>
+              </View>
+            ) : null}
+
             {voiceSession ? (
               <View style={styles.voiceSessionCard}>
                 <Text style={styles.voiceSessionTitle}>
-                  ElevenLabs session ready
+                  Voice session connected
                 </Text>
                 <Text style={styles.voiceSessionText}>
-                  TTS: {voiceSession.providers?.tts || VOICE_PROVIDER} · Audio:{" "}
+                  STT: {voiceSession.providers?.stt || "mock"} · TTS:{" "}
+                  {voiceSession.providers?.tts || VOICE_PROVIDER} · Audio:{" "}
                   {voiceSession.audio?.outputFormat || "mp3_44100"}
                 </Text>
+                {activeVoiceTurnId ? (
+                  <Text style={styles.voiceSessionText}>
+                    Turn: {activeVoiceTurnId}
+                  </Text>
+                ) : null}
                 {ELEVENLABS_VOICE_ID ? (
                   <Text style={styles.voiceSessionText}>
                     Voice ID: {ELEVENLABS_VOICE_ID}
@@ -754,22 +1048,22 @@ console.log("devesh response", conversationId, response)
                 onPress={handleVoiceQuestion}
                 style={({ pressed }) => [
                   styles.micButton,
-                  isListening && styles.micButtonActive,
+                  isVoiceControlActive && styles.micButtonActive,
                   pressed && styles.pressed,
                 ]}
               >
                 <Mic
-                  color={isListening ? "#FFFFFF" : "#B45309"}
+                  color={isVoiceControlActive ? "#FFFFFF" : "#B45309"}
                   size={20}
                   strokeWidth={2.5}
                 />
                 <Text
                   style={[
                     styles.micButtonText,
-                    isListening && styles.micButtonTextActive,
+                    isVoiceControlActive && styles.micButtonTextActive,
                   ]}
                 >
-                  {isListening ? "Stop" : "Speak"}
+                  {isVoiceControlActive ? "Stop" : "Speak"}
                 </Text>
               </Pressable>
 
@@ -1165,6 +1459,28 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     lineHeight: 18,
     marginTop: 10,
+  },
+  voiceTranscriptCard: {
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 10,
+    padding: 12,
+  },
+  voiceTranscriptLabel: {
+    color: "#B45309",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0,
+    textTransform: "uppercase",
+  },
+  voiceTranscriptText: {
+    color: "#3F3328",
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 20,
+    marginTop: 5,
   },
   voiceSessionCard: {
     backgroundColor: "#F0FDF4",
