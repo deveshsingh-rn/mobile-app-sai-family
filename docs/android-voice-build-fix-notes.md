@@ -56,6 +56,12 @@ Root cause:
   -> @siteed/audio-studio@3.2.1
 ```
 
+NPM deprecation message:
+
+```text
+Deprecated: use @siteed/audio-studio instead. This compatibility shim only re-exports @siteed/audio-studio.
+```
+
 `@siteed/audio-studio@3.2.1` currently does not compile against Expo SDK 54 Android because Expo Modules Core changed the Kotlin `Promise.reject` API shape.
 
 ## Step 3: Check Package Options

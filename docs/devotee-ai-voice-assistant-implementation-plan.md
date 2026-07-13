@@ -368,8 +368,11 @@ Frontend needs:
 
 - `expo-dev-client`
 - Native audio stream module
-- Preferred: `@siteed/expo-audio-stream`
-- Alternative: `react-native-live-audio-stream`
+- Do not use `@siteed/expo-audio-stream` on Expo SDK 54 right now.
+  It is deprecated and re-exports `@siteed/audio-studio`, which failed Android
+  Kotlin compilation in this project.
+- Investigate a maintained SDK 54-compatible mic stream module, or create a
+  small custom Expo native module for PCM chunks.
 
 Required audio format:
 

@@ -41,21 +41,34 @@ Native audio streaming module
 Native chunked audio playback module
 ```
 
-Recommended packages:
+Current build-safe packages:
 
 ```bash
 npx expo install expo-dev-client
-npm install @siteed/expo-audio-stream
 npm install react-native-audio-api
 ```
 
-Alternative mic package:
+Do not install `@siteed/expo-audio-stream` on Expo SDK 54 at this time.
+It is deprecated and now only re-exports `@siteed/audio-studio`, which failed
+Android compilation in this project.
+
+Deprecated package message:
+
+```text
+Deprecated: use @siteed/audio-studio instead. This compatibility shim only re-exports @siteed/audio-studio.
+```
+
+`@siteed/audio-studio@3.2.1` failed with Expo SDK 54 Android Kotlin errors
+around `Promise.reject`, so it is not currently build-safe for this app.
+
+Possible mic package to investigate separately:
 
 ```bash
 npm install react-native-live-audio-stream
 ```
 
-Use `@siteed/expo-audio-stream` first if it works cleanly in your Expo dev client.
+Do not install the alternative blindly; first confirm it supports React Native
+0.81, Expo SDK 54, Android, iOS, and New Architecture.
 
 ## Environment Variables
 
