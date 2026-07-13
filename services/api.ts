@@ -15,10 +15,22 @@ const fallbackApiBaseUrl = Platform.select({
   default: 'http://localhost:4000',
 });
 
-const API_BASE_URL = 
+const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ||
   Constants.expoConfig?.extra?.apiBaseUrl ||
   fallbackApiBaseUrl;
+
+const joinUrl = (baseUrl?: string, path?: string) => {
+  if (!baseUrl) {
+    return path || '';
+  }
+
+  if (!path) {
+    return baseUrl;
+  }
+
+  return `${baseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+};
 
 // console.log(`[API] Initializing client with baseURL: ${API_BASE_URL}`);
 // console.log(`[API] Platform: ${Platform.OS}`);
@@ -214,29 +226,26 @@ apiClient.interceptors.response.use(
         code: error.code,
         url: error.config?.url,
         baseURL: error.config?.baseURL,
-        fullURL: `${error.config?.baseURL}${error.config?.url}`,
+        fullURL: joinUrl(error.config?.baseURL, error.config?.url),
         status: error.response?.status,
         backendErrorData: error.response?.data,
         isNetworkError: !error.response,
       };
 
-      // console.error('[API Response Error]', errorDetails);
-
-      // Network error hints
       if (!error.response) {
-        console.error('[API Troubleshooting Hints]');
-        console.error('❌ Backend is NOT reachable at:', error.config?.baseURL);
-        console.error('✓ To fix, please:');
-        console.error('  1. Make sure backend is running: npm run dev (in backend folder)');
-        console.error('  2. Check backend is listening on port 4000');
-        if (Platform.OS === 'android') {
-          console.error('  3. For Android emulator, ensure using http://10.0.2.2:4000');
-        } else if (Platform.OS === 'ios') {
-          console.error('  3. For iOS simulator, localhost:4000 should work');
-        } else {
-          console.error('  3. For physical device, use machine local IP: http://YOUR_IP:4000');
-        }
-        console.error('  4. See TROUBLESHOOTING.md for detailed setup');
+        const platformHint =
+          Platform.OS === 'android'
+            ? 'Android emulator normally uses http://10.0.2.2:4000 for a local backend.'
+            : Platform.OS === 'ios'
+              ? 'iOS simulator can use http://localhost:4000, but a physical device needs your machine IP.'
+              : 'Physical devices need your machine IP, for example http://YOUR_IP:4000.';
+
+        console.warn('[API Network Error]', {
+          ...errorDetails,
+          hint: `Backend did not respond. Confirm EXPO_PUBLIC_API_BASE_URL is reachable from this device. ${platformHint}`,
+        });
+      } else {
+        console.warn('[API Response Error]', errorDetails);
       }
     } else {
       console.error('[API Response Error] <-- ', error);

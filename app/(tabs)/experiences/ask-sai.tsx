@@ -39,9 +39,12 @@ import {
 import { ExperienceTopTabs } from "@/components/experiences";
 import {
   AskDevoteeQuestionResponse,
+  createDevoteeAiVoiceSession,
   deleteDevoteeAiConversation,
   DevoteeAiConversation,
   DevoteeAiMessage,
+  DevoteeAiVoiceSession,
+  DevoteeAiVoiceState,
   fetchDevoteeAiConversationDetail,
   fetchDevoteeAiConversations,
   askDevoteeQuestion,
@@ -55,6 +58,15 @@ const SUGGESTED_QUESTIONS = [
   "How do I share my experience with other devotees?",
   "What should I do before attending a Sai event?",
 ];
+
+const FULL_DUPLEX_VOICE_ENABLED =
+  process.env.EXPO_PUBLIC_VOICE_AI_ENABLED === "true";
+const VOICE_PROVIDER =
+  process.env.EXPO_PUBLIC_AI_VOICE_PROVIDER === "mock"
+    ? "mock"
+    : "elevenlabs";
+const ELEVENLABS_VOICE_ID =
+  process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID || undefined;
 
 async function getSpeechRecognitionModule() {
   const speechRecognition = await import("expo-speech-recognition");
@@ -82,12 +94,34 @@ export default function AskSaiScreen() {
   const [isListening, setIsListening] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceSession, setVoiceSession] =
+    useState<DevoteeAiVoiceSession | null>(null);
   const [voiceError, setVoiceError] = useState("");
 
   const canSubmit = useMemo(
     () => question.trim().length >= 3 && !isSubmitting,
     [isSubmitting, question]
   );
+
+  const voiceAiState: DevoteeAiVoiceState = useMemo(() => {
+    if (voiceError) {
+      return "error";
+    }
+
+    if (isListening) {
+      return "listening";
+    }
+
+    if (isSubmitting) {
+      return "thinking";
+    }
+
+    if (isSpeaking) {
+      return "speaking";
+    }
+
+    return "idle";
+  }, [isListening, isSpeaking, isSubmitting, voiceError]);
 
   useEffect(() => {
     return () => {
@@ -202,7 +236,7 @@ export default function AskSaiScreen() {
         setLastResponse(null);
         setMessages([]);
         setSafetyNote("");
-console.log("devesh response", conversationId)
+console.log("devesh conversationId", conversationId)
         const response = await askDevoteeQuestion({
           conversationId,
           locale: "en-IN",
@@ -357,6 +391,23 @@ console.log("devesh response", conversationId, response)
     try {
       await stopSpeech();
 
+      if (FULL_DUPLEX_VOICE_ENABLED) {
+        setVoiceError("");
+        const session = await createDevoteeAiVoiceSession({
+          conversationId,
+          locale: "hi-IN",
+          pillar: "experiences",
+          secondaryLocale: "en-IN",
+          ttsVoiceId: ELEVENLABS_VOICE_ID,
+          voiceProvider: VOICE_PROVIDER,
+        });
+        setVoiceSession(session);
+        setVoiceError(
+          `${session.providers?.tts || VOICE_PROVIDER} voice session is ready. Install raw PCM mic streaming to start live ElevenLabs playback.`
+        );
+        return;
+      }
+
       const ExpoSpeechRecognitionModule =
         await getSpeechRecognitionModule();
 
@@ -393,7 +444,7 @@ console.log("devesh response", conversationId, response)
         "Voice input needs a custom development build. Please type your question for now."
       );
     }
-  }, [isListening, stopSpeech]);
+  }, [conversationId, isListening, stopSpeech]);
 
   const openConversation = useCallback(
     async (id: string) => {
@@ -632,7 +683,35 @@ console.log("devesh response", conversationId, response)
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Your question</Text>
+            <View style={styles.questionHeader}>
+              <Text style={styles.label}>Your question</Text>
+              <View
+                style={[
+                  styles.voiceStatePill,
+                  voiceAiState === "error" && styles.voiceStatePillError,
+                  voiceAiState === "listening" && styles.voiceStatePillActive,
+                  voiceAiState === "speaking" && styles.voiceStatePillActive,
+                  voiceAiState === "thinking" && styles.voiceStatePillThinking,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.voiceStateText,
+                    voiceAiState !== "idle" && styles.voiceStateTextActive,
+                  ]}
+                >
+                  {voiceAiState === "idle"
+                    ? "Ready"
+                    : voiceAiState === "listening"
+                      ? "Listening"
+                      : voiceAiState === "thinking"
+                        ? "Thinking"
+                        : voiceAiState === "speaking"
+                          ? "Speaking"
+                          : "Needs setup"}
+                </Text>
+              </View>
+            </View>
             <TextInput
               multiline
               onChangeText={setQuestion}
@@ -650,6 +729,23 @@ console.log("devesh response", conversationId, response)
               <Text style={styles.listeningText}>
                 Listening... speak your question clearly.
               </Text>
+            ) : null}
+
+            {voiceSession ? (
+              <View style={styles.voiceSessionCard}>
+                <Text style={styles.voiceSessionTitle}>
+                  ElevenLabs session ready
+                </Text>
+                <Text style={styles.voiceSessionText}>
+                  TTS: {voiceSession.providers?.tts || VOICE_PROVIDER} · Audio:{" "}
+                  {voiceSession.audio?.outputFormat || "mp3_44100"}
+                </Text>
+                {ELEVENLABS_VOICE_ID ? (
+                  <Text style={styles.voiceSessionText}>
+                    Voice ID: {ELEVENLABS_VOICE_ID}
+                  </Text>
+                ) : null}
+              </View>
             ) : null}
 
             <View style={styles.inputActions}>
@@ -1010,6 +1106,40 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     marginBottom: 10,
   },
+  questionHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  voiceStatePill: {
+    backgroundColor: "#F8FAFC",
+    borderColor: "#E2E8F0",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  voiceStatePillActive: {
+    backgroundColor: "#ECFDF5",
+    borderColor: "#BBF7D0",
+  },
+  voiceStatePillThinking: {
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+  },
+  voiceStatePillError: {
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
+  },
+  voiceStateText: {
+    color: "#64748B",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  voiceStateTextActive: {
+    color: "#92400E",
+  },
   input: {
     backgroundColor: "#FFFDF8",
     borderColor: "#F1DEC0",
@@ -1035,6 +1165,26 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     lineHeight: 18,
     marginTop: 10,
+  },
+  voiceSessionCard: {
+    backgroundColor: "#F0FDF4",
+    borderColor: "#BBF7D0",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 10,
+    padding: 12,
+  },
+  voiceSessionTitle: {
+    color: "#166534",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  voiceSessionText: {
+    color: "#166534",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 4,
   },
   inputActions: {
     flexDirection: "row",

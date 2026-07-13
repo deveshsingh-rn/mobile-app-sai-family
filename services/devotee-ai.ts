@@ -5,6 +5,7 @@ import { apiClient } from "./api";
 
 const DEFAULT_DEVOTEE_AI_ENDPOINT = "/api/ai/devotee-question";
 const AI_BASE_PATH = "/api/ai";
+const AI_QUESTION_TIMEOUT_MS = 180000;
 const AUTH_REQUIRED_MESSAGE =
   "Please login again to use Ask Sai. This feature needs a secure login session.";
 
@@ -82,6 +83,119 @@ export type DevoteeAiFeedback = {
   reason?: string | null;
 };
 
+export type DevoteeAiVoiceState =
+  | "idle"
+  | "connecting"
+  | "listening"
+  | "thinking"
+  | "speaking"
+  | "interrupted"
+  | "error";
+
+export type CreateDevoteeAiVoiceSessionPayload = {
+  conversationId?: string;
+  locale?: "hi-IN" | "en-IN";
+  pillar?: DevoteeAiPillar;
+  secondaryLocale?: "hi-IN" | "en-IN";
+  ttsVoiceId?: string;
+  voiceProvider?: "elevenlabs" | "mock";
+};
+
+export type DevoteeAiVoiceSession = {
+  audio?: {
+    channels: number;
+    chunkMs: number;
+    inputFormat: "pcm_s16le";
+    outputFormat?: "mp3_44100" | string;
+    sampleRate: number;
+  };
+  conversationId?: string;
+  expiresAt: string;
+  limits?: {
+    bargeInEnabled?: boolean;
+    maxSessionSeconds?: number;
+    maxTurnsPerSession?: number;
+  };
+  providers?: {
+    llm?: string;
+    stt?: string;
+    tts?: string;
+  };
+  sessionId: string;
+  sessionToken: string;
+  status?: "active" | "ended" | "failed" | string;
+  webSocketUrl: string;
+};
+
+export type DevoteeAiVoiceClientEvent =
+  | {
+      audio: {
+        channels: number;
+        chunkMs: number;
+        format: "pcm_s16le";
+        sampleRate: number;
+      };
+      turnId: string;
+      type: "start";
+    }
+  | {
+      data: string;
+      encoding: "base64";
+      turnId: string;
+      type: "audio_chunk";
+    }
+  | {
+      turnId: string;
+      type: "end_input";
+    }
+  | {
+      turnId: string;
+      type: "barge_in";
+    };
+
+export type DevoteeAiVoiceServerEvent =
+  | {
+      sessionId: string;
+      state: DevoteeAiVoiceState;
+      turnId: string;
+      type: "state";
+    }
+  | {
+      text: string;
+      turnId: string;
+      type: "transcript_partial" | "transcript_final" | "answer_delta";
+    }
+  | {
+      data: string;
+      encoding: "base64";
+      format: "mp3_44100";
+      turnId: string;
+      type: "audio_chunk";
+    }
+  | {
+      reason?: string;
+      turnId: string;
+      type: "stop_playback";
+    }
+  | {
+      conversationId?: string;
+      latency?: {
+        firstAudioMs?: number;
+        firstTokenMs?: number;
+        speechEndpointMs?: number;
+        totalMs?: number;
+      };
+      messageId?: string;
+      turnId: string;
+      type: "turn_complete";
+    }
+  | {
+      code?: string;
+      message: string;
+      turnId?: string;
+      type: "error";
+    };
+
 type BackendDevoteeAiResponse = {
   answer?: string;
   cached?: boolean;
@@ -110,6 +224,17 @@ function getAiErrorMessage(error: unknown) {
 
     if (error.response?.status === 404) {
       return "The Sai assistant API is not ready on the backend yet.";
+    }
+
+    if (
+      error.response?.status === 504 ||
+      error.response?.data?.error?.code === "AI_TIMEOUT"
+    ) {
+      return "Sai assistant is taking longer than usual. Please try again in a moment, or ask a shorter question.";
+    }
+
+    if (error.code === "ECONNABORTED") {
+      return "Sai assistant took too long to respond. Please check your connection and try again.";
     }
 
     return (
@@ -154,6 +279,9 @@ export async function askDevoteeQuestion(
           pillar: payload.pillar || "experiences",
           question,
           voice: payload.voice || false,
+        },
+        {
+          timeout: AI_QUESTION_TIMEOUT_MS,
         }
       );
 
@@ -283,4 +411,80 @@ export async function submitDevoteeAiFeedback(
   } catch (error) {
     throw new Error(getAiErrorMessage(error));
   }
+}
+
+export async function createDevoteeAiVoiceSession(
+  payload?: CreateDevoteeAiVoiceSessionPayload
+): Promise<DevoteeAiVoiceSession> {
+  try {
+    await assertAiAuthSession();
+
+    const { data } = await apiClient.post<DevoteeAiVoiceSession>(
+      `${AI_BASE_PATH}/voice/sessions`,
+      {
+        locale: payload?.locale || "hi-IN",
+        pillar: payload?.pillar || "experiences",
+        secondaryLocale: payload?.secondaryLocale || "en-IN",
+        ttsVoiceId: payload?.ttsVoiceId,
+        voiceProvider: payload?.voiceProvider || "elevenlabs",
+        conversationId: payload?.conversationId,
+      }
+    );
+
+    return data;
+  } catch (error) {
+    throw new Error(getAiErrorMessage(error));
+  }
+}
+
+export function createDevoteeAiVoiceSocket(
+  session: DevoteeAiVoiceSession,
+  handlers: {
+    onClose?: () => void;
+    onError?: (error: Event) => void;
+    onEvent?: (event: DevoteeAiVoiceServerEvent) => void;
+    onOpen?: () => void;
+  }
+) {
+  const socket = new WebSocket(session.webSocketUrl);
+
+  socket.onopen = () => {
+    handlers.onOpen?.();
+  };
+
+  socket.onclose = () => {
+    handlers.onClose?.();
+  };
+
+  socket.onerror = (error) => {
+    handlers.onError?.(error);
+  };
+
+  socket.onmessage = (message) => {
+    if (typeof message.data !== "string") {
+      return;
+    }
+
+    try {
+      handlers.onEvent?.(
+        JSON.parse(message.data) as DevoteeAiVoiceServerEvent
+      );
+    } catch {
+      handlers.onEvent?.({
+        message: "Voice assistant sent an unreadable event.",
+        type: "error",
+      });
+    }
+  };
+
+  return {
+    close: () => socket.close(),
+    get readyState() {
+      return socket.readyState;
+    },
+    send: (event: DevoteeAiVoiceClientEvent) => {
+      socket.send(JSON.stringify(event));
+    },
+    socket,
+  };
 }
