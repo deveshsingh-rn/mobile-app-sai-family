@@ -202,7 +202,7 @@ export default function AskSaiScreen() {
         setLastResponse(null);
         setMessages([]);
         setSafetyNote("");
-
+console.log("devesh response", conversationId)
         const response = await askDevoteeQuestion({
           conversationId,
           locale: "en-IN",
@@ -210,7 +210,7 @@ export default function AskSaiScreen() {
           question: questionToAsk,
           voice: false,
         });
-    console.log("devesh response", response)
+console.log("devesh response", conversationId, response)
         setQuestion(questionToAsk);
         setAnswer(response.answer);
         setConversationId(response.conversationId || conversationId);
@@ -253,7 +253,7 @@ export default function AskSaiScreen() {
         if (message.toLowerCase().includes("login again")) {
           setAuthMessage(message);
         }
-console.log("devesh", message)
+
         Alert.alert(
           "Sai assistant",
           message

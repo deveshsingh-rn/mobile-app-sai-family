@@ -164,7 +164,9 @@ export async function askDevoteeQuestion(
       data.message;
 
     if (!answer) {
-      throw new Error("Sai assistant did not return an answer.");
+      throw new Error(
+        "Sai assistant could not prepare an answer right now. Please try again in a moment."
+      );
     }
 
     return {
