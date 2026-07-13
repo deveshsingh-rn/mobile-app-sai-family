@@ -1,0 +1,16 @@
+{
+  "name": "sai-audio-stream",
+  "version": "1.0.0",
+  "description": "Sai Family local Expo module for PCM microphone streaming.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "sideEffects": false,
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "expo-modules-core": "*"
+  }
+}

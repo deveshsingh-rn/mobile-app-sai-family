@@ -1,0 +1,9 @@
+{
+  "platforms": ["ios", "android"],
+  "ios": {
+    "modules": ["SaiAudioStreamModule"]
+  },
+  "android": {
+    "modules": ["com.saifamily.audiostream.SaiAudioStreamModule"]
+  }
+}

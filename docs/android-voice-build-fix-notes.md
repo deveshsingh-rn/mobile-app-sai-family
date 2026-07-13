@@ -209,12 +209,69 @@ Working and build-safe:
 - Voice WebSocket session is wired.
 - Mock voice session events can be rendered.
 - `react-native-audio-api` is installed for lower-level audio playback work.
+- Local Expo module `sai-audio-stream` is implemented for microphone PCM chunk capture.
+- Expo autolinking detects `sai-audio-stream` on Android.
 
-Not yet implemented:
+Still pending real-device verification:
 
-- Raw PCM microphone streaming.
 - Chunked ElevenLabs MP3 playback queue.
 - Barge-in with native playback interruption.
+- Android EAS build compile result for the local module.
+- iOS EAS build compile result for the local module.
+
+## Step 8: Implement Local PCM Mic Module
+
+Because the Siteed packages were not build-safe on Expo SDK 54, a small local
+Expo module was added instead:
+
+```text
+modules/sai-audio-stream
+```
+
+It exposes:
+
+```ts
+requestSaiAudioStreamPermissionsAsync()
+startSaiAudioStreamAsync({ sampleRate, channels, chunkMs })
+stopSaiAudioStreamAsync()
+addAudioChunkListener(listener)
+addAudioErrorListener(listener)
+```
+
+The module emits `audioChunk` events shaped for the backend voice WebSocket:
+
+```json
+{
+  "base64": "pcm_s16le_base64",
+  "sampleRate": 16000,
+  "channels": 1,
+  "chunkMs": 100,
+  "sequence": 1,
+  "timestamp": 1780000000000
+}
+```
+
+The Ask Sai screen sends each chunk as:
+
+```json
+{
+  "type": "audio_chunk",
+  "encoding": "base64",
+  "data": "pcm_s16le_base64",
+  "turnId": "turn-..."
+}
+```
+
+Important `.gitignore` note:
+
+```text
+/android/
+/ios/
+```
+
+Use top-level-only ignores. Do not use broad `android/` or `ios/` rules,
+because they hide `modules/sai-audio-stream/android` and
+`modules/sai-audio-stream/ios` from Git and Expo doctor.
 
 ## Recommended Next Step
 
@@ -222,10 +279,11 @@ Do not use `@siteed/expo-audio-stream` on Expo SDK 54 until it publishes a compa
 
 Best production path:
 
-1. Create a small custom Expo native module for microphone PCM chunks.
-2. Output PCM signed 16-bit little-endian.
-3. Use `16 kHz`, mono, `100ms` chunks.
-4. Send chunks to backend WebSocket as binary or base64.
-5. Use `react-native-audio-api` for streamed playback experiments.
+1. Run Android EAS development build and confirm native module compilation.
+2. Run iOS EAS development build and confirm native module compilation.
+3. Test live mic capture on a physical Android device.
+4. Test live mic capture on a physical iPhone.
+5. Add chunked ElevenLabs MP3 playback queue.
+6. Add barge-in with playback interruption.
 
 This is safer than carrying patches against an incompatible third-party Android module.

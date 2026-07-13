@@ -54,6 +54,10 @@ import {
   submitDevoteeAiFeedback,
 } from "@/services/devotee-ai";
 import { trackProductEvent } from "@/services/product-analytics";
+import type {
+  SaiAudioStreamChunkEvent,
+  SaiAudioStreamErrorEvent,
+} from "sai-audio-stream";
 
 const SUGGESTED_QUESTIONS = [
   "How can I keep faith during a difficult time?",
@@ -102,10 +106,20 @@ async function getSpeechRecognitionModule() {
   return speechRecognition.ExpoSpeechRecognitionModule;
 }
 
+async function getSaiAudioStreamModule() {
+  return import("sai-audio-stream");
+}
+
 export default function AskSaiScreen() {
   const insets = useSafeAreaInsets();
   const voiceSocketRef =
     useRef<ReturnType<typeof createDevoteeAiVoiceSocket> | null>(null);
+  const audioChunkSubscriptionRef = useRef<{ remove: () => void } | null>(
+    null
+  );
+  const audioErrorSubscriptionRef = useRef<{ remove: () => void } | null>(
+    null
+  );
   const activeVoiceTurnIdRef = useRef<string | null>(null);
   const voiceAnswerBufferRef = useRef("");
   const voiceFinalTranscriptRef = useRef("");
@@ -237,6 +251,16 @@ export default function AskSaiScreen() {
   }, []);
 
   const closeVoiceSession = useCallback(() => {
+    void getSaiAudioStreamModule()
+      .then((audioStream) => audioStream.stopSaiAudioStreamAsync())
+      .catch(() => {
+        // The native stream module may be unavailable in Expo Go.
+      });
+
+    audioChunkSubscriptionRef.current?.remove();
+    audioErrorSubscriptionRef.current?.remove();
+    audioChunkSubscriptionRef.current = null;
+    audioErrorSubscriptionRef.current = null;
     voiceSocketRef.current?.close();
     voiceSocketRef.current = null;
     activeVoiceTurnIdRef.current = null;
@@ -447,7 +471,6 @@ export default function AskSaiScreen() {
         setLastResponse(null);
         setMessages([]);
         setSafetyNote("");
-console.log("devesh conversationId", conversationId)
         const response = await askDevoteeQuestion({
           conversationId,
           locale: "en-IN",
@@ -455,7 +478,7 @@ console.log("devesh conversationId", conversationId)
           question: questionToAsk,
           voice: false,
         });
-console.log("devesh response", conversationId, response)
+
         setQuestion(questionToAsk);
         setAnswer(response.answer);
         setConversationId(response.conversationId || conversationId);
@@ -590,7 +613,27 @@ console.log("devesh response", conversationId, response)
       FULL_DUPLEX_VOICE_ENABLED &&
       (voiceSocketRef.current || voiceConnectionState !== "idle")
     ) {
-      closeVoiceSession();
+      const activeTurnId = activeVoiceTurnIdRef.current;
+
+      if (
+        activeTurnId &&
+        voiceSocketRef.current?.readyState === WebSocket.OPEN
+      ) {
+        voiceSocketRef.current.send({
+          turnId: activeTurnId,
+          type: "end_input",
+        });
+      }
+
+      try {
+        const audioStream = await getSaiAudioStreamModule();
+        await audioStream.stopSaiAudioStreamAsync();
+      } catch {
+        // Native stream may already be stopped or unavailable.
+      }
+
+      setIsListening(false);
+      setVoiceConnectionState("thinking");
       return;
     }
 
@@ -619,6 +662,18 @@ console.log("devesh response", conversationId, response)
         voiceAnswerBufferRef.current = "";
         voiceHadAudioChunksRef.current = false;
 
+        const audioStream = await getSaiAudioStreamModule();
+        const permissions =
+          await audioStream.requestSaiAudioStreamPermissionsAsync();
+
+        if (!permissions.granted) {
+          setVoiceConnectionState("error");
+          setVoiceError(
+            "Please allow microphone permission to ask Sai by voice."
+          );
+          return;
+        }
+
         const session = await createDevoteeAiVoiceSession({
           conversationId,
           locale: "hi-IN",
@@ -632,6 +687,9 @@ console.log("devesh response", conversationId, response)
         setConversationId(session.conversationId || conversationId);
 
         const turnId = createVoiceTurnId();
+        const audioSampleRate = session.audio?.sampleRate || 16000;
+        const audioChunkMs = session.audio?.chunkMs || 100;
+        const audioChannels = session.audio?.channels || 1;
         activeVoiceTurnIdRef.current = turnId;
         setActiveVoiceTurnId(turnId);
 
@@ -641,6 +699,13 @@ console.log("devesh response", conversationId, response)
 
         socketClient = createDevoteeAiVoiceSocket(session, {
           onClose: () => {
+            void audioStream.stopSaiAudioStreamAsync().catch(() => {
+              // Recording may already be stopped.
+            });
+            audioChunkSubscriptionRef.current?.remove();
+            audioErrorSubscriptionRef.current?.remove();
+            audioChunkSubscriptionRef.current = null;
+            audioErrorSubscriptionRef.current = null;
             voiceSocketRef.current = null;
             activeVoiceTurnIdRef.current = null;
             setActiveVoiceTurnId(null);
@@ -650,6 +715,9 @@ console.log("devesh response", conversationId, response)
             );
           },
           onError: () => {
+            void audioStream.stopSaiAudioStreamAsync().catch(() => {
+              // Recording may already be stopped.
+            });
             setIsListening(false);
             setVoiceConnectionState("error");
             setVoiceError(
@@ -662,13 +730,47 @@ console.log("devesh response", conversationId, response)
             setVoiceConnectionState("listening");
             socketClient?.send({
               audio: {
-                channels: session.audio?.channels || 1,
-                chunkMs: session.audio?.chunkMs || 100,
+                channels: audioChannels,
+                chunkMs: audioChunkMs,
                 format: "pcm_s16le",
-                sampleRate: session.audio?.sampleRate || 16000,
+                sampleRate: audioSampleRate,
               },
               turnId,
               type: "start",
+            });
+
+            audioChunkSubscriptionRef.current =
+              audioStream.addAudioChunkListener(
+                (event: SaiAudioStreamChunkEvent) => {
+                  if (
+                    activeVoiceTurnIdRef.current !== turnId ||
+                    !socketClient ||
+                    socketClient.readyState !== WebSocket.OPEN
+                  ) {
+                    return;
+                  }
+
+                  socketClient.send({
+                    data: event.data,
+                    encoding: "base64",
+                    turnId,
+                    type: "audio_chunk",
+                  });
+                }
+              );
+
+            audioErrorSubscriptionRef.current =
+              audioStream.addAudioErrorListener(
+                (event: SaiAudioStreamErrorEvent) => {
+                  setVoiceConnectionState("error");
+                  setVoiceError(event.message);
+                  void audioStream.stopSaiAudioStreamAsync();
+                }
+              );
+
+            void audioStream.startSaiAudioStreamAsync({
+              chunkMs: audioChunkMs,
+              sampleRate: audioSampleRate,
             });
           },
         });
@@ -677,7 +779,7 @@ console.log("devesh response", conversationId, response)
         setVoiceError(
           session.providers?.stt === "mock"
             ? "Voice session connected in mock mode. Backend can now send test transcript and answer events."
-            : "Voice session connected. Native mic streaming is required for live speech audio."
+            : "Voice session connected. Listening now."
         );
         trackProductEvent("Devotee Voice Session Started", {
           pillar: "experiences",
@@ -723,7 +825,6 @@ console.log("devesh response", conversationId, response)
       );
     }
   }, [
-    closeVoiceSession,
     conversationId,
     handleVoiceServerEvent,
     isListening,

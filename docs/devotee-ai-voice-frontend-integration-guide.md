@@ -46,6 +46,7 @@ Current build-safe packages:
 ```bash
 npx expo install expo-dev-client
 npm install react-native-audio-api
+npm install ./modules/sai-audio-stream
 ```
 
 Do not install `@siteed/expo-audio-stream` on Expo SDK 54 at this time.
@@ -69,6 +70,59 @@ npm install react-native-live-audio-stream
 
 Do not install the alternative blindly; first confirm it supports React Native
 0.81, Expo SDK 54, Android, iOS, and New Architecture.
+
+## Current Mobile Mic Implementation
+
+This app now uses a local Expo module instead of a third-party recording shim:
+
+```text
+modules/sai-audio-stream
+```
+
+Why:
+
+- We need raw PCM chunks for low-latency voice AI.
+- Expo Go cannot provide this native streaming path.
+- `@siteed/expo-audio-stream` is deprecated.
+- `@siteed/audio-studio@3.2.1` failed Android compilation on Expo SDK 54.
+
+The local module emits `pcm_s16le` mic chunks as base64:
+
+```ts
+import {
+  addAudioChunkListener,
+  requestSaiAudioStreamPermissionsAsync,
+  startSaiAudioStreamAsync,
+  stopSaiAudioStreamAsync,
+} from "sai-audio-stream";
+```
+
+Runtime settings should come from `POST /api/ai/voice/sessions`:
+
+```ts
+await startSaiAudioStreamAsync({
+  sampleRate: session.audio.sampleRate, // normally 16000
+  channels: session.audio.channels, // 1
+  chunkMs: session.audio.chunkMs, // 100
+});
+```
+
+Each chunk is sent to the backend WebSocket as:
+
+```json
+{
+  "type": "audio_chunk",
+  "encoding": "base64",
+  "data": "<pcm_s16le_base64>",
+  "turnId": "<current_turn_id>"
+}
+```
+
+Build requirement:
+
+```text
+Use Expo development build or production build. This will not work in Expo Go.
+```
 
 ## Environment Variables
 
