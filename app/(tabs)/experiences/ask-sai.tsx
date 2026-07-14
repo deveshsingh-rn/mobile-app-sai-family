@@ -110,10 +110,28 @@ async function getSaiAudioStreamModule() {
   return import("sai-audio-stream");
 }
 
+type SaiAudioStreamModuleApi = Awaited<
+  ReturnType<typeof getSaiAudioStreamModule>
+>;
+
+type PendingVoiceStartContext = {
+  audioChannels: number;
+  audioChunkMs: number;
+  audioSampleRate: number;
+  audioStream: SaiAudioStreamModuleApi;
+  hasStarted: boolean;
+  socketClient: ReturnType<typeof createDevoteeAiVoiceSocket>;
+  turnId: string;
+};
+
 export default function AskSaiScreen() {
   const insets = useSafeAreaInsets();
   const voiceSocketRef =
     useRef<ReturnType<typeof createDevoteeAiVoiceSocket> | null>(null);
+  const pendingVoiceStartRef = useRef<PendingVoiceStartContext | null>(null);
+  const voiceConnectedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const audioChunkSubscriptionRef = useRef<{ remove: () => void } | null>(
     null
   );
@@ -192,6 +210,8 @@ export default function AskSaiScreen() {
 
   const voiceStateLabel = useMemo(() => {
     switch (voiceAiState) {
+      case "connected":
+        return "Connected";
       case "connecting":
         return "Connecting";
       case "listening":
@@ -251,6 +271,13 @@ export default function AskSaiScreen() {
   }, []);
 
   const closeVoiceSession = useCallback(() => {
+    if (voiceConnectedTimeoutRef.current) {
+      clearTimeout(voiceConnectedTimeoutRef.current);
+      voiceConnectedTimeoutRef.current = null;
+    }
+
+    pendingVoiceStartRef.current = null;
+
     void getSaiAudioStreamModule()
       .then((audioStream) => audioStream.stopSaiAudioStreamAsync())
       .catch(() => {
@@ -328,6 +355,77 @@ export default function AskSaiScreen() {
     await speakText(answer);
   }, [answer, isSpeaking, speakText, stopSpeech]);
 
+  const startConnectedVoiceStreaming = useCallback(async () => {
+    const pendingStart = pendingVoiceStartRef.current;
+
+    if (!pendingStart || pendingStart.hasStarted) {
+      return;
+    }
+
+    if (pendingStart.socketClient.readyState !== WebSocket.OPEN) {
+      setVoiceConnectionState("error");
+      setVoiceError("Voice connection closed before listening could start.");
+      return;
+    }
+
+    pendingStart.hasStarted = true;
+
+    if (voiceConnectedTimeoutRef.current) {
+      clearTimeout(voiceConnectedTimeoutRef.current);
+      voiceConnectedTimeoutRef.current = null;
+    }
+
+    setIsListening(true);
+    setVoiceConnectionState("listening");
+
+    pendingStart.socketClient.send({
+      audio: {
+        channels: pendingStart.audioChannels,
+        chunkMs: pendingStart.audioChunkMs,
+        format: "pcm_s16le",
+        sampleRate: pendingStart.audioSampleRate,
+      },
+      turnId: pendingStart.turnId,
+      type: "start",
+    });
+
+    audioChunkSubscriptionRef.current?.remove();
+    audioErrorSubscriptionRef.current?.remove();
+
+    audioChunkSubscriptionRef.current =
+      pendingStart.audioStream.addAudioChunkListener(
+        (event: SaiAudioStreamChunkEvent) => {
+          if (
+            activeVoiceTurnIdRef.current !== pendingStart.turnId ||
+            pendingStart.socketClient.readyState !== WebSocket.OPEN
+          ) {
+            return;
+          }
+
+          pendingStart.socketClient.send({
+            data: event.data,
+            encoding: "base64",
+            turnId: pendingStart.turnId,
+            type: "audio_chunk",
+          });
+        }
+      );
+
+    audioErrorSubscriptionRef.current =
+      pendingStart.audioStream.addAudioErrorListener(
+        (event: SaiAudioStreamErrorEvent) => {
+          setVoiceConnectionState("error");
+          setVoiceError(event.message);
+          void pendingStart.audioStream.stopSaiAudioStreamAsync();
+        }
+      );
+
+    await pendingStart.audioStream.startSaiAudioStreamAsync({
+      chunkMs: pendingStart.audioChunkMs,
+      sampleRate: pendingStart.audioSampleRate,
+    });
+  }, []);
+
   const handleVoiceServerEvent = useCallback(
     (event: DevoteeAiVoiceServerEvent) => {
       const eventTurnId = "turnId" in event ? event.turnId : undefined;
@@ -342,7 +440,12 @@ export default function AskSaiScreen() {
 
       switch (event.type) {
         case "state":
-          setVoiceConnectionState(event.state);
+          if (event.state === "connected") {
+            setVoiceConnectionState("connected");
+            void startConnectedVoiceStreaming();
+          } else {
+            setVoiceConnectionState(event.state);
+          }
           break;
 
         case "transcript_partial":
@@ -443,6 +546,7 @@ export default function AskSaiScreen() {
       loadConversations,
       question,
       speakText,
+      startConnectedVoiceStreaming,
       stopSpeech,
       voiceSession?.providers?.llm,
     ]
@@ -699,6 +803,11 @@ export default function AskSaiScreen() {
 
         socketClient = createDevoteeAiVoiceSocket(session, {
           onClose: () => {
+            if (voiceConnectedTimeoutRef.current) {
+              clearTimeout(voiceConnectedTimeoutRef.current);
+              voiceConnectedTimeoutRef.current = null;
+            }
+
             void audioStream.stopSaiAudioStreamAsync().catch(() => {
               // Recording may already be stopped.
             });
@@ -706,6 +815,7 @@ export default function AskSaiScreen() {
             audioErrorSubscriptionRef.current?.remove();
             audioChunkSubscriptionRef.current = null;
             audioErrorSubscriptionRef.current = null;
+            pendingVoiceStartRef.current = null;
             voiceSocketRef.current = null;
             activeVoiceTurnIdRef.current = null;
             setActiveVoiceTurnId(null);
@@ -715,9 +825,15 @@ export default function AskSaiScreen() {
             );
           },
           onError: () => {
+            if (voiceConnectedTimeoutRef.current) {
+              clearTimeout(voiceConnectedTimeoutRef.current);
+              voiceConnectedTimeoutRef.current = null;
+            }
+
             void audioStream.stopSaiAudioStreamAsync().catch(() => {
               // Recording may already be stopped.
             });
+            pendingVoiceStartRef.current = null;
             setIsListening(false);
             setVoiceConnectionState("error");
             setVoiceError(
@@ -726,60 +842,46 @@ export default function AskSaiScreen() {
           },
           onEvent: handleVoiceServerEvent,
           onOpen: () => {
-            setIsListening(true);
-            setVoiceConnectionState("listening");
-            socketClient?.send({
-              audio: {
-                channels: audioChannels,
-                chunkMs: audioChunkMs,
-                format: "pcm_s16le",
-                sampleRate: audioSampleRate,
-              },
-              turnId,
-              type: "start",
-            });
+            setVoiceConnectionState("connecting");
+            setVoiceError("Voice socket opened. Waiting for backend...");
 
-            audioChunkSubscriptionRef.current =
-              audioStream.addAudioChunkListener(
-                (event: SaiAudioStreamChunkEvent) => {
-                  if (
-                    activeVoiceTurnIdRef.current !== turnId ||
-                    !socketClient ||
-                    socketClient.readyState !== WebSocket.OPEN
-                  ) {
-                    return;
-                  }
+            if (voiceConnectedTimeoutRef.current) {
+              clearTimeout(voiceConnectedTimeoutRef.current);
+            }
 
-                  socketClient.send({
-                    data: event.data,
-                    encoding: "base64",
-                    turnId,
-                    type: "audio_chunk",
-                  });
-                }
-              );
+            voiceConnectedTimeoutRef.current = setTimeout(() => {
+              const pendingStart = pendingVoiceStartRef.current;
 
-            audioErrorSubscriptionRef.current =
-              audioStream.addAudioErrorListener(
-                (event: SaiAudioStreamErrorEvent) => {
-                  setVoiceConnectionState("error");
-                  setVoiceError(event.message);
-                  void audioStream.stopSaiAudioStreamAsync();
-                }
-              );
-
-            void audioStream.startSaiAudioStreamAsync({
-              chunkMs: audioChunkMs,
-              sampleRate: audioSampleRate,
-            });
+              if (pendingStart && !pendingStart.hasStarted) {
+                pendingVoiceStartRef.current = null;
+                setVoiceConnectionState("error");
+                setVoiceError(
+                  "Voice backend did not confirm connection. Please try again."
+                );
+                pendingStart.socketClient.close();
+              }
+            }, 8000);
           },
         });
 
+        if (!socketClient) {
+          throw new Error("Voice socket could not be created.");
+        }
+
         voiceSocketRef.current = socketClient;
+        pendingVoiceStartRef.current = {
+          audioChannels,
+          audioChunkMs,
+          audioSampleRate,
+          audioStream,
+          hasStarted: false,
+          socketClient,
+          turnId,
+        };
         setVoiceError(
           session.providers?.stt === "mock"
-            ? "Voice session connected in mock mode. Backend can now send test transcript and answer events."
-            : "Voice session connected. Listening now."
+            ? "Voice session created in mock mode. Waiting for backend connection..."
+            : "Voice session created. Waiting for backend connection..."
         );
         trackProductEvent("Devotee Voice Session Started", {
           pillar: "experiences",

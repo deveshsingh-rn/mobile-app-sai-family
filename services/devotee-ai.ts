@@ -84,6 +84,7 @@ export type DevoteeAiFeedback = {
 };
 
 export type DevoteeAiVoiceState =
+  | "connected"
   | "idle"
   | "connecting"
   | "listening"

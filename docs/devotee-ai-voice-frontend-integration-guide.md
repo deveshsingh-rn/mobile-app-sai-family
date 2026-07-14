@@ -353,6 +353,25 @@ Open:
 const socket = new WebSocket(session.webSocketUrl);
 ```
 
+Current app sequence:
+
+```text
+1. POST /api/ai/voice/sessions with voiceProvider=mock or elevenlabs
+2. Store returned session audio settings and webSocketUrl
+3. Open WebSocket
+4. Wait for backend event: { "type": "state", "state": "connected" }
+5. Send { "type": "start", "audio": { "format": "pcm_s16le", ... } }
+6. Start native mic capture
+7. Send mic chunks as { "type": "audio_chunk", "encoding": "base64", "data": "..." }
+8. On user stop, send { "type": "end_input" }
+9. Render transcript, answer_delta, audio_chunk, and turn_complete events
+```
+
+Do not start microphone streaming on raw `WebSocket.onopen`. `onopen` only
+means the socket transport is open; the backend may still be validating the
+session token and preparing STT/TTS resources. Start streaming only after
+`state: "connected"`.
+
 ### Client -> Server Events
 
 Start turn:
