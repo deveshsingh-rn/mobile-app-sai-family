@@ -128,6 +128,11 @@ export type DevoteeAiVoiceSession = {
   webSocketUrl: string;
 };
 
+export type EndActiveDevoteeAiVoiceSessionsResponse = {
+  endedCount: number;
+  success: boolean;
+};
+
 export type DevoteeAiVoiceClientEvent =
   | {
       audio: {
@@ -256,6 +261,34 @@ async function assertAiAuthSession() {
 
   if (!hasToken) {
     throw new Error(AUTH_REQUIRED_MESSAGE);
+  }
+}
+
+function normalizeVoiceWebSocketUrl(webSocketUrl: string) {
+  try {
+    const socketUrl = new URL(webSocketUrl);
+    const apiBaseUrl = apiClient.defaults.baseURL;
+
+    if (
+      !apiBaseUrl ||
+      !["127.0.0.1", "localhost"].includes(socketUrl.hostname)
+    ) {
+      return webSocketUrl;
+    }
+
+    const apiUrl = new URL(apiBaseUrl);
+
+    if (["127.0.0.1", "localhost"].includes(apiUrl.hostname)) {
+      return webSocketUrl;
+    }
+
+    socketUrl.hostname = apiUrl.hostname;
+    socketUrl.port = apiUrl.port;
+    socketUrl.protocol = apiUrl.protocol === "https:" ? "wss:" : "ws:";
+
+    return socketUrl.toString();
+  } catch {
+    return webSocketUrl;
   }
 }
 
@@ -431,6 +464,24 @@ export async function createDevoteeAiVoiceSession(
         conversationId: payload?.conversationId,
       }
     );
+
+    return {
+      ...data,
+      webSocketUrl: normalizeVoiceWebSocketUrl(data.webSocketUrl),
+    };
+  } catch (error) {
+    throw new Error(getAiErrorMessage(error));
+  }
+}
+
+export async function endActiveDevoteeAiVoiceSessions(): Promise<EndActiveDevoteeAiVoiceSessionsResponse> {
+  try {
+    await assertAiAuthSession();
+
+    const { data } =
+      await apiClient.delete<EndActiveDevoteeAiVoiceSessionsResponse>(
+        `${AI_BASE_PATH}/voice/sessions/active`
+      );
 
     return data;
   } catch (error) {

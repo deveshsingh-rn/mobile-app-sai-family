@@ -48,6 +48,7 @@ import {
   DevoteeAiVoiceServerEvent,
   DevoteeAiVoiceSession,
   DevoteeAiVoiceState,
+  endActiveDevoteeAiVoiceSessions,
   fetchDevoteeAiConversationDetail,
   fetchDevoteeAiConversations,
   askDevoteeQuestion,
@@ -69,12 +70,26 @@ const SUGGESTED_QUESTIONS = [
 const FULL_DUPLEX_VOICE_ENABLED =
   process.env.EXPO_PUBLIC_AI_VOICE_ENABLED === "true" ||
   process.env.EXPO_PUBLIC_VOICE_AI_ENABLED === "true";
-const VOICE_PROVIDER =
+const VOICE_PROVIDER: "elevenlabs" | "mock" =
   process.env.EXPO_PUBLIC_AI_VOICE_PROVIDER === "mock"
     ? "mock"
     : "elevenlabs";
 const ELEVENLABS_VOICE_ID =
   process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID || undefined;
+const VOICE_DEBUG_ENABLED = __DEV__;
+
+const logVoiceDebug = (message: string, payload?: Record<string, unknown>) => {
+  if (!VOICE_DEBUG_ENABLED) {
+    return;
+  }
+
+  if (payload) {
+    console.log(`[AskSaiVoice] ${message}`, payload);
+    return;
+  }
+
+  console.log(`[AskSaiVoice] ${message}`);
+};
 
 const createVoiceTurnId = () =>
   `turn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -140,8 +155,20 @@ export default function AskSaiScreen() {
   );
   const activeVoiceTurnIdRef = useRef<string | null>(null);
   const voiceAnswerBufferRef = useRef("");
+  const voiceChunkCountRef = useRef(0);
   const voiceFinalTranscriptRef = useRef("");
   const voiceHadAudioChunksRef = useRef(false);
+  const voiceTimingRef = useRef<{
+    connectedAt?: number;
+    firstAnswerAt?: number;
+    firstAudioChunkAt?: number;
+    firstMicChunkAt?: number;
+    firstTranscriptAt?: number;
+    sessionCreatedAt?: number;
+    socketOpenedAt?: number;
+    startedAt?: number;
+    tapAt?: number;
+  }>({});
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [conversationId, setConversationId] = useState<string | undefined>();
@@ -164,6 +191,7 @@ export default function AskSaiScreen() {
     useState<DevoteeAiVoiceSession | null>(null);
   const [voiceConnectionState, setVoiceConnectionState] =
     useState<DevoteeAiVoiceState>("idle");
+  const voiceConnectionStateRef = useRef<DevoteeAiVoiceState>("idle");
   const [voiceError, setVoiceError] = useState("");
   const [activeVoiceTurnId, setActiveVoiceTurnId] =
     useState<string | null>(null);
@@ -208,6 +236,10 @@ export default function AskSaiScreen() {
   const isVoiceControlActive =
     isListening || voiceConnectionState !== "idle";
 
+  useEffect(() => {
+    voiceConnectionStateRef.current = voiceConnectionState;
+  }, [voiceConnectionState]);
+
   const voiceStateLabel = useMemo(() => {
     switch (voiceAiState) {
       case "connected":
@@ -228,15 +260,6 @@ export default function AskSaiScreen() {
         return "Ready";
     }
   }, [voiceAiState]);
-
-  useEffect(() => {
-    return () => {
-      voiceSocketRef.current?.close();
-      voiceSocketRef.current = null;
-      activeVoiceTurnIdRef.current = null;
-      void Speech.stop();
-    };
-  }, []);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -270,7 +293,36 @@ export default function AskSaiScreen() {
     setIsSpeaking(false);
   }, []);
 
+  const cleanupBackendVoiceSessions = useCallback(async (reason: string) => {
+    try {
+      logVoiceDebug("Cleaning active backend voice sessions", { reason });
+
+      const response = await endActiveDevoteeAiVoiceSessions();
+
+      logVoiceDebug("Backend voice sessions cleaned", {
+        endedCount: response.endedCount,
+        reason,
+        success: response.success,
+      });
+
+      return response;
+    } catch (error) {
+      logVoiceDebug("Backend voice session cleanup failed", {
+        error: error instanceof Error ? error.message : String(error),
+        reason,
+      });
+
+      return null;
+    }
+  }, []);
+
   const closeVoiceSession = useCallback(() => {
+    logVoiceDebug("Closing voice session", {
+      chunksSent: voiceChunkCountRef.current,
+      state: voiceConnectionStateRef.current,
+      turnId: activeVoiceTurnIdRef.current,
+    });
+
     if (voiceConnectedTimeoutRef.current) {
       clearTimeout(voiceConnectedTimeoutRef.current);
       voiceConnectedTimeoutRef.current = null;
@@ -292,13 +344,23 @@ export default function AskSaiScreen() {
     voiceSocketRef.current = null;
     activeVoiceTurnIdRef.current = null;
     voiceAnswerBufferRef.current = "";
+    voiceChunkCountRef.current = 0;
     voiceFinalTranscriptRef.current = "";
     voiceHadAudioChunksRef.current = false;
+    voiceTimingRef.current = {};
     setActiveVoiceTurnId(null);
     setIsListening(false);
     setVoiceConnectionState("idle");
     setVoicePartialTranscript("");
-  }, []);
+    void cleanupBackendVoiceSessions("local-close");
+  }, [cleanupBackendVoiceSessions]);
+
+  useEffect(() => {
+    return () => {
+      closeVoiceSession();
+      void Speech.stop();
+    };
+  }, [closeVoiceSession]);
 
   const resetConversation = useCallback(() => {
     void stopSpeech();
@@ -377,6 +439,21 @@ export default function AskSaiScreen() {
 
     setIsListening(true);
     setVoiceConnectionState("listening");
+    voiceTimingRef.current.startedAt = Date.now();
+
+    logVoiceDebug("Sending start event and starting mic stream", {
+      audio: {
+        channels: pendingStart.audioChannels,
+        chunkMs: pendingStart.audioChunkMs,
+        format: "pcm_s16le",
+        sampleRate: pendingStart.audioSampleRate,
+      },
+      msSinceTap:
+        voiceTimingRef.current.tapAt
+          ? Date.now() - voiceTimingRef.current.tapAt
+          : undefined,
+      turnId: pendingStart.turnId,
+    });
 
     pendingStart.socketClient.send({
       audio: {
@@ -408,12 +485,38 @@ export default function AskSaiScreen() {
             turnId: pendingStart.turnId,
             type: "audio_chunk",
           });
+
+          voiceChunkCountRef.current += 1;
+
+          if (!voiceTimingRef.current.firstMicChunkAt) {
+            voiceTimingRef.current.firstMicChunkAt = Date.now();
+            logVoiceDebug("First mic chunk sent", {
+              bytesBase64: event.data.length,
+              msSinceStart:
+                voiceTimingRef.current.startedAt
+                  ? Date.now() - voiceTimingRef.current.startedAt
+                  : undefined,
+              sequence: event.sequence,
+              turnId: pendingStart.turnId,
+            });
+          } else if (voiceChunkCountRef.current % 10 === 0) {
+            logVoiceDebug("Mic chunks streaming", {
+              chunksSent: voiceChunkCountRef.current,
+              lastSequence: event.sequence,
+              turnId: pendingStart.turnId,
+            });
+          }
         }
       );
 
     audioErrorSubscriptionRef.current =
       pendingStart.audioStream.addAudioErrorListener(
         (event: SaiAudioStreamErrorEvent) => {
+          logVoiceDebug("Native audio stream error", {
+            code: event.code,
+            message: event.message,
+            turnId: pendingStart.turnId,
+          });
           setVoiceConnectionState("error");
           setVoiceError(event.message);
           void pendingStart.audioStream.stopSaiAudioStreamAsync();
@@ -430,17 +533,41 @@ export default function AskSaiScreen() {
     (event: DevoteeAiVoiceServerEvent) => {
       const eventTurnId = "turnId" in event ? event.turnId : undefined;
 
+      logVoiceDebug("Server event received", {
+        eventType: event.type,
+        state: event.type === "state" ? event.state : undefined,
+        textLength: "text" in event ? event.text.length : undefined,
+        turnId: eventTurnId,
+      });
+
       if (
         eventTurnId &&
         activeVoiceTurnIdRef.current &&
         eventTurnId !== activeVoiceTurnIdRef.current
       ) {
+        logVoiceDebug("Ignoring stale server event", {
+          activeTurnId: activeVoiceTurnIdRef.current,
+          eventTurnId,
+          eventType: event.type,
+        });
         return;
       }
 
       switch (event.type) {
         case "state":
           if (event.state === "connected") {
+            voiceTimingRef.current.connectedAt = Date.now();
+            logVoiceDebug("Backend confirmed connected", {
+              msSinceTap:
+                voiceTimingRef.current.tapAt
+                  ? Date.now() - voiceTimingRef.current.tapAt
+                  : undefined,
+              msSinceSocketOpen:
+                voiceTimingRef.current.socketOpenedAt
+                  ? Date.now() - voiceTimingRef.current.socketOpenedAt
+                  : undefined,
+              turnId: event.turnId,
+            });
             setVoiceConnectionState("connected");
             void startConnectedVoiceStreaming();
           } else {
@@ -449,11 +576,34 @@ export default function AskSaiScreen() {
           break;
 
         case "transcript_partial":
+          if (!voiceTimingRef.current.firstTranscriptAt) {
+            voiceTimingRef.current.firstTranscriptAt = Date.now();
+            logVoiceDebug("First transcript received", {
+              msSinceTap:
+                voiceTimingRef.current.tapAt
+                  ? Date.now() - voiceTimingRef.current.tapAt
+                  : undefined,
+              textLength: event.text.length,
+              turnId: event.turnId,
+            });
+          }
           setVoicePartialTranscript(event.text);
           setVoiceConnectionState("listening");
           break;
 
         case "transcript_final":
+          if (!voiceTimingRef.current.firstTranscriptAt) {
+            voiceTimingRef.current.firstTranscriptAt = Date.now();
+          }
+
+          logVoiceDebug("Final transcript received", {
+            msSinceTap:
+              voiceTimingRef.current.tapAt
+                ? Date.now() - voiceTimingRef.current.tapAt
+                : undefined,
+            textLength: event.text.length,
+            turnId: event.turnId,
+          });
           voiceFinalTranscriptRef.current = event.text;
           setVoiceFinalTranscript(event.text);
           setVoicePartialTranscript("");
@@ -462,12 +612,35 @@ export default function AskSaiScreen() {
           break;
 
         case "answer_delta":
+          if (!voiceTimingRef.current.firstAnswerAt) {
+            voiceTimingRef.current.firstAnswerAt = Date.now();
+            logVoiceDebug("First answer delta received", {
+              msSinceTap:
+                voiceTimingRef.current.tapAt
+                  ? Date.now() - voiceTimingRef.current.tapAt
+                  : undefined,
+              textLength: event.text.length,
+              turnId: event.turnId,
+            });
+          }
           voiceAnswerBufferRef.current += event.text;
           setAnswer(voiceAnswerBufferRef.current);
           setVoiceConnectionState("speaking");
           break;
 
         case "audio_chunk":
+          if (!voiceTimingRef.current.firstAudioChunkAt) {
+            voiceTimingRef.current.firstAudioChunkAt = Date.now();
+            logVoiceDebug("First response audio chunk received", {
+              dataLength: event.data.length,
+              format: event.format,
+              msSinceTap:
+                voiceTimingRef.current.tapAt
+                  ? Date.now() - voiceTimingRef.current.tapAt
+                  : undefined,
+              turnId: event.turnId,
+            });
+          }
           voiceHadAudioChunksRef.current = true;
           setVoiceConnectionState("speaking");
           break;
@@ -480,6 +653,49 @@ export default function AskSaiScreen() {
         case "turn_complete": {
           const finalQuestion = voiceFinalTranscriptRef.current || question;
           const finalAnswer = voiceAnswerBufferRef.current.trim();
+
+          logVoiceDebug("Turn complete", {
+            backendLatency: event.latency,
+            chunksSent: voiceChunkCountRef.current,
+            finalAnswerLength: finalAnswer.length,
+            finalQuestionLength: finalQuestion.length,
+            frontendLatency: {
+              connectedMs:
+                voiceTimingRef.current.tapAt &&
+                voiceTimingRef.current.connectedAt
+                  ? voiceTimingRef.current.connectedAt -
+                    voiceTimingRef.current.tapAt
+                  : undefined,
+              firstAnswerMs:
+                voiceTimingRef.current.tapAt &&
+                voiceTimingRef.current.firstAnswerAt
+                  ? voiceTimingRef.current.firstAnswerAt -
+                    voiceTimingRef.current.tapAt
+                  : undefined,
+              firstAudioMs:
+                voiceTimingRef.current.tapAt &&
+                voiceTimingRef.current.firstAudioChunkAt
+                  ? voiceTimingRef.current.firstAudioChunkAt -
+                    voiceTimingRef.current.tapAt
+                  : undefined,
+              firstMicChunkMs:
+                voiceTimingRef.current.tapAt &&
+                voiceTimingRef.current.firstMicChunkAt
+                  ? voiceTimingRef.current.firstMicChunkAt -
+                    voiceTimingRef.current.tapAt
+                  : undefined,
+              firstTranscriptMs:
+                voiceTimingRef.current.tapAt &&
+                voiceTimingRef.current.firstTranscriptAt
+                  ? voiceTimingRef.current.firstTranscriptAt -
+                    voiceTimingRef.current.tapAt
+                  : undefined,
+              totalMs: voiceTimingRef.current.tapAt
+                ? Date.now() - voiceTimingRef.current.tapAt
+                : undefined,
+            },
+            turnId: event.turnId,
+          });
 
           if (event.conversationId) {
             setConversationId(event.conversationId);
@@ -531,17 +747,25 @@ export default function AskSaiScreen() {
           activeVoiceTurnIdRef.current = null;
           setActiveVoiceTurnId(null);
           setVoiceConnectionState("idle");
+          void cleanupBackendVoiceSessions("turn-complete");
           void loadConversations();
           break;
         }
 
         case "error":
+          logVoiceDebug("Server error event", {
+            code: event.code,
+            message: event.message,
+            turnId: event.turnId,
+          });
           setVoiceConnectionState("error");
           setVoiceError(getVoiceErrorMessage(event.code, event.message));
+          void cleanupBackendVoiceSessions("server-error");
           break;
       }
     },
     [
+      cleanupBackendVoiceSessions,
       conversationId,
       loadConversations,
       question,
@@ -713,16 +937,43 @@ export default function AskSaiScreen() {
   }, [submitQuestion]);
 
   const handleVoiceQuestion = useCallback(async () => {
+    logVoiceDebug("Voice button pressed", {
+      fullDuplexEnabled: FULL_DUPLEX_VOICE_ENABLED,
+      isListening,
+      provider: VOICE_PROVIDER,
+      socketReadyState: voiceSocketRef.current?.readyState,
+      state: voiceConnectionState,
+    });
+
     if (
       FULL_DUPLEX_VOICE_ENABLED &&
       (voiceSocketRef.current || voiceConnectionState !== "idle")
     ) {
+      if (!voiceSocketRef.current) {
+        logVoiceDebug("Resetting stale voice state without socket", {
+          state: voiceConnectionState,
+        });
+
+        pendingVoiceStartRef.current = null;
+        activeVoiceTurnIdRef.current = null;
+        setActiveVoiceTurnId(null);
+        setIsListening(false);
+        setVoiceConnectionState("idle");
+        setVoiceError("");
+        return;
+      }
+
       const activeTurnId = activeVoiceTurnIdRef.current;
 
       if (
         activeTurnId &&
         voiceSocketRef.current?.readyState === WebSocket.OPEN
       ) {
+        logVoiceDebug("Sending end_input", {
+          chunksSent: voiceChunkCountRef.current,
+          turnId: activeTurnId,
+        });
+
         voiceSocketRef.current.send({
           turnId: activeTurnId,
           type: "end_input",
@@ -758,6 +1009,16 @@ export default function AskSaiScreen() {
       await stopSpeech();
 
       if (FULL_DUPLEX_VOICE_ENABLED) {
+        voiceTimingRef.current = {
+          tapAt: Date.now(),
+        };
+        voiceChunkCountRef.current = 0;
+
+        logVoiceDebug("Starting full-duplex voice flow", {
+          conversationId,
+          provider: VOICE_PROVIDER,
+        });
+
         setVoiceError("");
         setVoiceConnectionState("connecting");
         setVoicePartialTranscript("");
@@ -767,8 +1028,14 @@ export default function AskSaiScreen() {
         voiceHadAudioChunksRef.current = false;
 
         const audioStream = await getSaiAudioStreamModule();
+        logVoiceDebug("Native audio module loaded");
+
         const permissions =
           await audioStream.requestSaiAudioStreamPermissionsAsync();
+
+        logVoiceDebug("Microphone permission result", {
+          granted: permissions.granted,
+        });
 
         if (!permissions.granted) {
           setVoiceConnectionState("error");
@@ -778,13 +1045,58 @@ export default function AskSaiScreen() {
           return;
         }
 
-        const session = await createDevoteeAiVoiceSession({
+        await cleanupBackendVoiceSessions("before-create");
+
+        logVoiceDebug("Creating voice session", {
           conversationId,
-          locale: "hi-IN",
-          pillar: "experiences",
-          secondaryLocale: "en-IN",
+          provider: VOICE_PROVIDER,
+        });
+
+        const voiceSessionPayload = {
+          conversationId,
+          locale: "hi-IN" as const,
+          pillar: "experiences" as const,
+          secondaryLocale: "en-IN" as const,
           ttsVoiceId: ELEVENLABS_VOICE_ID,
           voiceProvider: VOICE_PROVIDER,
+        };
+
+        let session: DevoteeAiVoiceSession;
+
+        try {
+          session = await createDevoteeAiVoiceSession(voiceSessionPayload);
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+
+          if (!errorMessage.toLowerCase().includes("already active")) {
+            throw error;
+          }
+
+          logVoiceDebug("Create session found active backend session; cleaning and retrying", {
+            error: errorMessage,
+          });
+
+          await cleanupBackendVoiceSessions("already-active-retry");
+          session = await createDevoteeAiVoiceSession(voiceSessionPayload);
+        }
+
+        voiceTimingRef.current.sessionCreatedAt = Date.now();
+
+        logVoiceDebug("Voice session created", {
+          audio: session.audio,
+          conversationId: session.conversationId,
+          msSinceTap:
+            voiceTimingRef.current.tapAt
+              ? Date.now() - voiceTimingRef.current.tapAt
+              : undefined,
+          providers: session.providers,
+          sessionId: session.sessionId,
+          status: session.status,
+          webSocketUrl: session.webSocketUrl.replace(
+            /([?&]token=)[^&]+/,
+            "$1***"
+          ),
         });
 
         setVoiceSession(session);
@@ -803,6 +1115,12 @@ export default function AskSaiScreen() {
 
         socketClient = createDevoteeAiVoiceSocket(session, {
           onClose: () => {
+            logVoiceDebug("WebSocket closed", {
+              chunksSent: voiceChunkCountRef.current,
+              state: voiceConnectionState,
+              turnId,
+            });
+
             if (voiceConnectedTimeoutRef.current) {
               clearTimeout(voiceConnectedTimeoutRef.current);
               voiceConnectedTimeoutRef.current = null;
@@ -825,6 +1143,11 @@ export default function AskSaiScreen() {
             );
           },
           onError: () => {
+            logVoiceDebug("WebSocket error", {
+              state: voiceConnectionState,
+              turnId,
+            });
+
             if (voiceConnectedTimeoutRef.current) {
               clearTimeout(voiceConnectedTimeoutRef.current);
               voiceConnectedTimeoutRef.current = null;
@@ -842,6 +1165,15 @@ export default function AskSaiScreen() {
           },
           onEvent: handleVoiceServerEvent,
           onOpen: () => {
+            voiceTimingRef.current.socketOpenedAt = Date.now();
+            logVoiceDebug("WebSocket opened", {
+              msSinceTap:
+                voiceTimingRef.current.tapAt
+                  ? Date.now() - voiceTimingRef.current.tapAt
+                  : undefined,
+              turnId,
+            });
+
             setVoiceConnectionState("connecting");
             setVoiceError("Voice socket opened. Waiting for backend...");
 
@@ -853,6 +1185,14 @@ export default function AskSaiScreen() {
               const pendingStart = pendingVoiceStartRef.current;
 
               if (pendingStart && !pendingStart.hasStarted) {
+                logVoiceDebug("Backend connected timeout", {
+                  msSinceSocketOpen:
+                    voiceTimingRef.current.socketOpenedAt
+                      ? Date.now() - voiceTimingRef.current.socketOpenedAt
+                      : undefined,
+                  turnId: pendingStart.turnId,
+                });
+
                 pendingVoiceStartRef.current = null;
                 setVoiceConnectionState("error");
                 setVoiceError(
@@ -920,13 +1260,42 @@ export default function AskSaiScreen() {
         lang: "en-IN",
         maxAlternatives: 1,
       });
-    } catch {
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      logVoiceDebug("Voice flow failed", {
+        error: errorMessage,
+        provider: VOICE_PROVIDER,
+        state: voiceConnectionState,
+      });
+
+      if (voiceConnectedTimeoutRef.current) {
+        clearTimeout(voiceConnectedTimeoutRef.current);
+        voiceConnectedTimeoutRef.current = null;
+      }
+
+      pendingVoiceStartRef.current = null;
+      voiceSocketRef.current = null;
+      activeVoiceTurnIdRef.current = null;
+      setActiveVoiceTurnId(null);
       setIsListening(false);
+      setVoiceConnectionState("idle");
+
+      if (errorMessage.toLowerCase().includes("already active")) {
+        setVoiceError(
+          "A previous voice session is still active on the backend. Please wait a moment, then tap mic again."
+        );
+        return;
+      }
+
       setVoiceError(
-        "Voice input needs a custom development build. Please type your question for now."
+        errorMessage ||
+          "Voice input needs a custom development build. Please type your question for now."
       );
     }
   }, [
+    cleanupBackendVoiceSessions,
     conversationId,
     handleVoiceServerEvent,
     isListening,
