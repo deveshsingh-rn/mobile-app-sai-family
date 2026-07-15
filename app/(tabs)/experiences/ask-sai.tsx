@@ -94,6 +94,19 @@ const logVoiceDebug = (message: string, payload?: Record<string, unknown>) => {
 const createVoiceTurnId = () =>
   `turn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+const getSpeechLanguage = () => (Platform.OS === "ios" ? "en-US" : "en-IN");
+
+const base64ToArrayBuffer = (base64: string) => {
+  const binary = globalThis.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes.buffer;
+};
+
 const getVoiceErrorMessage = (code?: string, fallback?: string) => {
   switch (code) {
     case "UNAUTHENTICATED":
@@ -158,6 +171,19 @@ export default function AskSaiScreen() {
   const voiceChunkCountRef = useRef(0);
   const voiceFinalTranscriptRef = useRef("");
   const voiceHadAudioChunksRef = useRef(false);
+  const voiceAudioContextRef = useRef<{
+    close: () => Promise<void>;
+    decodeAudioData: (data: ArrayBuffer) => Promise<unknown>;
+    destination: unknown;
+    resume: () => Promise<void>;
+  } | null>(null);
+  const voiceAudioQueueRef = useRef<{
+    clearBuffers: () => void;
+    enqueueBuffer: (buffer: unknown) => string;
+    stop: () => void;
+    start: (when?: number, offset?: number) => void;
+  } | null>(null);
+  const voiceAudioDecodeQueueRef = useRef(Promise.resolve());
   const voiceTimingRef = useRef<{
     connectedAt?: number;
     firstAnswerAt?: number;
@@ -288,10 +314,106 @@ export default function AskSaiScreen() {
     void loadConversations();
   }, [loadConversations]);
 
-  const stopSpeech = useCallback(async () => {
-    await Speech.stop();
+  const stopVoicePlayback = useCallback(async () => {
+    voiceAudioDecodeQueueRef.current = Promise.resolve();
+
+    try {
+      voiceAudioQueueRef.current?.clearBuffers();
+      voiceAudioQueueRef.current?.stop();
+    } catch {
+      // Native queue may already be stopped.
+    }
+
+    voiceAudioQueueRef.current = null;
+
+    if (voiceAudioContextRef.current) {
+      try {
+        await voiceAudioContextRef.current.close();
+      } catch {
+        // Context may already be closed during route cleanup.
+      }
+    }
+
+    voiceAudioContextRef.current = null;
     setIsSpeaking(false);
   }, []);
+
+  const ensureVoicePlaybackQueue = useCallback(async () => {
+    if (!voiceAudioContextRef.current || !voiceAudioQueueRef.current) {
+      const { AudioContext } = await import("react-native-audio-api");
+      const audioContext = new AudioContext();
+      const queueSource = audioContext.createBufferQueueSource({
+        pitchCorrection: false,
+      }) as unknown as NonNullable<typeof voiceAudioQueueRef.current> & {
+        connect: (destination: unknown) => unknown;
+      };
+
+      queueSource.connect(audioContext.destination);
+      queueSource.start(0, 0);
+      await audioContext.resume();
+
+      voiceAudioContextRef.current = audioContext;
+      voiceAudioQueueRef.current = queueSource;
+    }
+
+    const audioContext = voiceAudioContextRef.current;
+    const queueSource = voiceAudioQueueRef.current;
+
+    if (!audioContext || !queueSource) {
+      throw new Error("Voice playback queue is not ready");
+    }
+
+    return { audioContext, queueSource };
+  }, []);
+
+  const enqueueVoiceAudioChunk = useCallback(
+    (event: Extract<DevoteeAiVoiceServerEvent, { type: "audio_chunk" }>) => {
+      voiceAudioDecodeQueueRef.current = voiceAudioDecodeQueueRef.current
+        .then(async () => {
+          if (
+            activeVoiceTurnIdRef.current &&
+            event.turnId !== activeVoiceTurnIdRef.current
+          ) {
+            return;
+          }
+
+          const { audioContext, queueSource } =
+            await ensureVoicePlaybackQueue();
+          const audioBuffer = await audioContext.decodeAudioData(
+            base64ToArrayBuffer(event.data)
+          );
+
+          queueSource.enqueueBuffer(audioBuffer);
+          voiceHadAudioChunksRef.current = true;
+          setIsSpeaking(true);
+          setVoiceConnectionState("speaking");
+        })
+        .catch((error) => {
+          logVoiceDebug("Voice audio chunk playback failed", {
+            error: error instanceof Error ? error.message : String(error),
+            format: event.format,
+            turnId: event.turnId,
+          });
+        });
+    },
+    [ensureVoicePlaybackQueue]
+  );
+
+  const stopSpeech = useCallback(async () => {
+    try {
+      await Speech.stop();
+    } catch (error) {
+      logVoiceDebug("Expo speech stop failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    if (voiceAudioContextRef.current || voiceAudioQueueRef.current) {
+      await stopVoicePlayback();
+    }
+
+    setIsSpeaking(false);
+  }, [stopVoicePlayback]);
 
   const cleanupBackendVoiceSessions = useCallback(async (reason: string) => {
     try {
@@ -342,6 +464,7 @@ export default function AskSaiScreen() {
     audioErrorSubscriptionRef.current = null;
     voiceSocketRef.current?.close();
     voiceSocketRef.current = null;
+    void stopVoicePlayback();
     activeVoiceTurnIdRef.current = null;
     voiceAnswerBufferRef.current = "";
     voiceChunkCountRef.current = 0;
@@ -353,7 +476,7 @@ export default function AskSaiScreen() {
     setVoiceConnectionState("idle");
     setVoicePartialTranscript("");
     void cleanupBackendVoiceSessions("local-close");
-  }, [cleanupBackendVoiceSessions]);
+  }, [cleanupBackendVoiceSessions, stopVoicePlayback]);
 
   useEffect(() => {
     return () => {
@@ -384,16 +507,33 @@ export default function AskSaiScreen() {
         return;
       }
 
-      await Speech.stop();
-      setIsSpeaking(true);
-      Speech.speak(textToSpeak, {
-        language: "en-IN",
-        pitch: 1,
-        rate: 0.9,
-        onDone: () => setIsSpeaking(false),
-        onError: () => setIsSpeaking(false),
-        onStopped: () => setIsSpeaking(false),
-      });
+      try {
+        await Speech.stop();
+        setIsSpeaking(true);
+        Speech.speak(textToSpeak, {
+          language: getSpeechLanguage(),
+          pitch: 1,
+          rate: Platform.OS === "ios" ? 0.48 : 0.9,
+          onDone: () => setIsSpeaking(false),
+          onError: (error) => {
+            logVoiceDebug("Expo speech speak failed", {
+              error: typeof error === "string" ? error : String(error),
+            });
+            setIsSpeaking(false);
+          },
+          onStopped: () => setIsSpeaking(false),
+        });
+      } catch (error) {
+        setIsSpeaking(false);
+        logVoiceDebug("Expo speech start crashed", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        Alert.alert(
+          "Speak reply",
+          "Voice playback is not available right now. Please read the reply on screen."
+        );
+        return;
+      }
 
       trackProductEvent("Devotee Answer Spoken", {
         pillar: "experiences",
@@ -407,15 +547,31 @@ export default function AskSaiScreen() {
       return;
     }
 
-    const speaking = await Speech.isSpeakingAsync();
+    let speaking = false;
+
+    try {
+      speaking = await Speech.isSpeakingAsync();
+    } catch (error) {
+      logVoiceDebug("Expo speech status failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
 
     if (speaking || isSpeaking) {
-      await stopSpeech();
+      try {
+        await Speech.stop();
+      } catch (error) {
+        logVoiceDebug("Expo speech stop from button failed", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+
+      setIsSpeaking(false);
       return;
     }
 
     await speakText(answer);
-  }, [answer, isSpeaking, speakText, stopSpeech]);
+  }, [answer, isSpeaking, speakText]);
 
   const startConnectedVoiceStreaming = useCallback(async () => {
     const pendingStart = pendingVoiceStartRef.current;
@@ -608,6 +764,12 @@ export default function AskSaiScreen() {
           setVoiceFinalTranscript(event.text);
           setVoicePartialTranscript("");
           setQuestion(event.text);
+          setIsListening(false);
+          void getSaiAudioStreamModule()
+            .then((audioStream) => audioStream.stopSaiAudioStreamAsync())
+            .catch(() => {
+              // The native stream module may be unavailable in Expo Go.
+            });
           setVoiceConnectionState("thinking");
           break;
 
@@ -641,7 +803,7 @@ export default function AskSaiScreen() {
               turnId: event.turnId,
             });
           }
-          voiceHadAudioChunksRef.current = true;
+          enqueueVoiceAudioChunk(event);
           setVoiceConnectionState("speaking");
           break;
 
@@ -767,6 +929,7 @@ export default function AskSaiScreen() {
     [
       cleanupBackendVoiceSessions,
       conversationId,
+      enqueueVoiceAudioChunk,
       loadConversations,
       question,
       speakText,

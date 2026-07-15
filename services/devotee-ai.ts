@@ -174,7 +174,7 @@ export type DevoteeAiVoiceServerEvent =
   | {
       data: string;
       encoding: "base64";
-      format: "mp3_44100";
+      format: "mp3_44100" | "wav_16000" | string;
       turnId: string;
       type: "audio_chunk";
     }
