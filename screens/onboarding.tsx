@@ -137,7 +137,7 @@ function WelcomeSlide({
     >
       <ImageBackground
         imageStyle={styles.welcomeBackgroundImage}
-        resizeMode="cover"
+        resizeMode='stretch'
         source={image}
         style={styles.welcomeBackground}
       >
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   welcomeBackgroundImage: {
-    transform: [{ scale: 1.02 }],
+    transform: [{ scale: 1 }],
   },
   welcomeOverlay: {
     flex: 1,
@@ -724,8 +724,8 @@ const styles = StyleSheet.create({
     width: 74,
   },
   welcomeSubtitle: {
-    color: "#FFF6DD",
-    fontSize: 15.5,
+    color: "#eabb3b",
+    fontSize: 19.5,
     fontWeight: "500",
     lineHeight: 23,
     marginTop: 14,
