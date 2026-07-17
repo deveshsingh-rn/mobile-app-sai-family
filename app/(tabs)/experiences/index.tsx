@@ -8,6 +8,7 @@ import React, {
 import {
   ActivityIndicator,
   Animated,
+  ImageBackground,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -21,9 +22,9 @@ import { FlashList } from "@shopify/flash-list";
 import { router } from "expo-router";
 
 import {
+  Mic2,
   PenLine,
   Search,
-  UserCircle2,
 } from "lucide-react-native";
 
 import {
@@ -55,6 +56,8 @@ import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 const LIMIT = 10;
 const HEADER_SCROLL_THRESHOLD = 18;
 const HEADER_ANIMATION_MS = 150;
+const SAI_BABA_WELCOME_IMAGE =
+  require("@/assets/images/saijii.jpg");
 
 const CATEGORIES = [
   {
@@ -450,71 +453,80 @@ export default function HomeScreen() {
               },
             ]}
           >
-            <View style={styles.header}>
-              <View style={styles.headerLeft}>
-                <View style={styles.headerIcon}>
-                  <UserCircle2
-                    size={23}
-                    color="#1F2937"
-                    strokeWidth={1.8}
-                  />
-                </View>
+            <ImageBackground
+              imageStyle={styles.askSaiImage}
+              resizeMode='contain'
+              source={SAI_BABA_WELCOME_IMAGE}
+              style={styles.askSaiCard}
+            >
+              <View style={styles.askSaiScrim} />
 
+              <View style={styles.askSaiTopRow}>
                 <View>
-                  <Text style={styles.eyebrow}>
-                    Sai Family
+                  <Text style={styles.askSaiEyebrow}>
+                    OM SAI RAM
                   </Text>
-                  <Text style={styles.title}>
-                    Experiences
+                  <Text style={styles.askSaiTitle}>
+                    Ask Sai
                   </Text>
+                </View>
+
+                <View style={styles.headerActions}>
+                  <Pressable
+                    onPress={() =>
+                      router.push("/(tabs)/experiences/search" as any)
+                    }
+                    style={styles.headerAction}
+                  >
+                    <Search
+                      size={18}
+                      color="#3A2610"
+                      strokeWidth={2}
+                    />
+                  </Pressable>
+                  <Pressable
+                    onPress={() =>
+                      router.push("/(tabs)/experiences/post" as any)
+                    }
+                    style={styles.primaryAction}
+                  >
+                    <PenLine
+                      size={17}
+                      color="#FFFFFF"
+                      strokeWidth={2}
+                    />
+                  </Pressable>
                 </View>
               </View>
 
-              <View style={styles.headerActions}>
-                <Pressable
-                  onPress={() =>
-                    router.push("/(tabs)/experiences/search" as any)
-                  }
-                  style={styles.headerAction}
-                >
-                  <Search
-                    size={18}
-                    color="#1F2937"
-                    strokeWidth={2}
-                  />
-                </Pressable>
-                <Pressable
-                  onPress={() =>
-                    router.push("/(tabs)/experiences/post" as any)
-                  }
-                  style={styles.primaryAction}
-                >
-                  <PenLine
-                    size={17}
-                    color="#FFFFFF"
-                    strokeWidth={2}
-                  />
-                </Pressable>
-              </View>
-            </View>
+              <View style={styles.askSaiBottomRow}>
+                <View style={styles.askSaiCopy}>
+                  <Text style={styles.askSaiPrompt}>
+                    Speak your question,
+                    receive peaceful guidance.
+                  </Text>
+                  <Text style={styles.askSaiMeta}>
+                    Voice assistant for devotees
+                  </Text>
+                </View>
 
-            {/* <View style={styles.heroPanel}>
-              <View style={styles.heroTextWrap}>
-                <Text style={styles.heroTitle}>
-                  Share blessings, prayers, dreams, and darshan stories.
-                </Text>
-                <Text style={styles.heroMeta}>
-                  {feed.length || 0} live posts in your family feed
-                </Text>
+                <Pressable
+                  onPress={() =>
+                    router.push("/(tabs)/experiences/ask-sai" as any)
+                  }
+                  style={({ pressed }) => [
+                    styles.askSaiMicButton,
+                    pressed && styles.askSaiMicPressed,
+                  ]}
+                >
+                  <Mic2
+                    size={26}
+                    color="#3A2108"
+                    strokeWidth={2.4}
+                  />
+                </Pressable>
               </View>
-              <View style={styles.heroBadge}>
-                <Sparkles
-                  size={18}
-                  color="#F97316"
-                  strokeWidth={2}
-                />
-              </View>
-            </View> */}
+            </ImageBackground>
           </Animated.View>
         )}
 
@@ -589,11 +601,122 @@ const styles = StyleSheet.create({
 
   fixedTop: {
     backgroundColor: "#FFFCF7",
-
     borderBottomWidth: 1,
-
     borderBottomColor: "#E9D8BD",
     paddingTop: 54,
+  },
+
+  askSaiCard: {
+    borderRadius: 24,
+    justifyContent: "space-between",
+    marginBottom: 14,
+    marginHorizontal: 16,
+     backgroundColor: "rgb(76, 64, 54)",
+    minHeight: 238,
+    overflow: "hidden",
+    padding: 16,
+    shadowColor: "#9A5C10",
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+
+  askSaiImage: {
+    borderRadius: 24,
+  },
+
+  askSaiScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(40, 21, 5, 0)",
+  },
+
+  askSaiTopRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    position: "relative",
+    zIndex: 1,
+  },
+
+  askSaiEyebrow: {
+    color: "#FFE8A8",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 2.1,
+    textShadowColor: "rgba(0, 0, 0, 0.28)",
+    textShadowOffset: { height: 1, width: 0 },
+    textShadowRadius: 4,
+  },
+
+  askSaiTitle: {
+    color: "#FFF4CF",
+    fontFamily: "Georgia",
+    fontSize: 34,
+    fontWeight: "900",
+    lineHeight: 40,
+    marginTop: 2,
+    textShadowColor: "rgba(0, 0, 0, 0.34)",
+    textShadowOffset: { height: 1, width: 0 },
+    textShadowRadius: 7,
+  },
+
+  askSaiBottomRow: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    gap: 14,
+    justifyContent: "space-between",
+    position: "relative",
+    zIndex: 1,
+  },
+
+  askSaiCopy: {
+    flex: 1,
+    paddingRight: 8,
+  },
+
+  askSaiPrompt: {
+    color: "#FFF7E1",
+    fontSize: 16,
+    fontWeight: "800",
+    lineHeight: 22,
+    maxWidth: 230,
+    textShadowColor: "rgba(0, 0, 0, 0.32)",
+    textShadowOffset: { height: 1, width: 0 },
+    textShadowRadius: 5,
+  },
+
+  askSaiMeta: {
+    color: "#FFE2A0",
+    fontSize: 12.5,
+    fontWeight: "700",
+    marginTop: 5,
+  },
+
+  askSaiMicButton: {
+    alignItems: "center",
+    backgroundColor: "#FFE29A",
+    borderColor: "rgba(255, 255, 255, 0.74)",
+    borderRadius: 24,
+    borderWidth: 2,
+    height: 64,
+    justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    width: 64,
+  },
+
+  askSaiMicPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.97 }],
   },
 
   header: {
