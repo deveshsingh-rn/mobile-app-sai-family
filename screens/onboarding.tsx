@@ -14,6 +14,7 @@
 import { useState } from "react";
 import {
   Image,
+  ImageBackground,
   ImageSourcePropType,
   Pressable,
   StyleSheet,
@@ -131,31 +132,39 @@ function WelcomeSlide({
   });
 
   return (
-    <Animated.View style={[styles.slide, { width }, animatedStyle]}>
-      <View style={styles.welcomeBody}>
-        <View style={styles.imageStack}>
-          <LinearGradient
-            colors={[C.saffronBg, "#FDF5E6"]}
-            style={styles.imageHalo}
-          />
-          <View style={styles.saffronRing}>
-            <View style={styles.innerDashedRing} />
-            <View style={styles.imageWell}>
-              <Image resizeMode="contain" source={image} style={styles.welcomeImage} />
+    <Animated.View
+      style={[styles.slide, styles.welcomeSlide, { width }, animatedStyle]}
+    >
+      <ImageBackground
+        imageStyle={styles.welcomeBackgroundImage}
+        resizeMode="cover"
+        source={image}
+        style={styles.welcomeBackground}
+      >
+        <LinearGradient
+          colors={[
+            "rgba(28, 18, 6, 0.12)",
+            "rgba(40, 22, 7, 0.34)",
+            "rgba(30, 16, 5, 0.86)",
+          ]}
+          locations={[0, 0.5, 1]}
+          style={styles.welcomeOverlay}
+        >
+          <View style={styles.welcomeBody}>
+            <View style={styles.kicker}>
+              <Sparkles color="#FFE7A3" size={12} strokeWidth={2.4} />
+              <Text style={styles.kickerText}>OM SAI RAM</Text>
             </View>
+
+            <Text style={styles.welcomeTitle}>Sai Ki Family</Text>
+            <View style={styles.welcomeGoldenLine} />
+            <Text style={styles.welcomeSubtitle}>
+              Welcome Home.{"\n"}
+The Global Family of Sai Devotees
+            </Text>
           </View>
-        </View>
-
-        <View style={styles.kicker}>
-          <Sparkles color={C.saffronText} size={11} strokeWidth={2.3} />
-          <Text style={styles.kickerText}>OM SAI RAM</Text>
-        </View>
-
-        <Text style={styles.welcomeTitle}>Sai Ki Family</Text>
-        <Text style={styles.welcomeSubtitle}>
-          Your peaceful space for devotion, community, and sacred connection.
-        </Text>
-      </View>
+        </LinearGradient>
+      </ImageBackground>
     </Animated.View>
   );
 }
@@ -613,11 +622,24 @@ const styles = StyleSheet.create({
   slide: { justifyContent: "flex-start", paddingHorizontal: 22, paddingTop: 12 },
 
   /* Slide 1 */
+  welcomeSlide: {
+    paddingHorizontal: 0,
+    paddingTop: 0,
+  },
+  welcomeBackground: {
+    flex: 1,
+  },
+  welcomeBackgroundImage: {
+    transform: [{ scale: 1.02 }],
+  },
+  welcomeOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
   welcomeBody: {
     alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-    paddingBottom: 40,
+    paddingBottom: 54,
+    paddingHorizontal: 26,
   },
   imageStack: {
     alignItems: "center",
@@ -667,8 +689,8 @@ const styles = StyleSheet.create({
   welcomeImage: { height: 148, width: 148 },
   kicker: {
     alignItems: "center",
-    backgroundColor: C.saffronBg,
-    borderColor: C.saffronBorder,
+    backgroundColor: "rgba(255, 240, 184, 0.16)",
+    borderColor: "rgba(255, 231, 163, 0.5)",
     borderRadius: 100,
     borderWidth: 1,
     flexDirection: "row",
@@ -678,27 +700,39 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   kickerText: {
-    color: C.saffronText,
+    color: "#FFE7A3",
     fontSize: 10.5,
     fontWeight: "700",
     letterSpacing: 3,
   },
   welcomeTitle: {
-    color: C.ink,
+    color: "#FFE3A1",
     fontFamily: "Georgia",
-    fontSize: 30,
+    fontSize: 34,
     fontWeight: "700",
-    letterSpacing: -0.5,
-    lineHeight: 36,
+    lineHeight: 40,
+    textShadowColor: "rgba(0, 0, 0, 0.32)",
+    textShadowOffset: { height: 1, width: 0 },
+    textShadowRadius: 6,
     textAlign: "center",
   },
-  welcomeSubtitle: {
-    color: C.inkSecondary,
-    fontSize: 15,
-    fontWeight: "400",
-    lineHeight: 22,
+  welcomeGoldenLine: {
+    backgroundColor: "rgba(255, 218, 128, 0.78)",
+    borderRadius: 100,
+    height: 2,
     marginTop: 12,
-    maxWidth: 300,
+    width: 74,
+  },
+  welcomeSubtitle: {
+    color: "#FFF6DD",
+    fontSize: 15.5,
+    fontWeight: "500",
+    lineHeight: 23,
+    marginTop: 14,
+    maxWidth: 310,
+    textShadowColor: "rgba(0, 0, 0, 0.28)",
+    textShadowOffset: { height: 1, width: 0 },
+    textShadowRadius: 4,
     textAlign: "center",
   },
 
