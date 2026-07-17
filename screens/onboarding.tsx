@@ -151,7 +151,7 @@ function WelcomeSlide({
           <Text style={styles.kickerText}>OM SAI RAM</Text>
         </View>
 
-        <Text style={styles.welcomeTitle}>Welcome home,{"\n"}devotee</Text>
+        <Text style={styles.welcomeTitle}>Sai Ki Family</Text>
         <Text style={styles.welcomeSubtitle}>
           Your peaceful space for devotion, community, and sacred connection.
         </Text>
@@ -391,6 +391,7 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
   const progress = useSharedValue(0);
 
   const image = require("../assets/images/saibaba1.png");
+  const image2 = require("../assets/images/saijii.jpg");
 
   const isFirst = activeIndex === 0;
   const isLast = activeIndex === 2;
@@ -487,7 +488,7 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
       <Animated.View
         style={[styles.slider, { width: width * 3 }, sliderStyle]}
       >
-        <WelcomeSlide image={image} index={0} progress={progress} width={width} />
+        <WelcomeSlide image={image2} index={0} progress={progress} width={width} />
         <PersonalizeSlide
           image={image}
           index={1}
