@@ -8,6 +8,8 @@ import {
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
+const SAI_BABA_WELCOME_IMAGE =
+  require("../assets/images/saijii.jpg");
 
 // ── Flower Petal Component ──────────────────────────────────────────────────
 const FLOWER_EMOJIS = ["✦", "🔅","✧", "✺","🔸","🔆"];
@@ -313,12 +315,12 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
         Om Sai Ram
       </Animated.Text>
 
-      {/* ── Glow ring + Image ── */}
+      {/* ── Golden 16:9 Sai Baba image card ── */}
       <View style={styles.imageWrapper}>
         <GlowRing />
         <View style={styles.imageHalo} />
         <Animated.Image
-          source={require("../assets/images/saibaba1.png")}
+          source={SAI_BABA_WELCOME_IMAGE}
           style={[
             styles.saiBabaImage,
             {
@@ -326,7 +328,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
               transform: [{ scale: imageScale }],
             },
           ]}
-          resizeMode="contain"
+          resizeMode="stretch"
         />
       </View>
 
@@ -347,7 +349,10 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
 }
 
 // ── Styles ───────────────────────────────────────────────────────────────────
-const IMG_SIZE = width * 0.62;
+const IMAGE_CARD_WIDTH = Math.min(width * 0.64, 360);
+const IMAGE_CARD_WIDTH1 = Math.min(width * 0.84, 360);
+const IMAGE_CARD_HEIGHT = IMAGE_CARD_WIDTH1 * 0.9625;
+const IMAGE_CARD_RADIUS = 28;
 
 const styles = StyleSheet.create({
   container: {
@@ -426,14 +431,14 @@ const styles = StyleSheet.create({
   imageWrapper: {
     alignItems: "center",
     justifyContent: "center",
-    width: IMG_SIZE + 30,
-    height: IMG_SIZE + 30,
+    width: IMAGE_CARD_WIDTH + 28,
+    height: IMAGE_CARD_HEIGHT + 28,
   },
   glowRing: {
     position: "absolute",
-    width: IMG_SIZE + 28,
-    height: IMG_SIZE + 28,
-    borderRadius: (IMG_SIZE + 28) / 2,
+    width: IMAGE_CARD_WIDTH + 26,
+    height: IMAGE_CARD_HEIGHT + 26,
+    borderRadius: IMAGE_CARD_RADIUS + 12,
     borderWidth: 1,
     borderColor: "#e3b34f",
     shadowColor: "#d59a25",
@@ -444,17 +449,17 @@ const styles = StyleSheet.create({
   },
   imageHalo: {
     position: "absolute",
-    width: IMG_SIZE + 8,
-    height: IMG_SIZE + 8,
-    borderRadius: (IMG_SIZE + 8) / 2,
+    width: IMAGE_CARD_WIDTH + 12,
+    height: IMAGE_CARD_HEIGHT + 12,
+    borderRadius: IMAGE_CARD_RADIUS + 6,
     backgroundColor: "#fffdf7",
   },
   saiBabaImage: {
-    width: IMG_SIZE,
-    height: IMG_SIZE,
-    borderRadius: IMG_SIZE / 2,
-    borderWidth: 2,
-    borderColor: "#d9a441",
+    width: IMAGE_CARD_WIDTH,
+    height: IMAGE_CARD_HEIGHT,
+    borderRadius: IMAGE_CARD_RADIUS,
+    borderWidth: 3,
+    borderColor: "#f0c865",
   },
 
   divider: {
