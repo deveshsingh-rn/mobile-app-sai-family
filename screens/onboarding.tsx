@@ -150,18 +150,26 @@ function WelcomeSlide({
           locations={[0, 0.5, 1]}
           style={styles.welcomeOverlay}
         >
-          <View style={styles.welcomeBody}>
-            <View style={styles.kicker}>
+          <View style={styles.welcomeTopBrand}>
+            <View style={styles.welcomeKicker}>
               <Sparkles color="#FFE7A3" size={12} strokeWidth={2.4} />
               <Text style={styles.kickerText}>OM SAI RAM</Text>
             </View>
+            {/* <Text style={styles.welcomeBrandName}>Sai Ki Family</Text> */}
+          </View>
 
-            <Text style={styles.welcomeTitle}>Sai Ki Family</Text>
-            <View style={styles.welcomeGoldenLine} />
+          <View style={styles.welcomeBody}>
+            <View/>
+           
+            <View  />
+            <View>
+             <Text style={styles.welcomeTitle}>Sai Ki Family</Text>
             <Text style={styles.welcomeSubtitle}>
               Welcome Home.{"\n"}
-The Global Family of Sai Devotees
+              The Global Family of Sai Devotees
             </Text>
+            </View>
+             <View  />
           </View>
         </LinearGradient>
       </ImageBackground>
@@ -634,11 +642,21 @@ const styles = StyleSheet.create({
   },
   welcomeOverlay: {
     flex: 1,
-    justifyContent: "flex-end",
+  },
+  welcomeTopBrand: {
+    alignItems: "flex-end",
+    paddingHorizontal: 8,
+    paddingTop: 6,
+    position: "absolute",
+    right: 0,
+    top: 0,
+    zIndex: 2,
   },
   welcomeBody: {
     alignItems: "center",
-    paddingBottom: 54,
+    flex: 1,
+    justifyContent:'space-around',
+    paddingBottom: 14,
     paddingHorizontal: 26,
   },
   imageStack: {
@@ -687,7 +705,7 @@ const styles = StyleSheet.create({
     width: 154,
   },
   welcomeImage: { height: 148, width: 148 },
-  kicker: {
+  welcomeKicker: {
     alignItems: "center",
     backgroundColor: "rgba(255, 240, 184, 0.16)",
     borderColor: "rgba(255, 231, 163, 0.5)",
@@ -701,20 +719,30 @@ const styles = StyleSheet.create({
   },
   kickerText: {
     color: "#FFE7A3",
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: "700",
-    letterSpacing: 3,
+    letterSpacing: 2.6,
+  },
+  welcomeBrandName: {
+    color: "#FFF0B8",
+    fontFamily: "Georgia",
+    fontSize: 18,
+    fontWeight: "700",
+    marginTop: 6,
+    textShadowColor: "rgba(0, 0, 0, 0.32)",
+    textShadowOffset: { height: 1, width: 0 },
+    textShadowRadius: 5,
   },
   welcomeTitle: {
     color: "#FFE3A1",
     fontFamily: "Georgia",
-    fontSize: 34,
+    fontSize: 42,
     fontWeight: "700",
-    lineHeight: 40,
+    lineHeight: 49,
     textShadowColor: "rgba(0, 0, 0, 0.32)",
     textShadowOffset: { height: 1, width: 0 },
     textShadowRadius: 6,
-    textAlign: "center",
+    textAlign: "center",marginBottom: 12
   },
   welcomeGoldenLine: {
     backgroundColor: "rgba(255, 218, 128, 0.78)",
@@ -724,12 +752,12 @@ const styles = StyleSheet.create({
     width: 74,
   },
   welcomeSubtitle: {
-    color: "#eabb3b",
-    fontSize: 19.5,
-    fontWeight: "500",
-    lineHeight: 23,
-    marginTop: 14,
-    maxWidth: 310,
+    color: "#FFF3C4",
+    fontSize: 26,
+    fontWeight: "600",
+    lineHeight: 29,
+    marginTop: 26,
+    maxWidth: 330,
     textShadowColor: "rgba(0, 0, 0, 0.28)",
     textShadowOffset: { height: 1, width: 0 },
     textShadowRadius: 4,
