@@ -1193,6 +1193,45 @@ export default function AskSaiScreen() {
         const audioStream = await getSaiAudioStreamModule();
         logVoiceDebug("Native audio module loaded");
 
+        if (!audioStream.isSaiAudioStreamAvailable()) {
+          logVoiceDebug("Native audio module unavailable; falling back to speech recognition");
+          setVoiceError(
+            "Live voice streaming needs a fresh development build. Using speech recognition fallback for now."
+          );
+
+          const ExpoSpeechRecognitionModule =
+            await getSpeechRecognitionModule();
+          const fallbackPermissions =
+            await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+
+          if (!fallbackPermissions.granted) {
+            setVoiceConnectionState("error");
+            setVoiceError(
+              "Please allow microphone and speech recognition permissions to ask by voice."
+            );
+            return;
+          }
+
+          if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
+            setVoiceConnectionState("error");
+            setVoiceError(
+              "Voice input is not available on this device. Please type your question."
+            );
+            return;
+          }
+
+          setVoiceConnectionState("idle");
+          setIsListening(true);
+          ExpoSpeechRecognitionModule.start({
+            addsPunctuation: true,
+            continuous: false,
+            interimResults: true,
+            lang: "en-IN",
+            maxAlternatives: 1,
+          });
+          return;
+        }
+
         const permissions =
           await audioStream.requestSaiAudioStreamPermissionsAsync();
 

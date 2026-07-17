@@ -1,4 +1,4 @@
-import { requireNativeModule } from "expo-modules-core";
+import { requireOptionalNativeModule } from "expo-modules-core";
 
 export type SaiAudioStreamChunkEvent = {
   channels: number;
@@ -31,34 +31,48 @@ type SaiAudioStreamNativeModule = {
 };
 
 const SaiAudioStreamModule =
-  requireNativeModule<SaiAudioStreamNativeModule>("SaiAudioStream");
+  requireOptionalNativeModule<SaiAudioStreamNativeModule>("SaiAudioStream");
+
+function getSaiAudioStreamModule() {
+  if (!SaiAudioStreamModule) {
+    throw new Error(
+      "SaiAudioStream native module is unavailable. Install a fresh development build that includes modules/sai-audio-stream."
+    );
+  }
+
+  return SaiAudioStreamModule;
+}
+
+export function isSaiAudioStreamAvailable() {
+  return Boolean(SaiAudioStreamModule);
+}
 
 export function addAudioChunkListener(
   listener: (event: SaiAudioStreamChunkEvent) => void
 ) {
-  return SaiAudioStreamModule.addListener("audioChunk", listener);
+  return getSaiAudioStreamModule().addListener("audioChunk", listener);
 }
 
 export function addAudioErrorListener(
   listener: (event: SaiAudioStreamErrorEvent) => void
 ) {
-  return SaiAudioStreamModule.addListener("audioError", listener);
+  return getSaiAudioStreamModule().addListener("audioError", listener);
 }
 
 export function getSaiAudioStreamStatusAsync() {
-  return SaiAudioStreamModule.getStatusAsync();
+  return getSaiAudioStreamModule().getStatusAsync();
 }
 
 export function requestSaiAudioStreamPermissionsAsync() {
-  return SaiAudioStreamModule.requestPermissionsAsync();
+  return getSaiAudioStreamModule().requestPermissionsAsync();
 }
 
 export function startSaiAudioStreamAsync(
   options?: SaiAudioStreamStartOptions
 ) {
-  return SaiAudioStreamModule.startAsync(options);
+  return getSaiAudioStreamModule().startAsync(options);
 }
 
 export function stopSaiAudioStreamAsync() {
-  return SaiAudioStreamModule.stopAsync();
+  return getSaiAudioStreamModule().stopAsync();
 }
