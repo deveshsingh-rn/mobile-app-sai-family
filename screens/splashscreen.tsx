@@ -6,10 +6,13 @@ import {
   Dimensions,
   Text,
 } from "react-native";
+import { useAudioPlayer } from "expo-audio";
 
 const { width, height } = Dimensions.get("window");
 const SAI_BABA_WELCOME_IMAGE =
   require("../assets/images/saijii.jpg");
+const WELCOME_MESSAGE_AUDIO =
+  require("../assets/images/welcome-message.mp3");
 
 // ── Flower Petal Component ──────────────────────────────────────────────────
 const FLOWER_EMOJIS = ["✦", "🔅","✧", "✺","🔸","🔆"];
@@ -205,6 +208,20 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
   const subtitleOpacity = useRef(new Animated.Value(0)).current;
   const imageScale = useRef(new Animated.Value(0.6)).current;
   const imageOpacity = useRef(new Animated.Value(0)).current;
+  const welcomePlayer = useAudioPlayer(WELCOME_MESSAGE_AUDIO);
+
+  useEffect(() => {
+    try {
+      welcomePlayer.seekTo(0);
+      welcomePlayer.play();
+    } catch (error) {
+      console.warn("[SplashAudio] Welcome message playback failed", error);
+    }
+
+    return () => {
+      welcomePlayer.pause();
+    };
+  }, [welcomePlayer]);
 
   useEffect(() => {
     Animated.sequence([
@@ -244,9 +261,13 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
     // auto-dismiss after 4 seconds
     if (onFinish) {
       const t = setTimeout(onFinish, 3500);
-      return () => clearTimeout(t);
+      return () => {
+        clearTimeout(t);
+      };
     }
-  }, []);
+
+    return undefined;
+  }, [imageOpacity, imageScale, onFinish, subtitleOpacity, titleOpacity, titleY]);
 
   // Generate flowers
   const flowers = useMemo(

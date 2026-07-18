@@ -23,6 +23,7 @@
     "axios": "^1.16.0",
     "country-state-city": "^3.2.1",
     "expo": "~54.0.33",
+    "expo-audio": "~1.1.1",
     "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.13",
     "expo-dev-client": "~6.0.21",

@@ -74,7 +74,8 @@
           "locationWhenInUsePermission": "Allow Sai Family to use your location to fill event and directory coordinates."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,
