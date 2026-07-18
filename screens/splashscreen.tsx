@@ -6,7 +6,7 @@ import {
   Dimensions,
   Text,
 } from "react-native";
-import { useAudioPlayer } from "expo-audio";
+import { requireOptionalNativeModule } from "expo-modules-core";
 
 const { width, height } = Dimensions.get("window");
 const SAI_BABA_WELCOME_IMAGE =
@@ -208,20 +208,59 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
   const subtitleOpacity = useRef(new Animated.Value(0)).current;
   const imageScale = useRef(new Animated.Value(0.6)).current;
   const imageOpacity = useRef(new Animated.Value(0)).current;
-  const welcomePlayer = useAudioPlayer(WELCOME_MESSAGE_AUDIO);
 
   useEffect(() => {
-    try {
-      welcomePlayer.seekTo(0);
-      welcomePlayer.play();
-    } catch (error) {
-      console.warn("[SplashAudio] Welcome message playback failed", error);
-    }
+    let player:
+      | {
+          pause: () => void;
+          remove?: () => void;
+          seekTo?: (seconds: number) => Promise<void> | void;
+          play: () => void;
+        }
+      | null = null;
+    let isMounted = true;
+
+    const playWelcomeMessage = async () => {
+      try {
+        const nativeAudioModule =
+          requireOptionalNativeModule("ExpoAudio");
+
+        if (!nativeAudioModule) {
+          console.warn(
+            "[SplashAudio] ExpoAudio native module is unavailable. Rebuild the app to enable splash audio."
+          );
+          return;
+        }
+
+        const { createAudioPlayer } = await import("expo-audio");
+
+        if (typeof createAudioPlayer !== "function") {
+          console.warn(
+            "[SplashAudio] createAudioPlayer is unavailable in this build."
+          );
+          return;
+        }
+
+        if (!isMounted) {
+          return;
+        }
+
+        player = createAudioPlayer(WELCOME_MESSAGE_AUDIO);
+        await player.seekTo?.(0);
+        player.play();
+      } catch (error) {
+        console.warn("[SplashAudio] Welcome message playback failed", error);
+      }
+    };
+
+    void playWelcomeMessage();
 
     return () => {
-      welcomePlayer.pause();
+      isMounted = false;
+      player?.pause();
+      player?.remove?.();
     };
-  }, [welcomePlayer]);
+  }, []);
 
   useEffect(() => {
     Animated.sequence([
@@ -260,7 +299,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
 
     // auto-dismiss after 4 seconds
     if (onFinish) {
-      const t = setTimeout(onFinish, 3500);
+      const t = setTimeout(onFinish, 35000);
       return () => {
         clearTimeout(t);
       };
