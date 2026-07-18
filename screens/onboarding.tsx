@@ -218,7 +218,7 @@ function PersonalizeSlide({
         <View style={styles.personalizeHeader}>
           <View style={styles.smallImageRing}>
             <View style={styles.smallImageWell}>
-              <Image resizeMode="contain" source={image} style={styles.smallImage} />
+              <Image resizeMode="stretch" source={image} style={styles.smallImage} />
             </View>
           </View>
           <View style={{ flex: 1 }}>
@@ -226,11 +226,6 @@ function PersonalizeSlide({
             <Text style={styles.slideTitle}>How can we serve{"\n"}your journey?</Text>
           </View>
         </View>
-
-        <Text style={styles.slideText}>
-          Pick what matters to you. We'll shape your feed, notifications, and
-          events around it.
-        </Text>
 
         <View style={styles.counterRow}>
           <Text style={styles.counterLabel}>CHOOSE ANY</Text>
@@ -273,13 +268,13 @@ function PersonalizeSlide({
                 >
                   <Icon
                     color={isSel ? "#FFFFFF" : C.saffron}
-                    size={17}
+                    size={22}
                     strokeWidth={2}
                   />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text
-                    numberOfLines={1}
+                    numberOfLines={2}
                     style={[
                       styles.interestTitle,
                       isSel && { color: C.saffronText },
@@ -287,7 +282,7 @@ function PersonalizeSlide({
                   >
                     {interest.title}
                   </Text>
-                  <Text numberOfLines={1} style={styles.interestSubtitle}>
+                  <Text numberOfLines={2} style={styles.interestSubtitle}>
                     {interest.subtitle}
                   </Text>
                 </View>
@@ -339,8 +334,6 @@ function ReadySlide({
   });
 
   const selectedItems = INTERESTS.filter((i) => selected.includes(i.id));
-  const preview = selectedItems.slice(0, 3);
-  const extraCount = selectedItems.length - preview.length;
 
   return (
     <Animated.View style={[styles.slide, { width }, animatedStyle]}>
@@ -348,7 +341,7 @@ function ReadySlide({
         <View style={styles.readyImageStack}>
           <View style={styles.readyImageRing}>
             <View style={styles.readyImageWell}>
-              <Image resizeMode="contain" source={image} style={styles.readyImage} />
+              <Image resizeMode="stretch" source={image} style={styles.readyImage} />
             </View>
           </View>
           <View style={styles.readyCheckBadge}>
@@ -366,26 +359,27 @@ function ReadySlide({
             <Text style={styles.previewLabel}>
               YOUR PERSONALIZED EXPERIENCE
             </Text>
-            {preview.map((item) => {
-              const Icon = item.Icon;
-              return (
-                <View key={item.id} style={styles.previewCard}>
-                  <View style={styles.previewIcon}>
-                    <Icon color={C.saffron} size={15} strokeWidth={2} />
+            <View style={styles.previewGrid}>
+              {selectedItems.map((item) => {
+                const Icon = item.Icon;
+                return (
+                  <View key={item.id} style={styles.previewCard}>
+                    <View style={styles.previewIcon}>
+                      <Icon color={C.saffron} size={17} strokeWidth={2.2} />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text numberOfLines={2} style={styles.previewTitle}>
+                        {item.title}
+                      </Text>
+                      <Text numberOfLines={1} style={styles.previewSubtitle}>
+                        Curated daily
+                      </Text>
+                    </View>
+                    <CheckCircle2 color={C.green} size={17} strokeWidth={2.2} />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.previewTitle}>{item.title}</Text>
-                    <Text style={styles.previewSubtitle}>
-                      Curated for you daily
-                    </Text>
-                  </View>
-                  <CheckCircle2 color={C.green} size={16} strokeWidth={2.2} />
-                </View>
-              );
-            })}
-            {extraCount > 0 ? (
-              <Text style={styles.extraCount}>+ {extraCount} more</Text>
-            ) : null}
+                );
+              })}
+            </View>
           </>
         ) : (
           <Text style={styles.readyFallback}>
@@ -407,7 +401,7 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
   const [selected, setSelected] = useState<InterestId[]>([]);
   const progress = useSharedValue(0);
 
-  const image = require("../assets/images/saibaba1.png");
+  const image = require("../assets/images/saijii.jpg");
   const image2 = require("../assets/images/saijii.jpg");
 
   const isFirst = activeIndex === 0;
@@ -765,12 +759,15 @@ const styles = StyleSheet.create({
   },
 
   /* Slide 2 */
-  personalizeBody: { flex: 1, paddingTop: 4 },
+  personalizeBody: {
+    flex: 1,
+    paddingTop: 2,
+  },
   personalizeHeader: {
     alignItems: "center",
     flexDirection: "row",
     gap: 12,
-    paddingBottom: 14,
+    paddingBottom: 12,
   },
   smallImageRing: {
     alignItems: "center",
@@ -801,10 +798,10 @@ const styles = StyleSheet.create({
   slideTitle: {
     color: C.ink,
     fontFamily: "Georgia",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "700",
     letterSpacing: -0.3,
-    lineHeight: 27,
+    lineHeight: 29,
     marginTop: 2,
   },
   slideText: {
@@ -818,7 +815,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   counterLabel: {
     color: C.inkSecondary,
@@ -839,61 +836,67 @@ const styles = StyleSheet.create({
   },
   counterChipText: { color: C.inkTertiary, fontSize: 11, fontWeight: "600" },
   counterChipTextActive: { color: C.saffronText },
-  interestGrid: { flexDirection: "row", flexWrap: "wrap", gap: 9 },
+  interestGrid: {
+    flex: 1,
+    gap: 9,
+    paddingBottom: 2,
+  },
   interestCard: {
     alignItems: "center",
     backgroundColor: C.surface,
     borderColor: C.separator,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1.5,
-    flexBasis: "48%",
     flexDirection: "row",
-    flexGrow: 1,
-    gap: 11,
-    padding: 11,
+    gap: 14,
+    minHeight: 67,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     position: "relative",
   },
   interestCardSelected: { backgroundColor: C.saffronBg, borderColor: C.saffron },
   interestIcon: {
     alignItems: "center",
     backgroundColor: C.saffronBg,
-    borderRadius: 10,
-    height: 36,
+    borderRadius: 13,
+    height: 44,
     justifyContent: "center",
-    width: 36,
+    width: 44,
   },
   interestTitle: {
     color: C.ink,
-    fontSize: 12.5,
-    fontWeight: "600",
+    fontSize: 17,
+    fontWeight: "800",
     letterSpacing: -0.1,
+    lineHeight: 21,
   },
   interestSubtitle: {
     color: C.inkSecondary,
-    fontSize: 10.5,
-    fontWeight: "400",
-    marginTop: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 18,
+    marginTop: 2,
   },
   interestCheck: {
     alignItems: "center",
     backgroundColor: C.saffron,
     borderRadius: 11,
-    height: 22,
+    height: 26,
     justifyContent: "center",
     position: "absolute",
-    right: -6,
-    top: -6,
-    width: 22,
+    right: -7,
+    top: -7,
+    width: 26,
   },
 
   /* Slide 3 */
-  readyBody: { flex: 1, paddingTop: 6 },
+  readyBody: { flex: 1, paddingTop: 2 },
   readyImageStack: {
     alignSelf: "center",
-    height: 120,
-    marginBottom: 18,
+    height: 96,
+    marginBottom: 12,
     position: "relative",
-    width: 120,
+    width: 96,
   },
   readyImageRing: {
     alignItems: "center",
@@ -901,20 +904,20 @@ const styles = StyleSheet.create({
     borderColor: C.saffronBorder,
     borderRadius: 100,
     borderWidth: 1.5,
-    height: 108,
+    height: 88,
     justifyContent: "center",
-    width: 108,
+    width: 88,
   },
   readyImageWell: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderRadius: 100,
-    height: 92,
+    height: 74,
     justifyContent: "center",
     overflow: "hidden",
-    width: 92,
+    width: 74,
   },
-  readyImage: { height: 88, width: 88 },
+  readyImage: { height: 70, width: 70 },
   readyCheckBadge: {
     alignItems: "center",
     backgroundColor: C.green,
@@ -922,11 +925,11 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     borderWidth: 3,
     bottom: 2,
-    height: 34,
+    height: 30,
     justifyContent: "center",
     position: "absolute",
     right: 2,
-    width: 34,
+    width: 30,
   },
   readyEyebrow: {
     color: C.green,
@@ -937,10 +940,10 @@ const styles = StyleSheet.create({
   readyTitle: {
     color: C.ink,
     fontFamily: "Georgia",
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "700",
     letterSpacing: -0.4,
-    lineHeight: 32,
+    lineHeight: 29,
     marginTop: 6,
     textAlign: "center",
   },
@@ -951,38 +954,40 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom: 8,
   },
+  previewGrid: {
+    gap: 8,
+  },
   previewCard: {
     alignItems: "center",
     backgroundColor: C.surface,
     borderColor: C.separator,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 8,
-    padding: 12,
+    gap: 12,
+    minHeight: 58,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   previewIcon: {
     alignItems: "center",
     backgroundColor: C.saffronBg,
-    borderRadius: 8,
-    height: 32,
+    borderRadius: 10,
+    height: 34,
     justifyContent: "center",
-    width: 32,
+    width: 34,
   },
-  previewTitle: { color: C.ink, fontSize: 13, fontWeight: "600" },
+  previewTitle: {
+    color: C.ink,
+    fontSize: 15.5,
+    fontWeight: "800",
+    lineHeight: 19,
+  },
   previewSubtitle: {
     color: C.inkSecondary,
-    fontSize: 11.5,
-    fontWeight: "400",
-    marginTop: 1,
-  },
-  extraCount: {
-    color: C.inkSecondary,
-    fontSize: 12,
-    fontWeight: "500",
-    marginTop: 4,
-    textAlign: "center",
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 2,
   },
   readyFallback: {
     color: C.inkSecondary,
