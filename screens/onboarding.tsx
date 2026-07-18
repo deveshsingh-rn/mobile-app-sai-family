@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
   smallImage: { height: 44, width: 44 },
   slideEyebrow: {
     color: C.saffronText,
-    fontSize: 10.5,
+    fontSize: 13.5,
     fontWeight: "700",
     letterSpacing: 1.5,
   },

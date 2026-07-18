@@ -299,7 +299,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
 
     // auto-dismiss after 4 seconds
     if (onFinish) {
-      const t = setTimeout(onFinish, 35000);
+      const t = setTimeout(onFinish, 3500);
       return () => {
         clearTimeout(t);
       };
