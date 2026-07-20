@@ -32,12 +32,12 @@ const COLORS = {
 const TABS = [
   {
     Icon: House,
-    label: "Expieriences",
-    name: "index",
+    label: "Devotee Experiences",
+    name: "experiences",
   },
   {
     Icon: CalendarDays,
-    label: "Events",
+    label: "Devotee Events",
     name: "events",
   },
   {
@@ -52,7 +52,7 @@ const TABS = [
   },
   {
     Icon: UserCircle2,
-    label: "Profile",
+    label: "Devotee Profile",
     name: "profile",
   },
 ];
@@ -95,9 +95,11 @@ function TabItem({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ selected: focused }}
       onPress={onPress}
       style={({ pressed }) => [
         styles.tabItem,
+        focused && styles.tabItemActive,
         pressed && styles.pressed,
       ]}
     >
@@ -135,7 +137,7 @@ function TabItem({
       </Animated.View>
 
       <Text
-        numberOfLines={1}
+        numberOfLines={2}
         style={[
           styles.label,
           focused && styles.labelActive,
@@ -197,15 +199,15 @@ export default function CustomTabBar({
 
 const styles = StyleSheet.create({
   activePill: {
-    backgroundColor: COLORS.soft,
-    borderColor: "#FED7AA",
-    borderRadius: 16,
-    borderWidth: 1,
-    bottom: 6,
-    left: 4,
+    backgroundColor: "#FFF4E6",
+    borderColor: COLORS.primary,
+    borderRadius: 18,
+    borderWidth: 1.4,
+    bottom: 4,
+    left: 3,
     position: "absolute",
-    right: 4,
-    top: 6,
+    right: 3,
+    top: 4,
   },
   
   createPressable: {
@@ -222,12 +224,12 @@ const styles = StyleSheet.create({
   dock: {
     backgroundColor: COLORS.dock,
     borderColor: COLORS.border,
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
     bottom: BOTTOM,
     left: 12,
     overflow: "hidden",
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
     position: "absolute",
     right: 12,
     shadowColor: "#7C2D12",
@@ -247,9 +249,15 @@ const styles = StyleSheet.create({
   },
   label: {
     color: COLORS.inactive,
-    fontSize: 10,
+    flexShrink: 1,
+    fontSize: 10.5,
     fontWeight: "800",
-    marginTop: 2,
+    lineHeight: 12.5,
+    marginTop: 3,
+    maxWidth: "100%",
+    minHeight: 25,
+    paddingHorizontal: 2,
+    textAlign: "center",
   },
   labelActive: {
     color: COLORS.active,
@@ -261,18 +269,22 @@ const styles = StyleSheet.create({
   tabItem: {
     alignItems: "center",
     flex: 1,
-    height: 64,
+    height: 76,
     justifyContent: "center",
     minWidth: 0,
+    paddingHorizontal: 2,
+  },
+  tabItemActive: {
+    transform: [{ translateY: -2 }],
   },
   tabsRow: {
     alignItems: "center",
     flexDirection: "row",
-    height: 70,
+    height: 82,
   },
   wrapper: {
     bottom: 0,
-    height: 112,
+    height: 126,
     left: 0,
     position: "absolute",
     right: 0,
