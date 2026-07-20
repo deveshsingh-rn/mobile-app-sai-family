@@ -54,6 +54,7 @@ import {
   selectCreateExperienceLoading,
   selectExperienceCategories,
 } from "@/store/experiences/selectors";
+import { requestLocationPermissionWithSettingsFallback } from "@/services/location-permissions";
 
 type MediaType =
   | "image"
@@ -202,10 +203,15 @@ export default function PremiumPostScreen() {
   // ───────────────── LOCATION ─────────────────
 
   const pickLocation = async () => {
-    const permission =
-      await Location.requestForegroundPermissionsAsync();
+    const hasPermission =
+      await requestLocationPermissionWithSettingsFallback({
+        message:
+          "Please allow location access to add your current place to this experience.",
+        settingsMessage:
+          "Location access is turned off for Sai Family. Please enable it from Settings to add your current place.",
+      });
 
-    if (!permission.granted) {
+    if (!hasPermission) {
       return;
     }
 

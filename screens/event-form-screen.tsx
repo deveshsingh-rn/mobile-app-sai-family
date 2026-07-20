@@ -98,6 +98,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { requestLocationPermissionWithSettingsFallback } from "@/services/location-permissions";
 
 type EventFormMode = "create" | "edit";
 
@@ -749,13 +750,15 @@ export default function EventFormScreen({
   );
 
   const handleUseCurrentLocation = useCallback(async () => {
-    const permission = await Location.requestForegroundPermissionsAsync();
+    const hasPermission =
+      await requestLocationPermissionWithSettingsFallback({
+        message:
+          "Please allow location access to fill event coordinates.",
+        settingsMessage:
+          "Location access is turned off for Sai Family. Please enable it from Settings to fill event coordinates.",
+      });
 
-    if (!permission.granted) {
-      Alert.alert(
-        "Location needed",
-        "Please allow location access to fill event coordinates."
-      );
+    if (!hasPermission) {
       return;
     }
 

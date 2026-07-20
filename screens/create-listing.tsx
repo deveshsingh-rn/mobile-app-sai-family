@@ -53,6 +53,7 @@ import type {
   DirectoryUploadMediaPayload,
 } from '@/store/directory/types';
 import { validateDirectoryListingPayload } from '@/store/directory/validation';
+import { requestLocationPermissionWithSettingsFallback } from '@/services/location-permissions';
 
 const steps = [
   'Basic',
@@ -636,13 +637,15 @@ const CreateListingScreen = () => {
   };
 
   const handleUseCurrentLocation = useCallback(async () => {
-    const permission = await Location.requestForegroundPermissionsAsync();
+    const hasPermission =
+      await requestLocationPermissionWithSettingsFallback({
+        message:
+          'Please allow location access to fill your business location.',
+        settingsMessage:
+          'Location access is turned off for Sai Family. Please enable it from Settings to fill your business location.',
+      });
 
-    if (!permission.granted) {
-      Alert.alert(
-        'Location needed',
-        'Please allow location access to fill your business location.'
-      );
+    if (!hasPermission) {
       return;
     }
 

@@ -57,7 +57,7 @@ const LIMIT = 10;
 const HEADER_SCROLL_THRESHOLD = 18;
 const HEADER_ANIMATION_MS = 150;
 const SAI_BABA_WELCOME_IMAGE =
-  require("@/assets/images/saijii.jpg");
+  require("@/assets/images/hariom.png");
 
 const CATEGORIES = [
   {
@@ -455,7 +455,7 @@ export default function HomeScreen() {
           >
             <ImageBackground
               imageStyle={styles.askSaiImage}
-              resizeMode='contain'
+              resizeMode='conver'
               source={SAI_BABA_WELCOME_IMAGE}
               style={styles.askSaiCard}
             >
@@ -612,7 +612,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     marginHorizontal: 16,
      backgroundColor: "rgb(76, 64, 54)",
-    minHeight: 238,
+    minHeight: 200,
+    maxHeight: 200,
     overflow: "hidden",
     padding: 16,
     shadowColor: "#9A5C10",

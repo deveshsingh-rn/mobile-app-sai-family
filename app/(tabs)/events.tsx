@@ -77,6 +77,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { requestLocationPermissionWithSettingsFallback } from "@/services/location-permissions";
 
 const EVENT_FILTERS: {
   label: string;
@@ -214,10 +215,15 @@ function EventsScreen() {
 
   const fetchNearbyFromLocation = useCallback(async () => {
     try {
-      const permission =
-        await Location.requestForegroundPermissionsAsync();
+      const hasPermission =
+        await requestLocationPermissionWithSettingsFallback({
+          message:
+            "Please allow location access to show events near you.",
+          settingsMessage:
+            "Location access is turned off for Sai Family. Please enable it from Settings to show nearby events.",
+        });
 
-      if (!permission.granted) {
+      if (!hasPermission) {
         return;
       }
 

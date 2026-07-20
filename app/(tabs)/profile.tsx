@@ -44,6 +44,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type ProfileTab = "details" | "settings";
 
@@ -279,7 +280,7 @@ export default function ProfileScreen() {
     }
   };
 
-  return (
+  return (<SafeAreaView style={styles.container}>
     <ScrollView
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
@@ -603,6 +604,7 @@ export default function ProfileScreen() {
         </View>
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -735,7 +737,7 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 120,
     paddingHorizontal: 16,
-    paddingTop: 58,
+    // paddingTop: 58,
   },
   detailCard: {
     backgroundColor: "#FFFFFF",
