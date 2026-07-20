@@ -32,7 +32,7 @@ const COLORS = {
 const TABS = [
   {
     Icon: House,
-    label: "Home",
+    label: "Expieriences",
     name: "index",
   },
   {
@@ -42,12 +42,12 @@ const TABS = [
   },
   {
     Icon: Building2,
-    label: "Directory",
+    label: "Business Directory",
     name: "directory",
   },
   {
     Icon: Users,
-    label: "Sangha",
+    label: "Local community",
     name: "sangha",
   },
   {

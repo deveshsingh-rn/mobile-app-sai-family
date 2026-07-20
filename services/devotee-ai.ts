@@ -239,6 +239,10 @@ function getAiErrorMessage(error: unknown) {
       return "Sai assistant is taking longer than usual. Please try again in a moment, or ask a shorter question.";
     }
 
+    if (error.response?.status === 500) {
+      return "Sai assistant service is not responding correctly right now. Please try again in a moment.";
+    }
+
     if (error.code === "ECONNABORTED") {
       return "Sai assistant took too long to respond. Please check your connection and try again.";
     }

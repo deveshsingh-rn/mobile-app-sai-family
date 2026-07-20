@@ -299,7 +299,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
 
     // auto-dismiss after 4 seconds
     if (onFinish) {
-      const t = setTimeout(onFinish, 3500);
+      const t = setTimeout(onFinish, 35500);
       return () => {
         clearTimeout(t);
       };
@@ -409,15 +409,15 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
 }
 
 // ── Styles ───────────────────────────────────────────────────────────────────
-const IMAGE_CARD_WIDTH = Math.min(width * 0.64, 360);
-const IMAGE_CARD_WIDTH1 = Math.min(width * 0.84, 360);
+const IMAGE_CARD_WIDTH = Math.min(width * 0.84, 360);
+const IMAGE_CARD_WIDTH1 = Math.min(width * 5, 560);
 const IMAGE_CARD_HEIGHT = IMAGE_CARD_WIDTH1 * 0.9625;
-const IMAGE_CARD_RADIUS = 28;
+const IMAGE_CARD_RADIUS = 88;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fffaf0",
+    backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
