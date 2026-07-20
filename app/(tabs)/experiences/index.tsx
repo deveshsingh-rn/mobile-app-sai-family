@@ -455,7 +455,7 @@ export default function HomeScreen() {
           >
             <ImageBackground
               imageStyle={styles.askSaiImage}
-              resizeMode='conver'
+              resizeMode="cover"
               source={SAI_BABA_WELCOME_IMAGE}
               style={styles.askSaiCard}
             >

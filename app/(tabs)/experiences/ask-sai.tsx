@@ -1251,6 +1251,7 @@ export default function AskSaiScreen() {
 
         logVoiceDebug("Creating voice session", {
           conversationId,
+          hasTtsVoiceId: Boolean(ELEVENLABS_VOICE_ID),
           provider: VOICE_PROVIDER,
         });
 
