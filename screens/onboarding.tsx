@@ -13,7 +13,6 @@
 import { useState } from "react";
 import {
   Image,
-  ImageBackground,
   ImageSourcePropType,
   Pressable,
   StyleSheet,
@@ -31,7 +30,6 @@ import {
   CalendarDays,
   HandHeart,
   HeartHandshake,
-  Sparkles,
   Star,
   Users,
 } from "lucide-react-native";
@@ -131,44 +129,64 @@ function WelcomeSlide({
     <Animated.View
       style={[styles.slide, styles.welcomeSlide, { width }, animatedStyle]}
     >
-      <ImageBackground
-        imageStyle={styles.welcomeBackgroundImage}
-        resizeMode='stretch'
-        source={image}
-        style={styles.welcomeBackground}
-      >
-        <LinearGradient
-          colors={[
-            "rgba(28, 18, 6, 0.12)",
-            "rgba(40, 22, 7, 0.34)",
-            "rgba(30, 16, 5, 0.86)",
-          ]}
-          locations={[0, 0.5, 1]}
-          style={styles.welcomeOverlay}
-        >
-          <View style={styles.welcomeTopBrand}>
-            <View style={styles.welcomeKicker}>
-              <Sparkles color="#FFE7A3" size={12} strokeWidth={2.4} />
-              <Text style={styles.kickerText}>OM SAI RAM</Text>
-            </View>
-            {/* <Text style={styles.welcomeBrandName}>Sai Ki Family</Text> */}
-          </View>
+      <View style={styles.onboardingSplashBody}>
+        <View style={styles.onboardingBgOuter} />
+        <View style={styles.onboardingBgMid} />
+        <View style={styles.onboardingBgInner} />
 
-          <View style={styles.welcomeBody}>
-            <View/>
-           
-            <View  />
-            <View>
-             <Text style={styles.welcomeTitle}>Sai Ki Family</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Welcome Home.{"\n"}
-              The Global Family of Sai Devotees
-            </Text>
-            </View>
-             <View  />
-          </View>
-        </LinearGradient>
-      </ImageBackground>
+        {/* <Text style={styles.onboardingSplashBrand}>SAI FAMILY</Text>
+        <Text style={styles.onboardingSplashOm}>ॐ</Text> */}
+        <Text style={styles.onboardingSplashTitle}>SAI FAMILY</Text>
+        <Text style={styles.onboardingSplashSubtitle}>Om Sai Ram</Text>
+
+        <View
+          style={[
+            styles.onboardingImageWrapper,
+            {
+              height: width * 0.84 * 0.5625 + 28,
+              width: width * 0.84 + 28,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.onboardingGlowRing,
+              {
+                height: width * 0.84 * 0.5625 + 26,
+                width: width * 0.84 + 26,
+              },
+            ]}
+          />
+          <View
+            style={[
+              styles.onboardingImageHalo,
+              {
+                height: width * 0.84 * 0.5625 + 12,
+                width: width * 0.84 + 12,
+              },
+            ]}
+          />
+          <Image
+            resizeMode="stretch"
+            source={image}
+            style={[
+              styles.onboardingSaiImage,
+              {
+                height: width * 0.84 * 0.5625,
+                width: width * 0.84,
+              },
+            ]}
+          />
+        </View>
+
+        <View style={styles.onboardingDivider}>
+          <View style={styles.onboardingDividerLine} />
+          <Text style={styles.onboardingDividerOm}>ॐ</Text>
+          <View style={styles.onboardingDividerLine} />
+        </View>
+
+        <Text style={styles.onboardingBlessing}>Sabka Malik Ek</Text>
+      </View>
     </Animated.View>
   );
 }
@@ -461,136 +479,115 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingTop: 0,
   },
-  welcomeBackground: {
-    flex: 1,
-  },
-  welcomeBackgroundImage: {
-    transform: [{ scale: 1 }],
-  },
-  welcomeOverlay: {
-    flex: 1,
-  },
-  welcomeTopBrand: {
-    alignItems: "flex-end",
-    paddingHorizontal: 8,
-    paddingTop: 6,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    zIndex: 2,
-  },
-  welcomeBody: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent:'space-around',
-    paddingBottom: 14,
-    paddingHorizontal: 26,
-  },
-  imageStack: {
-    alignItems: "center",
-    height: 220,
-    justifyContent: "center",
-    marginBottom: 24,
-    width: 220,
-  },
-  imageHalo: {
-    borderRadius: 999,
-    height: 220,
-    opacity: 0.6,
-    position: "absolute",
-    width: 220,
-  },
-  saffronRing: {
-    alignItems: "center",
-    backgroundColor: C.saffronBg,
-    borderColor: C.saffronBorder,
-    borderRadius: 100,
-    borderWidth: 1.5,
-    height: 172,
-    justifyContent: "center",
-    width: 172,
-  },
-  innerDashedRing: {
-    borderColor: C.saffron,
-    borderRadius: 100,
-    borderStyle: "dashed",
-    borderWidth: 0.5,
-    bottom: 8,
-    left: 8,
-    opacity: 0.5,
-    position: "absolute",
-    right: 8,
-    top: 8,
-  },
-  imageWell: {
+  onboardingSplashBody: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 100,
-    height: 154,
+    flex: 1,
     justifyContent: "center",
     overflow: "hidden",
-    width: 154,
+    paddingHorizontal: 18,
   },
-  welcomeImage: { height: 148, width: 148 },
-  welcomeKicker: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 240, 184, 0.16)",
-    borderColor: "rgba(255, 231, 163, 0.5)",
-    borderRadius: 100,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 5,
+  onboardingBgOuter: {
+    backgroundColor: "#F7DD89",
+    borderRadius: 420,
+    height: 520,
+    left: -120,
+    position: "absolute",
+    top: -250,
+    width: 520,
+  },
+  onboardingBgMid: {
+    backgroundColor: "#FACD51",
+    borderRadius: 240,
+    bottom: -120,
+    height: 360,
+    left: -40,
+    position: "absolute",
+    width: 360,
+  },
+  onboardingBgInner: {
+    backgroundColor: "#FFF3CF",
+    borderRadius: 180,
+    height: 300,
+    position: "absolute",
+    width: 300,
+  },
+  onboardingSplashBrand: {
+    color: "#8A5A13",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 4,
     marginBottom: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
   },
-  kickerText: {
-    color: "#FFE7A3",
-    fontSize: 11,
+  onboardingSplashOm: {
+    color: "#BD7A12",
+    fontSize: 34,
     fontWeight: "700",
-    letterSpacing: 2.6,
+    marginBottom: 8,
   },
-  welcomeBrandName: {
-    color: "#FFF0B8",
+  onboardingSplashTitle: {
+    color: "#5D3B0A",
     fontFamily: "Georgia",
-    fontSize: 18,
+    fontSize: 34,
     fontWeight: "700",
-    marginTop: 6,
-    textShadowColor: "rgba(0, 0, 0, 0.32)",
-    textShadowOffset: { height: 1, width: 0 },
-    textShadowRadius: 5,
+    letterSpacing: 1.5,
+    marginBottom: 6,
   },
-  welcomeTitle: {
-    color: "#FFE3A1",
-    fontFamily: "Georgia",
-    fontSize: 42,
-    fontWeight: "700",
-    lineHeight: 49,
-    textShadowColor: "rgba(0, 0, 0, 0.32)",
-    textShadowOffset: { height: 1, width: 0 },
-    textShadowRadius: 6,
-    textAlign: "center",marginBottom: 12
-  },
-  welcomeGoldenLine: {
-    backgroundColor: "rgba(255, 218, 128, 0.78)",
-    borderRadius: 100,
-    height: 2,
-    marginTop: 12,
-    width: 74,
-  },
-  welcomeSubtitle: {
-    color: "#FFF3C4",
-    fontSize: 26,
+  onboardingSplashSubtitle: {
+    color: "#E39611",
+    fontSize: 13,
     fontWeight: "600",
-    lineHeight: 29,
-    marginTop: 26,
-    maxWidth: 330,
-    textShadowColor: "rgba(0, 0, 0, 0.28)",
-    textShadowOffset: { height: 1, width: 0 },
-    textShadowRadius: 4,
-    textAlign: "center",
+    letterSpacing: 3,
+    marginBottom: 24,
+    textTransform: "uppercase",
   },
-
+  onboardingImageWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  onboardingGlowRing: {
+    borderColor: "#E3B34F",
+    borderRadius: 40,
+    borderWidth: 1,
+    position: "absolute",
+    shadowColor: "#D59A25",
+    shadowOffset: { height: 0, width: 0 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+  },
+  onboardingImageHalo: {
+    backgroundColor: "#FFFDF7",
+    borderRadius: 34,
+    position: "absolute",
+  },
+  onboardingSaiImage: {
+    borderColor: "#F0C865",
+    borderRadius: 28,
+    borderWidth: 3,
+  },
+  onboardingDivider: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 18,
+  },
+  onboardingDividerLine: {
+    backgroundColor: "#D8AD55",
+    height: 1,
+    width: 44,
+  },
+  onboardingDividerOm: {
+    color: "#9A6A1A",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  onboardingBlessing: {
+    color: "#6F4A12",
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 2.5,
+    marginTop: 14,
+  },
   /* Slide 2 */
   personalizeBody: {
     flex: 1,
