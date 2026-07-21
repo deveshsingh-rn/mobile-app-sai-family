@@ -15,7 +15,8 @@ const WELCOME_MESSAGE_AUDIO =
   require("../assets/images/welcome-message.mp3");
 
 // ── Flower Petal Component ──────────────────────────────────────────────────
-const FLOWER_EMOJIS = ["✦", "🔅","✧", "✺","🔸","🔆"];
+// const FLOWER_EMOJIS = ["✦", "🔅","✧", "✺","🔸","🔆"];
+const FLOWER_EMOJIS = ["🌸", "💮", "🌹", "🌺", "🌻", "🌼"];
 
 type FallingFlowerProps = {
   delay: number;
@@ -316,7 +317,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
         delay: i * 420 + Math.random() * 500,
         startX: Math.random() * (width - 40),
         emoji: FLOWER_EMOJIS[i % FLOWER_EMOJIS.length],
-        size: 10 + Math.random() * 8,
+        size: 30 + Math.random() * 8,
       })),
     []
   );
@@ -366,7 +367,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
           { opacity: titleOpacity, transform: [{ translateY: titleY }] },
         ]}
       >
-        Sai Baba
+        SAI FAMILY
       </Animated.Text>
 
       <Animated.Text

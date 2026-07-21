@@ -130,8 +130,16 @@ const getVoiceErrorMessage = (code?: string, fallback?: string) => {
 
 async function getSpeechRecognitionModule() {
   const speechRecognition = await import("expo-speech-recognition");
+  const speechRecognitionModule =
+    speechRecognition.ExpoSpeechRecognitionModule;
 
-  return speechRecognition.ExpoSpeechRecognitionModule;
+  if (!speechRecognitionModule) {
+    throw new Error(
+      "Speech recognition module is unavailable in this build."
+    );
+  }
+
+  return speechRecognitionModule;
 }
 
 async function getSaiAudioStreamModule() {
@@ -379,8 +387,16 @@ export default function AskSaiScreen() {
 
           const { audioContext, queueSource } =
             await ensureVoicePlaybackQueue();
+          const audioArrayBuffer = base64ToArrayBuffer(event.data);
+
+          logVoiceDebug("Audio chunk received", {
+            bytes: audioArrayBuffer.byteLength,
+            format: event.format,
+            turnId: event.turnId,
+          });
+
           const audioBuffer = await audioContext.decodeAudioData(
-            base64ToArrayBuffer(event.data)
+            audioArrayBuffer
           );
 
           queueSource.enqueueBuffer(audioBuffer);
@@ -1099,6 +1115,57 @@ export default function AskSaiScreen() {
     };
   }, [submitQuestion]);
 
+  const startSpeechRecognitionFallback = useCallback(
+    async () => {
+      try {
+        const ExpoSpeechRecognitionModule =
+          await getSpeechRecognitionModule();
+
+        const permissions =
+          await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+
+        if (!permissions.granted) {
+          setVoiceConnectionState("error");
+          setVoiceError(
+            "Please allow microphone and speech recognition permissions to ask by voice."
+          );
+          return false;
+        }
+
+        if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
+          setVoiceConnectionState("error");
+          setVoiceError(
+            "Voice input is not available on this device. Please type your question."
+          );
+          return false;
+        }
+
+        setVoiceConnectionState("idle");
+        setVoiceError("");
+        setIsListening(true);
+        ExpoSpeechRecognitionModule.start({
+          addsPunctuation: true,
+          continuous: false,
+          interimResults: true,
+          lang: getSpeechLanguage(),
+          maxAlternatives: 1,
+        });
+
+        return true;
+      } catch (error) {
+        logVoiceDebug("Speech recognition fallback failed", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        setVoiceConnectionState("error");
+        setVoiceError(
+          "Voice input needs a fresh development build. Please type your question for now."
+        );
+        return false;
+      }
+    },
+    []
+  );
+
   const handleVoiceQuestion = useCallback(async () => {
     logVoiceDebug("Voice button pressed", {
       fullDuplexEnabled: FULL_DUPLEX_VOICE_ENABLED,
@@ -1199,36 +1266,7 @@ export default function AskSaiScreen() {
             "Live voice streaming needs a fresh development build. Using speech recognition fallback for now."
           );
 
-          const ExpoSpeechRecognitionModule =
-            await getSpeechRecognitionModule();
-          const fallbackPermissions =
-            await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-
-          if (!fallbackPermissions.granted) {
-            setVoiceConnectionState("error");
-            setVoiceError(
-              "Please allow microphone and speech recognition permissions to ask by voice."
-            );
-            return;
-          }
-
-          if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
-            setVoiceConnectionState("error");
-            setVoiceError(
-              "Voice input is not available on this device. Please type your question."
-            );
-            return;
-          }
-
-          setVoiceConnectionState("idle");
-          setIsListening(true);
-          ExpoSpeechRecognitionModule.start({
-            addsPunctuation: true,
-            continuous: false,
-            interimResults: true,
-            lang: "en-IN",
-            maxAlternatives: 1,
-          });
+          await startSpeechRecognitionFallback();
           return;
         }
 
@@ -1289,6 +1327,7 @@ export default function AskSaiScreen() {
         logVoiceDebug("Voice session created", {
           audio: session.audio,
           conversationId: session.conversationId,
+          outputFormat: session.audio?.outputFormat,
           msSinceTap:
             voiceTimingRef.current.tapAt
               ? Date.now() - voiceTimingRef.current.tapAt
@@ -1433,36 +1472,7 @@ export default function AskSaiScreen() {
         return;
       }
 
-      const ExpoSpeechRecognitionModule =
-        await getSpeechRecognitionModule();
-
-      const permissions =
-        await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-
-      if (!permissions.granted) {
-        setVoiceError(
-          "Please allow microphone and speech recognition permissions to ask by voice."
-        );
-        return;
-      }
-
-      if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
-        setVoiceError(
-          "Voice input is not available on this device. Please type your question."
-        );
-        return;
-      }
-
-      setVoiceError("");
-      setIsListening(true);
-
-      ExpoSpeechRecognitionModule.start({
-        addsPunctuation: true,
-        continuous: false,
-        interimResults: true,
-        lang: "en-IN",
-        maxAlternatives: 1,
-      });
+      await startSpeechRecognitionFallback();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -1502,6 +1512,7 @@ export default function AskSaiScreen() {
     conversationId,
     handleVoiceServerEvent,
     isListening,
+    startSpeechRecognitionFallback,
     stopSpeech,
     voiceConnectionState,
   ]);

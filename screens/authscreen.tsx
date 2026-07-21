@@ -397,136 +397,136 @@ function CountryPickerModal({
 /* ═══════════════════════════════════════════════════════════
    PILLAR ACCORDION CARD
    ═══════════════════════════════════════════════════════════ */
-function PillarAccordionCard({
-  isOpen,
-  onToggle,
-  pillar,
-}: {
-  isOpen: boolean;
-  onToggle: () => void;
-  pillar: Pillar;
-}) {
-  const Icon = pillar.Icon;
+// function PillarAccordionCard({
+//   isOpen,
+//   onToggle,
+//   pillar,
+// }: {
+//   isOpen: boolean;
+//   onToggle: () => void;
+//   pillar: Pillar;
+// }) {
+//   const Icon = pillar.Icon;
 
-  const handlePress = () => {
-    LayoutAnimation.configureNext({
-      duration: 280,
-      create: { type: "easeInEaseOut", property: "opacity" },
-      update: { type: "spring", springDamping: 0.78 },
-      delete: { type: "easeInEaseOut", property: "opacity" },
-    });
-    onToggle();
-  };
+//   const handlePress = () => {
+//     LayoutAnimation.configureNext({
+//       duration: 280,
+//       create: { type: "easeInEaseOut", property: "opacity" },
+//       update: { type: "spring", springDamping: 0.78 },
+//       delete: { type: "easeInEaseOut", property: "opacity" },
+//     });
+//     onToggle();
+//   };
 
-  return (
-    <Pressable
-      onPress={handlePress}
-      style={({ pressed }) => [
-        styles.pillarCard,
-        {
-          backgroundColor: isOpen ? pillar.bgSoft : C.surface,
-          borderColor: isOpen ? pillar.accent : C.separator,
-        },
-        pressed && styles.pillarCardPressed,
-      ]}
-    >
-      {isOpen ? (
-        <View style={[styles.pillarRibbon, { backgroundColor: pillar.accent }]} />
-      ) : null}
+//   return (
+//     <Pressable
+//       onPress={handlePress}
+//       style={({ pressed }) => [
+//         styles.pillarCard,
+//         {
+//           backgroundColor: isOpen ? pillar.bgSoft : C.surface,
+//           borderColor: isOpen ? pillar.accent : C.separator,
+//         },
+//         pressed && styles.pillarCardPressed,
+//       ]}
+//     >
+//       {isOpen ? (
+//         <View style={[styles.pillarRibbon, { backgroundColor: pillar.accent }]} />
+//       ) : null}
 
-      {/* Header */}
-      <View style={styles.pillarHeader}>
-        <View
-          style={[
-            styles.pillarIconLarge,
-            { backgroundColor: isOpen ? pillar.accent : pillar.bg },
-          ]}
-        >
-          <Icon color={isOpen ? "#FFFFFF" : pillar.accent} size={20} strokeWidth={2} />
-        </View>
+//       {/* Header */}
+//       <View style={styles.pillarHeader}>
+//         <View
+//           style={[
+//             styles.pillarIconLarge,
+//             { backgroundColor: isOpen ? pillar.accent : pillar.bg },
+//           ]}
+//         >
+//           <Icon color={isOpen ? "#FFFFFF" : pillar.accent} size={20} strokeWidth={2} />
+//         </View>
 
-        <View style={{ flex: 1 }}>
-          <Text
-            style={[
-              styles.pillarLabel,
-              { color: isOpen ? pillar.accent : C.ink },
-            ]}
-          >
-            {pillar.label}
-          </Text>
-          <Text style={styles.pillarTagline}>{pillar.tagline}</Text>
-        </View>
+//         <View style={{ flex: 1 }}>
+//           <Text
+//             style={[
+//               styles.pillarLabel,
+//               { color: isOpen ? pillar.accent : C.ink },
+//             ]}
+//           >
+//             {pillar.label}
+//           </Text>
+//           <Text style={styles.pillarTagline}>{pillar.tagline}</Text>
+//         </View>
 
-        <View
-          style={[
-            styles.pillarChevron,
-            { backgroundColor: isOpen ? pillar.bgTint : "#F5E4C0" },
-          ]}
-        >
-          <ChevronDown
-            color={isOpen ? pillar.accent : "#8B4513"}
-            size={14}
-            strokeWidth={2.2}
-            style={{
-              transform: [{ rotate: isOpen ? "180deg" : "0deg" }],
-            }}
-          />
-        </View>
-      </View>
+//         <View
+//           style={[
+//             styles.pillarChevron,
+//             { backgroundColor: isOpen ? pillar.bgTint : "#F5E4C0" },
+//           ]}
+//         >
+//           <ChevronDown
+//             color={isOpen ? pillar.accent : "#8B4513"}
+//             size={14}
+//             strokeWidth={2.2}
+//             style={{
+//               transform: [{ rotate: isOpen ? "180deg" : "0deg" }],
+//             }}
+//           />
+//         </View>
+//       </View>
 
-      {/* Expanded body */}
-      {isOpen ? (
-        <View style={styles.pillarBody}>
-          {/* Ornamental divider */}
-          <View style={styles.dotDivider}>
-            <View style={[styles.dotLine, { backgroundColor: pillar.accent }]} />
-            <View style={[styles.dotDot, { backgroundColor: pillar.accent }]} />
-            <View style={[styles.dotLine, { backgroundColor: pillar.accent }]} />
-          </View>
+//       {/* Expanded body */}
+//       {isOpen ? (
+//         <View style={styles.pillarBody}>
+//           {/* Ornamental divider */}
+//           <View style={styles.dotDivider}>
+//             <View style={[styles.dotLine, { backgroundColor: pillar.accent }]} />
+//             <View style={[styles.dotDot, { backgroundColor: pillar.accent }]} />
+//             <View style={[styles.dotLine, { backgroundColor: pillar.accent }]} />
+//           </View>
 
-          <Text style={styles.pillarDescription}>{pillar.description}</Text>
+//           <Text style={styles.pillarDescription}>{pillar.description}</Text>
 
-          <Text style={styles.featuresLabel}>WHAT YOU'LL DO</Text>
+//           <Text style={styles.featuresLabel}>WHAT YOU'LL DO</Text>
 
-          {pillar.features.map((feature, idx) => {
-            const FIcon = feature.Icon;
-            return (
-              <View key={idx} style={styles.featureRow}>
-                <View
-                  style={[
-                    styles.featureIcon,
-                    { backgroundColor: pillar.bgTint },
-                  ]}
-                >
-                  <FIcon color={pillar.accent} size={12} strokeWidth={1.8} />
-                </View>
-                <Text style={styles.featureText}>{feature.label}</Text>
-              </View>
-            );
-          })}
+//           {pillar.features.map((feature, idx) => {
+//             const FIcon = feature.Icon;
+//             return (
+//               <View key={idx} style={styles.featureRow}>
+//                 <View
+//                   style={[
+//                     styles.featureIcon,
+//                     { backgroundColor: pillar.bgTint },
+//                   ]}
+//                 >
+//                   <FIcon color={pillar.accent} size={12} strokeWidth={1.8} />
+//                 </View>
+//                 <Text style={styles.featureText}>{feature.label}</Text>
+//               </View>
+//             );
+//           })}
 
-          {/* Tagline chip */}
-          <View
-            style={[
-              styles.quoteChip,
-              {
-                backgroundColor: pillar.bgTint,
-                borderColor: pillar.accent + "30",
-              },
-            ]}
-          >
-            <Sparkles color={pillar.accent} size={10} strokeWidth={2.2} />
-            <Text
-              style={[styles.quoteChipText, { color: pillar.accent }]}
-            >
-              {pillar.quote}
-            </Text>
-          </View>
-        </View>
-      ) : null}
-    </Pressable>
-  );
-}
+//           {/* Tagline chip */}
+//           <View
+//             style={[
+//               styles.quoteChip,
+//               {
+//                 backgroundColor: pillar.bgTint,
+//                 borderColor: pillar.accent + "30",
+//               },
+//             ]}
+//           >
+//             <Sparkles color={pillar.accent} size={10} strokeWidth={2.2} />
+//             <Text
+//               style={[styles.quoteChipText, { color: pillar.accent }]}
+//             >
+//               {pillar.quote}
+//             </Text>
+//           </View>
+//         </View>
+//       ) : null}
+//     </Pressable>
+//   );
+// }
 
 /* ═══════════════════════════════════════════════════════════
    MAIN SCREEN
@@ -687,19 +687,19 @@ export default function AuthScreen({
               />
             </View>
           </View>
-
+{/* 
           <View style={styles.kicker}>
             <Sparkles color={C.saffronText} size={11} strokeWidth={2.3} />
             <Text style={styles.kickerText}>OM SAI RAM</Text>
-          </View>
+          </View> */}
 
-          <Text style={styles.heroTitle}>
+          {/* <Text style={styles.heroTitle}>
             One peaceful place for{"\n"}devotion & sangha
           </Text>
           <Text style={styles.heroText}>
             Continue with mobile or email to stay connected with experiences,
             events, and your community.
-          </Text>
+          </Text> */}
         </View>
 
         {/* ─── Sign-in card ─── */}
@@ -718,7 +718,7 @@ export default function AuthScreen({
 
           {/* Segmented */}
           <View style={styles.segmented}>
-            {(["mobile", "email"] as const).map((mode) => {
+            {(["mobile"] as const).map((mode) => {
               const activeMode = loginMode === mode;
               return (
                 <Pressable
@@ -806,7 +806,7 @@ export default function AuthScreen({
             </View>
           ) : (
             <View style={styles.formStack}>
-              <View>
+              {/* <View>
                 <Text style={styles.inputLabel}>EMAIL ADDRESS</Text>
                 <TextInput
                   autoCapitalize="none"
@@ -818,8 +818,8 @@ export default function AuthScreen({
                   style={styles.input}
                   value={email}
                 />
-              </View>
-              <View>
+              </View> */}
+              {/* <View>
                 <Text style={styles.inputLabel}>PASSWORD</Text>
                 <TextInput
                   onChangeText={setPassword}
@@ -834,7 +834,7 @@ export default function AuthScreen({
               <Text style={styles.helperText}>
                 Email login works after you verify your email and create a
                 password from profile settings.
-              </Text>
+              </Text> */}
             </View>
           )}
         </View>
@@ -850,7 +850,7 @@ export default function AuthScreen({
         </View>
 
         {/* ─── Deep pillars section ─── */}
-        <View style={styles.sectionHeader}>
+        {/* <View style={styles.sectionHeader}>
           <Text style={styles.sectionEyebrow}>FOUR SACRED PILLARS</Text>
           <Text style={styles.sectionTitle}>
             Everything your devotion needs
@@ -858,9 +858,9 @@ export default function AuthScreen({
           <Text style={styles.sectionText}>
             Tap any pillar to see how it supports your daily practice.
           </Text>
-        </View>
+        </View> */}
 
-        <View style={styles.pillarsStack}>
+        {/* <View style={styles.pillarsStack}>
           {PILLARS.map((pillar) => (
             <PillarAccordionCard
               key={pillar.id}
@@ -869,7 +869,7 @@ export default function AuthScreen({
               pillar={pillar}
             />
           ))}
-        </View>
+        </View> */}
       </ScrollView>
 
       {/* ─── Sticky bottom bar ─── */}
