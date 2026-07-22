@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -18,15 +20,21 @@ import * as ImagePicker from "expo-image-picker";
 import {
   Camera,
   CheckCircle2,
+  Check,
+  ChevronDown,
   ChevronLeft,
   Lock,
   MapPin,
+  Search,
   Sparkles,
   UserRound,
+  X,
 } from "lucide-react-native";
 
 import {
+  loginUserWithMobilePin,
   sendUserMobileOtp,
+  setupUserMobilePin,
   verifyUserMobileOtp,
 } from "@/services/auth";
 import {
@@ -99,6 +107,59 @@ type FieldGroup = {
   fields: FieldConfig[];
 };
 
+type Country = {
+  code: string;
+  name: string;
+  dialCode: string;
+  flag: string;
+};
+
+const COUNTRIES: Country[] = [
+  { code: "IN", name: "India", dialCode: "+91", flag: "🇮🇳" },
+  { code: "US", name: "United States", dialCode: "+1", flag: "🇺🇸" },
+  { code: "GB", name: "United Kingdom", dialCode: "+44", flag: "🇬🇧" },
+  { code: "CA", name: "Canada", dialCode: "+1", flag: "🇨🇦" },
+  { code: "AU", name: "Australia", dialCode: "+61", flag: "🇦🇺" },
+  { code: "AE", name: "United Arab Emirates", dialCode: "+971", flag: "🇦🇪" },
+  { code: "SG", name: "Singapore", dialCode: "+65", flag: "🇸🇬" },
+  { code: "MY", name: "Malaysia", dialCode: "+60", flag: "🇲🇾" },
+  { code: "NP", name: "Nepal", dialCode: "+977", flag: "🇳🇵" },
+  { code: "LK", name: "Sri Lanka", dialCode: "+94", flag: "🇱🇰" },
+  { code: "BD", name: "Bangladesh", dialCode: "+880", flag: "🇧🇩" },
+  { code: "PK", name: "Pakistan", dialCode: "+92", flag: "🇵🇰" },
+  { code: "SA", name: "Saudi Arabia", dialCode: "+966", flag: "🇸🇦" },
+  { code: "OM", name: "Oman", dialCode: "+968", flag: "🇴🇲" },
+  { code: "QA", name: "Qatar", dialCode: "+974", flag: "🇶🇦" },
+  { code: "KW", name: "Kuwait", dialCode: "+965", flag: "🇰🇼" },
+  { code: "BH", name: "Bahrain", dialCode: "+973", flag: "🇧🇭" },
+  { code: "DE", name: "Germany", dialCode: "+49", flag: "🇩🇪" },
+  { code: "FR", name: "France", dialCode: "+33", flag: "🇫🇷" },
+  { code: "IT", name: "Italy", dialCode: "+39", flag: "🇮🇹" },
+  { code: "ES", name: "Spain", dialCode: "+34", flag: "🇪🇸" },
+  { code: "NL", name: "Netherlands", dialCode: "+31", flag: "🇳🇱" },
+  { code: "CH", name: "Switzerland", dialCode: "+41", flag: "🇨🇭" },
+  { code: "NZ", name: "New Zealand", dialCode: "+64", flag: "🇳🇿" },
+  { code: "JP", name: "Japan", dialCode: "+81", flag: "🇯🇵" },
+  { code: "KR", name: "South Korea", dialCode: "+82", flag: "🇰🇷" },
+  { code: "TH", name: "Thailand", dialCode: "+66", flag: "🇹🇭" },
+  { code: "ID", name: "Indonesia", dialCode: "+62", flag: "🇮🇩" },
+  { code: "PH", name: "Philippines", dialCode: "+63", flag: "🇵🇭" },
+  { code: "ZA", name: "South Africa", dialCode: "+27", flag: "🇿🇦" },
+  { code: "KE", name: "Kenya", dialCode: "+254", flag: "🇰🇪" },
+  { code: "MU", name: "Mauritius", dialCode: "+230", flag: "🇲🇺" },
+  { code: "FJ", name: "Fiji", dialCode: "+679", flag: "🇫🇯" },
+  { code: "BR", name: "Brazil", dialCode: "+55", flag: "🇧🇷" },
+  { code: "IE", name: "Ireland", dialCode: "+353", flag: "🇮🇪" },
+  { code: "SE", name: "Sweden", dialCode: "+46", flag: "🇸🇪" },
+  { code: "NO", name: "Norway", dialCode: "+47", flag: "🇳🇴" },
+  { code: "DK", name: "Denmark", dialCode: "+45", flag: "🇩🇰" },
+  { code: "FI", name: "Finland", dialCode: "+358", flag: "🇫🇮" },
+  { code: "BE", name: "Belgium", dialCode: "+32", flag: "🇧🇪" },
+  { code: "PT", name: "Portugal", dialCode: "+351", flag: "🇵🇹" },
+];
+
+const DEFAULT_COUNTRY = COUNTRIES[0];
+
 /* Grouped visually — same form state under the hood */
 const FIELD_GROUPS: FieldGroup[] = [
   {
@@ -162,6 +223,124 @@ type CreateDevoteeAccountScreenProps = {
   onCreated: (account: DevoteeAccount) => void;
 };
 
+function CountryPickerModal({
+  visible,
+  selectedCode,
+  onClose,
+  onSelect,
+}: {
+  visible: boolean;
+  selectedCode: string;
+  onClose: () => void;
+  onSelect: (country: Country) => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const [query, setQuery] = useState("");
+
+  const filteredCountries = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return COUNTRIES;
+    }
+
+    return COUNTRIES.filter(
+      (country) =>
+        country.name.toLowerCase().includes(normalizedQuery) ||
+        country.code.toLowerCase().includes(normalizedQuery) ||
+        country.dialCode.includes(normalizedQuery)
+    );
+  }, [query]);
+
+  const handleClose = () => {
+    setQuery("");
+    onClose();
+  };
+
+  return (
+    <Modal
+      animationType="slide"
+      onRequestClose={handleClose}
+      statusBarTranslucent
+      transparent
+      visible={visible}
+    >
+      <View style={styles.modalBackdrop}>
+        <Pressable style={styles.modalBackdropTouch} onPress={handleClose} />
+        <View
+          style={[
+            styles.modalSheet,
+            { paddingBottom: insets.bottom + 8 },
+          ]}
+        >
+          <View style={styles.modalGrabber} />
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select country</Text>
+            <Pressable
+              hitSlop={10}
+              onPress={handleClose}
+              style={styles.modalCloseButton}
+            >
+              <X color={C.inkSecondary} size={15} strokeWidth={2.4} />
+            </Pressable>
+          </View>
+
+          <View style={styles.countrySearchBox}>
+            <Search color={C.inkSecondary} size={16} strokeWidth={2} />
+            <TextInput
+              autoCapitalize="none"
+              autoCorrect={false}
+              onChangeText={setQuery}
+              placeholder="Search country or code"
+              placeholderTextColor={C.inkTertiary}
+              returnKeyType="done"
+              style={styles.countrySearchInput}
+              value={query}
+            />
+          </View>
+
+          <FlatList
+            data={filteredCountries}
+            ItemSeparatorComponent={() => (
+              <View style={styles.countrySeparator} />
+            )}
+            keyboardShouldPersistTaps="handled"
+            keyExtractor={(item) => item.code}
+            renderItem={({ item }) => {
+              const isSelected = item.code === selectedCode;
+
+              return (
+                <Pressable
+                  onPress={() => {
+                    onSelect(item);
+                    handleClose();
+                  }}
+                  style={({ pressed }) => [
+                    styles.countryRow,
+                    isSelected && styles.countryRowSelected,
+                    pressed && styles.countryRowPressed,
+                  ]}
+                >
+                  <Text style={styles.countryFlag}>{item.flag}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.countryName}>{item.name}</Text>
+                    <Text style={styles.countryDial}>{item.dialCode}</Text>
+                  </View>
+                  {isSelected ? (
+                    <View style={styles.countryCheck}>
+                      <Check color="#FFFFFF" size={12} strokeWidth={2.6} />
+                    </View>
+                  ) : null}
+                </Pressable>
+              );
+            }}
+          />
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════ */
 export default function CreateDevoteeAccountScreen({
   onBack,
@@ -175,10 +354,19 @@ export default function CreateDevoteeAccountScreen({
 
   const [form, setForm] = useState<DevoteeAccountForm>(INITIAL_FORM);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [selectedCountry, setSelectedCountry] =
+    useState<Country>(DEFAULT_COUNTRY);
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [mobilePin, setMobilePin] = useState("");
+  const [confirmMobilePin, setConfirmMobilePin] = useState("");
+  const [pinMode, setPinMode] = useState<"login" | "setup">("setup");
   const [mobileVerified, setMobileVerified] = useState(false);
   const [isVerifyingMobile, setIsVerifyingMobile] = useState(false);
+  const sanitizedMobileNumber = form.mobileNumber.replace(/\D/g, "");
+  const fullMobileNumber = `${selectedCountry.dialCode}${sanitizedMobileNumber}`;
+  const isIndiaMobile = fullMobileNumber.startsWith("+91");
 
   const canSubmit = useMemo(
     () =>
@@ -213,7 +401,28 @@ export default function CreateDevoteeAccountScreen({
       setMobileVerified(false);
       setOtpSent(false);
       setOtp("");
+      setMobilePin("");
+      setConfirmMobilePin("");
     }
+  };
+
+  const resetMobileVerification = () => {
+    setMobileVerified(false);
+    setOtpSent(false);
+    setOtp("");
+    setMobilePin("");
+    setConfirmMobilePin("");
+    setPinMode("setup");
+  };
+
+  const handleCountrySelect = (country: Country) => {
+    setSelectedCountry(country);
+    setForm((current) => ({
+      ...current,
+      country: country.name,
+      mobileNumber: "",
+    }));
+    resetMobileVerification();
   };
 
   useEffect(() => {
@@ -265,17 +474,23 @@ export default function CreateDevoteeAccountScreen({
       return;
     }
     setHasSubmitted(true);
-    dispatch(createDevoteeAccountRequest(form));
+    dispatch(
+      createDevoteeAccountRequest({
+        ...form,
+        country: form.country || selectedCountry.name,
+        mobileNumber: fullMobileNumber,
+      })
+    );
   };
 
   const handleSendMobileOtp = async () => {
-    if (!form.mobileNumber.trim()) {
+    if (!sanitizedMobileNumber) {
       Alert.alert("Mobile required", "Please enter your mobile number first.");
       return;
     }
     try {
       setIsVerifyingMobile(true);
-      await sendUserMobileOtp(form.mobileNumber);
+      await sendUserMobileOtp(fullMobileNumber);
       setOtpSent(true);
       Alert.alert("OTP sent", "Please enter the OTP sent to your mobile.");
     } catch (err) {
@@ -289,19 +504,74 @@ export default function CreateDevoteeAccountScreen({
   };
 
   const handleVerifyMobileOtp = async () => {
-    if (!form.mobileNumber.trim() || !otp.trim()) {
+    if (!sanitizedMobileNumber || !otp.trim()) {
       Alert.alert("OTP required", "Please enter mobile number and OTP.");
       return;
     }
     try {
       setIsVerifyingMobile(true);
-      await verifyUserMobileOtp(form.mobileNumber, otp);
+      await verifyUserMobileOtp(fullMobileNumber, otp);
       setMobileVerified(true);
       Alert.alert("Mobile verified", "You can now create your account.");
     } catch (err) {
       Alert.alert(
         "Verification failed",
         err instanceof Error ? err.message : "Unable to verify OTP."
+      );
+    } finally {
+      setIsVerifyingMobile(false);
+    }
+  };
+
+  const validateMobilePin = () => {
+    if (!sanitizedMobileNumber) {
+      Alert.alert("Mobile required", "Please enter your mobile number first.");
+      return false;
+    }
+
+    if (!/^\d{6}$/.test(mobilePin.trim())) {
+      Alert.alert(
+        "PIN required",
+        "Please enter a secure 6 digit mobile PIN."
+      );
+      return false;
+    }
+
+    if (
+      pinMode === "setup" &&
+      mobilePin.trim() !== confirmMobilePin.trim()
+    ) {
+      Alert.alert(
+        "PIN does not match",
+        "Please enter the same PIN in both fields."
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleMobilePinSubmit = async () => {
+    if (!validateMobilePin()) {
+      return;
+    }
+
+    try {
+      setIsVerifyingMobile(true);
+      if (pinMode === "setup") {
+        await setupUserMobilePin(fullMobileNumber, mobilePin);
+      } else {
+        await loginUserWithMobilePin(fullMobileNumber, mobilePin);
+      }
+
+      setMobileVerified(true);
+      Alert.alert("Mobile verified", "You can now create your account.");
+    } catch (err) {
+      Alert.alert(
+        pinMode === "setup" ? "PIN setup failed" : "PIN login failed",
+        err instanceof Error
+          ? err.message
+          : "Unable to verify mobile PIN."
       );
     } finally {
       setIsVerifyingMobile(false);
@@ -447,66 +717,191 @@ export default function CreateDevoteeAccountScreen({
             <Text style={styles.label}>
               MOBILE NUMBER<Text style={styles.required}> *</Text>
             </Text>
-            <TextInput
-              keyboardType="phone-pad"
-              onChangeText={(v) => updateField("mobileNumber", v)}
-              placeholder="+91 98765 43210"
-              placeholderTextColor={C.inkTertiary}
-              style={styles.input}
-              value={form.mobileNumber}
-              editable={!mobileVerified}
-            />
-
-            {!mobileVerified ? (
+            <View style={styles.phoneInputWrap}>
               <Pressable
-                disabled={isVerifyingMobile}
-                onPress={handleSendMobileOtp}
+                disabled={mobileVerified}
+                onPress={() => setShowCountryPicker(true)}
                 style={({ pressed }) => [
-                  styles.otpButton,
+                  styles.countryPill,
                   pressed && styles.buttonPressed,
+                  mobileVerified && { opacity: 0.7 },
                 ]}
               >
-                {isVerifyingMobile && !otpSent ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.otpButtonText}>
-                    {otpSent ? "Resend OTP" : "Send OTP"}
-                  </Text>
-                )}
+                <Text style={styles.countryPillFlag}>
+                  {selectedCountry.flag}
+                </Text>
+                <Text style={styles.countryPillCode}>
+                  {selectedCountry.dialCode}
+                </Text>
+                <ChevronDown
+                  color={C.inkSecondary}
+                  size={13}
+                  strokeWidth={2.2}
+                />
               </Pressable>
+              <View style={styles.phoneDivider} />
+              <TextInput
+                editable={!mobileVerified}
+                keyboardType="phone-pad"
+                maxLength={15}
+                onChangeText={(v) => updateField("mobileNumber", v)}
+                placeholder="98765 43210"
+                placeholderTextColor={C.inkTertiary}
+                returnKeyType="done"
+                style={styles.phoneInput}
+                value={form.mobileNumber}
+              />
+            </View>
+
+            <Text style={styles.mobileHint}>
+              {isIndiaMobile
+                ? "India numbers verify with OTP."
+                : "Non-India numbers verify with a secure 6 digit PIN."}
+            </Text>
+
+            {!mobileVerified && isIndiaMobile ? (
+              <>
+                <Pressable
+                  disabled={isVerifyingMobile}
+                  onPress={handleSendMobileOtp}
+                  style={({ pressed }) => [
+                    styles.otpButton,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  {isVerifyingMobile && !otpSent ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Text style={styles.otpButtonText}>
+                      {otpSent ? "Resend OTP" : "Send OTP"}
+                    </Text>
+                  )}
+                </Pressable>
+
+                {otpSent ? (
+                  <>
+                    <Text style={[styles.label, { marginTop: 12 }]}>
+                      ONE-TIME PASSWORD<Text style={styles.required}> *</Text>
+                    </Text>
+                    <View style={styles.otpRow}>
+                      <TextInput
+                        keyboardType="number-pad"
+                        maxLength={6}
+                        onChangeText={setOtp}
+                        placeholder="6-digit code"
+                        placeholderTextColor={C.inkTertiary}
+                        returnKeyType="done"
+                        style={[styles.input, { flex: 1 }]}
+                        value={otp}
+                      />
+                      <Pressable
+                        disabled={isVerifyingMobile}
+                        onPress={handleVerifyMobileOtp}
+                        style={({ pressed }) => [
+                          styles.verifyButton,
+                          pressed && styles.buttonPressed,
+                        ]}
+                      >
+                        {isVerifyingMobile ? (
+                          <ActivityIndicator color="#FFFFFF" size="small" />
+                        ) : (
+                          <Text style={styles.otpButtonText}>Verify</Text>
+                        )}
+                      </Pressable>
+                    </View>
+                  </>
+                ) : null}
+              </>
             ) : null}
 
-            {otpSent && !mobileVerified ? (
-              <>
-                <Text style={[styles.label, { marginTop: 6 }]}>
-                  ONE-TIME PASSWORD<Text style={styles.required}> *</Text>
-                </Text>
-                <View style={styles.otpRow}>
-                  <TextInput
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    onChangeText={setOtp}
-                    placeholder="6-digit code"
-                    placeholderTextColor={C.inkTertiary}
-                    style={[styles.input, { flex: 1 }]}
-                    value={otp}
-                  />
-                  <Pressable
-                    disabled={isVerifyingMobile}
-                    onPress={handleVerifyMobileOtp}
-                    style={({ pressed }) => [
-                      styles.verifyButton,
-                      pressed && styles.buttonPressed,
-                    ]}
-                  >
-                    {isVerifyingMobile ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                    ) : (
-                      <Text style={styles.otpButtonText}>Verify</Text>
-                    )}
-                  </Pressable>
+            {!mobileVerified && !isIndiaMobile ? (
+              <View style={styles.pinPanel}>
+                <View style={styles.pinModeRow}>
+                  {(["setup", "login"] as const).map((mode) => {
+                    const activePinMode = pinMode === mode;
+
+                    return (
+                      <Pressable
+                        key={mode}
+                        onPress={() => {
+                          setPinMode(mode);
+                          setMobilePin("");
+                          setConfirmMobilePin("");
+                        }}
+                        style={[
+                          styles.pinModeButton,
+                          activePinMode && styles.pinModeButtonActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.pinModeText,
+                            activePinMode && styles.pinModeTextActive,
+                          ]}
+                        >
+                          {mode === "setup" ? "Create PIN" : "I have PIN"}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
-              </>
+
+                <Text style={styles.label}>
+                  {pinMode === "setup"
+                    ? "CREATE 6 DIGIT PIN"
+                    : "ENTER 6 DIGIT PIN"}
+                  <Text style={styles.required}> *</Text>
+                </Text>
+                <TextInput
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  onChangeText={setMobilePin}
+                  placeholder="123456"
+                  placeholderTextColor={C.inkTertiary}
+                  returnKeyType="done"
+                  secureTextEntry
+                  style={styles.input}
+                  value={mobilePin}
+                />
+
+                {pinMode === "setup" ? (
+                  <>
+                    <Text style={styles.label}>
+                      CONFIRM PIN<Text style={styles.required}> *</Text>
+                    </Text>
+                    <TextInput
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      onChangeText={setConfirmMobilePin}
+                      placeholder="Re-enter PIN"
+                      placeholderTextColor={C.inkTertiary}
+                      returnKeyType="done"
+                      secureTextEntry
+                      style={styles.input}
+                      value={confirmMobilePin}
+                    />
+                  </>
+                ) : null}
+
+                <Pressable
+                  disabled={isVerifyingMobile}
+                  onPress={handleMobilePinSubmit}
+                  style={({ pressed }) => [
+                    styles.otpButton,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  {isVerifyingMobile ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Text style={styles.otpButtonText}>
+                      {pinMode === "setup"
+                        ? "Create PIN & Verify"
+                        : "Verify PIN"}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
             ) : null}
           </View>
         </View>
@@ -548,6 +943,13 @@ export default function CreateDevoteeAccountScreen({
           )}
         </Pressable>
       </View>
+
+      <CountryPickerModal
+        onClose={() => setShowCountryPicker(false)}
+        onSelect={handleCountrySelect}
+        selectedCode={selectedCountry.code}
+        visible={showCountryPicker}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -891,6 +1293,90 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     textAlignVertical: "top",
   },
+  phoneInputWrap: {
+    alignItems: "center",
+    backgroundColor: "rgba(120,120,128,0.08)",
+    borderRadius: 12,
+    flexDirection: "row",
+    minHeight: 50,
+    overflow: "hidden",
+  },
+  countryPill: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    minHeight: 50,
+    paddingHorizontal: 12,
+  },
+  countryPillFlag: {
+    fontSize: 18,
+  },
+  countryPillCode: {
+    color: C.ink,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  phoneDivider: {
+    backgroundColor: "rgba(120,120,128,0.24)",
+    height: 26,
+    width: 1,
+  },
+  phoneInput: {
+    color: C.ink,
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "500",
+    minHeight: 50,
+    paddingHorizontal: 14,
+  },
+  mobileHint: {
+    color: C.inkSecondary,
+    fontSize: 12,
+    fontWeight: "500",
+    lineHeight: 17,
+    marginTop: 8,
+  },
+  pinPanel: {
+    backgroundColor: C.saffronBg,
+    borderColor: C.saffronBorder,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 12,
+    marginTop: 12,
+    padding: 12,
+  },
+  pinModeRow: {
+    backgroundColor: "rgba(194,65,12,0.1)",
+    borderRadius: 12,
+    flexDirection: "row",
+    padding: 3,
+  },
+  pinModeButton: {
+    alignItems: "center",
+    borderRadius: 10,
+    flex: 1,
+    minHeight: 36,
+    justifyContent: "center",
+    paddingHorizontal: 8,
+  },
+  pinModeButtonActive: {
+    backgroundColor: C.surface,
+    shadowColor: "#7C2D12",
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  pinModeText: {
+    color: C.saffronText,
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  pinModeTextActive: {
+    color: C.ink,
+    fontWeight: "700",
+  },
 
   /* OTP */
   otpButton: {
@@ -966,5 +1452,106 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     letterSpacing: 0.1,
+  },
+  modalBackdrop: {
+    backgroundColor: "rgba(0,0,0,0.32)",
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  modalBackdropTouch: {
+    flex: 1,
+  },
+  modalSheet: {
+    backgroundColor: C.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "78%",
+    paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  modalGrabber: {
+    alignSelf: "center",
+    backgroundColor: C.separator,
+    borderRadius: 100,
+    height: 5,
+    marginBottom: 14,
+    width: 42,
+  },
+  modalHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  modalTitle: {
+    color: C.ink,
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  modalCloseButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(120,120,128,0.1)",
+    borderRadius: 100,
+    height: 30,
+    justifyContent: "center",
+    width: 30,
+  },
+  countrySearchBox: {
+    alignItems: "center",
+    backgroundColor: "rgba(120,120,128,0.08)",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+    minHeight: 46,
+    paddingHorizontal: 12,
+  },
+  countrySearchInput: {
+    color: C.ink,
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  countrySeparator: {
+    backgroundColor: C.separator,
+    height: 1,
+    marginLeft: 52,
+  },
+  countryRow: {
+    alignItems: "center",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+  },
+  countryRowSelected: {
+    backgroundColor: C.saffronBg,
+  },
+  countryRowPressed: {
+    opacity: 0.75,
+  },
+  countryFlag: {
+    fontSize: 24,
+    width: 30,
+  },
+  countryName: {
+    color: C.ink,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  countryDial: {
+    color: C.inkSecondary,
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 1,
+  },
+  countryCheck: {
+    alignItems: "center",
+    backgroundColor: C.saffron,
+    borderRadius: 100,
+    height: 22,
+    justifyContent: "center",
+    width: 22,
   },
 });

@@ -8,7 +8,9 @@ export const AUTH_SESSION_STORAGE_KEY = "sai-family.auth-session";
 
 export type AuthTokens = {
   accessToken?: string;
+  accessTokenExpiresInSeconds?: number;
   refreshToken?: string;
+  refreshTokenExpiresAt?: string;
 };
 
 export type AuthSession = {
@@ -17,6 +19,9 @@ export type AuthSession = {
 };
 
 type AuthResponse = AuthSession & {
+  audience?: string;
+  authMethod?: string;
+  isNewUser?: boolean;
   message?: string;
 };
 
@@ -140,10 +145,11 @@ export async function clearAuthSession() {
 
 export async function sendUserMobileOtp(mobileNumber: string) {
   try {
-    const data = await postWithLegacyRouteFallback(
-      "/api/auth/mobile/send-otp",
+    const { data } = await apiClient.post(
       "/api/auth/user/mobile/send-otp",
-      { mobileNumber: mobileNumber.trim() }
+      {
+        mobileNumber: mobileNumber.trim(),
+      }
     );
 
     return data;
@@ -159,8 +165,7 @@ export async function verifyUserMobileOtp(
   otp: string
 ) {
   try {
-    const data = await postWithLegacyRouteFallback<AuthResponse>(
-      "/api/auth/mobile/verify-otp",
+    const { data } = await apiClient.post<AuthResponse>(
       "/api/auth/user/mobile/verify-otp",
       {
         mobileNumber: mobileNumber.trim(),
@@ -174,6 +179,52 @@ export async function verifyUserMobileOtp(
   } catch (error) {
     throw new Error(
       getAuthErrorMessage(error, "Unable to verify mobile OTP.")
+    );
+  }
+}
+
+export async function setupUserMobilePin(
+  mobileNumber: string,
+  pin: string
+) {
+  try {
+    const { data } = await apiClient.post<AuthResponse>(
+      "/api/auth/user/mobile/setup-pin",
+      {
+        mobileNumber: mobileNumber.trim(),
+        pin: pin.trim(),
+      }
+    );
+
+    await saveAuthSession(data);
+
+    return data;
+  } catch (error) {
+    throw new Error(
+      getAuthErrorMessage(error, "Unable to setup mobile PIN.")
+    );
+  }
+}
+
+export async function loginUserWithMobilePin(
+  mobileNumber: string,
+  pin: string
+) {
+  try {
+    const { data } = await apiClient.post<AuthResponse>(
+      "/api/auth/user/mobile/login-pin",
+      {
+        mobileNumber: mobileNumber.trim(),
+        pin: pin.trim(),
+      }
+    );
+
+    await saveAuthSession(data);
+
+    return data;
+  } catch (error) {
+    throw new Error(
+      getAuthErrorMessage(error, "Unable to login with mobile PIN.")
     );
   }
 }

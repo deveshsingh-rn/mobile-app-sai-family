@@ -52,8 +52,10 @@ import {
 
 import {
   authUserToDevoteeAccount,
+  loginUserWithMobilePin,
   loginUserWithEmail,
   sendUserMobileOtp,
+  setupUserMobilePin,
   verifyUserMobileOtp,
 } from "@/services/auth";
 import { saveDevoteeAccount } from "@/services/devotee-account";
@@ -547,6 +549,9 @@ export default function AuthScreen({
 
   const [mobileOtp, setMobileOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [mobilePin, setMobilePin] = useState("");
+  const [confirmMobilePin, setConfirmMobilePin] = useState("");
+  const [pinMode, setPinMode] = useState<"login" | "setup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -555,7 +560,9 @@ export default function AuthScreen({
   const [openPillar, setOpenPillar] = useState<PillarId | null>("experiences");
 
   /* Compose full mobile number for services */
-  const fullMobileNumber = `${selectedCountry.dialCode}${phoneNumber.replace(/\s/g, "")}`;
+  const sanitizedPhoneNumber = phoneNumber.replace(/\D/g, "");
+  const fullMobileNumber = `${selectedCountry.dialCode}${sanitizedPhoneNumber}`;
+  const isIndiaMobile = fullMobileNumber.startsWith("+91");
 
   /* ── Handlers (logic preserved) ── */
   const completeLogin = async (user: any) => {
@@ -568,7 +575,7 @@ export default function AuthScreen({
   };
 
   const handleSendOtp = async () => {
-    if (!phoneNumber.trim()) {
+    if (!sanitizedPhoneNumber) {
       Alert.alert("Mobile required", "Please enter your mobile number.");
       return;
     }
@@ -593,7 +600,7 @@ export default function AuthScreen({
   };
 
   const handleMobileLogin = async () => {
-    if (!phoneNumber.trim() || !mobileOtp.trim()) {
+    if (!sanitizedPhoneNumber || !mobileOtp.trim()) {
       Alert.alert("OTP required", "Please enter mobile number and OTP.");
       return;
     }
@@ -613,6 +620,82 @@ export default function AuthScreen({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const validateMobilePin = () => {
+    if (!sanitizedPhoneNumber) {
+      Alert.alert("Mobile required", "Please enter your mobile number.");
+      return false;
+    }
+
+    if (!/^\d{6}$/.test(mobilePin.trim())) {
+      Alert.alert(
+        "PIN required",
+        "Please enter a secure 6 digit mobile PIN."
+      );
+      return false;
+    }
+
+    if (
+      pinMode === "setup" &&
+      mobilePin.trim() !== confirmMobilePin.trim()
+    ) {
+      Alert.alert(
+        "PIN does not match",
+        "Please enter the same PIN in both fields."
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleMobilePinSubmit = async () => {
+    if (!validateMobilePin()) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response =
+        pinMode === "setup"
+          ? await setupUserMobilePin(fullMobileNumber, mobilePin)
+          : await loginUserWithMobilePin(fullMobileNumber, mobilePin);
+
+      await completeLogin(response.user);
+      trackProductEvent("Login Completed", {
+        auth_step:
+          pinMode === "setup" ? "mobile_pin_setup" : "mobile_pin_login",
+        country_code: selectedCountry.code,
+        method: "mobile_pin",
+      });
+    } catch (error) {
+      Alert.alert(
+        pinMode === "setup" ? "PIN setup failed" : "Login failed",
+        error instanceof Error
+          ? error.message
+          : "Unable to continue with mobile PIN."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleMobileSubmit = () => {
+    if (isIndiaMobile) {
+      return otpSent ? handleMobileLogin() : handleSendOtp();
+    }
+
+    return handleMobilePinSubmit();
+  };
+
+  const handleCountrySelect = (country: Country) => {
+    setSelectedCountry(country);
+    setOtpSent(false);
+    setMobileOtp("");
+    setMobilePin("");
+    setConfirmMobilePin("");
+    setPinMode("login");
   };
 
   const handleEmailLogin = async () => {
@@ -708,7 +791,7 @@ export default function AuthScreen({
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>Sign in</Text>
               <Text style={styles.cardSubtitle}>
-                Mobile OTP or verified email password
+                India uses OTP. Other countries use secure 6 digit PIN.
               </Text>
             </View>
             <View style={styles.shieldChip}>
@@ -735,7 +818,7 @@ export default function AuthScreen({
                       activeMode && styles.segmentTextActive,
                     ]}
                   >
-                    {mode === "mobile" ? "Mobile OTP" : "Email"}
+                    {mode === "mobile" ? "Mobile Login" : "Email"}
                   </Text>
                 </Pressable>
               );
@@ -782,7 +865,7 @@ export default function AuthScreen({
                 </View>
               </View>
 
-              {otpSent ? (
+              {isIndiaMobile && otpSent ? (
                 <View>
                   <Text style={styles.inputLabel}>ONE-TIME PASSWORD</Text>
                   <TextInput
@@ -798,10 +881,84 @@ export default function AuthScreen({
                 </View>
               ) : null}
 
+              {!isIndiaMobile ? (
+                <View style={styles.pinPanel}>
+                  <View style={styles.pinModeRow}>
+                    {(["login", "setup"] as const).map((mode) => {
+                      const activePinMode = pinMode === mode;
+
+                      return (
+                        <Pressable
+                          key={mode}
+                          onPress={() => {
+                            setPinMode(mode);
+                            setMobilePin("");
+                            setConfirmMobilePin("");
+                          }}
+                          style={[
+                            styles.pinModeButton,
+                            activePinMode && styles.pinModeButtonActive,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.pinModeText,
+                              activePinMode && styles.pinModeTextActive,
+                            ]}
+                          >
+                            {mode === "login" ? "I have PIN" : "Create PIN"}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  <View>
+                    <Text style={styles.inputLabel}>
+                      {pinMode === "setup"
+                        ? "CREATE 6 DIGIT PIN"
+                        : "ENTER 6 DIGIT PIN"}
+                    </Text>
+                    <TextInput
+                      keyboardType="number-pad"
+                      maxLength={6}
+                      onChangeText={setMobilePin}
+                      placeholder="123456"
+                      placeholderTextColor={C.inkTertiary}
+                      returnKeyType="done"
+                      secureTextEntry
+                      style={styles.input}
+                      value={mobilePin}
+                    />
+                  </View>
+
+                  {pinMode === "setup" ? (
+                    <View>
+                      <Text style={styles.inputLabel}>CONFIRM PIN</Text>
+                      <TextInput
+                        keyboardType="number-pad"
+                        maxLength={6}
+                        onChangeText={setConfirmMobilePin}
+                        placeholder="Re-enter PIN"
+                        placeholderTextColor={C.inkTertiary}
+                        returnKeyType="done"
+                        secureTextEntry
+                        style={styles.input}
+                        value={confirmMobilePin}
+                      />
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+
               <Text style={styles.helperText}>
-                {otpSent
-                  ? `We sent a code to ${selectedCountry.dialCode} ${phoneNumber}. Enter it above to continue.`
-                  : "We'll send a one-time password to confirm your number."}
+                {isIndiaMobile
+                  ? otpSent
+                    ? `We sent a code to ${selectedCountry.dialCode} ${phoneNumber}. Enter it above to continue.`
+                    : "We'll send a one-time password to confirm your Indian mobile number."
+                  : pinMode === "setup"
+                    ? "Non-India numbers use a private 6 digit PIN instead of OTP."
+                    : "Enter your existing PIN for this mobile number."}
               </Text>
             </View>
           ) : (
@@ -880,9 +1037,7 @@ export default function AuthScreen({
           disabled={isSubmitting}
           onPress={
             loginMode === "mobile"
-              ? otpSent
-                ? handleMobileLogin
-                : handleSendOtp
+              ? handleMobileSubmit
               : handleEmailLogin
           }
           style={({ pressed }) => [
@@ -897,9 +1052,13 @@ export default function AuthScreen({
             <>
               <Text style={styles.primaryText}>
                 {loginMode === "mobile"
-                  ? otpSent
-                    ? "Verify OTP"
-                    : "Send OTP"
+                  ? isIndiaMobile
+                    ? otpSent
+                      ? "Verify OTP"
+                      : "Send OTP"
+                    : pinMode === "setup"
+                      ? "Create PIN & Continue"
+                      : "Login with PIN"
                   : "Login"}
               </Text>
               <ArrowRight color="#FFFFFF" size={18} strokeWidth={2.2} />
@@ -925,7 +1084,7 @@ export default function AuthScreen({
         visible={showCountryPicker}
         selectedCode={selectedCountry.code}
         onClose={() => setShowCountryPicker(false)}
-        onSelect={setSelectedCountry}
+        onSelect={handleCountrySelect}
       />
     </KeyboardAvoidingView>
   );
@@ -1129,6 +1288,46 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontWeight: "400",
     lineHeight: 18,
+  },
+  pinPanel: {
+    backgroundColor: C.saffronBg,
+    borderColor: C.saffronBorder,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+    padding: 12,
+  },
+  pinModeRow: {
+    backgroundColor: "rgba(194,65,12,0.1)",
+    borderRadius: 12,
+    flexDirection: "row",
+    padding: 3,
+  },
+  pinModeButton: {
+    alignItems: "center",
+    borderRadius: 10,
+    flex: 1,
+    minHeight: 36,
+    justifyContent: "center",
+    paddingHorizontal: 8,
+  },
+  pinModeButtonActive: {
+    backgroundColor: C.surface,
+    shadowColor: "#7C2D12",
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  pinModeText: {
+    color: C.saffronText,
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  pinModeTextActive: {
+    color: C.ink,
+    fontWeight: "700",
   },
 
   /* Phone input with country picker */

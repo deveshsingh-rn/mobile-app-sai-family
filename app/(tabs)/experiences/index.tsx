@@ -25,6 +25,8 @@ import {
   Mic2,
   PenLine,
   Search,
+  Type,
+
 } from "lucide-react-native";
 
 import {
@@ -472,29 +474,21 @@ export default function HomeScreen() {
                 </View>
 
                 <View style={styles.headerActions}>
+                  
                   <Pressable
                     onPress={() =>
-                      router.push("/(tabs)/experiences/search" as any)
+                      router.push("/(tabs)/experiences/ask-sai" as any)
                     }
-                    style={styles.headerAction}
+                     style={({ pressed }) => [
+                    styles.askSaiMicButton,
+                    pressed && styles.askSaiMicPressed,
+                  ]}
                   >
-                    <Search
-                      size={18}
-                      color="#3A2610"
-                      strokeWidth={2}
-                    />
-                  </Pressable>
-                  <Pressable
-                    onPress={() =>
-                      router.push("/(tabs)/experiences/post" as any)
-                    }
-                    style={styles.primaryAction}
-                  >
-                    <PenLine
-                      size={17}
-                      color="#FFFFFF"
-                      strokeWidth={2}
-                    />
+                    <Type
+  size={26}
+  color="#3A2108"
+  strokeWidth={2.4}
+/>
                   </Pressable>
                 </View>
               </View>
@@ -611,7 +605,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 14,
     marginHorizontal: 16,
-     backgroundColor: "rgb(76, 64, 54)",
+     backgroundColor: "rgb(44, 44, 44)",
     minHeight: 200,
     maxHeight: 200,
     overflow: "hidden",
@@ -628,11 +622,12 @@ const styles = StyleSheet.create({
 
   askSaiImage: {
     borderRadius: 24,
+    backgroundColor: "rgba(0, 0, 0, 1)",
   },
 
   askSaiScrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(40, 21, 5, 0)",
+    backgroundColor: "rgba(28, 17, 8, 0.4)",
   },
 
   askSaiTopRow: {
@@ -644,7 +639,7 @@ const styles = StyleSheet.create({
   },
 
   askSaiEyebrow: {
-    color: "#FFE8A8",
+    color: "#fcfbfa",
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 2.1,
@@ -654,7 +649,7 @@ const styles = StyleSheet.create({
   },
 
   askSaiTitle: {
-    color: "#FFF4CF",
+    color: "#faf9f9",
     fontFamily: "Georgia",
     fontSize: 34,
     fontWeight: "900",
