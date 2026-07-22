@@ -76,7 +76,8 @@ const VOICE_PROVIDER: "elevenlabs" | "mock" =
     : "elevenlabs";
 const ELEVENLABS_VOICE_ID =
   process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID || undefined;
-const VOICE_DEBUG_ENABLED = __DEV__;
+const VOICE_DEBUG_ENABLED =
+  __DEV__ || FULL_DUPLEX_VOICE_ENABLED;
 
 const logVoiceDebug = (message: string, payload?: Record<string, unknown>) => {
   if (!VOICE_DEBUG_ENABLED) {
@@ -89,6 +90,13 @@ const logVoiceDebug = (message: string, payload?: Record<string, unknown>) => {
   }
 
   console.log(`[AskSaiVoice] ${message}`);
+};
+
+const logVoiceProductionCheck = (
+  message: string,
+  payload?: Record<string, unknown>
+) => {
+  console.log(`[AskSaiVoiceProd] ${message}`, payload || {});
 };
 
 const createVoiceTurnId = () =>
@@ -389,6 +397,13 @@ export default function AskSaiScreen() {
             await ensureVoicePlaybackQueue();
           const audioArrayBuffer = base64ToArrayBuffer(event.data);
 
+          logVoiceProductionCheck("audio_chunk", {
+            base64Length: event.data?.length ?? 0,
+            format: event.format,
+            hasData: Boolean(event.data),
+            turnId: event.turnId,
+          });
+
           logVoiceDebug("Audio chunk received", {
             bytes: audioArrayBuffer.byteLength,
             format: event.format,
@@ -517,6 +532,17 @@ export default function AskSaiScreen() {
 
   const speakText = useCallback(
     async (text: string) => {
+      if (FULL_DUPLEX_VOICE_ENABLED && VOICE_PROVIDER === "elevenlabs") {
+        logVoiceProductionCheck("device TTS blocked", {
+          reason: "ElevenLabs production voice test is enabled.",
+          textLength: text.trim().length,
+        });
+        setVoiceError(
+          "ElevenLabs voice mode is enabled. Please use the mic button to hear the backend voice."
+        );
+        return;
+      }
+
       const textToSpeak = text.trim();
 
       if (!textToSpeak) {
@@ -918,7 +944,11 @@ export default function AskSaiScreen() {
             );
           }
 
-          if (finalAnswer && !voiceHadAudioChunksRef.current) {
+          if (
+            finalAnswer &&
+            !voiceHadAudioChunksRef.current &&
+            VOICE_PROVIDER !== "elevenlabs"
+          ) {
             void speakText(finalAnswer);
           }
 
@@ -1248,6 +1278,10 @@ export default function AskSaiScreen() {
           conversationId,
           provider: VOICE_PROVIDER,
         });
+        logVoiceProductionCheck("voice provider env", {
+          env: process.env.EXPO_PUBLIC_AI_VOICE_PROVIDER,
+          resolvedProvider: VOICE_PROVIDER,
+        });
 
         setVoiceError("");
         setVoiceConnectionState("connecting");
@@ -1323,6 +1357,22 @@ export default function AskSaiScreen() {
         }
 
         voiceTimingRef.current.sessionCreatedAt = Date.now();
+
+        logVoiceProductionCheck("voice session providers", {
+          providers: session.providers,
+        });
+        logVoiceProductionCheck("voice output format", {
+          outputFormat: session.audio?.outputFormat,
+        });
+        logVoiceProductionCheck("voice websocket url", {
+          isProductionWss: session.webSocketUrl.startsWith(
+            "wss://saifamily.sustaininsight.com/api/ai/voice/ws"
+          ),
+          webSocketUrl: session.webSocketUrl.replace(
+            /([?&]token=)[^&]+/,
+            "$1***"
+          ),
+        });
 
         logVoiceDebug("Voice session created", {
           audio: session.audio,
@@ -1813,7 +1863,7 @@ export default function AskSaiScreen() {
                 <Text style={styles.voiceSessionText}>
                   STT: {voiceSession.providers?.stt || "mock"} · TTS:{" "}
                   {voiceSession.providers?.tts || VOICE_PROVIDER} · Audio:{" "}
-                  {voiceSession.audio?.outputFormat || "mp3_44100"}
+                  {voiceSession.audio?.outputFormat || "mp3_44100_128"}
                 </Text>
                 {activeVoiceTurnId ? (
                   <Text style={styles.voiceSessionText}>

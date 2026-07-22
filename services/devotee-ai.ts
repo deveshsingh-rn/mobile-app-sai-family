@@ -107,7 +107,7 @@ export type DevoteeAiVoiceSession = {
     channels: number;
     chunkMs: number;
     inputFormat: "pcm_s16le";
-    outputFormat?: "mp3_44100" | string;
+    outputFormat?: "mp3_44100_128" | "mp3_44100" | "wav_16000" | string;
     sampleRate: number;
   };
   conversationId?: string;
@@ -174,7 +174,7 @@ export type DevoteeAiVoiceServerEvent =
   | {
       data: string;
       encoding: "base64";
-      format: "mp3_44100" | "wav_16000" | string;
+      format: "mp3_44100_128" | "mp3_44100" | "wav_16000" | string;
       turnId: string;
       type: "audio_chunk";
     }
