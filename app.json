@@ -82,7 +82,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiBaseUrl": "https://saifamily.sustaininsight.com",
+      "apiBaseUrl": "http://192.168.1.3:8000",
       "router": {},
       "eas": {
         "projectId": "d751b428-eab5-47a0-8ed0-4782b79d0e40"

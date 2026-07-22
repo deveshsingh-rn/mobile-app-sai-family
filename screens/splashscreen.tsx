@@ -19,7 +19,7 @@ type SaiBabaSplashScreenProps = {
 export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenProps) {
   // Title fade-in
   const titleOpacity = useRef(new Animated.Value(0)).current;
-  const titleY = useRef(new Animated.Value(30)).current;
+  const titleY = useRef(new Animated.Value(3)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -37,7 +37,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
 
     // auto-dismiss after the welcome moment
     if (onFinish) {
-      const t = setTimeout(onFinish, 3500);
+      const t = setTimeout(onFinish, 2000);
       return () => {
         clearTimeout(t);
       };
@@ -46,7 +46,16 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
     return undefined;
   }, [onFinish, titleOpacity, titleY]);
 
-  return (
+  return (<SaiBabaSplashScreenContent titleOpacity={titleOpacity} titleY={titleY} />);
+}
+
+type SaiBabaSplashScreenContentProps = {
+  titleOpacity: Animated.Value;
+  titleY: Animated.Value;
+};
+
+function SaiBabaSplashScreenContent({ titleOpacity, titleY }: SaiBabaSplashScreenContentProps) {
+  return (  
     <ImageBackground
       imageStyle={styles.splashWelcomeImage}
       resizeMode="stretch"
@@ -55,9 +64,9 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
     >
       <LinearGradient
         colors={[
-          "rgba(28, 18, 6, 0.1)",
-          "rgba(40, 22, 7, 0.34)",
-          "rgba(30, 16, 5, 0.9)",
+          "rgba(100, 56, 4, 0.1)",
+          "rgba(172, 93, 28, 0.04)",
+          "rgba(30, 16, 5, 0.09)",
         ]}
         locations={[0, 0.52, 1]}
         style={styles.splashWelcomeOverlay}
@@ -123,6 +132,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2.6,
   },
   splashWelcomeContent: {
+    paddingTop: 120,
     alignItems: "center",
     flex: 1,
     justifyContent: "center",

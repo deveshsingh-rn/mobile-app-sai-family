@@ -203,8 +203,8 @@ function WelcomeSlide({
           style={[
             styles.onboardingImageWrapper,
             {
-              height: width * 0.84 * 0.5625 + 28,
-              width: width * 0.84 + 28,
+              height: width * 1.2 * 0.9625 + 28,
+              width: width * .84 + 28,
             },
           ]}
         >
@@ -212,7 +212,7 @@ function WelcomeSlide({
             style={[
               styles.onboardingGlowRing,
               {
-                height: width * 0.84 * 0.5625 + 26,
+                height: width * 1.2 * 0.9625 + 26,
                 width: width * 0.84 + 26,
               },
             ]}
@@ -221,8 +221,8 @@ function WelcomeSlide({
             style={[
               styles.onboardingImageHalo,
               {
-                height: width * 0.84 * 0.5625 + 12,
-                width: width * 0.84 + 12,
+                height: width * 1.2 * 0.9625 + 12,
+                width: width * 0.74 + 12,
               },
             ]}
           />
@@ -232,8 +232,8 @@ function WelcomeSlide({
             style={[
               styles.onboardingSaiImage,
               {
-                height: width * 0.84 * 0.5625,
-                width: width * 0.84,
+                height: width * 1.2 * 0.9625,
+                width: width * 0.74,
               },
             ]}
           />
