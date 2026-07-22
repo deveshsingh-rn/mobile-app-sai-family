@@ -10,7 +10,7 @@
  * ────────────────────────────────────────────────────────────
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Image,
   ImageSourcePropType,
@@ -22,6 +22,7 @@ import {
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
+import { requireOptionalNativeModule } from "expo-modules-core";
 import {
   ArrowLeft,
   ArrowRight,
@@ -56,6 +57,9 @@ const C = {
   saffronBorder: "#FED7AA",
   maroon: "#2B1308",
 };
+
+const WELCOME_MESSAGE_AUDIO =
+  require("../assets/images/welcome-message.mp3");
 
 /* ─── Interests (drive personalization) ──────────────────── */
 type InterestId =
@@ -124,6 +128,62 @@ function WelcomeSlide({
       ],
     };
   });
+
+  useEffect(() => {
+    let player:
+      | {
+          pause: () => void;
+          remove?: () => void;
+          seekTo?: (seconds: number) => Promise<void> | void;
+          play: () => void;
+        }
+      | null = null;
+    let isMounted = true;
+
+    const playWelcomeMessage = async () => {
+      try {
+        const nativeAudioModule =
+          requireOptionalNativeModule("ExpoAudio");
+
+        if (!nativeAudioModule) {
+          console.warn(
+            "[OnboardingAudio] ExpoAudio native module is unavailable. Rebuild the app to enable onboarding audio."
+          );
+          return;
+        }
+
+        const { createAudioPlayer } = await import("expo-audio");
+
+        if (typeof createAudioPlayer !== "function") {
+          console.warn(
+            "[OnboardingAudio] createAudioPlayer is unavailable in this build."
+          );
+          return;
+        }
+
+        if (!isMounted) {
+          return;
+        }
+
+        player = createAudioPlayer(WELCOME_MESSAGE_AUDIO);
+        await player.seekTo?.(0);
+        player.play();
+      } catch (error) {
+        console.warn(
+          "[OnboardingAudio] Welcome message playback failed",
+          error
+        );
+      }
+    };
+
+    void playWelcomeMessage();
+
+    return () => {
+      isMounted = false;
+      player?.pause();
+      player?.remove?.();
+    };
+  }, []);
 
   return (
     <Animated.View

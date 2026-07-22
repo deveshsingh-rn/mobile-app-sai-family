@@ -6,13 +6,10 @@ import {
   ImageBackground,
   Text,
 } from "react-native";
-import { requireOptionalNativeModule } from "expo-modules-core";
 import { LinearGradient } from "expo-linear-gradient";
 
 const SAI_BABA_WELCOME_IMAGE =
   require("../assets/images/saijii.jpg");
-const WELCOME_MESSAGE_AUDIO =
-  require("../assets/images/welcome-message.mp3");
 
 type SaiBabaSplashScreenProps = {
   onFinish?: () => void;
@@ -23,59 +20,6 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
   // Title fade-in
   const titleOpacity = useRef(new Animated.Value(0)).current;
   const titleY = useRef(new Animated.Value(30)).current;
-
-  useEffect(() => {
-    let player:
-      | {
-          pause: () => void;
-          remove?: () => void;
-          seekTo?: (seconds: number) => Promise<void> | void;
-          play: () => void;
-        }
-      | null = null;
-    let isMounted = true;
-
-    const playWelcomeMessage = async () => {
-      try {
-        const nativeAudioModule =
-          requireOptionalNativeModule("ExpoAudio");
-
-        if (!nativeAudioModule) {
-          console.warn(
-            "[SplashAudio] ExpoAudio native module is unavailable. Rebuild the app to enable splash audio."
-          );
-          return;
-        }
-
-        const { createAudioPlayer } = await import("expo-audio");
-
-        if (typeof createAudioPlayer !== "function") {
-          console.warn(
-            "[SplashAudio] createAudioPlayer is unavailable in this build."
-          );
-          return;
-        }
-
-        if (!isMounted) {
-          return;
-        }
-
-        player = createAudioPlayer(WELCOME_MESSAGE_AUDIO);
-        await player.seekTo?.(0);
-        player.play();
-      } catch (error) {
-        console.warn("[SplashAudio] Welcome message playback failed", error);
-      }
-    };
-
-    void playWelcomeMessage();
-
-    return () => {
-      isMounted = false;
-      player?.pause();
-      player?.remove?.();
-    };
-  }, []);
 
   useEffect(() => {
     Animated.parallel([
