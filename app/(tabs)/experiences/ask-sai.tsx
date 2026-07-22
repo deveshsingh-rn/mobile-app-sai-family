@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -29,6 +30,7 @@ import {
   Mic2,
   Pause,
   Plus,
+  RotateCcw,
   Send,
   Sparkles,
   ThumbsDown,
@@ -102,7 +104,21 @@ const logVoiceProductionCheck = (
 const createVoiceTurnId = () =>
   `turn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const getSpeechLanguage = () => (Platform.OS === "ios" ? "en-US" : "en-IN");
+const getSpeechLanguage = () => "hi-IN";
+
+const selectBestSpeechTranscript = (
+  results?: { transcript?: string }[]
+) => {
+  const candidates = (results || [])
+    .map((result) => result.transcript?.trim())
+    .filter((transcript): transcript is string => Boolean(transcript));
+
+  if (candidates.length === 0) {
+    return "";
+  }
+
+  return candidates.sort((first, second) => second.length - first.length)[0];
+};
 
 const base64ToArrayBuffer = (base64: string) => {
   const binary = globalThis.atob(base64);
@@ -196,6 +212,11 @@ export default function AskSaiScreen() {
   const voiceFinalTranscriptRef = useRef("");
   const voiceHadAudioChunksRef = useRef(false);
   const voiceLivePlaybackFailedRef = useRef(false);
+  const waitingToneTimerRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
+  const voicePlaybackCompletionTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(null);
   const voiceAudioContextRef = useRef<{
     close: () => Promise<void>;
     decodeAudioData: (data: ArrayBuffer) => Promise<unknown>;
@@ -238,6 +259,8 @@ export default function AskSaiScreen() {
   const [isListening, setIsListening] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isVoiceModalVisible, setIsVoiceModalVisible] = useState(false);
+  const [isWaitingToneActive, setIsWaitingToneActive] = useState(false);
   const [voiceSession, setVoiceSession] =
     useState<DevoteeAiVoiceSession | null>(null);
   const [voiceConnectionState, setVoiceConnectionState] =
@@ -351,6 +374,11 @@ export default function AskSaiScreen() {
 
     voiceFallbackAudioPlayerRef.current = null;
 
+    if (voicePlaybackCompletionTimerRef.current) {
+      clearTimeout(voicePlaybackCompletionTimerRef.current);
+      voicePlaybackCompletionTimerRef.current = null;
+    }
+
     const cachedAudioUri = voiceFallbackAudioFileUriRef.current;
     voiceFallbackAudioFileUriRef.current = null;
 
@@ -385,6 +413,43 @@ export default function AskSaiScreen() {
 
     voiceAudioContextRef.current = null;
     setIsSpeaking(false);
+  }, []);
+
+  const stopWaitingTone = useCallback(async () => {
+    if (waitingToneTimerRef.current) {
+      clearInterval(waitingToneTimerRef.current);
+      waitingToneTimerRef.current = null;
+    }
+
+    setIsWaitingToneActive(false);
+
+    try {
+      await Speech.stop();
+    } catch {
+      // Waiting tone may already be stopped.
+    }
+  }, []);
+
+  const startWaitingTone = useCallback(() => {
+    if (waitingToneTimerRef.current) {
+      return;
+    }
+
+    setIsWaitingToneActive(true);
+
+    const playTone = () => {
+      Speech.speak("Om Sai Ram", {
+        language: "hi-IN",
+        pitch: 0.82,
+        rate: Platform.OS === "ios" ? 0.38 : 0.62,
+        volume: 0.35,
+      });
+    };
+
+    playTone();
+    waitingToneTimerRef.current = setInterval(playTone, 3200);
+
+    logVoiceDebug("Waiting tone started");
   }, []);
 
   const ensureVoicePlaybackQueue = useCallback(async () => {
@@ -460,9 +525,27 @@ export default function AskSaiScreen() {
       voiceFallbackAudioPlayerRef.current = player;
 
       await player.seekTo?.(0);
+      await stopWaitingTone();
       player.play();
       setIsSpeaking(true);
       setVoiceConnectionState("speaking");
+
+      if (voicePlaybackCompletionTimerRef.current) {
+        clearTimeout(voicePlaybackCompletionTimerRef.current);
+      }
+
+      const estimatedBytes = Math.floor((base64Audio.length * 3) / 4);
+      const estimatedDurationMs = Math.max(
+        2500,
+        Math.min(45000, Math.ceil((estimatedBytes / 16000) * 1000) + 1200)
+      );
+
+      voicePlaybackCompletionTimerRef.current = setTimeout(() => {
+        setIsSpeaking(false);
+        setVoiceConnectionState((currentState) =>
+          currentState === "speaking" ? "idle" : currentState
+        );
+      }, estimatedDurationMs);
 
       logVoiceProductionCheck("buffered ElevenLabs MP3 playback started", {
         base64Length: base64Audio.length,
@@ -480,7 +563,7 @@ export default function AskSaiScreen() {
       });
       return false;
     }
-  }, []);
+  }, [stopWaitingTone]);
 
   const enqueueVoiceAudioChunk = useCallback(
     (event: Extract<DevoteeAiVoiceServerEvent, { type: "audio_chunk" }>) => {
@@ -528,6 +611,7 @@ export default function AskSaiScreen() {
             audioArrayBuffer
           );
 
+          await stopWaitingTone();
           queueSource.enqueueBuffer(audioBuffer);
           voiceHadAudioChunksRef.current = true;
           setIsSpeaking(true);
@@ -542,7 +626,7 @@ export default function AskSaiScreen() {
           });
         });
     },
-    [ensureVoicePlaybackQueue]
+    [ensureVoicePlaybackQueue, stopWaitingTone]
   );
 
   const stopSpeech = useCallback(async () => {
@@ -597,6 +681,7 @@ export default function AskSaiScreen() {
     }
 
     pendingVoiceStartRef.current = null;
+    void stopWaitingTone();
 
     void getSaiAudioStreamModule()
       .then((audioStream) => audioStream.stopSaiAudioStreamAsync())
@@ -624,7 +709,7 @@ export default function AskSaiScreen() {
     setVoiceConnectionState("idle");
     setVoicePartialTranscript("");
     void cleanupBackendVoiceSessions("local-close");
-  }, [cleanupBackendVoiceSessions, stopVoicePlayback]);
+  }, [cleanupBackendVoiceSessions, stopVoicePlayback, stopWaitingTone]);
 
   useEffect(() => {
     return () => {
@@ -967,6 +1052,7 @@ export default function AskSaiScreen() {
           break;
 
         case "stop_playback":
+          void stopWaitingTone();
           void stopSpeech();
           setVoiceConnectionState("interrupted");
           break;
@@ -1068,6 +1154,8 @@ export default function AskSaiScreen() {
             void playBufferedVoiceAudio(event.turnId);
           } else if (finalAnswer && !voiceHadAudioChunksRef.current) {
             void speakText(finalAnswer);
+          } else {
+            void stopWaitingTone();
           }
 
           activeVoiceTurnIdRef.current = null;
@@ -1086,6 +1174,7 @@ export default function AskSaiScreen() {
           });
           setVoiceConnectionState("error");
           setVoiceError(getVoiceErrorMessage(event.code, event.message));
+          void stopWaitingTone();
           void cleanupBackendVoiceSessions("server-error");
           break;
       }
@@ -1100,6 +1189,7 @@ export default function AskSaiScreen() {
       speakText,
       startConnectedVoiceStreaming,
       stopSpeech,
+      stopWaitingTone,
       voiceSession?.providers?.llm,
     ]
   );
@@ -1212,7 +1302,7 @@ export default function AskSaiScreen() {
             isFinal: boolean;
             results?: { transcript?: string }[];
           }) => {
-            const transcript = event.results?.[0]?.transcript?.trim();
+            const transcript = selectBestSpeechTranscript(event.results);
 
             if (!transcript) {
               return;
@@ -1220,10 +1310,13 @@ export default function AskSaiScreen() {
 
             setQuestion(transcript);
             setVoiceError("");
+            setVoicePartialTranscript(event.isFinal ? "" : transcript);
 
             if (event.isFinal) {
               setIsListening(false);
-              void submitQuestion(transcript, { speak: true });
+              setVoiceFinalTranscript(transcript);
+              voiceFinalTranscriptRef.current = transcript;
+              setVoiceConnectionState("idle");
             }
           }
         );
@@ -1262,7 +1355,7 @@ export default function AskSaiScreen() {
       errorSubscription?.remove();
       endSubscription?.remove();
     };
-  }, [submitQuestion]);
+  }, []);
 
   const startSpeechRecognitionFallback = useCallback(
     async () => {
@@ -1291,13 +1384,27 @@ export default function AskSaiScreen() {
 
         setVoiceConnectionState("idle");
         setVoiceError("");
+        setVoicePartialTranscript("");
+        setVoiceFinalTranscript("");
+        voiceFinalTranscriptRef.current = "";
         setIsListening(true);
         ExpoSpeechRecognitionModule.start({
           addsPunctuation: true,
-          continuous: false,
+          contextualStrings: [
+            "Sai Baba",
+            "Om Sai Ram",
+            "Shraddha",
+            "Saburi",
+            "mandir",
+            "darshan",
+            "seva",
+            "bhajan",
+          ],
+          continuous: true,
           interimResults: true,
           lang: getSpeechLanguage(),
-          maxAlternatives: 1,
+          maxAlternatives: 3,
+          requiresOnDeviceRecognition: false,
         });
 
         return true;
@@ -1688,6 +1795,105 @@ export default function AskSaiScreen() {
     voiceConnectionState,
   ]);
 
+  const openVoiceModal = useCallback(() => {
+    setIsVoiceModalVisible(true);
+
+    if (!isVoiceControlActive && !isSubmitting) {
+      void handleVoiceQuestion();
+    }
+  }, [handleVoiceQuestion, isSubmitting, isVoiceControlActive]);
+
+  const submitVoiceModal = useCallback(async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    if (FULL_DUPLEX_VOICE_ENABLED && voiceSocketRef.current) {
+      startWaitingTone();
+      await handleVoiceQuestion();
+      return;
+    }
+
+    const fallbackQuestion = (
+      voiceFinalTranscript ||
+      voicePartialTranscript ||
+      question
+    ).trim();
+
+    if (fallbackQuestion.length >= 3) {
+      startWaitingTone();
+      try {
+        await submitQuestion(fallbackQuestion, { speak: false });
+      } finally {
+        await stopWaitingTone();
+      }
+    } else {
+      Alert.alert(
+        "Speak your question",
+        "Please speak or write a little more before submitting."
+      );
+    }
+  }, [
+    handleVoiceQuestion,
+    isSubmitting,
+    question,
+    startWaitingTone,
+    stopWaitingTone,
+    submitQuestion,
+    voiceFinalTranscript,
+    voicePartialTranscript,
+  ]);
+
+  const closeVoiceModal = useCallback(async () => {
+    setIsVoiceModalVisible(false);
+    await stopWaitingTone();
+    closeVoiceSession();
+  }, [closeVoiceSession, stopWaitingTone]);
+
+  const updateVoiceTranscript = useCallback((nextTranscript: string) => {
+    setQuestion(nextTranscript);
+    setVoiceFinalTranscript(nextTranscript);
+    setVoicePartialTranscript("");
+    voiceFinalTranscriptRef.current = nextTranscript;
+  }, []);
+
+  const listenAgainFromModal = useCallback(async () => {
+    await stopWaitingTone();
+    setAnswer("");
+    setVoiceError("");
+    setVoicePartialTranscript("");
+    setVoiceFinalTranscript("");
+    setQuestion("");
+    voiceFinalTranscriptRef.current = "";
+
+    if (isListening) {
+      try {
+        const ExpoSpeechRecognitionModule =
+          await getSpeechRecognitionModule();
+        ExpoSpeechRecognitionModule.stop();
+      } catch {
+        // Listener cleanup is best effort.
+      }
+    }
+
+    if (FULL_DUPLEX_VOICE_ENABLED) {
+      closeVoiceSession();
+      setTimeout(() => {
+        setIsVoiceModalVisible(true);
+        void handleVoiceQuestion();
+      }, 260);
+      return;
+    }
+
+    await startSpeechRecognitionFallback();
+  }, [
+    closeVoiceSession,
+    handleVoiceQuestion,
+    isListening,
+    startSpeechRecognitionFallback,
+    stopWaitingTone,
+  ]);
+
   const openConversation = useCallback(
     async (id: string) => {
       try {
@@ -1803,6 +2009,35 @@ export default function AskSaiScreen() {
     },
     [feedbackMessageId]
   );
+
+  const modalTranscript =
+    voicePartialTranscript || voiceFinalTranscript || question;
+  const hasModalTranscript = modalTranscript.trim().length >= 3;
+  const isVoiceThinking =
+    voiceConnectionState === "thinking" ||
+    (isWaitingToneActive && !isSpeaking);
+  const isVoiceSubmitDisabled =
+    isSubmitting ||
+    isSpeaking ||
+    isVoiceThinking ||
+    voiceConnectionState === "connecting" ||
+    (!FULL_DUPLEX_VOICE_ENABLED && !hasModalTranscript);
+  const canListenAgain =
+    !isVoiceThinking &&
+    !isSpeaking &&
+    voiceConnectionState !== "connecting";
+  const voiceModalTitle = isSpeaking
+    ? "Sai Baba is replying"
+    : isVoiceThinking
+      ? "Preparing guidance"
+      : isListening
+        ? "Speak from your heart"
+        : "Ask Sai by voice";
+  const voiceModalSubtitle = isSpeaking
+    ? "Listen peacefully to the guidance."
+    : isVoiceThinking
+      ? "A soft tone will continue until the reply is ready."
+      : "Share your problem, prayer, or question. Tap Submit when you finish.";
 
   return (
     <KeyboardAvoidingView
@@ -2002,7 +2237,7 @@ export default function AskSaiScreen() {
             <View style={styles.inputActions}>
               <Pressable
                 disabled={isSubmitting}
-                onPress={handleVoiceQuestion}
+                onPress={openVoiceModal}
                 style={({ pressed }) => [
                   styles.micButton,
                   isVoiceControlActive && styles.micButtonActive,
@@ -2168,6 +2403,164 @@ export default function AskSaiScreen() {
           ) : null}
         </ScrollView>
       </LinearGradient>
+
+      <Modal
+        animationType="fade"
+        onRequestClose={closeVoiceModal}
+        transparent
+        visible={isVoiceModalVisible}
+      >
+        <View style={styles.voiceModalBackdrop}>
+          <Pressable
+            onPress={closeVoiceModal}
+            style={styles.voiceModalBackdropPress}
+          />
+          <View
+            style={[
+              styles.voiceModalCard,
+              { paddingBottom: insets.bottom + 18 },
+            ]}
+          >
+            <View style={styles.voiceModalHandle} />
+            <View style={styles.voiceModalHeader}>
+              <View style={styles.voiceModalIcon}>
+                {isSpeaking ? (
+                  <Volume2 color="#FFFFFF" size={24} strokeWidth={2.5} />
+                ) : (
+                  <Mic color="#FFFFFF" size={24} strokeWidth={2.5} />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.voiceModalTitle}>
+                  {voiceModalTitle}
+                </Text>
+                <Text style={styles.voiceModalSubtitle}>
+                  {voiceModalSubtitle}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.voiceWavePanel}>
+              <View
+                style={[
+                  styles.voiceWaveDot,
+                  isListening && styles.voiceWaveDotActive,
+                ]}
+              />
+              <View
+                style={[
+                  styles.voiceWaveDot,
+                  styles.voiceWaveDotTall,
+                  (isListening || isWaitingToneActive) &&
+                    styles.voiceWaveDotActive,
+                ]}
+              />
+              <View
+                style={[
+                  styles.voiceWaveDot,
+                  (isSpeaking || isWaitingToneActive) &&
+                    styles.voiceWaveDotActive,
+                ]}
+              />
+            </View>
+
+            {isWaitingToneActive ? (
+              <View style={styles.waitingToneCard}>
+                <ActivityIndicator color="#B45309" size="small" />
+                <Text style={styles.waitingToneText}>
+                  Soft tone playing while Sai prepares the reply...
+                </Text>
+              </View>
+            ) : null}
+
+            <View style={styles.voiceModalTranscriptBox}>
+              <Text style={styles.voiceModalTranscriptLabel}>
+                {modalTranscript ? "Review your words" : "Listening area"}
+              </Text>
+              <TextInput
+                editable={!isVoiceThinking && !isSpeaking}
+                multiline
+                onChangeText={updateVoiceTranscript}
+                placeholder="Speak naturally. You can share your problem, prayer, or question."
+                placeholderTextColor="#9A8265"
+                returnKeyType="done"
+                style={styles.voiceModalTranscriptInput}
+                textAlignVertical="top"
+                value={modalTranscript}
+              />
+            </View>
+
+            {canListenAgain ? (
+              <Pressable
+                onPress={listenAgainFromModal}
+                style={({ pressed }) => [
+                  styles.voiceModalRetryButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <RotateCcw
+                  color="#B45309"
+                  size={16}
+                  strokeWidth={2.5}
+                />
+                <Text style={styles.voiceModalRetryText}>
+                  Listen again
+                </Text>
+              </Pressable>
+            ) : null}
+
+            {answer && isSpeaking ? (
+              <View style={styles.voiceModalAnswerBox}>
+                <Text style={styles.voiceModalTranscriptLabel}>
+                  Sai assistant
+                </Text>
+                <Text numberOfLines={4} style={styles.voiceModalAnswerText}>
+                  {answer}
+                </Text>
+              </View>
+            ) : null}
+
+            {voiceError ? (
+              <Text style={styles.voiceModalError}>{voiceError}</Text>
+            ) : null}
+
+            <View style={styles.voiceModalActions}>
+              <Pressable
+                onPress={closeVoiceModal}
+                style={({ pressed }) => [
+                  styles.voiceModalSecondaryButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.voiceModalSecondaryText}>
+                  {isSpeaking ? "Close" : "Cancel"}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                disabled={isVoiceSubmitDisabled}
+                onPress={submitVoiceModal}
+                style={({ pressed }) => [
+                  styles.voiceModalPrimaryButton,
+                  isVoiceSubmitDisabled && styles.voiceModalPrimaryDisabled,
+                  pressed && styles.pressed,
+                ]}
+              >
+                {isVoiceThinking ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <>
+                    <Text style={styles.voiceModalPrimaryText}>
+                      Submit
+                    </Text>
+                    <Send color="#FFFFFF" size={17} strokeWidth={2.5} />
+                  </>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -2667,5 +3060,211 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     lineHeight: 20,
+  },
+  voiceModalBackdrop: {
+    backgroundColor: "rgba(31, 18, 8, 0.42)",
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  voiceModalBackdropPress: {
+    flex: 1,
+  },
+  voiceModalCard: {
+    backgroundColor: "#FFFDF8",
+    borderColor: "#F3E1BE",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    borderWidth: 1,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    shadowColor: "#7C2D12",
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 24,
+  },
+  voiceModalHandle: {
+    alignSelf: "center",
+    backgroundColor: "#E7D3B4",
+    borderRadius: 100,
+    height: 5,
+    marginBottom: 18,
+    width: 46,
+  },
+  voiceModalHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 14,
+    marginBottom: 18,
+  },
+  voiceModalIcon: {
+    alignItems: "center",
+    backgroundColor: "#B45309",
+    borderRadius: 22,
+    height: 54,
+    justifyContent: "center",
+    width: 54,
+  },
+  voiceModalTitle: {
+    color: "#23201D",
+    fontSize: 23,
+    fontWeight: "900",
+    letterSpacing: 0,
+  },
+  voiceModalSubtitle: {
+    color: "#6B5A45",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
+    marginTop: 4,
+  },
+  voiceWavePanel: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#F1DEC0",
+    borderRadius: 24,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    height: 86,
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  voiceWaveDot: {
+    backgroundColor: "#FED7AA",
+    borderRadius: 999,
+    height: 28,
+    width: 12,
+  },
+  voiceWaveDotTall: {
+    height: 52,
+  },
+  voiceWaveDotActive: {
+    backgroundColor: "#B45309",
+  },
+  waitingToneCard: {
+    alignItems: "center",
+    backgroundColor: "#FFFBEB",
+    borderColor: "#FDE68A",
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  waitingToneText: {
+    color: "#92400E",
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 18,
+  },
+  voiceModalTranscriptBox: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F0DFC6",
+    borderRadius: 18,
+    borderWidth: 1,
+    marginBottom: 12,
+    minHeight: 106,
+    padding: 14,
+  },
+  voiceModalAnswerBox: {
+    backgroundColor: "#F7FBFF",
+    borderColor: "#DBEAFE",
+    borderRadius: 18,
+    borderWidth: 1,
+    marginBottom: 12,
+    padding: 14,
+  },
+  voiceModalTranscriptLabel: {
+    color: "#B45309",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0,
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+  voiceModalTranscriptText: {
+    color: "#2F2A24",
+    fontSize: 17,
+    fontWeight: "800",
+    lineHeight: 25,
+  },
+  voiceModalTranscriptInput: {
+    color: "#2F2A24",
+    fontSize: 18,
+    fontWeight: "800",
+    lineHeight: 27,
+    minHeight: 112,
+    padding: 0,
+  },
+  voiceModalRetryButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 7,
+    marginBottom: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+  },
+  voiceModalRetryText: {
+    color: "#B45309",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  voiceModalAnswerText: {
+    color: "#26384F",
+    fontSize: 15,
+    fontWeight: "800",
+    lineHeight: 22,
+  },
+  voiceModalError: {
+    color: "#B91C1C",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+  voiceModalActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  voiceModalSecondaryButton: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F0DFC6",
+    borderRadius: 16,
+    borderWidth: 1,
+    flex: 0.42,
+    height: 54,
+    justifyContent: "center",
+  },
+  voiceModalSecondaryText: {
+    color: "#7C2D12",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  voiceModalPrimaryButton: {
+    alignItems: "center",
+    backgroundColor: "#B45309",
+    borderRadius: 16,
+    flex: 0.58,
+    flexDirection: "row",
+    gap: 8,
+    height: 54,
+    justifyContent: "center",
+  },
+  voiceModalPrimaryDisabled: {
+    opacity: 0.7,
+  },
+  voiceModalPrimaryText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "900",
   },
 });

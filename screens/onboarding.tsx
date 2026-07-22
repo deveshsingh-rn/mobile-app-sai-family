@@ -239,13 +239,7 @@ function WelcomeSlide({
           />
         </View>
 
-        <View style={styles.onboardingDivider}>
-          <View style={styles.onboardingDividerLine} />
-          <Text style={styles.onboardingDividerOm}>ॐ</Text>
-          <View style={styles.onboardingDividerLine} />
-        </View>
-
-        <Text style={styles.onboardingBlessing}>Sabka Malik Ek</Text>
+       
       </View>
     </Animated.View>
   );
