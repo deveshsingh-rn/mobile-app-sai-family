@@ -184,9 +184,18 @@ export default function AskSaiScreen() {
   );
   const activeVoiceTurnIdRef = useRef<string | null>(null);
   const voiceAnswerBufferRef = useRef("");
+  const voiceAudioChunkPartsRef = useRef<string[]>([]);
   const voiceChunkCountRef = useRef(0);
+  const voiceFallbackAudioFileUriRef = useRef<string | null>(null);
+  const voiceFallbackAudioPlayerRef = useRef<{
+    pause: () => void;
+    play: () => void;
+    remove?: () => void;
+    seekTo?: (seconds: number) => Promise<void> | void;
+  } | null>(null);
   const voiceFinalTranscriptRef = useRef("");
   const voiceHadAudioChunksRef = useRef(false);
+  const voiceLivePlaybackFailedRef = useRef(false);
   const voiceAudioContextRef = useRef<{
     close: () => Promise<void>;
     decodeAudioData: (data: ArrayBuffer) => Promise<unknown>;
@@ -334,6 +343,30 @@ export default function AskSaiScreen() {
     voiceAudioDecodeQueueRef.current = Promise.resolve();
 
     try {
+      voiceFallbackAudioPlayerRef.current?.pause();
+      voiceFallbackAudioPlayerRef.current?.remove?.();
+    } catch {
+      // Cached playback may already be released.
+    }
+
+    voiceFallbackAudioPlayerRef.current = null;
+
+    const cachedAudioUri = voiceFallbackAudioFileUriRef.current;
+    voiceFallbackAudioFileUriRef.current = null;
+
+    if (cachedAudioUri) {
+      void import("expo-file-system/legacy")
+        .then((FileSystem) =>
+          FileSystem.deleteAsync(cachedAudioUri, {
+            idempotent: true,
+          })
+        )
+        .catch(() => {
+          // Cache cleanup is best effort.
+        });
+    }
+
+    try {
       voiceAudioQueueRef.current?.clearBuffers();
       voiceAudioQueueRef.current?.stop();
     } catch {
@@ -382,6 +415,73 @@ export default function AskSaiScreen() {
     return { audioContext, queueSource };
   }, []);
 
+  const playBufferedVoiceAudio = useCallback(async (turnId: string) => {
+    const base64Audio = voiceAudioChunkPartsRef.current.join("");
+
+    if (!base64Audio) {
+      logVoiceProductionCheck("buffered audio skipped", {
+        reason: "No backend audio chunks collected.",
+        turnId,
+      });
+      return false;
+    }
+
+    try {
+      const [{ createAudioPlayer }, FileSystem] = await Promise.all([
+        import("expo-audio"),
+        import("expo-file-system/legacy"),
+      ]);
+
+      if (!FileSystem.cacheDirectory) {
+        throw new Error("FileSystem cache directory is unavailable.");
+      }
+
+      const fileUri = `${FileSystem.cacheDirectory}sai-elevenlabs-${turnId}.mp3`;
+
+      if (voiceFallbackAudioFileUriRef.current) {
+        await FileSystem.deleteAsync(
+          voiceFallbackAudioFileUriRef.current,
+          { idempotent: true }
+        ).catch(() => undefined);
+      }
+
+      await FileSystem.writeAsStringAsync(fileUri, base64Audio, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      voiceFallbackAudioPlayerRef.current?.pause();
+      voiceFallbackAudioPlayerRef.current?.remove?.();
+
+      const player = createAudioPlayer(fileUri, {
+        keepAudioSessionActive: false,
+      });
+
+      voiceFallbackAudioFileUriRef.current = fileUri;
+      voiceFallbackAudioPlayerRef.current = player;
+
+      await player.seekTo?.(0);
+      player.play();
+      setIsSpeaking(true);
+      setVoiceConnectionState("speaking");
+
+      logVoiceProductionCheck("buffered ElevenLabs MP3 playback started", {
+        base64Length: base64Audio.length,
+        fileUri,
+        parts: voiceAudioChunkPartsRef.current.length,
+        turnId,
+      });
+
+      return true;
+    } catch (error) {
+      logVoiceProductionCheck("buffered ElevenLabs MP3 playback failed", {
+        error: error instanceof Error ? error.message : String(error),
+        parts: voiceAudioChunkPartsRef.current.length,
+        turnId,
+      });
+      return false;
+    }
+  }, []);
+
   const enqueueVoiceAudioChunk = useCallback(
     (event: Extract<DevoteeAiVoiceServerEvent, { type: "audio_chunk" }>) => {
       voiceAudioDecodeQueueRef.current = voiceAudioDecodeQueueRef.current
@@ -393,16 +493,30 @@ export default function AskSaiScreen() {
             return;
           }
 
-          const { audioContext, queueSource } =
-            await ensureVoicePlaybackQueue();
-          const audioArrayBuffer = base64ToArrayBuffer(event.data);
-
           logVoiceProductionCheck("audio_chunk", {
             base64Length: event.data?.length ?? 0,
             format: event.format,
             hasData: Boolean(event.data),
             turnId: event.turnId,
           });
+
+          if (event.format.startsWith("mp3")) {
+            voiceAudioChunkPartsRef.current.push(event.data);
+            voiceHadAudioChunksRef.current = true;
+            setVoiceConnectionState("speaking");
+
+            logVoiceProductionCheck("buffering mp3 audio chunk", {
+              parts: voiceAudioChunkPartsRef.current.length,
+              reason:
+                "MP3 chunks may be stream fragments; playback starts from complete buffered MP3.",
+              turnId: event.turnId,
+            });
+            return;
+          }
+
+          const { audioContext, queueSource } =
+            await ensureVoicePlaybackQueue();
+          const audioArrayBuffer = base64ToArrayBuffer(event.data);
 
           logVoiceDebug("Audio chunk received", {
             bytes: audioArrayBuffer.byteLength,
@@ -420,6 +534,7 @@ export default function AskSaiScreen() {
           setVoiceConnectionState("speaking");
         })
         .catch((error) => {
+          voiceLivePlaybackFailedRef.current = true;
           logVoiceDebug("Voice audio chunk playback failed", {
             error: error instanceof Error ? error.message : String(error),
             format: event.format,
@@ -498,9 +613,11 @@ export default function AskSaiScreen() {
     void stopVoicePlayback();
     activeVoiceTurnIdRef.current = null;
     voiceAnswerBufferRef.current = "";
+    voiceAudioChunkPartsRef.current = [];
     voiceChunkCountRef.current = 0;
     voiceFinalTranscriptRef.current = "";
     voiceHadAudioChunksRef.current = false;
+    voiceLivePlaybackFailedRef.current = false;
     voiceTimingRef.current = {};
     setActiveVoiceTurnId(null);
     setIsListening(false);
@@ -945,10 +1062,11 @@ export default function AskSaiScreen() {
           }
 
           if (
-            finalAnswer &&
-            !voiceHadAudioChunksRef.current &&
-            VOICE_PROVIDER !== "elevenlabs"
+            VOICE_PROVIDER === "elevenlabs" &&
+            voiceAudioChunkPartsRef.current.length > 0
           ) {
+            void playBufferedVoiceAudio(event.turnId);
+          } else if (finalAnswer && !voiceHadAudioChunksRef.current) {
             void speakText(finalAnswer);
           }
 
@@ -977,6 +1095,7 @@ export default function AskSaiScreen() {
       conversationId,
       enqueueVoiceAudioChunk,
       loadConversations,
+      playBufferedVoiceAudio,
       question,
       speakText,
       startConnectedVoiceStreaming,
@@ -1289,7 +1408,9 @@ export default function AskSaiScreen() {
         setVoiceFinalTranscript("");
         voiceFinalTranscriptRef.current = "";
         voiceAnswerBufferRef.current = "";
+        voiceAudioChunkPartsRef.current = [];
         voiceHadAudioChunksRef.current = false;
+        voiceLivePlaybackFailedRef.current = false;
 
         const audioStream = await getSaiAudioStreamModule();
         logVoiceDebug("Native audio module loaded");
