@@ -151,6 +151,114 @@ const combineBase64Chunks = (chunks: string[]) => {
   return combinedBytes;
 };
 
+const bytesToBase64 = (bytes: Uint8Array) => {
+  const binaryParts: string[] = [];
+  const chunkSize = 32_768;
+
+  for (let offset = 0; offset < bytes.byteLength; offset += chunkSize) {
+    const chunk = bytes.subarray(
+      offset,
+      Math.min(offset + chunkSize, bytes.byteLength)
+    );
+    let binaryChunk = "";
+
+    for (let index = 0; index < chunk.byteLength; index += 1) {
+      binaryChunk += String.fromCharCode(chunk[index]);
+    }
+
+    binaryParts.push(binaryChunk);
+  }
+
+  return globalThis.btoa(binaryParts.join(""));
+};
+
+type VoicePlaybackStage =
+  | "idle"
+  | "waiting"
+  | "buffering"
+  | "playing"
+  | "completed"
+  | "failed";
+
+type VoicePlayerStatus = {
+  didJustFinish: boolean;
+  isLoaded: boolean;
+  playing: boolean;
+};
+
+type VoicePlayer = {
+  addListener: (
+    eventName: "playbackStatusUpdate",
+    listener: (status: VoicePlayerStatus) => void
+  ) => { remove: () => void };
+  isLoaded: boolean;
+  pause: () => void;
+  play: () => void;
+  playing: boolean;
+  remove?: () => void;
+  seekTo?: (seconds: number) => Promise<void> | void;
+};
+
+const waitForVoicePlayer = (
+  player: VoicePlayer,
+  predicate: (status: VoicePlayerStatus) => boolean,
+  timeoutMs: number
+) =>
+  new Promise<void>((resolve, reject) => {
+    let subscription: { remove: () => void } | null = null;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
+    const finish = (error?: Error) => {
+      subscription?.remove();
+
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    };
+
+    const currentStatus: VoicePlayerStatus = {
+      didJustFinish: false,
+      isLoaded: player.isLoaded,
+      playing: player.playing,
+    };
+
+    if (predicate(currentStatus)) {
+      resolve();
+      return;
+    }
+
+    subscription = player.addListener(
+      "playbackStatusUpdate",
+      (status) => {
+        if (predicate(status)) {
+          finish();
+        }
+      }
+    );
+
+    const statusAfterSubscription: VoicePlayerStatus = {
+      didJustFinish: false,
+      isLoaded: player.isLoaded,
+      playing: player.playing,
+    };
+
+    if (predicate(statusAfterSubscription)) {
+      finish();
+      return;
+    }
+
+    timeout = setTimeout(() => {
+      finish(new Error("Voice audio player did not become ready in time."));
+    }, timeoutMs);
+  });
+
 const getVoiceErrorMessage = (code?: string, fallback?: string) => {
   switch (code) {
     case "UNAUTHENTICATED":
@@ -219,20 +327,13 @@ export default function AskSaiScreen() {
     null
   );
   const activeVoiceTurnIdRef = useRef<string | null>(null);
+  const completedVoiceTurnIdRef = useRef<string | null>(null);
   const voiceAnswerBufferRef = useRef("");
   const voiceAudioChunkPartsRef = useRef<string[]>([]);
   const voiceChunkCountRef = useRef(0);
+  const voiceResponseChunkCountRef = useRef(0);
   const voiceFallbackAudioFileUriRef = useRef<string | null>(null);
-  const voiceFallbackAudioPlayerRef = useRef<{
-    addListener?: (
-      eventName: "playbackStatusUpdate",
-      listener: (status: { didJustFinish: boolean }) => void
-    ) => { remove: () => void };
-    pause: () => void;
-    play: () => void;
-    remove?: () => void;
-    seekTo?: (seconds: number) => Promise<void> | void;
-  } | null>(null);
+  const voiceFallbackAudioPlayerRef = useRef<VoicePlayer | null>(null);
   const voicePlaybackStatusSubscriptionRef = useRef<{
     remove: () => void;
   } | null>(null);
@@ -288,6 +389,8 @@ export default function AskSaiScreen() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isVoiceModalVisible, setIsVoiceModalVisible] = useState(false);
   const [isWaitingToneActive, setIsWaitingToneActive] = useState(false);
+  const [voicePlaybackStage, setVoicePlaybackStage] =
+    useState<VoicePlaybackStage>("idle");
   const [voiceSession, setVoiceSession] =
     useState<DevoteeAiVoiceSession | null>(null);
   const [voiceConnectionState, setVoiceConnectionState] =
@@ -356,7 +459,7 @@ export default function AskSaiScreen() {
       case "interrupted":
         return "Interrupted";
       case "error":
-        return "Needs setup";
+        return "Try again";
       default:
         return "Ready";
     }
@@ -442,6 +545,7 @@ export default function AskSaiScreen() {
 
     voiceAudioContextRef.current = null;
     setIsSpeaking(false);
+    setVoicePlaybackStage("idle");
   }, []);
 
   const stopWaitingTone = useCallback(async () => {
@@ -459,6 +563,7 @@ export default function AskSaiScreen() {
     }
 
     setIsWaitingToneActive(true);
+    setVoicePlaybackStage("waiting");
 
     const playWaitingPulse = () => {
       void Haptics.impactAsync(
@@ -506,6 +611,7 @@ export default function AskSaiScreen() {
     const audioChunks = [...voiceAudioChunkPartsRef.current];
 
     if (audioChunks.length === 0) {
+      setVoicePlaybackStage("failed");
       logVoiceProductionCheck("buffered audio skipped", {
         reason: "No backend audio chunks collected.",
         turnId,
@@ -514,12 +620,11 @@ export default function AskSaiScreen() {
     }
 
     try {
-      const [
-        { createAudioPlayer, setAudioModeAsync },
-        { File, Paths },
-      ] = await Promise.all([
+      setVoicePlaybackStage("buffering");
+      const [{ createAudioPlayer, setAudioModeAsync }, FileSystem] =
+        await Promise.all([
         import("expo-audio"),
-        import("expo-file-system"),
+        import("expo-file-system/legacy"),
       ]);
       const audioBytes = combineBase64Chunks(audioChunks);
 
@@ -527,26 +632,26 @@ export default function AskSaiScreen() {
         throw new Error("Backend ElevenLabs audio was empty.");
       }
 
-      const audioFile = new File(
-        Paths.cache,
-        `sai-elevenlabs-${turnId}.mp3`
-      );
-
-      if (voiceFallbackAudioFileUriRef.current) {
-        const previousFile = new File(
-          voiceFallbackAudioFileUriRef.current,
-        );
-
-        if (previousFile.exists) {
-          previousFile.delete();
-        }
+      if (!FileSystem.cacheDirectory) {
+        throw new Error("The device audio cache directory is unavailable.");
       }
 
-      audioFile.create({
-        intermediates: true,
-        overwrite: true,
-      });
-      audioFile.write(audioBytes);
+      const safeTurnId = turnId.replace(/[^a-zA-Z0-9_-]/g, "");
+      const audioFileUri =
+        `${FileSystem.cacheDirectory}sai-elevenlabs-${safeTurnId}.mp3`;
+
+      if (voiceFallbackAudioFileUriRef.current) {
+        await FileSystem.deleteAsync(
+          voiceFallbackAudioFileUriRef.current,
+          { idempotent: true }
+        );
+      }
+
+      await FileSystem.writeAsStringAsync(
+        audioFileUri,
+        bytesToBase64(audioBytes),
+        { encoding: FileSystem.EncodingType.Base64 }
+      );
 
       await setAudioModeAsync({
         allowsRecording: false,
@@ -560,12 +665,19 @@ export default function AskSaiScreen() {
       voiceFallbackAudioPlayerRef.current?.pause();
       voiceFallbackAudioPlayerRef.current?.remove?.();
 
-      const player = createAudioPlayer(audioFile.uri, {
+      const player = createAudioPlayer(audioFileUri, {
         keepAudioSessionActive: false,
-      });
+      }) as VoicePlayer;
 
-      voiceFallbackAudioFileUriRef.current = audioFile.uri;
+      voiceFallbackAudioFileUriRef.current = audioFileUri;
       voiceFallbackAudioPlayerRef.current = player;
+
+      await waitForVoicePlayer(
+        player,
+        (status) => status.isLoaded,
+        6000
+      );
+
       voicePlaybackStatusSubscriptionRef.current = player.addListener(
         "playbackStatusUpdate",
         (status) => {
@@ -577,6 +689,7 @@ export default function AskSaiScreen() {
           voicePlaybackStatusSubscriptionRef.current = null;
           setIsSpeaking(false);
           setVoiceConnectionState("idle");
+          setVoicePlaybackStage("completed");
           logVoiceProductionCheck("ElevenLabs playback finished", {
             turnId,
           });
@@ -586,8 +699,16 @@ export default function AskSaiScreen() {
       await player.seekTo?.(0);
       await stopWaitingTone();
       player.play();
+
+      await waitForVoicePlayer(
+        player,
+        (status) => status.playing,
+        3000
+      );
+
       setIsSpeaking(true);
       setVoiceConnectionState("speaking");
+      setVoicePlaybackStage("playing");
 
       if (voicePlaybackCompletionTimerRef.current) {
         clearTimeout(voicePlaybackCompletionTimerRef.current);
@@ -603,6 +724,9 @@ export default function AskSaiScreen() {
 
       voicePlaybackCompletionTimerRef.current = setTimeout(() => {
         setIsSpeaking(false);
+        setVoicePlaybackStage((currentStage) =>
+          currentStage === "playing" ? "completed" : currentStage
+        );
         setVoiceConnectionState((currentState) =>
           currentState === "speaking" ? "idle" : currentState
         );
@@ -610,13 +734,20 @@ export default function AskSaiScreen() {
 
       logVoiceProductionCheck("buffered ElevenLabs MP3 playback started", {
         byteLength: audioBytes.byteLength,
-        fileUri: audioFile.uri,
+        fileUri: audioFileUri,
         parts: audioChunks.length,
         turnId,
       });
 
       return true;
     } catch (error) {
+      setIsSpeaking(false);
+      setVoiceConnectionState("error");
+      setVoicePlaybackStage("failed");
+      setVoiceError(
+        "Your text reply is ready, but voice playback did not start. Tap Try voice again."
+      );
+      await stopWaitingTone();
       logVoiceProductionCheck("buffered ElevenLabs MP3 playback failed", {
         error: error instanceof Error ? error.message : String(error),
         parts: audioChunks.length,
@@ -635,12 +766,20 @@ export default function AskSaiScreen() {
         return;
       }
 
-      logVoiceProductionCheck("audio_chunk", {
-        base64Length: event.data?.length ?? 0,
-        format: event.format,
-        hasData: Boolean(event.data),
-        turnId: event.turnId,
-      });
+      voiceResponseChunkCountRef.current += 1;
+      const responseChunkNumber = voiceResponseChunkCountRef.current;
+      const shouldLogChunk =
+        responseChunkNumber === 1 || responseChunkNumber % 50 === 0;
+
+      if (shouldLogChunk) {
+        logVoiceProductionCheck("audio_chunk", {
+          base64Length: event.data?.length ?? 0,
+          format: event.format,
+          hasData: Boolean(event.data),
+          responseChunkNumber,
+          turnId: event.turnId,
+        });
+      }
 
       if (!event.data) {
         voiceLivePlaybackFailedRef.current = true;
@@ -650,14 +789,16 @@ export default function AskSaiScreen() {
       if (event.format.startsWith("mp3")) {
         voiceAudioChunkPartsRef.current.push(event.data);
         voiceHadAudioChunksRef.current = true;
-        setVoiceConnectionState("speaking");
+        setVoicePlaybackStage("buffering");
 
-        logVoiceProductionCheck("buffering mp3 audio chunk", {
-          parts: voiceAudioChunkPartsRef.current.length,
-          reason:
-            "MP3 stream fragments are stored separately and combined as binary bytes.",
-          turnId: event.turnId,
-        });
+        if (shouldLogChunk) {
+          logVoiceProductionCheck("buffering mp3 audio chunk", {
+            parts: voiceAudioChunkPartsRef.current.length,
+            reason:
+              "MP3 stream fragments are stored separately and combined as binary bytes.",
+            turnId: event.turnId,
+          });
+        }
         return;
       }
 
@@ -682,9 +823,11 @@ export default function AskSaiScreen() {
           voiceHadAudioChunksRef.current = true;
           setIsSpeaking(true);
           setVoiceConnectionState("speaking");
+          setVoicePlaybackStage("playing");
         })
         .catch((error) => {
           voiceLivePlaybackFailedRef.current = true;
+          setVoicePlaybackStage("failed");
           logVoiceDebug("Voice audio chunk playback failed", {
             error: error instanceof Error ? error.message : String(error),
             format: event.format,
@@ -704,7 +847,11 @@ export default function AskSaiScreen() {
       });
     }
 
-    if (voiceAudioContextRef.current || voiceAudioQueueRef.current) {
+    if (
+      voiceFallbackAudioPlayerRef.current ||
+      voiceAudioContextRef.current ||
+      voiceAudioQueueRef.current
+    ) {
       await stopVoicePlayback();
     }
 
@@ -763,9 +910,11 @@ export default function AskSaiScreen() {
     voiceSocketRef.current = null;
     void stopVoicePlayback();
     activeVoiceTurnIdRef.current = null;
+    completedVoiceTurnIdRef.current = null;
     voiceAnswerBufferRef.current = "";
     voiceAudioChunkPartsRef.current = [];
     voiceChunkCountRef.current = 0;
+    voiceResponseChunkCountRef.current = 0;
     voiceFinalTranscriptRef.current = "";
     voiceHadAudioChunksRef.current = false;
     voiceLivePlaybackFailedRef.current = false;
@@ -857,6 +1006,25 @@ export default function AskSaiScreen() {
       return;
     }
 
+    if (FULL_DUPLEX_VOICE_ENABLED && VOICE_PROVIDER === "elevenlabs") {
+      if (isSpeaking) {
+        await stopVoicePlayback();
+        return;
+      }
+
+      if (voiceAudioChunkPartsRef.current.length === 0) {
+        Alert.alert(
+          "Voice reply",
+          "This answer was requested as text. Use Speak for a new question to receive an ElevenLabs voice reply."
+        );
+        return;
+      }
+
+      setVoiceError("");
+      await playBufferedVoiceAudio(`replay-${Date.now()}`);
+      return;
+    }
+
     let speaking = false;
 
     try {
@@ -881,7 +1049,13 @@ export default function AskSaiScreen() {
     }
 
     await speakText(answer);
-  }, [answer, isSpeaking, speakText]);
+  }, [
+    answer,
+    isSpeaking,
+    playBufferedVoiceAudio,
+    speakText,
+    stopVoicePlayback,
+  ]);
 
   const startConnectedVoiceStreaming = useCallback(async () => {
     const pendingStart = pendingVoiceStartRef.current;
@@ -999,12 +1173,14 @@ export default function AskSaiScreen() {
     (event: DevoteeAiVoiceServerEvent) => {
       const eventTurnId = "turnId" in event ? event.turnId : undefined;
 
-      logVoiceDebug("Server event received", {
-        eventType: event.type,
-        state: event.type === "state" ? event.state : undefined,
-        textLength: "text" in event ? event.text.length : undefined,
-        turnId: eventTurnId,
-      });
+      if (event.type !== "audio_chunk") {
+        logVoiceDebug("Server event received", {
+          eventType: event.type,
+          state: event.type === "state" ? event.state : undefined,
+          textLength: "text" in event ? event.text.length : undefined,
+          turnId: eventTurnId,
+        });
+      }
 
       if (
         eventTurnId &&
@@ -1036,6 +1212,8 @@ export default function AskSaiScreen() {
             });
             setVoiceConnectionState("connected");
             void startConnectedVoiceStreaming();
+          } else if (event.state === "speaking") {
+            setVoiceConnectionState("thinking");
           } else {
             setVoiceConnectionState(event.state);
           }
@@ -1097,7 +1275,25 @@ export default function AskSaiScreen() {
           }
           voiceAnswerBufferRef.current += event.text;
           setAnswer(voiceAnswerBufferRef.current);
-          setVoiceConnectionState("speaking");
+
+          if (completedVoiceTurnIdRef.current === event.turnId) {
+            setMessages((currentMessages) =>
+              currentMessages.map((message) =>
+                message.role === "assistant"
+                  ? {
+                      ...message,
+                      content: voiceAnswerBufferRef.current,
+                    }
+                  : message
+              )
+            );
+            logVoiceDebug("Applied late answer delta after turn_complete", {
+              textLength: event.text.length,
+              turnId: event.turnId,
+            });
+          } else {
+            setVoiceConnectionState("thinking");
+          }
           break;
 
         case "audio_chunk":
@@ -1114,22 +1310,25 @@ export default function AskSaiScreen() {
             });
           }
           enqueueVoiceAudioChunk(event);
-          setVoiceConnectionState("speaking");
+          setVoiceConnectionState("thinking");
           break;
 
         case "stop_playback":
           void stopWaitingTone();
           void stopSpeech();
           setVoiceConnectionState("interrupted");
+          setVoicePlaybackStage("completed");
           break;
 
         case "turn_complete": {
+          completedVoiceTurnIdRef.current = event.turnId;
           const finalQuestion = voiceFinalTranscriptRef.current || question;
           const finalAnswer = voiceAnswerBufferRef.current.trim();
 
           logVoiceDebug("Turn complete", {
             backendLatency: event.latency,
             chunksSent: voiceChunkCountRef.current,
+            responseAudioChunks: voiceResponseChunkCountRef.current,
             finalAnswerLength: finalAnswer.length,
             finalQuestionLength: finalQuestion.length,
             frontendLatency: {
@@ -1217,7 +1416,8 @@ export default function AskSaiScreen() {
             VOICE_PROVIDER === "elevenlabs" &&
             voiceAudioChunkPartsRef.current.length > 0
           ) {
-            setVoiceConnectionState("speaking");
+            setVoicePlaybackStage("buffering");
+            setVoiceConnectionState("thinking");
             void playBufferedVoiceAudio(event.turnId).then((didPlay) => {
               if (!didPlay) {
                 setVoiceConnectionState("error");
@@ -1229,6 +1429,7 @@ export default function AskSaiScreen() {
             });
           } else if (VOICE_PROVIDER === "elevenlabs") {
             setVoiceConnectionState("error");
+            setVoicePlaybackStage("failed");
             setVoiceError(
               "The backend returned text but no ElevenLabs audio. Please try again."
             );
@@ -1254,6 +1455,7 @@ export default function AskSaiScreen() {
             turnId: event.turnId,
           });
           setVoiceConnectionState("error");
+          setVoicePlaybackStage("failed");
           setVoiceError(getVoiceErrorMessage(event.code, event.message));
           void stopWaitingTone();
           void cleanupBackendVoiceSessions("server-error");
@@ -1292,6 +1494,9 @@ export default function AskSaiScreen() {
 
       try {
         await stopSpeech();
+        voiceAudioChunkPartsRef.current = [];
+        voiceHadAudioChunksRef.current = false;
+        setVoicePlaybackStage("idle");
         setIsSubmitting(true);
         setAnswer("");
         setFeedbackMessageId(null);
@@ -1591,12 +1796,15 @@ export default function AskSaiScreen() {
         });
 
         setVoiceError("");
+        setVoicePlaybackStage("idle");
         setVoiceConnectionState("connecting");
         setVoicePartialTranscript("");
         setVoiceFinalTranscript("");
         voiceFinalTranscriptRef.current = "";
         voiceAnswerBufferRef.current = "";
         voiceAudioChunkPartsRef.current = [];
+        voiceResponseChunkCountRef.current = 0;
+        completedVoiceTurnIdRef.current = null;
         voiceHadAudioChunksRef.current = false;
         voiceLivePlaybackFailedRef.current = false;
 
@@ -1791,6 +1999,7 @@ export default function AskSaiScreen() {
             pendingVoiceStartRef.current = null;
             setIsListening(false);
             setVoiceConnectionState("error");
+            setVoicePlaybackStage("failed");
             setVoiceError(
               "Voice connection failed. Please try again or type your question."
             );
@@ -1807,7 +2016,7 @@ export default function AskSaiScreen() {
             });
 
             setVoiceConnectionState("connecting");
-            setVoiceError("Voice socket opened. Waiting for backend...");
+            setVoiceError("");
 
             if (voiceConnectedTimeoutRef.current) {
               clearTimeout(voiceConnectedTimeoutRef.current);
@@ -1850,11 +2059,7 @@ export default function AskSaiScreen() {
           socketClient,
           turnId,
         };
-        setVoiceError(
-          session.providers?.stt === "mock"
-            ? "Voice session created in mock mode. Waiting for backend connection..."
-            : "Voice session created. Waiting for backend connection..."
-        );
+        setVoiceError("");
         trackProductEvent("Devotee Voice Session Started", {
           pillar: "experiences",
           provider: session.providers?.tts || VOICE_PROVIDER,
@@ -1884,6 +2089,7 @@ export default function AskSaiScreen() {
       setActiveVoiceTurnId(null);
       setIsListening(false);
       setVoiceConnectionState("idle");
+      setVoicePlaybackStage("failed");
 
       if (errorMessage.toLowerCase().includes("already active")) {
         setVoiceError(
@@ -1973,6 +2179,7 @@ export default function AskSaiScreen() {
     await stopWaitingTone();
     setAnswer("");
     setVoiceError("");
+    setVoicePlaybackStage("idle");
     setVoicePartialTranscript("");
     setVoiceFinalTranscript("");
     setQuestion("");
@@ -2127,29 +2334,65 @@ export default function AskSaiScreen() {
   const hasModalTranscript = modalTranscript.trim().length >= 3;
   const isVoiceThinking =
     voiceConnectionState === "thinking" ||
+    voicePlaybackStage === "waiting" ||
+    voicePlaybackStage === "buffering" ||
     (isWaitingToneActive && !isSpeaking);
+  const isVoicePlaying =
+    voicePlaybackStage === "playing" && isSpeaking;
+  const isVoiceFinished = voicePlaybackStage === "completed";
+  const hasVoiceFailed =
+    voicePlaybackStage === "failed" || voiceConnectionState === "error";
   const isVoiceSubmitDisabled =
     isSubmitting ||
-    isSpeaking ||
+    isVoicePlaying ||
     isVoiceThinking ||
     voiceConnectionState === "connecting" ||
     (!FULL_DUPLEX_VOICE_ENABLED && !hasModalTranscript);
   const canListenAgain =
+    !isListening &&
     !isVoiceThinking &&
-    !isSpeaking &&
-    voiceConnectionState !== "connecting";
-  const voiceModalTitle = isSpeaking
-    ? "Sai Baba is replying"
+    !isVoicePlaying &&
+    voiceConnectionState !== "connecting" &&
+    (hasVoiceFailed || isVoiceFinished || hasModalTranscript);
+  const voiceModalTitle = isVoicePlaying
+    ? "Sai guidance is playing"
+    : voicePlaybackStage === "buffering"
+      ? "Preparing the voice"
     : isVoiceThinking
       ? "Preparing guidance"
       : isListening
-        ? "Speak from your heart"
+        ? "I am listening"
+        : hasVoiceFailed
+          ? "Voice could not play"
+          : isVoiceFinished
+            ? "Guidance complete"
         : "Ask Sai by voice";
-  const voiceModalSubtitle = isSpeaking
-    ? "Listen peacefully to the guidance."
+  const voiceModalSubtitle = isVoicePlaying
+    ? "ElevenLabs voice is playing. Turn up media volume if needed."
+    : voicePlaybackStage === "buffering"
+      ? "Your answer is ready. Audio will begin shortly."
     : isVoiceThinking
-      ? "A soft tone will continue until the reply is ready."
-      : "Share your problem, prayer, or question. Tap Submit when you finish.";
+      ? "Please wait while the written reply and voice are prepared."
+      : isListening
+        ? "Speak clearly, then tap Finish & Ask."
+        : hasVoiceFailed
+          ? answer
+            ? "Your written reply is safe below. You can try voice again."
+            : "The voice connection stopped. Please try once more."
+          : isVoiceFinished
+            ? "You can read the answer or ask another question."
+            : "Share your problem, prayer, or question.";
+  const voicePrimaryLabel = isListening
+    ? "Finish & Ask"
+    : isVoicePlaying
+      ? "Playing..."
+      : isVoiceThinking
+        ? "Preparing..."
+        : hasVoiceFailed
+          ? "Try again"
+          : isVoiceFinished
+            ? "Ask another"
+            : "Start listening";
 
   return (
     <KeyboardAvoidingView
@@ -2303,6 +2546,13 @@ export default function AskSaiScreen() {
               textAlignVertical="top"
               value={question}
             />
+            <View style={styles.voiceModeHint}>
+              <Volume2 color="#B45309" size={16} strokeWidth={2.3} />
+              <Text style={styles.voiceModeHintText}>
+                Use Speak for an ElevenLabs voice reply. Written questions
+                return text.
+              </Text>
+            </View>
 
             {voiceError ? (
               <Text style={styles.voiceError}>{voiceError}</Text>
@@ -2323,7 +2573,7 @@ export default function AskSaiScreen() {
               </View>
             ) : null}
 
-            {voiceSession ? (
+            {__DEV__ && voiceSession ? (
               <View style={styles.voiceSessionCard}>
                 <Text style={styles.voiceSessionTitle}>
                   Voice session connected
@@ -2392,24 +2642,6 @@ export default function AskSaiScreen() {
             </View>
           </View>
 
-          <View style={styles.suggestionsBlock}>
-            <Text style={styles.sectionTitle}>Helpful starts</Text>
-            {SUGGESTED_QUESTIONS.map((item) => (
-              <Pressable
-                disabled={isSubmitting}
-                key={item}
-                onPress={() => submitQuestion(item)}
-                style={({ pressed }) => [
-                  styles.suggestion,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Mic2 color="#B45309" size={17} strokeWidth={2.2} />
-                <Text style={styles.suggestionText}>{item}</Text>
-              </Pressable>
-            ))}
-          </View>
-
           {answer ? (
             <View style={styles.answerCard}>
               <View style={styles.answerHeader}>
@@ -2417,19 +2649,30 @@ export default function AskSaiScreen() {
                   <Text style={styles.answerEyebrow}>REPLY</Text>
                   <Text style={styles.answerTitle}>Sai assistant says</Text>
                 </View>
-                <Pressable
-                  onPress={speakAnswer}
-                  style={({ pressed }) => [
-                    styles.speakButton,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  {isSpeaking ? (
-                    <Pause color="#FFFFFF" size={18} fill="#FFFFFF" />
-                  ) : (
-                    <Volume2 color="#FFFFFF" size={18} strokeWidth={2.4} />
-                  )}
-                </Pressable>
+                {voiceHadAudioChunksRef.current ||
+                !FULL_DUPLEX_VOICE_ENABLED ||
+                VOICE_PROVIDER !== "elevenlabs" ? (
+                  <Pressable
+                    accessibilityLabel={
+                      isSpeaking ? "Stop voice reply" : "Play voice reply"
+                    }
+                    onPress={speakAnswer}
+                    style={({ pressed }) => [
+                      styles.speakButton,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    {isSpeaking ? (
+                      <Pause color="#FFFFFF" size={18} fill="#FFFFFF" />
+                    ) : (
+                      <Volume2
+                        color="#FFFFFF"
+                        size={18}
+                        strokeWidth={2.4}
+                      />
+                    )}
+                  </Pressable>
+                ) : null}
               </View>
 
               <Text style={styles.answerText}>{answer}</Text>
@@ -2513,6 +2756,24 @@ export default function AskSaiScreen() {
               ))}
             </View>
           ) : null}
+
+          <View style={styles.suggestionsBlock}>
+            <Text style={styles.sectionTitle}>Helpful starts</Text>
+            {SUGGESTED_QUESTIONS.map((item) => (
+              <Pressable
+                disabled={isSubmitting}
+                key={item}
+                onPress={() => submitQuestion(item)}
+                style={({ pressed }) => [
+                  styles.suggestion,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Mic2 color="#B45309" size={17} strokeWidth={2.2} />
+                <Text style={styles.suggestionText}>{item}</Text>
+              </Pressable>
+            ))}
+          </View>
         </ScrollView>
       </LinearGradient>
 
@@ -2536,7 +2797,7 @@ export default function AskSaiScreen() {
             <View style={styles.voiceModalHandle} />
             <View style={styles.voiceModalHeader}>
               <View style={styles.voiceModalIcon}>
-                {isSpeaking ? (
+                {isVoicePlaying ? (
                   <Volume2 color="#FFFFFF" size={24} strokeWidth={2.5} />
                 ) : (
                   <Mic color="#FFFFFF" size={24} strokeWidth={2.5} />
@@ -2556,21 +2817,22 @@ export default function AskSaiScreen() {
               <View
                 style={[
                   styles.voiceWaveDot,
-                  isListening && styles.voiceWaveDotActive,
-                ]}
-              />
-              <View
-                style={[
-                  styles.voiceWaveDot,
-                  styles.voiceWaveDotTall,
-                  (isListening || isWaitingToneActive) &&
+                  (isListening || isVoicePlaying) &&
                     styles.voiceWaveDotActive,
                 ]}
               />
               <View
                 style={[
                   styles.voiceWaveDot,
-                  (isSpeaking || isWaitingToneActive) &&
+                  styles.voiceWaveDotTall,
+                  (isListening || isWaitingToneActive || isVoicePlaying) &&
+                    styles.voiceWaveDotActive,
+                ]}
+              />
+              <View
+                style={[
+                  styles.voiceWaveDot,
+                  (isVoicePlaying || isWaitingToneActive) &&
                     styles.voiceWaveDotActive,
                 ]}
               />
@@ -2580,7 +2842,7 @@ export default function AskSaiScreen() {
               <View style={styles.waitingToneCard}>
                 <ActivityIndicator color="#B45309" size="small" />
                 <Text style={styles.waitingToneText}>
-                  Soft tone playing while Sai prepares the reply...
+                  Preparing the written reply and ElevenLabs voice...
                 </Text>
               </View>
             ) : null}
@@ -2590,7 +2852,7 @@ export default function AskSaiScreen() {
                 {modalTranscript ? "Review your words" : "Listening area"}
               </Text>
               <TextInput
-                editable={!isVoiceThinking && !isSpeaking}
+                editable={!isVoiceThinking && !isVoicePlaying}
                 multiline
                 onChangeText={updateVoiceTranscript}
                 placeholder="Speak naturally. You can share your problem, prayer, or question."
@@ -2621,10 +2883,15 @@ export default function AskSaiScreen() {
               </Pressable>
             ) : null}
 
-            {answer && isSpeaking ? (
+            {answer &&
+            (isVoicePlaying || isVoiceFinished || hasVoiceFailed) ? (
               <View style={styles.voiceModalAnswerBox}>
                 <Text style={styles.voiceModalTranscriptLabel}>
-                  Sai assistant
+                  {hasVoiceFailed
+                    ? "Written reply"
+                    : isVoicePlaying
+                      ? "Now playing"
+                      : "Sai assistant"}
                 </Text>
                 <Text numberOfLines={4} style={styles.voiceModalAnswerText}>
                   {answer}
@@ -2645,13 +2912,17 @@ export default function AskSaiScreen() {
                 ]}
               >
                 <Text style={styles.voiceModalSecondaryText}>
-                  {isSpeaking ? "Close" : "Cancel"}
+                  {isVoicePlaying || isVoiceFinished ? "Close" : "Cancel"}
                 </Text>
               </Pressable>
 
               <Pressable
                 disabled={isVoiceSubmitDisabled}
-                onPress={submitVoiceModal}
+                onPress={
+                  hasVoiceFailed || isVoiceFinished
+                    ? listenAgainFromModal
+                    : submitVoiceModal
+                }
                 style={({ pressed }) => [
                   styles.voiceModalPrimaryButton,
                   isVoiceSubmitDisabled && styles.voiceModalPrimaryDisabled,
@@ -2659,13 +2930,26 @@ export default function AskSaiScreen() {
                 ]}
               >
                 {isVoiceThinking ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <>
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <Text style={styles.voiceModalPrimaryText}>
+                      {voicePrimaryLabel}
+                    </Text>
+                  </>
                 ) : (
                   <>
                     <Text style={styles.voiceModalPrimaryText}>
-                      Submit
+                      {voicePrimaryLabel}
                     </Text>
-                    <Send color="#FFFFFF" size={17} strokeWidth={2.5} />
+                    {isVoicePlaying ? (
+                      <Volume2
+                        color="#FFFFFF"
+                        size={17}
+                        strokeWidth={2.5}
+                      />
+                    ) : (
+                      <Send color="#FFFFFF" size={17} strokeWidth={2.5} />
+                    )}
                   </>
                 )}
               </Pressable>
@@ -2907,6 +3191,25 @@ const styles = StyleSheet.create({
     minHeight: 136,
     paddingHorizontal: 15,
     paddingTop: 14,
+  },
+  voiceModeHint: {
+    alignItems: "flex-start",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+    paddingHorizontal: 11,
+    paddingVertical: 10,
+  },
+  voiceModeHintText: {
+    color: "#7C2D12",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18,
   },
   voiceError: {
     color: "#B91C1C",

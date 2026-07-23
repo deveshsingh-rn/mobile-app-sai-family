@@ -32,7 +32,7 @@ const COLORS = {
 const TABS = [
   {
     Icon: House,
-    label: "Devotee Experiences",
+    label: "Devotee Experience",
     name: "experiences",
   },
   {
@@ -251,17 +251,17 @@ const styles = StyleSheet.create({
     color: COLORS.inactive,
     flexShrink: 1,
     fontSize: 10.5,
-    fontWeight: "800",
+    fontWeight: "400",
     lineHeight: 12.5,
     marginTop: 3,
     maxWidth: "100%",
     minHeight: 25,
-    paddingHorizontal: 2,
+    paddingHorizontal: 1,
     textAlign: "center",
   },
   labelActive: {
     color: COLORS.active,
-    fontWeight: "900",
+    fontWeight: "500",
   },
   pressed: {
     opacity: 0.82,
