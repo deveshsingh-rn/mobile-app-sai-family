@@ -70,6 +70,9 @@ const SUGGESTED_QUESTIONS = [
   "What should I do before attending a Sai event?",
 ];
 
+const BACKEND_MOCK_TRANSCRIPT =
+  "Sai Baba mujhe mushkil samay mein dhairya kaise rakhna chahiye?";
+
 const FULL_DUPLEX_VOICE_ENABLED =
   process.env.EXPO_PUBLIC_AI_VOICE_ENABLED === "true" ||
   process.env.EXPO_PUBLIC_VOICE_AI_ENABLED === "true";
@@ -316,6 +319,7 @@ export default function AskSaiScreen() {
   const insets = useSafeAreaInsets();
   const voiceSocketRef =
     useRef<ReturnType<typeof createDevoteeAiVoiceSocket> | null>(null);
+  const voiceSessionRef = useRef<DevoteeAiVoiceSession | null>(null);
   const pendingVoiceStartRef = useRef<PendingVoiceStartContext | null>(null);
   const voiceConnectedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
@@ -908,6 +912,7 @@ export default function AskSaiScreen() {
     audioErrorSubscriptionRef.current = null;
     voiceSocketRef.current?.close();
     voiceSocketRef.current = null;
+    voiceSessionRef.current = null;
     void stopVoicePlayback();
     activeVoiceTurnIdRef.current = null;
     completedVoiceTurnIdRef.current = null;
@@ -920,6 +925,7 @@ export default function AskSaiScreen() {
     voiceLivePlaybackFailedRef.current = false;
     voiceTimingRef.current = {};
     setActiveVoiceTurnId(null);
+    setVoiceSession(null);
     setIsListening(false);
     setVoiceConnectionState("idle");
     setVoicePartialTranscript("");
@@ -1235,7 +1241,43 @@ export default function AskSaiScreen() {
           setVoiceConnectionState("listening");
           break;
 
-        case "transcript_final":
+        case "transcript_final": {
+          const transcriptElapsedMs = voiceTimingRef.current.startedAt
+            ? Date.now() - voiceTimingRef.current.startedAt
+            : undefined;
+
+          if (
+            event.text.trim().toLocaleLowerCase() ===
+              BACKEND_MOCK_TRANSCRIPT.toLocaleLowerCase() &&
+            typeof transcriptElapsedMs === "number" &&
+            transcriptElapsedMs < 2500
+          ) {
+            logVoiceProductionCheck("mock STT transcript rejected", {
+              elapsedMs: transcriptElapsedMs,
+              provider: voiceSessionRef.current?.providers?.stt,
+              turnId: event.turnId,
+            });
+            setIsListening(false);
+            setVoiceConnectionState("error");
+            setVoicePlaybackStage("failed");
+            setVoiceError(
+              "Real speech recognition is not active on the server yet. Please type your question for now."
+            );
+            setVoicePartialTranscript("");
+            setVoiceFinalTranscript("");
+            setQuestion("");
+            voiceFinalTranscriptRef.current = "";
+            void getSaiAudioStreamModule()
+              .then((audioStream) => audioStream.stopSaiAudioStreamAsync())
+              .catch(() => {
+                // Recording cleanup is best effort.
+              });
+            voiceSocketRef.current?.close();
+            voiceSocketRef.current = null;
+            void cleanupBackendVoiceSessions("mock-stt-detected");
+            break;
+          }
+
           if (!voiceTimingRef.current.firstTranscriptAt) {
             voiceTimingRef.current.firstTranscriptAt = Date.now();
           }
@@ -1260,6 +1302,7 @@ export default function AskSaiScreen() {
             });
           setVoiceConnectionState("thinking");
           break;
+        }
 
         case "answer_delta":
           if (!voiceTimingRef.current.firstAnswerAt) {
@@ -1891,6 +1934,14 @@ export default function AskSaiScreen() {
           ),
         });
 
+        const sttProvider = session.providers?.stt?.toLowerCase();
+
+        if (!sttProvider || sttProvider.includes("mock")) {
+          throw new Error(
+            "Real speech recognition is not enabled on the server yet. Please type your question for now."
+          );
+        }
+
         if (VOICE_PROVIDER === "elevenlabs") {
           const ttsProvider = session.providers?.tts?.toLowerCase();
           const outputFormat = session.audio?.outputFormat?.toLowerCase();
@@ -1938,6 +1989,7 @@ export default function AskSaiScreen() {
         });
 
         setVoiceSession(session);
+        voiceSessionRef.current = session;
         setConversationId(session.conversationId || conversationId);
 
         const turnId = createVoiceTurnId();
@@ -2090,6 +2142,7 @@ export default function AskSaiScreen() {
       setIsListening(false);
       setVoiceConnectionState("idle");
       setVoicePlaybackStage("failed");
+      void cleanupBackendVoiceSessions("voice-start-failed");
 
       if (errorMessage.toLowerCase().includes("already active")) {
         setVoiceError(
