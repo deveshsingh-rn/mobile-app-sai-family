@@ -68,6 +68,7 @@
     "sai-audio-stream": "file:modules/sai-audio-stream"
   },
   "devDependencies": {
+    "@types/node": "^26.1.1",
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",

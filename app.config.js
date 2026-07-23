@@ -25,7 +25,7 @@ module.exports = ({ config }) => {
     ...config,
     ...baseConfig,
     name: isDevelopmentVariant ? "Sai Family Dev" : "Sai Family",
-    slug: isDevelopmentVariant ? "sai-family-dev" : baseConfig.slug,
+    slug: isDevelopmentVariant ? "saifamily" : baseConfig.slug,
     scheme: isDevelopmentVariant ? "saifamilydev" : baseConfig.scheme,
     owner,
     ios: {
