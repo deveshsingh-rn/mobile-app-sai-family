@@ -9,6 +9,7 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -17,6 +18,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 
@@ -317,6 +319,11 @@ type PendingVoiceStartContext = {
 
 export default function AskSaiScreen() {
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const mainScrollRef = useRef<ScrollView>(null);
+  const voiceModalScrollRef = useRef<ScrollView>(null);
+  const questionCardYRef = useRef(0);
+  const voiceTranscriptYRef = useRef(0);
   const voiceSocketRef =
     useRef<ReturnType<typeof createDevoteeAiVoiceSocket> | null>(null);
   const voiceSessionRef = useRef<DevoteeAiVoiceSession | null>(null);
@@ -2446,10 +2453,26 @@ export default function AskSaiScreen() {
           : isVoiceFinished
             ? "Ask another"
             : "Start listening";
+  const revealQuestionInput = () => {
+    setTimeout(() => {
+      mainScrollRef.current?.scrollTo({
+        animated: true,
+        y: Math.max(0, questionCardYRef.current - 12),
+      });
+    }, 120);
+  };
+  const revealVoiceTranscript = () => {
+    setTimeout(() => {
+      voiceModalScrollRef.current?.scrollTo({
+        animated: true,
+        y: Math.max(0, voiceTranscriptYRef.current - 12),
+      });
+    }, 120);
+  };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.root}
     >
       <LinearGradient
@@ -2471,11 +2494,15 @@ export default function AskSaiScreen() {
         </View>
 
         <ScrollView
+          ref={mainScrollRef}
           bounces
           contentContainerStyle={[
             styles.content,
             { paddingBottom: insets.bottom + 28 },
           ]}
+          keyboardDismissMode={
+            Platform.OS === "ios" ? "interactive" : "on-drag"
+          }
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -2567,7 +2594,12 @@ export default function AskSaiScreen() {
             )}
           </View>
 
-          <View style={styles.card}>
+          <View
+            onLayout={(event) => {
+              questionCardYRef.current = event.nativeEvent.layout.y;
+            }}
+            style={styles.card}
+          >
             <View style={styles.questionHeader}>
               <Text style={styles.label}>Your question</Text>
               <View
@@ -2592,10 +2624,13 @@ export default function AskSaiScreen() {
             <TextInput
               multiline
               onChangeText={setQuestion}
+              onFocus={revealQuestionInput}
+              onSubmitEditing={Keyboard.dismiss}
               placeholder="Write your question here..."
               placeholderTextColor="#A8A29E"
               returnKeyType="done"
               style={styles.input}
+              submitBehavior="blurAndSubmit"
               textAlignVertical="top"
               value={question}
             />
@@ -2836,179 +2871,213 @@ export default function AskSaiScreen() {
         transparent
         visible={isVoiceModalVisible}
       >
-        <View style={styles.voiceModalBackdrop}>
-          <Pressable
-            onPress={closeVoiceModal}
-            style={styles.voiceModalBackdropPress}
-          />
-          <View
-            style={[
-              styles.voiceModalCard,
-              { paddingBottom: insets.bottom + 18 },
-            ]}
-          >
-            <View style={styles.voiceModalHandle} />
-            <View style={styles.voiceModalHeader}>
-              <View style={styles.voiceModalIcon}>
-                {isVoicePlaying ? (
-                  <Volume2 color="#FFFFFF" size={24} strokeWidth={2.5} />
-                ) : (
-                  <Mic color="#FFFFFF" size={24} strokeWidth={2.5} />
-                )}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.voiceModalTitle}>
-                  {voiceModalTitle}
-                </Text>
-                <Text style={styles.voiceModalSubtitle}>
-                  {voiceModalSubtitle}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.voiceWavePanel}>
-              <View
-                style={[
-                  styles.voiceWaveDot,
-                  (isListening || isVoicePlaying) &&
-                    styles.voiceWaveDotActive,
-                ]}
-              />
-              <View
-                style={[
-                  styles.voiceWaveDot,
-                  styles.voiceWaveDotTall,
-                  (isListening || isWaitingToneActive || isVoicePlaying) &&
-                    styles.voiceWaveDotActive,
-                ]}
-              />
-              <View
-                style={[
-                  styles.voiceWaveDot,
-                  (isVoicePlaying || isWaitingToneActive) &&
-                    styles.voiceWaveDotActive,
-                ]}
-              />
-            </View>
-
-            {isWaitingToneActive ? (
-              <View style={styles.waitingToneCard}>
-                <ActivityIndicator color="#B45309" size="small" />
-                <Text style={styles.waitingToneText}>
-                  Preparing the written reply and ElevenLabs voice...
-                </Text>
-              </View>
-            ) : null}
-
-            <View style={styles.voiceModalTranscriptBox}>
-              <Text style={styles.voiceModalTranscriptLabel}>
-                {modalTranscript ? "Review your words" : "Listening area"}
-              </Text>
-              <TextInput
-                editable={!isVoiceThinking && !isVoicePlaying}
-                multiline
-                onChangeText={updateVoiceTranscript}
-                placeholder="Speak naturally. You can share your problem, prayer, or question."
-                placeholderTextColor="#9A8265"
-                returnKeyType="done"
-                style={styles.voiceModalTranscriptInput}
-                textAlignVertical="top"
-                value={modalTranscript}
-              />
-            </View>
-
-            {canListenAgain ? (
-              <Pressable
-                onPress={listenAgainFromModal}
-                style={({ pressed }) => [
-                  styles.voiceModalRetryButton,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <RotateCcw
-                  color="#B45309"
-                  size={16}
-                  strokeWidth={2.5}
-                />
-                <Text style={styles.voiceModalRetryText}>
-                  Listen again
-                </Text>
-              </Pressable>
-            ) : null}
-
-            {answer &&
-            (isVoicePlaying || isVoiceFinished || hasVoiceFailed) ? (
-              <View style={styles.voiceModalAnswerBox}>
-                <Text style={styles.voiceModalTranscriptLabel}>
-                  {hasVoiceFailed
-                    ? "Written reply"
-                    : isVoicePlaying
-                      ? "Now playing"
-                      : "Sai assistant"}
-                </Text>
-                <Text numberOfLines={4} style={styles.voiceModalAnswerText}>
-                  {answer}
-                </Text>
-              </View>
-            ) : null}
-
-            {voiceError ? (
-              <Text style={styles.voiceModalError}>{voiceError}</Text>
-            ) : null}
-
-            <View style={styles.voiceModalActions}>
-              <Pressable
-                onPress={closeVoiceModal}
-                style={({ pressed }) => [
-                  styles.voiceModalSecondaryButton,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={styles.voiceModalSecondaryText}>
-                  {isVoicePlaying || isVoiceFinished ? "Close" : "Cancel"}
-                </Text>
-              </Pressable>
-
-              <Pressable
-                disabled={isVoiceSubmitDisabled}
-                onPress={
-                  hasVoiceFailed || isVoiceFinished
-                    ? listenAgainFromModal
-                    : submitVoiceModal
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.voiceModalKeyboardView}
+        >
+          <View style={styles.voiceModalBackdrop}>
+            <Pressable
+              onPress={closeVoiceModal}
+              style={styles.voiceModalBackdropPress}
+            />
+            <View
+              style={[
+                styles.voiceModalCard,
+                { maxHeight: windowHeight * 0.9 },
+              ]}
+            >
+              <ScrollView
+                ref={voiceModalScrollRef}
+                bounces={false}
+                contentContainerStyle={styles.voiceModalScrollContent}
+                keyboardDismissMode={
+                  Platform.OS === "ios" ? "interactive" : "on-drag"
                 }
-                style={({ pressed }) => [
-                  styles.voiceModalPrimaryButton,
-                  isVoiceSubmitDisabled && styles.voiceModalPrimaryDisabled,
-                  pressed && styles.pressed,
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.voiceModalHandle} />
+                <View style={styles.voiceModalHeader}>
+                  <View style={styles.voiceModalIcon}>
+                    {isVoicePlaying ? (
+                      <Volume2 color="#FFFFFF" size={24} strokeWidth={2.5} />
+                    ) : (
+                      <Mic color="#FFFFFF" size={24} strokeWidth={2.5} />
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.voiceModalTitle}>
+                      {voiceModalTitle}
+                    </Text>
+                    <Text style={styles.voiceModalSubtitle}>
+                      {voiceModalSubtitle}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.voiceWavePanel}>
+                  <View
+                    style={[
+                      styles.voiceWaveDot,
+                      (isListening || isVoicePlaying) &&
+                        styles.voiceWaveDotActive,
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.voiceWaveDot,
+                      styles.voiceWaveDotTall,
+                      (isListening ||
+                        isWaitingToneActive ||
+                        isVoicePlaying) &&
+                        styles.voiceWaveDotActive,
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.voiceWaveDot,
+                      (isVoicePlaying || isWaitingToneActive) &&
+                        styles.voiceWaveDotActive,
+                    ]}
+                  />
+                </View>
+
+                {isWaitingToneActive ? (
+                  <View style={styles.waitingToneCard}>
+                    <ActivityIndicator color="#B45309" size="small" />
+                    <Text style={styles.waitingToneText}>
+                      Preparing the written reply and ElevenLabs voice...
+                    </Text>
+                  </View>
+                ) : null}
+
+                <View
+                  onLayout={(event) => {
+                    voiceTranscriptYRef.current = event.nativeEvent.layout.y;
+                  }}
+                  style={styles.voiceModalTranscriptBox}
+                >
+                  <Text style={styles.voiceModalTranscriptLabel}>
+                    {modalTranscript ? "Review your words" : "Listening area"}
+                  </Text>
+                  <TextInput
+                    editable={!isVoiceThinking && !isVoicePlaying}
+                    multiline
+                    onChangeText={updateVoiceTranscript}
+                    onFocus={revealVoiceTranscript}
+                    onSubmitEditing={Keyboard.dismiss}
+                    placeholder="Speak naturally. You can share your problem, prayer, or question."
+                    placeholderTextColor="#9A8265"
+                    returnKeyType="done"
+                    style={styles.voiceModalTranscriptInput}
+                    submitBehavior="blurAndSubmit"
+                    textAlignVertical="top"
+                    value={modalTranscript}
+                  />
+                </View>
+
+                {canListenAgain ? (
+                  <Pressable
+                    onPress={listenAgainFromModal}
+                    style={({ pressed }) => [
+                      styles.voiceModalRetryButton,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <RotateCcw
+                      color="#B45309"
+                      size={16}
+                      strokeWidth={2.5}
+                    />
+                    <Text style={styles.voiceModalRetryText}>
+                      Listen again
+                    </Text>
+                  </Pressable>
+                ) : null}
+
+                {answer &&
+                (isVoicePlaying || isVoiceFinished || hasVoiceFailed) ? (
+                  <View style={styles.voiceModalAnswerBox}>
+                    <Text style={styles.voiceModalTranscriptLabel}>
+                      {hasVoiceFailed
+                        ? "Written reply"
+                        : isVoicePlaying
+                          ? "Now playing"
+                          : "Sai assistant"}
+                    </Text>
+                    <Text
+                      numberOfLines={4}
+                      style={styles.voiceModalAnswerText}
+                    >
+                      {answer}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {voiceError ? (
+                  <Text style={styles.voiceModalError}>{voiceError}</Text>
+                ) : null}
+              </ScrollView>
+
+              <View
+                style={[
+                  styles.voiceModalActions,
+                  { paddingBottom: Math.max(insets.bottom, 12) },
                 ]}
               >
-                {isVoiceThinking ? (
-                  <>
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                    <Text style={styles.voiceModalPrimaryText}>
-                      {voicePrimaryLabel}
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <Text style={styles.voiceModalPrimaryText}>
-                      {voicePrimaryLabel}
-                    </Text>
-                    {isVoicePlaying ? (
-                      <Volume2
-                        color="#FFFFFF"
-                        size={17}
-                        strokeWidth={2.5}
-                      />
-                    ) : (
-                      <Send color="#FFFFFF" size={17} strokeWidth={2.5} />
-                    )}
-                  </>
-                )}
-              </Pressable>
+                <Pressable
+                  onPress={closeVoiceModal}
+                  style={({ pressed }) => [
+                    styles.voiceModalSecondaryButton,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={styles.voiceModalSecondaryText}>
+                    {isVoicePlaying || isVoiceFinished ? "Close" : "Cancel"}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  disabled={isVoiceSubmitDisabled}
+                  onPress={
+                    hasVoiceFailed || isVoiceFinished
+                      ? listenAgainFromModal
+                      : submitVoiceModal
+                  }
+                  style={({ pressed }) => [
+                    styles.voiceModalPrimaryButton,
+                    isVoiceSubmitDisabled && styles.voiceModalPrimaryDisabled,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  {isVoiceThinking ? (
+                    <>
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                      <Text style={styles.voiceModalPrimaryText}>
+                        {voicePrimaryLabel}
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.voiceModalPrimaryText}>
+                        {voicePrimaryLabel}
+                      </Text>
+                      {isVoicePlaying ? (
+                        <Volume2
+                          color="#FFFFFF"
+                          size={17}
+                          strokeWidth={2.5}
+                        />
+                      ) : (
+                        <Send color="#FFFFFF" size={17} strokeWidth={2.5} />
+                      )}
+                    </>
+                  )}
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </KeyboardAvoidingView>
   );
@@ -3534,6 +3603,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
   },
+  voiceModalKeyboardView: {
+    flex: 1,
+  },
   voiceModalBackdropPress: {
     flex: 1,
   },
@@ -3543,12 +3615,17 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     borderWidth: 1,
+    flexShrink: 1,
+    overflow: "hidden",
     paddingHorizontal: 20,
-    paddingTop: 10,
     shadowColor: "#7C2D12",
     shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.16,
     shadowRadius: 24,
+  },
+  voiceModalScrollContent: {
+    paddingBottom: 4,
+    paddingTop: 10,
   },
   voiceModalHandle: {
     alignSelf: "center",
@@ -3699,8 +3776,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   voiceModalActions: {
+    backgroundColor: "#FFFDF8",
+    borderTopColor: "#F3E1BE",
+    borderTopWidth: 1,
     flexDirection: "row",
     gap: 12,
+    paddingTop: 12,
   },
   voiceModalSecondaryButton: {
     alignItems: "center",
