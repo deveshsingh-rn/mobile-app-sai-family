@@ -128,6 +128,18 @@ const detectTranscriptLanguage = (text: string) => {
   return devanagariCount >= latinCount ? "Hindi" : "English";
 };
 
+const appendUniqueMessages = (
+  currentMessages: DevoteeAiMessage[],
+  nextMessages: DevoteeAiMessage[]
+) => {
+  const existingIds = new Set(currentMessages.map((message) => message.id));
+  const uniqueMessages = nextMessages.filter(
+    (message) => !existingIds.has(message.id)
+  );
+
+  return [...currentMessages, ...uniqueMessages].slice(-40);
+};
+
 const formatWaitingTime = (elapsedMs: number) => {
   const totalSeconds = Math.floor(elapsedMs / 1000);
   const minutes = Math.floor(totalSeconds / 60);
@@ -462,6 +474,7 @@ export default function AskSaiScreen() {
   );
   const activeVoiceTurnIdRef = useRef<string | null>(null);
   const completedVoiceTurnIdRef = useRef<string | null>(null);
+  const completedVoiceAssistantMessageIdRef = useRef<string | null>(null);
   const voiceAnswerBufferRef = useRef("");
   const voiceAudioChunkPartsRef = useRef<string[]>([]);
   const voiceChunkCountRef = useRef(0);
@@ -1046,6 +1059,7 @@ export default function AskSaiScreen() {
     void stopVoicePlayback();
     activeVoiceTurnIdRef.current = null;
     completedVoiceTurnIdRef.current = null;
+    completedVoiceAssistantMessageIdRef.current = null;
     voiceAnswerBufferRef.current = "";
     voiceAudioChunkPartsRef.current = [];
     voiceChunkCountRef.current = 0;
@@ -1145,6 +1159,8 @@ export default function AskSaiScreen() {
     if (FULL_DUPLEX_VOICE_ENABLED && VOICE_PROVIDER === "elevenlabs") {
       if (isSpeaking) {
         await stopVoicePlayback();
+        setVoiceConnectionState("idle");
+        setVoicePlaybackStage("completed");
         return;
       }
 
@@ -1181,6 +1197,8 @@ export default function AskSaiScreen() {
       }
 
       setIsSpeaking(false);
+      setVoiceConnectionState("idle");
+      setVoicePlaybackStage("completed");
       return;
     }
 
@@ -1450,16 +1468,37 @@ export default function AskSaiScreen() {
           setAnswer(voiceAnswerBufferRef.current);
 
           if (completedVoiceTurnIdRef.current === event.turnId) {
-            setMessages((currentMessages) =>
-              currentMessages.map((message) =>
-                message.role === "assistant"
+            const completedAssistantMessageId =
+              completedVoiceAssistantMessageIdRef.current;
+
+            setMessages((currentMessages) => {
+              if (!completedAssistantMessageId) {
+                return currentMessages;
+              }
+
+              const hasAssistantMessage = currentMessages.some(
+                (message) => message.id === completedAssistantMessageId
+              );
+
+              if (!hasAssistantMessage) {
+                return appendUniqueMessages(currentMessages, [
+                  {
+                    content: voiceAnswerBufferRef.current,
+                    id: completedAssistantMessageId,
+                    role: "assistant",
+                  },
+                ]);
+              }
+
+              return currentMessages.map((message) =>
+                message.id === completedAssistantMessageId
                   ? {
                       ...message,
                       content: voiceAnswerBufferRef.current,
                     }
                   : message
-              )
-            );
+              );
+            });
             logVoiceDebug("Applied late answer delta after turn_complete", {
               textLength: event.text.length,
               turnId: event.turnId,
@@ -1497,6 +1536,9 @@ export default function AskSaiScreen() {
           completedVoiceTurnIdRef.current = event.turnId;
           const finalQuestion = voiceFinalTranscriptRef.current || question;
           const finalAnswer = voiceAnswerBufferRef.current.trim();
+          const assistantMessageId =
+            event.messageId || `${event.turnId}-assistant`;
+          completedVoiceAssistantMessageIdRef.current = assistantMessageId;
 
           logVoiceDebug("Turn complete", {
             backendLatency: event.latency,
@@ -1551,27 +1593,29 @@ export default function AskSaiScreen() {
           }
 
           if (finalQuestion || finalAnswer) {
-            setMessages([
-              ...(finalQuestion
-                ? [
-                    {
-                      content: finalQuestion,
-                      id: `${event.turnId}-user`,
-                      role: "user" as const,
-                    },
-                  ]
-                : []),
-              ...(finalAnswer
-                ? [
-                    {
-                      content: finalAnswer,
-                      id: event.messageId || `${event.turnId}-assistant`,
-                      latencyMs: event.latency?.totalMs,
-                      role: "assistant" as const,
-                    },
-                  ]
-                : []),
-            ]);
+            setMessages((currentMessages) =>
+              appendUniqueMessages(currentMessages, [
+                ...(finalQuestion
+                  ? [
+                      {
+                        content: finalQuestion,
+                        id: `${event.turnId}-user`,
+                        role: "user" as const,
+                      },
+                    ]
+                  : []),
+                ...(finalAnswer
+                  ? [
+                      {
+                        content: finalAnswer,
+                        id: assistantMessageId,
+                        latencyMs: event.latency?.totalMs,
+                        role: "assistant" as const,
+                      },
+                    ]
+                  : []),
+              ])
+            );
             setLastResponse(
               finalAnswer
                 ? {
@@ -1584,6 +1628,11 @@ export default function AskSaiScreen() {
                 : null
             );
           }
+
+          setQuestion("");
+          setVoicePartialTranscript("");
+          setVoiceFinalTranscript("");
+          voiceFinalTranscriptRef.current = "";
 
           if (
             VOICE_PROVIDER === "elevenlabs" &&
@@ -1674,7 +1723,6 @@ export default function AskSaiScreen() {
         setAnswer("");
         setFeedbackMessageId(null);
         setLastResponse(null);
-        setMessages([]);
         setSafetyNote("");
         const response = await askDevoteeQuestion({
           conversationId,
@@ -1684,26 +1732,29 @@ export default function AskSaiScreen() {
           voice: false,
         });
 
-        setQuestion(questionToAsk);
+        setQuestion("");
         setAnswer(response.answer);
         setConversationId(response.conversationId || conversationId);
         setFeedbackMessageId(response.messageId || null);
         setLastResponse(response);
-        setMessages([
-          {
-            content: questionToAsk,
-            id: `${Date.now()}-user`,
-            role: "user",
-          },
-          {
-            cached: response.cached,
-            content: response.answer,
-            id: response.messageId || `${Date.now()}-assistant`,
-            latencyMs: response.latencyMs,
-            model: response.model,
-            role: "assistant",
-          },
-        ]);
+        const completedAt = Date.now();
+        setMessages((currentMessages) =>
+          appendUniqueMessages(currentMessages, [
+            {
+              content: questionToAsk,
+              id: `${completedAt}-user`,
+              role: "user",
+            },
+            {
+              cached: response.cached,
+              content: response.answer,
+              id: response.messageId || `${completedAt}-assistant`,
+              latencyMs: response.latencyMs,
+              model: response.model,
+              role: "assistant",
+            },
+          ])
+        );
         setSafetyNote(response.safetyNote || "");
         void loadConversations();
 
@@ -1978,6 +2029,7 @@ export default function AskSaiScreen() {
         voiceAudioChunkPartsRef.current = [];
         voiceResponseChunkCountRef.current = 0;
         completedVoiceTurnIdRef.current = null;
+        completedVoiceAssistantMessageIdRef.current = null;
         voiceHadAudioChunksRef.current = false;
         voiceLivePlaybackFailedRef.current = false;
 
@@ -2365,7 +2417,23 @@ export default function AskSaiScreen() {
   }, []);
 
   const listenAgainFromModal = useCallback(async () => {
+    const activeTurnId = activeVoiceTurnIdRef.current;
+
+    if (
+      activeTurnId &&
+      voiceSocketRef.current?.readyState === WebSocket.OPEN
+    ) {
+      voiceSocketRef.current.send({
+        turnId: activeTurnId,
+        type: "barge_in",
+      });
+      logVoiceDebug("Voice reply interrupted by user", {
+        turnId: activeTurnId,
+      });
+    }
+
     await stopWaitingTone();
+    await stopSpeech();
     setAnswer("");
     setVoiceError("");
     setVoicePlaybackStage("idle");
@@ -2399,6 +2467,7 @@ export default function AskSaiScreen() {
     handleVoiceQuestion,
     isListening,
     startSpeechRecognitionFallback,
+    stopSpeech,
     stopWaitingTone,
   ]);
 
@@ -2534,10 +2603,9 @@ export default function AskSaiScreen() {
   const isVoiceFinished = voicePlaybackStage === "completed";
   const hasVoiceFailed =
     voicePlaybackStage === "failed" || voiceConnectionState === "error";
+  const canInterruptVoiceReply = isVoicePlaying || isVoiceThinking;
   const isVoiceSubmitDisabled =
     isSubmitting ||
-    isVoicePlaying ||
-    isVoiceThinking ||
     voiceConnectionState === "connecting" ||
     (!FULL_DUPLEX_VOICE_ENABLED && !hasModalTranscript);
   const canListenAgain =
@@ -2577,14 +2645,23 @@ export default function AskSaiScreen() {
   const voicePrimaryLabel = isListening
     ? "Finish & Ask"
     : isVoicePlaying
-      ? "Playing..."
+      ? "Stop & ask again"
       : isVoiceThinking
-        ? "Preparing..."
+        ? "Cancel & ask again"
         : hasVoiceFailed
           ? "Try again"
           : isVoiceFinished
             ? "Ask another"
             : "Start listening";
+  const latestConversationMessage = messages[messages.length - 1];
+  const hasCurrentAnswerInMessages =
+    Boolean(answer.trim()) &&
+    latestConversationMessage?.role === "assistant" &&
+    latestConversationMessage.content === answer;
+  const previousConversationMessages =
+    hasCurrentAnswerInMessages && messages.length >= 2
+      ? messages.slice(0, -2)
+      : messages;
   const revealQuestionInput = () => {
     setTimeout(() => {
       mainScrollRef.current?.scrollTo({
@@ -2895,7 +2972,10 @@ export default function AskSaiScreen() {
                     ]}
                   >
                     {isSpeaking ? (
-                      <Pause color="#FFFFFF" size={18} fill="#FFFFFF" />
+                      <>
+                        <Pause color="#FFFFFF" size={18} fill="#FFFFFF" />
+                        <Text style={styles.speakButtonText}>Stop</Text>
+                      </>
                     ) : (
                       <Volume2
                         color="#FFFFFF"
@@ -2967,10 +3047,10 @@ export default function AskSaiScreen() {
             </View>
           ) : null}
 
-          {messages.length > 2 ? (
+          {previousConversationMessages.length > 0 ? (
             <View style={styles.threadCard}>
-              <Text style={styles.threadTitle}>Conversation</Text>
-              {messages.map((message) => (
+              <Text style={styles.threadTitle}>Earlier in this conversation</Text>
+              {previousConversationMessages.map((message) => (
                 <View
                   key={message.id}
                   style={[
@@ -3182,7 +3262,9 @@ export default function AskSaiScreen() {
                 <Pressable
                   disabled={isVoiceSubmitDisabled}
                   onPress={
-                    hasVoiceFailed || isVoiceFinished
+                    canInterruptVoiceReply ||
+                    hasVoiceFailed ||
+                    isVoiceFinished
                       ? listenAgainFromModal
                       : submitVoiceModal
                   }
@@ -3194,7 +3276,11 @@ export default function AskSaiScreen() {
                 >
                   {isVoiceThinking ? (
                     <>
-                      <ActivityIndicator color="#FFFFFF" size="small" />
+                      <RotateCcw
+                        color="#FFFFFF"
+                        size={17}
+                        strokeWidth={2.5}
+                      />
                       <Text style={styles.voiceModalPrimaryText}>
                         {voicePrimaryLabel}
                       </Text>
@@ -3205,7 +3291,7 @@ export default function AskSaiScreen() {
                         {voicePrimaryLabel}
                       </Text>
                       {isVoicePlaying ? (
-                        <Volume2
+                        <Pause
                           color="#FFFFFF"
                           size={17}
                           strokeWidth={2.5}
@@ -3637,9 +3723,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#C2410C",
     borderRadius: 17,
+    flexDirection: "row",
+    gap: 7,
     height: 44,
     justifyContent: "center",
-    width: 44,
+    minWidth: 44,
+    paddingHorizontal: 13,
+  },
+  speakButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
   },
   answerText: {
     color: "#FFF7ED",

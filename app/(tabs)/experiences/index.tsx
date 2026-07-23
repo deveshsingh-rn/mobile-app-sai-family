@@ -475,7 +475,35 @@ export default function HomeScreen() {
 
                 <View style={styles.headerActions}>
                   
-                  <Pressable
+                  {/* <Pressable
+                    onPress={() =>
+                      router.push("/(tabs)/experiences/ask-sai" as any)
+                    }
+                     style={({ pressed }) => [
+                    styles.askSaiMicButton,
+                    pressed && styles.askSaiMicPressed,
+                  ]}
+                  >
+                    <Type
+  size={26}
+  color="#3A2108"
+  strokeWidth={2.4}
+/>
+                  </Pressable> */}
+                </View>
+              </View>
+
+              <View style={styles.askSaiBottomRow}>
+                <View style={styles.askSaiCopy}>
+                  <Text style={styles.askSaiPrompt}>
+                    Speak your question,
+                    receive peaceful guidance.
+                  </Text>
+                  <Text style={styles.askSaiMeta}>
+                    Voice assistant for devotees
+                  </Text>
+                </View>
+                 <Pressable
                     onPress={() =>
                       router.push("/(tabs)/experiences/ask-sai" as any)
                     }
@@ -490,19 +518,6 @@ export default function HomeScreen() {
   strokeWidth={2.4}
 />
                   </Pressable>
-                </View>
-              </View>
-
-              <View style={styles.askSaiBottomRow}>
-                <View style={styles.askSaiCopy}>
-                  <Text style={styles.askSaiPrompt}>
-                    Speak your question,
-                    receive peaceful guidance.
-                  </Text>
-                  <Text style={styles.askSaiMeta}>
-                    Voice assistant for devotees
-                  </Text>
-                </View>
 
                 <Pressable
                   onPress={() =>
@@ -622,12 +637,12 @@ const styles = StyleSheet.create({
 
   askSaiImage: {
     borderRadius: 24,
-    backgroundColor: "rgba(0, 0, 0, 1)",
+    backgroundColor: "rgba(0, 0, 0, .1)",
   },
 
   askSaiScrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(28, 17, 8, 0.4)",
+    backgroundColor: "rgba(28, 17, 8, 0.1)",
   },
 
   askSaiTopRow: {
@@ -677,7 +692,7 @@ const styles = StyleSheet.create({
   askSaiPrompt: {
     color: "#FFF7E1",
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "700",
     lineHeight: 22,
     maxWidth: 230,
     textShadowColor: "rgba(0, 0, 0, 0.32)",
