@@ -8,6 +8,7 @@ import React, {
 import {
   ActivityIndicator,
   Animated,
+  Easing,
   ImageBackground,
   Pressable,
   RefreshControl,
@@ -19,14 +20,12 @@ import {
 } from "react-native";
 
 import { FlashList } from "@shopify/flash-list";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 
 import {
   Mic2,
-  PenLine,
-  Search,
   Type,
-
 } from "lucide-react-native";
 
 import {
@@ -126,8 +125,35 @@ export default function HomeScreen() {
   const headerIntroProgress = useRef(
     new Animated.Value(1)
   ).current;
+  const askSaiBorderProgress = useRef(
+    new Animated.Value(0)
+  ).current;
   const isHeaderIntroVisibleRef = useRef(true);
   const lastScrollYRef = useRef(0);
+
+  useEffect(() => {
+    if (!isHeaderIntroMounted) {
+      askSaiBorderProgress.stopAnimation();
+      return;
+    }
+
+    askSaiBorderProgress.setValue(0);
+    const borderAnimation = Animated.loop(
+      Animated.timing(askSaiBorderProgress, {
+        duration: 6200,
+        easing: Easing.linear,
+        isInteraction: false,
+        toValue: 1,
+        useNativeDriver: true,
+      })
+    );
+
+    borderAnimation.start();
+
+    return () => {
+      borderAnimation.stop();
+    };
+  }, [askSaiBorderProgress, isHeaderIntroMounted]);
 
   // ───────────────── INITIAL FETCH ─────────────────
 
@@ -424,6 +450,16 @@ export default function HomeScreen() {
 
   // ───────────────── UI ─────────────────
 
+  const askSaiGlowSize = Math.max(
+    screenWidth * 1.65,
+    520
+  );
+  const askSaiBorderRotation =
+    askSaiBorderProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["0deg", "360deg"],
+    });
+
   return (
     <View style={styles.container}>
       {/* HEADER */}
@@ -455,87 +491,117 @@ export default function HomeScreen() {
               },
             ]}
           >
-            <ImageBackground
-              imageStyle={styles.askSaiImage}
-              resizeMode="cover"
-              source={SAI_BABA_WELCOME_IMAGE}
-              style={styles.askSaiCard}
-            >
-              <View style={styles.askSaiScrim} />
+            <View style={styles.askSaiGlowFrame}>
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.askSaiBorderLight,
+                  {
+                    height: askSaiGlowSize,
+                    marginLeft: -askSaiGlowSize / 2,
+                    marginTop: -askSaiGlowSize / 2,
+                    transform: [
+                      {
+                        rotate: askSaiBorderRotation,
+                      },
+                    ],
+                    width: askSaiGlowSize,
+                  },
+                ]}
+              >
+                <LinearGradient
+                  colors={[
+                    "#FFF7C2",
+                    "#a2ff00",
+                    "#FFFFFF",
+                    "#ff5b03",
+                    "#FFF7C2",
+                  ]}
+                  end={{ x: 1, y: 1 }}
+                  start={{ x: 0, y: 0 }}
+                  style={StyleSheet.absoluteFill}
+                />
+              </Animated.View>
 
-              <View style={styles.askSaiTopRow}>
-                <View>
-                  <Text style={styles.askSaiEyebrow}>
-                    OM SAI RAM
-                  </Text>
-                  <Text style={styles.askSaiTitle}>
-                    Ask Sai
-                  </Text>
+              <ImageBackground
+                imageStyle={styles.askSaiImage}
+                resizeMode="cover"
+                source={SAI_BABA_WELCOME_IMAGE}
+                style={styles.askSaiCard}
+              >
+                <LinearGradient
+                  colors={[
+                    "rgba(24, 14, 6, 0.90)",
+                    "rgba(28, 16, 7, 0.72)",
+                    "rgba(32, 18, 8, 0.34)",
+                    "rgba(36, 20, 8, 0.10)",
+                  ]}
+                  end={{ x: 1, y: 0.5 }}
+                  locations={[0, 0.48, 0.82, 1]}
+                  pointerEvents="none"
+                  start={{ x: 0, y: 0.5 }}
+                  style={StyleSheet.absoluteFill}
+                />
+
+                <View style={styles.askSaiTopRow}>
+                  <View>
+                    <Text style={styles.askSaiEyebrow}>
+                      OM SAI RAM
+                    </Text>
+                    <Text style={styles.askSaiTitle}>
+                      Ask Sai
+                    </Text>
+                  </View>
+
+                  <View style={styles.headerActions}>
+                    {/* Reserved for future header actions. */}
+                  </View>
                 </View>
 
-                <View style={styles.headerActions}>
-                  
-                  {/* <Pressable
+                <View style={styles.askSaiBottomRow}>
+                  <View style={styles.askSaiCopy}>
+                    <Text style={styles.askSaiPrompt}>
+                      Speak your question,
+                      receive peaceful guidance.
+                    </Text>
+                    <Text style={styles.askSaiMeta}>
+                      Voice assistant for devotees
+                    </Text>
+                  </View>
+                  <Pressable
                     onPress={() =>
                       router.push("/(tabs)/experiences/ask-sai" as any)
                     }
-                     style={({ pressed }) => [
-                    styles.askSaiMicButton,
-                    pressed && styles.askSaiMicPressed,
-                  ]}
+                    style={({ pressed }) => [
+                      styles.askSaiMicButton,
+                      pressed && styles.askSaiMicPressed,
+                    ]}
                   >
                     <Type
-  size={26}
-  color="#3A2108"
-  strokeWidth={2.4}
-/>
-                  </Pressable> */}
-                </View>
-              </View>
-
-              <View style={styles.askSaiBottomRow}>
-                <View style={styles.askSaiCopy}>
-                  <Text style={styles.askSaiPrompt}>
-                    Speak your question,
-                    receive peaceful guidance.
-                  </Text>
-                  <Text style={styles.askSaiMeta}>
-                    Voice assistant for devotees
-                  </Text>
-                </View>
-                 <Pressable
-                    onPress={() =>
-                      router.push("/(tabs)/experiences/ask-sai" as any)
-                    }
-                     style={({ pressed }) => [
-                    styles.askSaiMicButton,
-                    pressed && styles.askSaiMicPressed,
-                  ]}
-                  >
-                    <Type
-  size={26}
-  color="#3A2108"
-  strokeWidth={2.4}
-/>
+                      color="#3A2108"
+                      size={26}
+                      strokeWidth={2.4}
+                    />
                   </Pressable>
 
-                <Pressable
-                  onPress={() =>
-                    router.push("/(tabs)/experiences/ask-sai" as any)
-                  }
-                  style={({ pressed }) => [
-                    styles.askSaiMicButton,
-                    pressed && styles.askSaiMicPressed,
-                  ]}
-                >
-                  <Mic2
-                    size={26}
-                    color="#3A2108"
-                    strokeWidth={2.4}
-                  />
-                </Pressable>
-              </View>
-            </ImageBackground>
+                  <Pressable
+                    onPress={() =>
+                      router.push("/(tabs)/experiences/ask-sai" as any)
+                    }
+                    style={({ pressed }) => [
+                      styles.askSaiMicButton,
+                      pressed && styles.askSaiMicPressed,
+                    ]}
+                  >
+                    <Mic2
+                      color="#3A2108"
+                      size={26}
+                      strokeWidth={2.4}
+                    />
+                  </Pressable>
+                </View>
+              </ImageBackground>
+            </View>
           </Animated.View>
         )}
 
@@ -615,16 +681,14 @@ const styles = StyleSheet.create({
     paddingTop: 54,
   },
 
-  askSaiCard: {
-    borderRadius: 24,
-    justifyContent: "space-between",
+  askSaiGlowFrame: {
+    backgroundColor: "#F59E0B",
+    borderRadius: 25,
+    height: 204,
     marginBottom: 14,
     marginHorizontal: 16,
-     backgroundColor: "rgb(44, 44, 44)",
-    minHeight: 200,
-    maxHeight: 200,
     overflow: "hidden",
-    padding: 16,
+    padding: 2,
     shadowColor: "#9A5C10",
     shadowOffset: {
       width: 0,
@@ -635,14 +699,25 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
 
-  askSaiImage: {
-    borderRadius: 24,
-    backgroundColor: "rgba(0, 0, 0, .1)",
+  askSaiBorderLight: {
+    left: "50%",
+    position: "absolute",
+    top: "50%",
   },
 
-  askSaiScrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(28, 17, 8, 0.1)",
+  askSaiCard: {
+    backgroundColor: "#2C2C2C",
+    borderRadius: 23,
+    flex: 1,
+    justifyContent: "space-between",
+    overflow: "hidden",
+    padding: 16,
+    width: "100%",
+  },
+
+  askSaiImage: {
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    borderRadius: 23,
   },
 
   askSaiTopRow: {
