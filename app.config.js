@@ -2,6 +2,9 @@ const baseConfig = require("./app.json").expo;
 
 const APP_VARIANT = process.env.APP_VARIANT || "production";
 const isDevelopmentVariant = APP_VARIANT === "development";
+const isMainDevelopmentVariant = APP_VARIANT === "main-development";
+const isDevelopmentBinary =
+  isDevelopmentVariant || isMainDevelopmentVariant;
 
 const productionBundleId = "com.deveshrn.saifamily";
 const developmentBundleId = "com.deveshrn.saifamily.dev";
@@ -14,19 +17,19 @@ module.exports = ({ config }) => {
   const bundleIdentifier = isDevelopmentVariant
     ? developmentBundleId
     : productionBundleId;
-  const owner =
-    process.env.EXPO_OWNER ||
-    (isDevelopmentVariant ? developmentOwner : productionOwner);
-  const projectId =
-    process.env.EAS_PROJECT_ID ||
-    (isDevelopmentVariant ? developmentProjectId : productionProjectId);
+  const owner = isDevelopmentVariant
+    ? developmentOwner
+    : productionOwner;
+  const projectId = isDevelopmentVariant
+    ? developmentProjectId
+    : productionProjectId;
 
   return {
     ...config,
     ...baseConfig,
-    name: isDevelopmentVariant ? "Sai Family Dev" : "Sai Family",
+    name: isDevelopmentBinary ? "Sai Family Dev" : "Sai Family",
     slug: isDevelopmentVariant ? "saifamily" : baseConfig.slug,
-    scheme: isDevelopmentVariant ? "saifamilydev" : baseConfig.scheme,
+    scheme: isDevelopmentBinary ? "saifamilydev" : baseConfig.scheme,
     owner,
     ios: {
       ...baseConfig.ios,

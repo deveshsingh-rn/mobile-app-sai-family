@@ -20,6 +20,7 @@ import {
   View,
 } from "react-native";
 
+import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -131,6 +132,25 @@ const base64ToArrayBuffer = (base64: string) => {
   return bytes.buffer;
 };
 
+const combineBase64Chunks = (chunks: string[]) => {
+  const decodedChunks = chunks.map(
+    (chunk) => new Uint8Array(base64ToArrayBuffer(chunk))
+  );
+  const totalBytes = decodedChunks.reduce(
+    (total, chunk) => total + chunk.byteLength,
+    0
+  );
+  const combinedBytes = new Uint8Array(totalBytes);
+  let writeOffset = 0;
+
+  decodedChunks.forEach((chunk) => {
+    combinedBytes.set(chunk, writeOffset);
+    writeOffset += chunk.byteLength;
+  });
+
+  return combinedBytes;
+};
+
 const getVoiceErrorMessage = (code?: string, fallback?: string) => {
   switch (code) {
     case "UNAUTHENTICATED":
@@ -204,10 +224,17 @@ export default function AskSaiScreen() {
   const voiceChunkCountRef = useRef(0);
   const voiceFallbackAudioFileUriRef = useRef<string | null>(null);
   const voiceFallbackAudioPlayerRef = useRef<{
+    addListener?: (
+      eventName: "playbackStatusUpdate",
+      listener: (status: { didJustFinish: boolean }) => void
+    ) => { remove: () => void };
     pause: () => void;
     play: () => void;
     remove?: () => void;
     seekTo?: (seconds: number) => Promise<void> | void;
+  } | null>(null);
+  const voicePlaybackStatusSubscriptionRef = useRef<{
+    remove: () => void;
   } | null>(null);
   const voiceFinalTranscriptRef = useRef("");
   const voiceHadAudioChunksRef = useRef(false);
@@ -366,12 +393,14 @@ export default function AskSaiScreen() {
     voiceAudioDecodeQueueRef.current = Promise.resolve();
 
     try {
+      voicePlaybackStatusSubscriptionRef.current?.remove();
       voiceFallbackAudioPlayerRef.current?.pause();
       voiceFallbackAudioPlayerRef.current?.remove?.();
     } catch {
       // Cached playback may already be released.
     }
 
+    voicePlaybackStatusSubscriptionRef.current = null;
     voiceFallbackAudioPlayerRef.current = null;
 
     if (voicePlaybackCompletionTimerRef.current) {
@@ -422,12 +451,6 @@ export default function AskSaiScreen() {
     }
 
     setIsWaitingToneActive(false);
-
-    try {
-      await Speech.stop();
-    } catch {
-      // Waiting tone may already be stopped.
-    }
   }, []);
 
   const startWaitingTone = useCallback(() => {
@@ -437,19 +460,18 @@ export default function AskSaiScreen() {
 
     setIsWaitingToneActive(true);
 
-    const playTone = () => {
-      Speech.speak("Om Sai Ram", {
-        language: "hi-IN",
-        pitch: 0.82,
-        rate: Platform.OS === "ios" ? 0.38 : 0.62,
-        volume: 0.35,
+    const playWaitingPulse = () => {
+      void Haptics.impactAsync(
+        Haptics.ImpactFeedbackStyle.Light
+      ).catch(() => {
+        // Haptics are optional on unsupported devices.
       });
     };
 
-    playTone();
-    waitingToneTimerRef.current = setInterval(playTone, 3200);
+    playWaitingPulse();
+    waitingToneTimerRef.current = setInterval(playWaitingPulse, 1800);
 
-    logVoiceDebug("Waiting tone started");
+    logVoiceDebug("Waiting feedback started");
   }, []);
 
   const ensureVoicePlaybackQueue = useCallback(async () => {
@@ -481,9 +503,9 @@ export default function AskSaiScreen() {
   }, []);
 
   const playBufferedVoiceAudio = useCallback(async (turnId: string) => {
-    const base64Audio = voiceAudioChunkPartsRef.current.join("");
+    const audioChunks = [...voiceAudioChunkPartsRef.current];
 
-    if (!base64Audio) {
+    if (audioChunks.length === 0) {
       logVoiceProductionCheck("buffered audio skipped", {
         reason: "No backend audio chunks collected.",
         turnId,
@@ -492,37 +514,74 @@ export default function AskSaiScreen() {
     }
 
     try {
-      const [{ createAudioPlayer }, FileSystem] = await Promise.all([
+      const [
+        { createAudioPlayer, setAudioModeAsync },
+        { File, Paths },
+      ] = await Promise.all([
         import("expo-audio"),
-        import("expo-file-system/legacy"),
+        import("expo-file-system"),
       ]);
+      const audioBytes = combineBase64Chunks(audioChunks);
 
-      if (!FileSystem.cacheDirectory) {
-        throw new Error("FileSystem cache directory is unavailable.");
+      if (audioBytes.byteLength === 0) {
+        throw new Error("Backend ElevenLabs audio was empty.");
       }
 
-      const fileUri = `${FileSystem.cacheDirectory}sai-elevenlabs-${turnId}.mp3`;
+      const audioFile = new File(
+        Paths.cache,
+        `sai-elevenlabs-${turnId}.mp3`
+      );
 
       if (voiceFallbackAudioFileUriRef.current) {
-        await FileSystem.deleteAsync(
+        const previousFile = new File(
           voiceFallbackAudioFileUriRef.current,
-          { idempotent: true }
-        ).catch(() => undefined);
+        );
+
+        if (previousFile.exists) {
+          previousFile.delete();
+        }
       }
 
-      await FileSystem.writeAsStringAsync(fileUri, base64Audio, {
-        encoding: FileSystem.EncodingType.Base64,
+      audioFile.create({
+        intermediates: true,
+        overwrite: true,
+      });
+      audioFile.write(audioBytes);
+
+      await setAudioModeAsync({
+        allowsRecording: false,
+        interruptionMode: "doNotMix",
+        playsInSilentMode: true,
+        shouldPlayInBackground: false,
+        shouldRouteThroughEarpiece: false,
       });
 
+      voicePlaybackStatusSubscriptionRef.current?.remove();
       voiceFallbackAudioPlayerRef.current?.pause();
       voiceFallbackAudioPlayerRef.current?.remove?.();
 
-      const player = createAudioPlayer(fileUri, {
+      const player = createAudioPlayer(audioFile.uri, {
         keepAudioSessionActive: false,
       });
 
-      voiceFallbackAudioFileUriRef.current = fileUri;
+      voiceFallbackAudioFileUriRef.current = audioFile.uri;
       voiceFallbackAudioPlayerRef.current = player;
+      voicePlaybackStatusSubscriptionRef.current = player.addListener(
+        "playbackStatusUpdate",
+        (status) => {
+          if (!status.didJustFinish) {
+            return;
+          }
+
+          voicePlaybackStatusSubscriptionRef.current?.remove();
+          voicePlaybackStatusSubscriptionRef.current = null;
+          setIsSpeaking(false);
+          setVoiceConnectionState("idle");
+          logVoiceProductionCheck("ElevenLabs playback finished", {
+            turnId,
+          });
+        }
+      );
 
       await player.seekTo?.(0);
       await stopWaitingTone();
@@ -534,10 +593,12 @@ export default function AskSaiScreen() {
         clearTimeout(voicePlaybackCompletionTimerRef.current);
       }
 
-      const estimatedBytes = Math.floor((base64Audio.length * 3) / 4);
       const estimatedDurationMs = Math.max(
         2500,
-        Math.min(45000, Math.ceil((estimatedBytes / 16000) * 1000) + 1200)
+        Math.min(
+          45000,
+          Math.ceil((audioBytes.byteLength / 16000) * 1000) + 3000
+        )
       );
 
       voicePlaybackCompletionTimerRef.current = setTimeout(() => {
@@ -548,9 +609,9 @@ export default function AskSaiScreen() {
       }, estimatedDurationMs);
 
       logVoiceProductionCheck("buffered ElevenLabs MP3 playback started", {
-        base64Length: base64Audio.length,
-        fileUri,
-        parts: voiceAudioChunkPartsRef.current.length,
+        byteLength: audioBytes.byteLength,
+        fileUri: audioFile.uri,
+        parts: audioChunks.length,
         turnId,
       });
 
@@ -558,7 +619,7 @@ export default function AskSaiScreen() {
     } catch (error) {
       logVoiceProductionCheck("buffered ElevenLabs MP3 playback failed", {
         error: error instanceof Error ? error.message : String(error),
-        parts: voiceAudioChunkPartsRef.current.length,
+        parts: audioChunks.length,
         turnId,
       });
       return false;
@@ -567,36 +628,41 @@ export default function AskSaiScreen() {
 
   const enqueueVoiceAudioChunk = useCallback(
     (event: Extract<DevoteeAiVoiceServerEvent, { type: "audio_chunk" }>) => {
+      if (
+        activeVoiceTurnIdRef.current &&
+        event.turnId !== activeVoiceTurnIdRef.current
+      ) {
+        return;
+      }
+
+      logVoiceProductionCheck("audio_chunk", {
+        base64Length: event.data?.length ?? 0,
+        format: event.format,
+        hasData: Boolean(event.data),
+        turnId: event.turnId,
+      });
+
+      if (!event.data) {
+        voiceLivePlaybackFailedRef.current = true;
+        return;
+      }
+
+      if (event.format.startsWith("mp3")) {
+        voiceAudioChunkPartsRef.current.push(event.data);
+        voiceHadAudioChunksRef.current = true;
+        setVoiceConnectionState("speaking");
+
+        logVoiceProductionCheck("buffering mp3 audio chunk", {
+          parts: voiceAudioChunkPartsRef.current.length,
+          reason:
+            "MP3 stream fragments are stored separately and combined as binary bytes.",
+          turnId: event.turnId,
+        });
+        return;
+      }
+
       voiceAudioDecodeQueueRef.current = voiceAudioDecodeQueueRef.current
         .then(async () => {
-          if (
-            activeVoiceTurnIdRef.current &&
-            event.turnId !== activeVoiceTurnIdRef.current
-          ) {
-            return;
-          }
-
-          logVoiceProductionCheck("audio_chunk", {
-            base64Length: event.data?.length ?? 0,
-            format: event.format,
-            hasData: Boolean(event.data),
-            turnId: event.turnId,
-          });
-
-          if (event.format.startsWith("mp3")) {
-            voiceAudioChunkPartsRef.current.push(event.data);
-            voiceHadAudioChunksRef.current = true;
-            setVoiceConnectionState("speaking");
-
-            logVoiceProductionCheck("buffering mp3 audio chunk", {
-              parts: voiceAudioChunkPartsRef.current.length,
-              reason:
-                "MP3 chunks may be stream fragments; playback starts from complete buffered MP3.",
-              turnId: event.turnId,
-            });
-            return;
-          }
-
           const { audioContext, queueSource } =
             await ensureVoicePlaybackQueue();
           const audioArrayBuffer = base64ToArrayBuffer(event.data);
@@ -1151,16 +1217,31 @@ export default function AskSaiScreen() {
             VOICE_PROVIDER === "elevenlabs" &&
             voiceAudioChunkPartsRef.current.length > 0
           ) {
-            void playBufferedVoiceAudio(event.turnId);
+            setVoiceConnectionState("speaking");
+            void playBufferedVoiceAudio(event.turnId).then((didPlay) => {
+              if (!didPlay) {
+                setVoiceConnectionState("error");
+                setVoiceError(
+                  "ElevenLabs replied, but its audio could not be played. Please try again."
+                );
+                void stopWaitingTone();
+              }
+            });
+          } else if (VOICE_PROVIDER === "elevenlabs") {
+            setVoiceConnectionState("error");
+            setVoiceError(
+              "The backend returned text but no ElevenLabs audio. Please try again."
+            );
+            void stopWaitingTone();
           } else if (finalAnswer && !voiceHadAudioChunksRef.current) {
             void speakText(finalAnswer);
           } else {
             void stopWaitingTone();
+            setVoiceConnectionState("idle");
           }
 
           activeVoiceTurnIdRef.current = null;
           setActiveVoiceTurnId(null);
-          setVoiceConnectionState("idle");
           void cleanupBackendVoiceSessions("turn-complete");
           void loadConversations();
           break;
@@ -1451,6 +1532,13 @@ export default function AskSaiScreen() {
 
       const activeTurnId = activeVoiceTurnIdRef.current;
 
+      try {
+        const audioStream = await getSaiAudioStreamModule();
+        await audioStream.stopSaiAudioStreamAsync();
+      } catch {
+        // Native stream may already be stopped or unavailable.
+      }
+
       if (
         activeTurnId &&
         voiceSocketRef.current?.readyState === WebSocket.OPEN
@@ -1464,13 +1552,6 @@ export default function AskSaiScreen() {
           turnId: activeTurnId,
           type: "end_input",
         });
-      }
-
-      try {
-        const audioStream = await getSaiAudioStreamModule();
-        await audioStream.stopSaiAudioStreamAsync();
-      } catch {
-        // Native stream may already be stopped or unavailable.
       }
 
       setIsListening(false);
@@ -1602,6 +1683,35 @@ export default function AskSaiScreen() {
           ),
         });
 
+        if (VOICE_PROVIDER === "elevenlabs") {
+          const ttsProvider = session.providers?.tts?.toLowerCase();
+          const outputFormat = session.audio?.outputFormat?.toLowerCase();
+
+          if (ttsProvider !== "elevenlabs") {
+            throw new Error(
+              `Voice backend returned TTS provider "${ttsProvider || "unknown"}" instead of ElevenLabs.`
+            );
+          }
+
+          if (!outputFormat?.startsWith("mp3")) {
+            throw new Error(
+              `Voice backend returned "${outputFormat || "unknown"}" instead of ElevenLabs MP3 audio.`
+            );
+          }
+
+          if (
+            process.env.EXPO_PUBLIC_API_BASE_URL ===
+              "https://saifamily.sustaininsight.com" &&
+            !session.webSocketUrl.startsWith(
+              "wss://saifamily.sustaininsight.com/api/ai/voice/ws"
+            )
+          ) {
+            throw new Error(
+              "Voice backend returned an unexpected production WebSocket URL."
+            );
+          }
+        }
+
         logVoiceDebug("Voice session created", {
           audio: session.audio,
           conversationId: session.conversationId,
@@ -1659,7 +1769,9 @@ export default function AskSaiScreen() {
             setActiveVoiceTurnId(null);
             setIsListening(false);
             setVoiceConnectionState((currentState) =>
-              currentState === "error" ? "error" : "idle"
+              currentState === "error" || currentState === "speaking"
+                ? currentState
+                : "idle"
             );
           },
           onError: () => {
@@ -1809,8 +1921,8 @@ export default function AskSaiScreen() {
     }
 
     if (FULL_DUPLEX_VOICE_ENABLED && voiceSocketRef.current) {
-      startWaitingTone();
       await handleVoiceQuestion();
+      startWaitingTone();
       return;
     }
 
