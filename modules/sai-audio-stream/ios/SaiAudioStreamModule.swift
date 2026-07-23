@@ -45,16 +45,52 @@ public class SaiAudioStreamModule: Module {
       return
     }
 
-    let permission = AVAudioSession.sharedInstance().recordPermission
+    let session = AVAudioSession.sharedInstance()
+    let permission = session.recordPermission
     guard permission == .granted else {
       sendAudioError(code: "MIC_PERMISSION_DENIED", message: "Microphone permission is required.")
       return
     }
 
-    let sampleRate = Double(options["sampleRate"] as? Int ?? 16000)
-    let chunkMs = options["chunkMs"] as? Int ?? 100
+    let requestedSampleRate = Double(options["sampleRate"] as? Int ?? 16000)
+    let requestedChunkMs = options["chunkMs"] as? Int ?? 100
+    let sampleRate = requestedSampleRate.isFinite && requestedSampleRate > 0
+      ? requestedSampleRate
+      : 16000
+    let chunkMs = min(max(requestedChunkMs, 20), 1000)
+
+    audioEngine.stop()
+    audioEngine.reset()
+
+    do {
+      try session.setCategory(
+        .playAndRecord,
+        mode: .voiceChat,
+        options: [.defaultToSpeaker, .allowBluetooth]
+      )
+      try session.setPreferredSampleRate(sampleRate)
+      try session.setPreferredIOBufferDuration(Double(chunkMs) / 1000.0)
+      try session.setActive(true)
+    } catch {
+      sendAudioError(code: "AUDIO_SESSION_FAILED", message: error.localizedDescription)
+      return
+    }
+
     let inputNode = audioEngine.inputNode
     let inputFormat = inputNode.outputFormat(forBus: 0)
+
+    guard
+      inputFormat.sampleRate.isFinite,
+      inputFormat.sampleRate > 0,
+      inputFormat.channelCount > 0
+    else {
+      deactivateSession()
+      sendAudioError(
+        code: "INVALID_INPUT_AUDIO_FORMAT",
+        message: "The microphone returned an invalid audio format. Check the active input route and try again."
+      )
+      return
+    }
 
     guard let desiredFormat = AVAudioFormat(
       commonFormat: .pcmFormatInt16,
@@ -62,46 +98,81 @@ public class SaiAudioStreamModule: Module {
       channels: 1,
       interleaved: true
     ) else {
+      deactivateSession()
       sendAudioError(code: "UNSUPPORTED_AUDIO_FORMAT", message: "Could not create PCM audio format.")
       return
     }
 
-    let converter = AVAudioConverter(from: inputFormat, to: desiredFormat)
-    let framesPerChunk = AVAudioFrameCount((sampleRate * Double(chunkMs)) / 1000.0)
-
-    do {
-      let session = AVAudioSession.sharedInstance()
-      try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
-      try session.setActive(true)
-    } catch {
-      sendAudioError(code: "AUDIO_SESSION_FAILED", message: error.localizedDescription)
+    guard let converter = AVAudioConverter(from: inputFormat, to: desiredFormat) else {
+      deactivateSession()
+      sendAudioError(
+        code: "AUDIO_CONVERTER_UNAVAILABLE",
+        message: "Could not convert the microphone audio to 16 kHz mono PCM."
+      )
       return
     }
 
+    let inputFramesPerChunk = max(
+      1,
+      AVAudioFrameCount(
+        (inputFormat.sampleRate * Double(chunkMs) / 1000.0).rounded()
+      )
+    )
+
     sequence = 0
-    isRecording = true
 
     inputNode.removeTap(onBus: 0)
-    inputNode.installTap(onBus: 0, bufferSize: framesPerChunk, format: inputFormat) { [weak self] buffer, _ in
+    inputNode.installTap(
+      onBus: 0,
+      bufferSize: inputFramesPerChunk,
+      format: nil
+    ) { [weak self] buffer, _ in
       guard let self, self.isRecording else {
         return
       }
 
-      guard let convertedBuffer = AVAudioPCMBuffer(pcmFormat: desiredFormat, frameCapacity: framesPerChunk) else {
+      let rateRatio = sampleRate / buffer.format.sampleRate
+      let outputFrameCapacity = max(
+        1,
+        AVAudioFrameCount(ceil(Double(buffer.frameLength) * rateRatio)) + 1
+      )
+
+      guard let convertedBuffer = AVAudioPCMBuffer(
+        pcmFormat: desiredFormat,
+        frameCapacity: outputFrameCapacity
+      ) else {
         self.sendAudioError(code: "BUFFER_CREATE_FAILED", message: "Could not create PCM buffer.")
         return
       }
 
       var error: NSError?
+      var didProvideInput = false
       let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
+        if didProvideInput {
+          outStatus.pointee = .noDataNow
+          return nil
+        }
+
+        didProvideInput = true
         outStatus.pointee = .haveData
         return buffer
       }
 
-      converter?.convert(to: convertedBuffer, error: &error, withInputFrom: inputBlock)
+      let conversionStatus = converter.convert(
+        to: convertedBuffer,
+        error: &error,
+        withInputFrom: inputBlock
+      )
 
       if let error {
         self.sendAudioError(code: "AUDIO_CONVERT_FAILED", message: error.localizedDescription)
+        return
+      }
+
+      guard
+        conversionStatus == .haveData || conversionStatus == .inputRanDry,
+        convertedBuffer.frameLength > 0
+      else {
         return
       }
 
@@ -127,11 +198,15 @@ public class SaiAudioStreamModule: Module {
     }
 
     do {
+      isRecording = true
       audioEngine.prepare()
       try audioEngine.start()
     } catch {
       isRecording = false
       inputNode.removeTap(onBus: 0)
+      audioEngine.stop()
+      audioEngine.reset()
+      deactivateSession()
       sendAudioError(code: "RECORDER_START_FAILED", message: error.localizedDescription)
     }
   }
@@ -144,11 +219,21 @@ public class SaiAudioStreamModule: Module {
     isRecording = false
     audioEngine.inputNode.removeTap(onBus: 0)
     audioEngine.stop()
+    audioEngine.reset()
 
+    deactivateSession(reportError: true)
+  }
+
+  private func deactivateSession(reportError: Bool = false) {
     do {
-      try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+      try AVAudioSession.sharedInstance().setActive(
+        false,
+        options: .notifyOthersOnDeactivation
+      )
     } catch {
-      sendAudioError(code: "AUDIO_SESSION_STOP_FAILED", message: error.localizedDescription)
+      if reportError {
+        sendAudioError(code: "AUDIO_SESSION_STOP_FAILED", message: error.localizedDescription)
+      }
     }
   }
 

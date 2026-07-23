@@ -25,6 +25,7 @@ import {
 import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
 import { LinearGradient } from "expo-linear-gradient";
+import { MotiView } from "moti";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -86,6 +87,7 @@ const ELEVENLABS_VOICE_ID =
   process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID || undefined;
 const VOICE_DEBUG_ENABLED =
   __DEV__ || FULL_DUPLEX_VOICE_ENABLED;
+const SAI_RAM_CYCLE_MS = 1800;
 
 const logVoiceDebug = (message: string, payload?: Record<string, unknown>) => {
   if (!VOICE_DEBUG_ENABLED) {
@@ -111,6 +113,113 @@ const createVoiceTurnId = () =>
   `turn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const getSpeechLanguage = () => "hi-IN";
+
+const formatWaitingTime = (elapsedMs: number) => {
+  const totalSeconds = Math.floor(elapsedMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
+
+function SaiRamWaitingCard({
+  active,
+  compact = false,
+}: {
+  active: boolean;
+  compact?: boolean;
+}) {
+  const startedAtRef = useRef<number | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      startedAtRef.current = null;
+      setElapsedMs(0);
+      return;
+    }
+
+    const startedAt = Date.now();
+    startedAtRef.current = startedAt;
+    setElapsedMs(0);
+
+    const timer = setInterval(() => {
+      if (startedAtRef.current) {
+        setElapsedMs(Date.now() - startedAtRef.current);
+      }
+    }, 200);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [active]);
+
+  if (!active) {
+    return null;
+  }
+
+  const completedCount = Math.floor(elapsedMs / SAI_RAM_CYCLE_MS);
+  const cycleProgress =
+    (elapsedMs % SAI_RAM_CYCLE_MS) / SAI_RAM_CYCLE_MS;
+  const progressWidth = `${Math.max(4, cycleProgress * 100)}%` as `${number}%`;
+
+  return (
+    <MotiView
+      accessibilityLabel={`Preparing Sai guidance. Sai Ram count ${completedCount}. Waiting ${formatWaitingTime(elapsedMs)}.`}
+      accessible
+      animate={{ opacity: 1, translateY: 0 }}
+      from={{ opacity: 0, translateY: 8 }}
+      style={[
+        styles.saiRamWaitingCard,
+        compact && styles.saiRamWaitingCardCompact,
+      ]}
+      transition={{ duration: 280, type: "timing" }}
+    >
+      <View style={styles.saiRamCounterCircle}>
+        <MotiView
+          key={completedCount}
+          animate={{ opacity: 1, scale: 1 }}
+          from={{ opacity: 0.35, scale: 0.8 }}
+          transition={{ duration: 420, type: "timing" }}
+        >
+          <Text style={styles.saiRamCounterValue}>{completedCount}</Text>
+        </MotiView>
+        <Text style={styles.saiRamCounterLabel}>COUNT</Text>
+      </View>
+
+      <View style={styles.saiRamWaitingContent}>
+        <MotiView
+          key={`name-${completedCount}`}
+          animate={{ opacity: 1, translateY: 0 }}
+          from={{ opacity: 0.45, translateY: 5 }}
+          transition={{ duration: 420, type: "timing" }}
+        >
+          <Text style={styles.saiRamWaitingName}>Om Sai Ram</Text>
+        </MotiView>
+        <Text style={styles.saiRamWaitingMessage}>
+          Your guidance is being prepared with care
+        </Text>
+
+        <View style={styles.saiRamMeterTrack}>
+          <MotiView
+            animate={{ width: progressWidth }}
+            style={styles.saiRamMeterFill}
+            transition={{ duration: 220, type: "timing" }}
+          />
+        </View>
+
+        <View style={styles.saiRamWaitingMeta}>
+          <Text style={styles.saiRamWaitingMetaText}>
+            Names completed: {completedCount}
+          </Text>
+          <Text style={styles.saiRamWaitingTime}>
+            {formatWaitingTime(elapsedMs)}
+          </Text>
+        </View>
+      </View>
+    </MotiView>
+  );
+}
 
 const selectBestSpeechTranscript = (
   results?: { transcript?: string }[]
@@ -2641,6 +2750,15 @@ export default function AskSaiScreen() {
                 return text.
               </Text>
             </View>
+            {/* just remove */}
+            {/* <SaiRamWaitingCard
+                  active={isWaitingToneActive}
+                  compact
+                /> */}
+
+            <SaiRamWaitingCard
+              active={isSubmitting && !isVoiceModalVisible}
+            />
 
             {voiceError ? (
               <Text style={styles.voiceError}>{voiceError}</Text>
@@ -2942,14 +3060,10 @@ export default function AskSaiScreen() {
                   />
                 </View>
 
-                {isWaitingToneActive ? (
-                  <View style={styles.waitingToneCard}>
-                    <ActivityIndicator color="#B45309" size="small" />
-                    <Text style={styles.waitingToneText}>
-                      Preparing the written reply and ElevenLabs voice...
-                    </Text>
-                  </View>
-                ) : null}
+                <SaiRamWaitingCard
+                  active={isWaitingToneActive}
+                  compact
+                />
 
                 <View
                   onLayout={(event) => {
@@ -3686,24 +3800,90 @@ const styles = StyleSheet.create({
   voiceWaveDotActive: {
     backgroundColor: "#B45309",
   },
-  waitingToneCard: {
+  saiRamWaitingCard: {
     alignItems: "center",
     backgroundColor: "#FFFBEB",
-    borderColor: "#FDE68A",
-    borderRadius: 16,
+    borderColor: "#F4D58D",
+    borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    gap: 14,
+    marginTop: 12,
+    padding: 14,
   },
-  waitingToneText: {
-    color: "#92400E",
+  saiRamWaitingCardCompact: {
+    marginBottom: 12,
+    marginTop: 0,
+    padding: 12,
+  },
+  saiRamCounterCircle: {
+    alignItems: "center",
+    backgroundColor: "#f39954",
+    borderColor: "#FDE68A",
+    borderRadius: 38,
+    borderWidth: 3,
+    height: 76,
+    justifyContent: "center",
+    width: 76,
+  },
+  saiRamCounterValue: {
+    color: "#FFFFFF",
+    fontSize: 26,
+    fontWeight: "900",
+    lineHeight: 29,
+    textAlign: "center",
+  },
+  saiRamCounterLabel: {
+    color: "#FDE68A",
+    fontSize: 9,
+    fontWeight: "900",
+    marginTop: 1,
+  },
+  saiRamWaitingContent: {
     flex: 1,
-    fontSize: 13,
+    minWidth: 0,
+  },
+  saiRamWaitingName: {
+    color: "#c93909",
+    fontSize: 21,
+    fontWeight: "900",
+  },
+  saiRamWaitingMessage: {
+    color: "#785B3D",
+    fontSize: 10,
+    fontWeight: "400",
+    lineHeight: 13,
+    marginTop: 2,
+  },
+  saiRamMeterTrack: {
+    backgroundColor: "#F7E6B5",
+    borderRadius: 999,
+    height: 7,
+    marginTop: 10,
+    overflow: "hidden",
+    width: "100%",
+  },
+  saiRamMeterFill: {
+    backgroundColor: "#B45309",
+    borderRadius: 999,
+    height: "100%",
+  },
+  saiRamWaitingMeta: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 7,
+  },
+  saiRamWaitingMetaText: {
+    color: "#92400E",
+    fontSize: 11,
     fontWeight: "800",
-    lineHeight: 18,
+  },
+  saiRamWaitingTime: {
+    color: "#7C2D12",
+    fontSize: 12,
+    fontVariant: ["tabular-nums"],
+    fontWeight: "900",
   },
   voiceModalTranscriptBox: {
     backgroundColor: "#FFFFFF",
