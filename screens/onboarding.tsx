@@ -99,16 +99,21 @@ type OnboardingScreenProps = {
    SLIDE 1 — Welcome (emotional hook)
    ═══════════════════════════════════════════════════════════ */
 function WelcomeSlide({
+  height,
   image,
   index,
   progress,
   width,
 }: {
+  height: number;
   image: ImageSourcePropType;
   index: number;
   progress: SharedValue<number>;
   width: number;
 }) {
+  const imageHeight = Math.min(height * 0.74, width * 1.56);
+  const imageWidth = Math.min(width * 0.94, imageHeight * 0.76);
+
   const animatedStyle = useAnimatedStyle(() => {
     const distance = progress.value - index;
     return {
@@ -194,17 +199,12 @@ function WelcomeSlide({
         <View style={styles.onboardingBgMid} />
         <View style={styles.onboardingBgInner} />
 
-        {/* <Text style={styles.onboardingSplashBrand}>SAI FAMILY</Text>
-        <Text style={styles.onboardingSplashOm}>ॐ</Text> */}
-        <Text style={styles.onboardingSplashTitle}>SAI FAMILY</Text>
-        <Text style={styles.onboardingSplashSubtitle}>Om Sai Ram</Text>
-
         <View
           style={[
             styles.onboardingImageWrapper,
             {
-              height: width * 1.2 * 0.9625 + 28,
-              width: width * .84 + 28,
+              height: imageHeight + 30,
+              width: imageWidth + 30,
             },
           ]}
         >
@@ -212,8 +212,8 @@ function WelcomeSlide({
             style={[
               styles.onboardingGlowRing,
               {
-                height: width * 1.2 * 0.9625 + 26,
-                width: width * 0.84 + 26,
+                height: imageHeight + 26,
+                width: imageWidth + 26,
               },
             ]}
           />
@@ -221,25 +221,31 @@ function WelcomeSlide({
             style={[
               styles.onboardingImageHalo,
               {
-                height: width * 1.2 * 0.9625 + 12,
-                width: width * 0.74 + 12,
+                height: imageHeight + 12,
+                width: imageWidth + 12,
               },
             ]}
           />
           <Image
-            resizeMode="stretch"
+            resizeMode="contain"
             source={image}
             style={[
               styles.onboardingSaiImage,
               {
-                height: width * 1.2 * 0.9625,
-                width: width * 0.74,
+                height: imageHeight,
+                width: imageWidth,
               },
             ]}
           />
         </View>
 
-       
+        <View style={styles.onboardingTitleCard}>
+          <Text style={styles.onboardingSplashSubtitle}>Om Sai Ram</Text>
+          <Text style={styles.onboardingSplashTitle}>Sai Ki Family</Text>
+          <Text style={styles.onboardingWelcomeLine}>
+            Welcome Home. The Global Family of Sai Devotees.
+          </Text>
+        </View>
       </View>
     </Animated.View>
   );
@@ -342,7 +348,7 @@ function PersonalizeSlide({
    ROOT
    ═══════════════════════════════════════════════════════════ */
 export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
-  const { width } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
   const progress = useSharedValue(0);
 
@@ -404,10 +410,16 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
           </>
         ) : (
           <>
-            <Text style={styles.headerBrand}>SAI FAMILY</Text>
-            <View style={styles.headerRight}>
-              <Text style={styles.stepCount}>{activeIndex + 1} / 2</Text>
+            <View style={styles.brandRow}>
+              <View style={styles.brandMark}>
+                <HeartHandshake color={C.saffron} size={16} strokeWidth={2} />
+              </View>
+              <View>
+                <Text style={styles.brandEyebrow}>Welcome to</Text>
+                <Text style={styles.brand}>Sai Family</Text>
+              </View>
             </View>
+            <Text style={styles.stepCount}>{activeIndex + 1} / 2</Text>
           </>
         )}
       </View>
@@ -423,7 +435,13 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
       <Animated.View
         style={[styles.slider, { width: width * 2 }, sliderStyle]}
       >
-        <WelcomeSlide image={image2} index={0} progress={progress} width={width} />
+        <WelcomeSlide
+          height={height}
+          image={image2}
+          index={0}
+          progress={progress}
+          width={width}
+        />
         <PersonalizeSlide
           image={image}
           index={1}
@@ -537,9 +555,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     overflow: "hidden",
-    paddingHorizontal: 18,
+    paddingHorizontal: 12,
+    paddingTop: 2,
   },
   onboardingBgOuter: {
     backgroundColor: "#F7DD89",
@@ -582,26 +601,52 @@ const styles = StyleSheet.create({
   onboardingSplashTitle: {
     color: "#5D3B0A",
     fontFamily: "Georgia",
-    fontSize: 34,
+    fontSize: 31,
     fontWeight: "700",
-    letterSpacing: 1.5,
-    marginBottom: 6,
+    letterSpacing: 0,
+    lineHeight: 37,
+    textAlign: "center",
   },
   onboardingSplashSubtitle: {
     color: "#E39611",
-    fontSize: 13,
-    fontWeight: "600",
-    letterSpacing: 3,
-    marginBottom: 24,
+    fontSize: 13.5,
+    fontWeight: "800",
+    letterSpacing: 2.6,
+    marginBottom: 5,
+    textAlign: "center",
     textTransform: "uppercase",
+  },
+  onboardingWelcomeLine: {
+    color: "#6F4A12",
+    fontSize: 15,
+    fontWeight: "700",
+    lineHeight: 21,
+    marginTop: 6,
+    textAlign: "center",
+  },
+  onboardingTitleCard: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 253, 247, 0.92)",
+    borderColor: "rgba(227, 179, 79, 0.42)",
+    borderRadius: 24,
+    borderWidth: 1,
+    marginTop: -8,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    shadowColor: "#A16207",
+    shadowOffset: { height: 10, width: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    width: "94%",
   },
   onboardingImageWrapper: {
     alignItems: "center",
     justifyContent: "center",
+    marginTop: -2,
   },
   onboardingGlowRing: {
     borderColor: "#E3B34F",
-    borderRadius: 40,
+    borderRadius: 44,
     borderWidth: 1,
     position: "absolute",
     shadowColor: "#D59A25",
@@ -611,12 +656,12 @@ const styles = StyleSheet.create({
   },
   onboardingImageHalo: {
     backgroundColor: "#FFFDF7",
-    borderRadius: 34,
+    borderRadius: 38,
     position: "absolute",
   },
   onboardingSaiImage: {
     borderColor: "#F0C865",
-    borderRadius: 28,
+    borderRadius: 32,
     borderWidth: 3,
   },
   onboardingDivider: {

@@ -1,6 +1,6 @@
 {
   "name": "@sai-family/mobile",
-  "main": "expo-router/entry",
+  "main": "index.js",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
@@ -9,6 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "postinstall": "node scripts/disable-react-native-font-scaling.js",
     "verify": "bash ./scripts/verify-setup.sh"
   },
   "dependencies": {
