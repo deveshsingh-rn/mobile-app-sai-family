@@ -75,6 +75,9 @@ const SUGGESTED_QUESTIONS = [
 
 const BACKEND_MOCK_TRANSCRIPT =
   "Sai Baba mujhe mushkil samay mein dhairya kaise rakhna chahiye?";
+const VOICE_PRIMARY_LOCALE = "hi-IN" as const;
+const VOICE_SECONDARY_LOCALE = "en-IN" as const;
+const AI_REPLY_LOCALE = "hi-IN" as const;
 
 const FULL_DUPLEX_VOICE_ENABLED =
   process.env.EXPO_PUBLIC_AI_VOICE_ENABLED === "true" ||
@@ -112,7 +115,18 @@ const logVoiceProductionCheck = (
 const createVoiceTurnId = () =>
   `turn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const getSpeechLanguage = () => "hi-IN";
+const getSpeechLanguage = () => AI_REPLY_LOCALE;
+
+const detectTranscriptLanguage = (text: string) => {
+  const devanagariCount = (text.match(/[\u0900-\u097F]/g) || []).length;
+  const latinCount = (text.match(/[A-Za-z]/g) || []).length;
+
+  if (devanagariCount === 0 && latinCount === 0) {
+    return null;
+  }
+
+  return devanagariCount >= latinCount ? "Hindi" : "English";
+};
 
 const formatWaitingTime = (elapsedMs: number) => {
   const totalSeconds = Math.floor(elapsedMs / 1000);
@@ -1664,7 +1678,7 @@ export default function AskSaiScreen() {
         setSafetyNote("");
         const response = await askDevoteeQuestion({
           conversationId,
-          locale: "en-IN",
+          locale: AI_REPLY_LOCALE,
           pillar: "experiences",
           question: questionToAsk,
           voice: false,
@@ -2005,12 +2019,18 @@ export default function AskSaiScreen() {
 
         const voiceSessionPayload = {
           conversationId,
-          locale: "hi-IN" as const,
+          locale: VOICE_PRIMARY_LOCALE,
           pillar: "experiences" as const,
-          secondaryLocale: "en-IN" as const,
+          secondaryLocale: VOICE_SECONDARY_LOCALE,
           ttsVoiceId: ELEVENLABS_VOICE_ID,
           voiceProvider: VOICE_PROVIDER,
         };
+
+        logVoiceProductionCheck("voice language contract", {
+          answerLocale: AI_REPLY_LOCALE,
+          primarySpeechLocale: VOICE_PRIMARY_LOCALE,
+          secondarySpeechLocale: VOICE_SECONDARY_LOCALE,
+        });
 
         let session: DevoteeAiVoiceSession;
 
@@ -2500,6 +2520,9 @@ export default function AskSaiScreen() {
 
   const modalTranscript =
     voicePartialTranscript || voiceFinalTranscript || question;
+  const detectedTranscriptLanguage = detectTranscriptLanguage(
+    voicePartialTranscript || voiceFinalTranscript
+  );
   const hasModalTranscript = modalTranscript.trim().length >= 3;
   const isVoiceThinking =
     voiceConnectionState === "thinking" ||
@@ -2550,7 +2573,7 @@ export default function AskSaiScreen() {
             : "The voice connection stopped. Please try once more."
           : isVoiceFinished
             ? "You can read the answer or ask another question."
-            : "Share your problem, prayer, or question.";
+            : "Speak in Hindi or English. Your reply will come in Hindi.";
   const voicePrimaryLabel = isListening
     ? "Finish & Ask"
     : isVoicePlaying
@@ -2746,8 +2769,8 @@ export default function AskSaiScreen() {
             <View style={styles.voiceModeHint}>
               <Volume2 color="#B45309" size={16} strokeWidth={2.3} />
               <Text style={styles.voiceModeHintText}>
-                Use Speak for an ElevenLabs voice reply. Written questions
-                return text.
+                Speak naturally in Hindi or English. Your words stay in the
+                detected language, and Sai guidance replies in Hindi.
               </Text>
             </View>
             {/* just remove */}
@@ -2772,6 +2795,9 @@ export default function AskSaiScreen() {
               <View style={styles.voiceTranscriptCard}>
                 <Text style={styles.voiceTranscriptLabel}>
                   {voicePartialTranscript ? "Listening" : "Heard"}
+                  {detectedTranscriptLanguage
+                    ? ` in ${detectedTranscriptLanguage}`
+                    : ""}
                 </Text>
                 <Text style={styles.voiceTranscriptText}>
                   {voicePartialTranscript || voiceFinalTranscript}
@@ -3072,7 +3098,9 @@ export default function AskSaiScreen() {
                   style={styles.voiceModalTranscriptBox}
                 >
                   <Text style={styles.voiceModalTranscriptLabel}>
-                    {modalTranscript ? "Review your words" : "Listening area"}
+                    {modalTranscript
+                      ? `${detectedTranscriptLanguage || "Speech"} detected · Review your words`
+                      : "Hindi + English listening"}
                   </Text>
                   <TextInput
                     editable={!isVoiceThinking && !isVoicePlaying}
