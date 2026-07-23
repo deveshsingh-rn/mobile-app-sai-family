@@ -450,10 +450,17 @@ export default function HomeScreen() {
 
   // ───────────────── UI ─────────────────
 
+  const askSaiFrameWidth = Math.min(
+    screenWidth - 12,
+    440
+  );
+  const askSaiFrameHeight =
+    (askSaiFrameWidth - 8) / 2 + 8;
   const askSaiGlowSize = Math.max(
-    screenWidth * 1.65,
+    askSaiFrameWidth * 1.65,
     520
   );
+  console.log("askSaiGlowSize", askSaiFrameWidth );
   const askSaiBorderRotation =
     askSaiBorderProgress.interpolate({
       inputRange: [0, 1],
@@ -491,7 +498,15 @@ export default function HomeScreen() {
               },
             ]}
           >
-            <View style={styles.askSaiGlowFrame}>
+            <View
+              style={[
+                styles.askSaiGlowFrame,
+                {
+                  height: askSaiFrameHeight,
+                  width: askSaiFrameWidth,
+                },
+              ]}
+            >
               <Animated.View
                 pointerEvents="none"
                 style={[
@@ -513,8 +528,8 @@ export default function HomeScreen() {
                   colors={[
                     "#FFF7C2",
                     "#a2ff00",
-                    "#FFFFFF",
-                    "#ff5b03",
+                    "#fe4800",
+                    "#f3f1f0",
                     "#FFF7C2",
                   ]}
                   end={{ x: 1, y: 1 }}
@@ -533,11 +548,12 @@ export default function HomeScreen() {
                   colors={[
                     "rgba(24, 14, 6, 0.90)",
                     "rgba(28, 16, 7, 0.72)",
-                    "rgba(32, 18, 8, 0.34)",
-                    "rgba(36, 20, 8, 0.10)",
+                    "rgba(32, 18, 8, 0.30)",
+                    "rgba(36, 20, 8, 0)",
+                    "rgba(36, 20, 8, 0)",
                   ]}
                   end={{ x: 1, y: 0.5 }}
-                  locations={[0, 0.48, 0.82, 1]}
+                  locations={[0, 0.34, 0.6, 0.72, 1]}
                   pointerEvents="none"
                   start={{ x: 0, y: 0.5 }}
                   style={StyleSheet.absoluteFill}
@@ -682,13 +698,12 @@ const styles = StyleSheet.create({
   },
 
   askSaiGlowFrame: {
+    alignSelf: "center",
     backgroundColor: "#F59E0B",
-    borderRadius: 25,
-    height: 204,
+    borderRadius: 27,
     marginBottom: 14,
-    marginHorizontal: 16,
     overflow: "hidden",
-    padding: 2,
+    padding: 4,
     shadowColor: "#9A5C10",
     shadowOffset: {
       width: 0,
@@ -706,13 +721,13 @@ const styles = StyleSheet.create({
   },
 
   askSaiCard: {
-    backgroundColor: "#2C2C2C",
+    // backgroundColor: "#2C2C2C",
+    alignSelf: "stretch",
     borderRadius: 23,
     flex: 1,
     justifyContent: "space-between",
     overflow: "hidden",
-    padding: 16,
-    width: "100%",
+    padding: 12,
   },
 
   askSaiImage: {
@@ -741,9 +756,9 @@ const styles = StyleSheet.create({
   askSaiTitle: {
     color: "#faf9f9",
     fontFamily: "Georgia",
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: "900",
-    lineHeight: 40,
+    lineHeight: 35,
     marginTop: 2,
     textShadowColor: "rgba(0, 0, 0, 0.34)",
     textShadowOffset: { height: 1, width: 0 },
@@ -766,10 +781,11 @@ const styles = StyleSheet.create({
 
   askSaiPrompt: {
     color: "#FFF7E1",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
-    lineHeight: 22,
-    maxWidth: 230,
+    lineHeight: 19,
+    maxHeight: 240,
+    width: "100%",
     textShadowColor: "rgba(0, 0, 0, 0.32)",
     textShadowOffset: { height: 1, width: 0 },
     textShadowRadius: 5,
@@ -777,7 +793,7 @@ const styles = StyleSheet.create({
 
   askSaiMeta: {
     color: "#FFE2A0",
-    fontSize: 12.5,
+    fontSize: 11,
     fontWeight: "700",
     marginTop: 5,
   },
@@ -788,7 +804,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.74)",
     borderRadius: 24,
     borderWidth: 2,
-    height: 64,
+    height: 54,
     justifyContent: "center",
     shadowColor: "#000000",
     shadowOffset: {
@@ -797,7 +813,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.22,
     shadowRadius: 12,
-    width: 64,
+    width: 54,
   },
 
   askSaiMicPressed: {
