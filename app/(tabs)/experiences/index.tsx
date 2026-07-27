@@ -371,6 +371,10 @@ export default function HomeScreen() {
     );
   }, [account?.id, dispatch]);
 
+  const openAskSai = useCallback(() => {
+    router.push("/(tabs)/experiences/ask-sai" as any);
+  }, []);
+
   // ───────────────── VIEWABILITY (AUTO-PLAY/PAUSE) ─────────────────
 
   const viewabilityConfig = React.useMemo(() => ({
@@ -460,7 +464,6 @@ export default function HomeScreen() {
     askSaiFrameWidth * 1.65,
     520
   );
-  console.log("askSaiGlowSize", askSaiFrameWidth );
   const askSaiBorderRotation =
     askSaiBorderProgress.interpolate({
       inputRange: [0, 1],
@@ -498,13 +501,18 @@ export default function HomeScreen() {
               },
             ]}
           >
-            <View
-              style={[
+            <Pressable
+              accessibilityHint="Opens the Ask Sai voice and text assistant"
+              accessibilityLabel="Ask Sai"
+              accessibilityRole="button"
+              onPress={openAskSai}
+              style={({ pressed }) => [
                 styles.askSaiGlowFrame,
                 {
                   height: askSaiFrameHeight,
                   width: askSaiFrameWidth,
                 },
+                pressed && styles.askSaiCardPressed,
               ]}
             >
               <Animated.View
@@ -584,40 +592,24 @@ export default function HomeScreen() {
                       Voice assistant for devotees
                     </Text>
                   </View>
-                  <Pressable
-                    onPress={() =>
-                      router.push("/(tabs)/experiences/ask-sai" as any)
-                    }
-                    style={({ pressed }) => [
-                      styles.askSaiMicButton,
-                      pressed && styles.askSaiMicPressed,
-                    ]}
-                  >
+                  <View style={styles.askSaiMicButton}>
                     <Type
                       color="#3A2108"
                       size={26}
                       strokeWidth={2.4}
                     />
-                  </Pressable>
+                  </View>
 
-                  <Pressable
-                    onPress={() =>
-                      router.push("/(tabs)/experiences/ask-sai" as any)
-                    }
-                    style={({ pressed }) => [
-                      styles.askSaiMicButton,
-                      pressed && styles.askSaiMicPressed,
-                    ]}
-                  >
+                  <View style={styles.askSaiMicButton}>
                     <Mic2
                       color="#3A2108"
                       size={26}
                       strokeWidth={2.4}
                     />
-                  </Pressable>
+                  </View>
                 </View>
               </ImageBackground>
-            </View>
+            </Pressable>
           </Animated.View>
         )}
 
@@ -720,6 +712,11 @@ const styles = StyleSheet.create({
     top: "50%",
   },
 
+  askSaiCardPressed: {
+    opacity: 0.94,
+    transform: [{ scale: 0.985 }],
+  },
+
   askSaiCard: {
     // backgroundColor: "#2C2C2C",
     alignSelf: "stretch",
@@ -814,11 +811,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 12,
     width: 54,
-  },
-
-  askSaiMicPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.97 }],
   },
 
   header: {

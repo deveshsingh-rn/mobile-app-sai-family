@@ -461,6 +461,8 @@ export default function AskSaiScreen() {
   const voiceTranscriptYRef = useRef(0);
   const voiceSocketRef =
     useRef<ReturnType<typeof createDevoteeAiVoiceSocket> | null>(null);
+  const handleVoiceQuestionRef = useRef<(() => Promise<void>) | null>(null);
+  const isMicCaptureReadyRef = useRef(false);
   const voiceSessionRef = useRef<DevoteeAiVoiceSession | null>(null);
   const pendingVoiceStartRef = useRef<PendingVoiceStartContext | null>(null);
   const voiceConnectedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -1041,6 +1043,7 @@ export default function AskSaiScreen() {
     }
 
     pendingVoiceStartRef.current = null;
+    isMicCaptureReadyRef.current = false;
     void stopWaitingTone();
 
     void getSaiAudioStreamModule()
@@ -1231,8 +1234,9 @@ export default function AskSaiScreen() {
       voiceConnectedTimeoutRef.current = null;
     }
 
-    setIsListening(true);
-    setVoiceConnectionState("listening");
+    isMicCaptureReadyRef.current = false;
+    setIsListening(false);
+    setVoiceConnectionState("connected");
     voiceTimingRef.current.startedAt = Date.now();
 
     logVoiceDebug("Sending start event and starting mic stream", {
@@ -1313,14 +1317,50 @@ export default function AskSaiScreen() {
           });
           setVoiceConnectionState("error");
           setVoiceError(event.message);
+          isMicCaptureReadyRef.current = false;
+          setIsListening(false);
           void pendingStart.audioStream.stopSaiAudioStreamAsync();
         }
       );
 
-    await pendingStart.audioStream.startSaiAudioStreamAsync({
-      chunkMs: pendingStart.audioChunkMs,
-      sampleRate: pendingStart.audioSampleRate,
-    });
+    try {
+      await pendingStart.audioStream.startSaiAudioStreamAsync({
+        chunkMs: pendingStart.audioChunkMs,
+        sampleRate: pendingStart.audioSampleRate,
+      });
+
+      if (
+        activeVoiceTurnIdRef.current !== pendingStart.turnId ||
+        pendingStart.socketClient.readyState !== WebSocket.OPEN
+      ) {
+        await pendingStart.audioStream.stopSaiAudioStreamAsync();
+        return;
+      }
+
+      isMicCaptureReadyRef.current = true;
+      setIsListening(true);
+      setVoiceConnectionState("listening");
+      void Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Success
+      ).catch(() => {
+        // Haptic cue is optional on unsupported devices.
+      });
+
+      logVoiceDebug("Microphone capture ready; user may speak now", {
+        turnId: pendingStart.turnId,
+      });
+    } catch (error) {
+      isMicCaptureReadyRef.current = false;
+      setIsListening(false);
+      setVoiceConnectionState("error");
+      setVoiceError(
+        "The microphone could not start. Please close voice mode and try again."
+      );
+      logVoiceDebug("Native microphone start failed", {
+        error: error instanceof Error ? error.message : String(error),
+        turnId: pendingStart.turnId,
+      });
+    }
   }, []);
 
   const handleVoiceServerEvent = useCallback(
@@ -1368,6 +1408,11 @@ export default function AskSaiScreen() {
             void startConnectedVoiceStreaming();
           } else if (event.state === "speaking") {
             setVoiceConnectionState("thinking");
+          } else if (
+            event.state === "listening" &&
+            !isMicCaptureReadyRef.current
+          ) {
+            setVoiceConnectionState("connected");
           } else {
             setVoiceConnectionState(event.state);
           }
@@ -1442,6 +1487,7 @@ export default function AskSaiScreen() {
           setVoiceFinalTranscript(event.text);
           setVoicePartialTranscript("");
           setQuestion(event.text);
+          isMicCaptureReadyRef.current = false;
           setIsListening(false);
           void getSaiAudioStreamModule()
             .then((audioStream) => audioStream.stopSaiAudioStreamAsync())
@@ -1823,6 +1869,7 @@ export default function AskSaiScreen() {
             setVoicePartialTranscript(event.isFinal ? "" : transcript);
 
             if (event.isFinal) {
+              isMicCaptureReadyRef.current = false;
               setIsListening(false);
               setVoiceFinalTranscript(transcript);
               voiceFinalTranscriptRef.current = transcript;
@@ -1834,6 +1881,7 @@ export default function AskSaiScreen() {
         errorSubscription = ExpoSpeechRecognitionModule.addListener(
           "error",
           (event: { message?: string }) => {
+            isMicCaptureReadyRef.current = false;
             setIsListening(false);
             setVoiceError(
               event.message ||
@@ -1845,6 +1893,7 @@ export default function AskSaiScreen() {
         endSubscription = ExpoSpeechRecognitionModule.addListener(
           "end",
           () => {
+            isMicCaptureReadyRef.current = false;
             setIsListening(false);
           }
         );
@@ -1854,6 +1903,8 @@ export default function AskSaiScreen() {
           return;
         }
 
+        isMicCaptureReadyRef.current = false;
+        setIsListening(false);
         setVoiceError(
           "Voice input needs a custom development build. Please type your question for now."
         );
@@ -1897,7 +1948,8 @@ export default function AskSaiScreen() {
         setVoicePartialTranscript("");
         setVoiceFinalTranscript("");
         voiceFinalTranscriptRef.current = "";
-        setIsListening(true);
+        isMicCaptureReadyRef.current = false;
+        setIsListening(false);
         ExpoSpeechRecognitionModule.start({
           addsPunctuation: true,
           contextualStrings: [
@@ -1916,9 +1968,19 @@ export default function AskSaiScreen() {
           maxAlternatives: 3,
           requiresOnDeviceRecognition: false,
         });
+        isMicCaptureReadyRef.current = true;
+        setIsListening(true);
+        setVoiceConnectionState("listening");
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success
+        ).catch(() => {
+          // Haptic cue is optional on unsupported devices.
+        });
 
         return true;
       } catch (error) {
+        isMicCaptureReadyRef.current = false;
+        setIsListening(false);
         logVoiceDebug("Speech recognition fallback failed", {
           error: error instanceof Error ? error.message : String(error),
         });
@@ -1953,9 +2015,14 @@ export default function AskSaiScreen() {
         pendingVoiceStartRef.current = null;
         activeVoiceTurnIdRef.current = null;
         setActiveVoiceTurnId(null);
+        isMicCaptureReadyRef.current = false;
         setIsListening(false);
         setVoiceConnectionState("idle");
         setVoiceError("");
+
+        setTimeout(() => {
+          void handleVoiceQuestionRef.current?.();
+        }, 0);
         return;
       }
 
@@ -1984,6 +2051,7 @@ export default function AskSaiScreen() {
       }
 
       setIsListening(false);
+      isMicCaptureReadyRef.current = false;
       setVoiceConnectionState("thinking");
       return;
     }
@@ -1997,6 +2065,7 @@ export default function AskSaiScreen() {
         // Nothing else to do; the fallback text is already visible.
       }
 
+      isMicCaptureReadyRef.current = false;
       setIsListening(false);
       return;
     }
@@ -2024,6 +2093,7 @@ export default function AskSaiScreen() {
         setVoiceConnectionState("connecting");
         setVoicePartialTranscript("");
         setVoiceFinalTranscript("");
+        isMicCaptureReadyRef.current = false;
         voiceFinalTranscriptRef.current = "";
         voiceAnswerBufferRef.current = "";
         voiceAudioChunkPartsRef.current = [];
@@ -2214,6 +2284,7 @@ export default function AskSaiScreen() {
             pendingVoiceStartRef.current = null;
             voiceSocketRef.current = null;
             activeVoiceTurnIdRef.current = null;
+            isMicCaptureReadyRef.current = false;
             setActiveVoiceTurnId(null);
             setIsListening(false);
             setVoiceConnectionState((currentState) =>
@@ -2237,6 +2308,7 @@ export default function AskSaiScreen() {
               // Recording may already be stopped.
             });
             pendingVoiceStartRef.current = null;
+            isMicCaptureReadyRef.current = false;
             setIsListening(false);
             setVoiceConnectionState("error");
             setVoicePlaybackStage("failed");
@@ -2275,6 +2347,7 @@ export default function AskSaiScreen() {
                 });
 
                 pendingVoiceStartRef.current = null;
+                isMicCaptureReadyRef.current = false;
                 setVoiceConnectionState("error");
                 setVoiceError(
                   "Voice backend did not confirm connection. Please try again."
@@ -2326,6 +2399,7 @@ export default function AskSaiScreen() {
       pendingVoiceStartRef.current = null;
       voiceSocketRef.current = null;
       activeVoiceTurnIdRef.current = null;
+      isMicCaptureReadyRef.current = false;
       setActiveVoiceTurnId(null);
       setIsListening(false);
       setVoiceConnectionState("idle");
@@ -2353,6 +2427,10 @@ export default function AskSaiScreen() {
     stopSpeech,
     voiceConnectionState,
   ]);
+
+  useEffect(() => {
+    handleVoiceQuestionRef.current = handleVoiceQuestion;
+  }, [handleVoiceQuestion]);
 
   const openVoiceModal = useCallback(() => {
     setIsVoiceModalVisible(true);
@@ -2456,7 +2534,7 @@ export default function AskSaiScreen() {
       closeVoiceSession();
       setTimeout(() => {
         setIsVoiceModalVisible(true);
-        void handleVoiceQuestion();
+        void handleVoiceQuestionRef.current?.();
       }, 260);
       return;
     }
@@ -2464,12 +2542,16 @@ export default function AskSaiScreen() {
     await startSpeechRecognitionFallback();
   }, [
     closeVoiceSession,
-    handleVoiceQuestion,
     isListening,
     startSpeechRecognitionFallback,
     stopSpeech,
     stopWaitingTone,
   ]);
+
+  const stopAndAskAgain = useCallback(() => {
+    setIsVoiceModalVisible(true);
+    void listenAgainFromModal();
+  }, [listenAgainFromModal]);
 
   const openConversation = useCallback(
     async (id: string) => {
@@ -2603,25 +2685,30 @@ export default function AskSaiScreen() {
   const isVoiceFinished = voicePlaybackStage === "completed";
   const hasVoiceFailed =
     voicePlaybackStage === "failed" || voiceConnectionState === "error";
+  const isVoiceStarting =
+    voiceConnectionState === "connecting" ||
+    (voiceConnectionState === "connected" && !isListening);
   const canInterruptVoiceReply = isVoicePlaying || isVoiceThinking;
   const isVoiceSubmitDisabled =
     isSubmitting ||
-    voiceConnectionState === "connecting" ||
+    isVoiceStarting ||
     (!FULL_DUPLEX_VOICE_ENABLED && !hasModalTranscript);
   const canListenAgain =
     !isListening &&
     !isVoiceThinking &&
     !isVoicePlaying &&
-    voiceConnectionState !== "connecting" &&
+    !isVoiceStarting &&
     (hasVoiceFailed || isVoiceFinished || hasModalTranscript);
   const voiceModalTitle = isVoicePlaying
     ? "Sai guidance is playing"
     : voicePlaybackStage === "buffering"
       ? "Preparing the voice"
+    : isVoiceStarting
+      ? "Getting microphone ready"
     : isVoiceThinking
       ? "Preparing guidance"
       : isListening
-        ? "I am listening"
+        ? "Speak now"
         : hasVoiceFailed
           ? "Voice could not play"
           : isVoiceFinished
@@ -2631,10 +2718,12 @@ export default function AskSaiScreen() {
     ? "ElevenLabs voice is playing. Turn up media volume if needed."
     : voicePlaybackStage === "buffering"
       ? "Your answer is ready. Audio will begin shortly."
+    : isVoiceStarting
+      ? "Please wait. Start speaking only when you see Speak now."
     : isVoiceThinking
       ? "Please wait while the written reply and voice are prepared."
       : isListening
-        ? "Speak clearly, then tap Finish & Ask."
+        ? "The microphone is capturing your voice. Tap Finish & Ask when done."
         : hasVoiceFailed
           ? answer
             ? "Your written reply is safe below. You can try voice again."
@@ -2646,6 +2735,8 @@ export default function AskSaiScreen() {
     ? "Finish & Ask"
     : isVoicePlaying
       ? "Stop & ask again"
+      : isVoiceStarting
+        ? "Please wait..."
       : isVoiceThinking
         ? "Cancel & ask again"
         : hasVoiceFailed
@@ -2963,9 +3054,15 @@ export default function AskSaiScreen() {
                 VOICE_PROVIDER !== "elevenlabs" ? (
                   <Pressable
                     accessibilityLabel={
-                      isSpeaking ? "Stop voice reply" : "Play voice reply"
+                      isSpeaking
+                        ? "Stop voice reply and ask again"
+                        : "Play voice reply"
                     }
-                    onPress={speakAnswer}
+                    onPress={
+                      isSpeaking
+                        ? stopAndAskAgain
+                        : speakAnswer
+                    }
                     style={({ pressed }) => [
                       styles.speakButton,
                       pressed && styles.pressed,
@@ -2974,7 +3071,9 @@ export default function AskSaiScreen() {
                     {isSpeaking ? (
                       <>
                         <Pause color="#FFFFFF" size={18} fill="#FFFFFF" />
-                        <Text style={styles.speakButtonText}>Stop</Text>
+                        <Text style={styles.speakButtonText}>
+                          Stop & ask
+                        </Text>
                       </>
                     ) : (
                       <Volume2
@@ -3138,6 +3237,39 @@ export default function AskSaiScreen() {
                     </Text>
                   </View>
                 </View>
+
+                {isVoiceStarting || isListening ? (
+                  <View
+                    accessibilityLiveRegion="polite"
+                    style={[
+                      styles.voiceCaptureStatus,
+                      isListening && styles.voiceCaptureStatusReady,
+                    ]}
+                  >
+                    {isVoiceStarting ? (
+                      <ActivityIndicator color="#B45309" size="small" />
+                    ) : (
+                      <View style={styles.voiceCaptureReadyDot} />
+                    )}
+                    <View style={styles.voiceCaptureStatusCopy}>
+                      <Text
+                        style={[
+                          styles.voiceCaptureStatusTitle,
+                          isListening && styles.voiceCaptureStatusTitleReady,
+                        ]}
+                      >
+                        {isListening
+                          ? "Speak now"
+                          : "Please wait"}
+                      </Text>
+                      <Text style={styles.voiceCaptureStatusText}>
+                        {isListening
+                          ? "Your voice is being captured."
+                          : "Connecting and preparing the microphone."}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
 
                 <View style={styles.voiceWavePanel}>
                   <View
@@ -3897,6 +4029,50 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     lineHeight: 20,
     marginTop: 4,
+  },
+  voiceCaptureStatus: {
+    alignItems: "center",
+    backgroundColor: "#FFF8E7",
+    borderBottomColor: "#F1DEC0",
+    borderBottomWidth: 1,
+    borderTopColor: "#F1DEC0",
+    borderTopWidth: 1,
+    flexDirection: "row",
+    gap: 11,
+    marginBottom: 14,
+    paddingHorizontal: 4,
+    paddingVertical: 11,
+  },
+  voiceCaptureStatusReady: {
+    backgroundColor: "#F0FDF4",
+    borderBottomColor: "#BBF7D0",
+    borderTopColor: "#BBF7D0",
+  },
+  voiceCaptureReadyDot: {
+    backgroundColor: "#16A34A",
+    borderColor: "#BBF7D0",
+    borderRadius: 10,
+    borderWidth: 4,
+    height: 20,
+    width: 20,
+  },
+  voiceCaptureStatusCopy: {
+    flex: 1,
+  },
+  voiceCaptureStatusTitle: {
+    color: "#92400E",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  voiceCaptureStatusTitleReady: {
+    color: "#166534",
+  },
+  voiceCaptureStatusText: {
+    color: "#6B5A45",
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 2,
   },
   voiceWavePanel: {
     alignItems: "center",

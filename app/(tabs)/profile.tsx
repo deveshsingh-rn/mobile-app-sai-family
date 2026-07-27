@@ -82,7 +82,7 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type SecurityAction = "setup" | "verify" | "resend";
 
 export default function ProfileScreen() {
-  const [activeTab, setActiveTab] = useState<ProfileTab>("details");
+  const [activeTab, setActiveTab] = useState<ProfileTab>("settings");
   const [securityEmail, setSecurityEmail] = useState("");
   const [securityPassword, setSecurityPassword] = useState("");
   const [securityConfirmPassword, setSecurityConfirmPassword] =
@@ -339,15 +339,16 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.segment}>
-        <SegmentButton
-          isActive={activeTab === "details"}
-          label="Profile Detail"
-          onPress={() => setActiveTab("details")}
-        />
+       
         <SegmentButton
           isActive={activeTab === "settings"}
           label="App Settings"
           onPress={() => setActiveTab("settings")}
+        />
+         <SegmentButton
+          isActive={activeTab === "details"}
+          label="Profile Detail"
+          onPress={() => setActiveTab("details")}
         />
       </View>
 
@@ -366,7 +367,7 @@ export default function ProfileScreen() {
             <ChevronRight color="#A8A29E" size={18} />
           </View>
 
-          <View style={styles.detailCard}>
+          {/* <View style={styles.detailCard}>
             <DetailRow label="Mobile" value={account?.mobileNumber} />
             <DetailRow label="Email" value={account?.email} />
             <DetailRow
@@ -403,12 +404,12 @@ export default function ProfileScreen() {
                 account?.language
               )?.toUpperCase()}
             />
-          </View>
+          </View> */}
         </View>
       ) : (
         <View style={styles.section}>
-          <View style={styles.securityCard}>
-            <View style={styles.securityHeader}>
+          {/* <View style={styles.securityCard}> */}
+            {/* <View style={styles.securityHeader}>
               <View style={styles.securityIcon}>
                 <KeyRound color="#F97316" size={22} />
               </View>
@@ -434,9 +435,9 @@ export default function ProfileScreen() {
                   {hasEmailLoginReady ? "Verified" : "Pending"}
                 </Text>
               </View>
-            </View>
+            </View> */}
 
-            <View style={styles.formGroup}>
+            {/* <View style={styles.formGroup}>
               <Text style={styles.inputLabel}>Email Address</Text>
               <View style={styles.inputShell}>
                 <Mail color="#A8A29E" size={18} />
@@ -451,9 +452,9 @@ export default function ProfileScreen() {
                   value={securityEmail}
                 />
               </View>
-            </View>
+            </View> */}
 
-            {!hasEmailLoginReady && (
+            {/* {!hasEmailLoginReady && (
               <>
                 <View style={styles.passwordGrid}>
                   <View style={styles.formGroup}>
@@ -563,17 +564,25 @@ export default function ProfileScreen() {
                   </View>
                 )}
               </>
-            )}
+            )} */}
 
-            {hasEmailLoginReady && (
+            {/* {hasEmailLoginReady && (
               <View style={styles.verifiedPanel}>
                 <CheckCircle2 color="#15803D" size={18} />
                 <Text style={styles.verifiedPanelText}>
                   Email and password login is active for this account.
                 </Text>
               </View>
-            )}
-          </View>
+            )} */}
+          {/* </View> */}
+           <SettingRow
+            description="Log out of your devotee account."
+            hideComingSoon
+            icon={<LogOut size={21} color="#DC2626" />}
+            isDestructive
+            onPress={handleLogout}
+            title="Log Out"
+          />
 
           <SettingRow
             description="Manage prayer, event, and family update alerts."
@@ -593,14 +602,7 @@ export default function ProfileScreen() {
             onPress={() => console.log("Open Language Setting")}
             title="Language"
           />
-          <SettingRow
-            description="Log out of your devotee account."
-            hideComingSoon
-            icon={<LogOut size={21} color="#DC2626" />}
-            isDestructive
-            onPress={handleLogout}
-            title="Log Out"
-          />
+         
         </View>
       )}
     </ScrollView>
