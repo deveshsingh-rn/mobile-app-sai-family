@@ -30,6 +30,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   History,
+  Languages,
   Mic,
   Mic2,
   Pause,
@@ -75,9 +76,100 @@ const SUGGESTED_QUESTIONS = [
 
 const BACKEND_MOCK_TRANSCRIPT =
   "Sai Baba mujhe mushkil samay mein dhairya kaise rakhna chahiye?";
-const VOICE_PRIMARY_LOCALE = "hi-IN" as const;
-const VOICE_SECONDARY_LOCALE = "en-IN" as const;
-const AI_REPLY_LOCALE = "hi-IN" as const;
+
+type AiLanguageOption = {
+  label: string;
+  locale: string;
+  nativeLabel: string;
+  secondaryLocale: string;
+};
+
+const AI_LANGUAGES: AiLanguageOption[] = [
+  {
+    label: "Hindi",
+    locale: "hi-IN",
+    nativeLabel: "हिंदी",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "English",
+    locale: "en-IN",
+    nativeLabel: "English",
+    secondaryLocale: "hi-IN",
+  },
+  {
+    label: "Marathi",
+    locale: "mr-IN",
+    nativeLabel: "मराठी",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "Bengali",
+    locale: "bn-IN",
+    nativeLabel: "বাংলা",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "Gujarati",
+    locale: "gu-IN",
+    nativeLabel: "ગુજરાતી",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "Punjabi",
+    locale: "pa-IN",
+    nativeLabel: "ਪੰਜਾਬੀ",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "Tamil",
+    locale: "ta-IN",
+    nativeLabel: "தமிழ்",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "Telugu",
+    locale: "te-IN",
+    nativeLabel: "తెలుగు",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "Kannada",
+    locale: "kn-IN",
+    nativeLabel: "ಕನ್ನಡ",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "Malayalam",
+    locale: "ml-IN",
+    nativeLabel: "മലയാളം",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "Odia",
+    locale: "or-IN",
+    nativeLabel: "ଓଡ଼ିଆ",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "Assamese",
+    locale: "as-IN",
+    nativeLabel: "অসমীয়া",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "Urdu",
+    locale: "ur-IN",
+    nativeLabel: "اردو",
+    secondaryLocale: "en-IN",
+  },
+  {
+    label: "Nepali",
+    locale: "ne-NP",
+    nativeLabel: "नेपाली",
+    secondaryLocale: "en-IN",
+  },
+];
 
 const FULL_DUPLEX_VOICE_ENABLED =
   process.env.EXPO_PUBLIC_AI_VOICE_ENABLED === "true" ||
@@ -115,17 +207,40 @@ const logVoiceProductionCheck = (
 const createVoiceTurnId = () =>
   `turn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-const getSpeechLanguage = () => AI_REPLY_LOCALE;
+const detectTranscriptLanguage = (
+  text: string,
+  selectedLanguage: AiLanguageOption
+) => {
+  const scriptMatchers: {
+    labels: string[];
+    pattern: RegExp;
+  }[] = [
+    { labels: ["Urdu"], pattern: /[\u0600-\u06FF]/ },
+    { labels: ["Assamese", "Bengali"], pattern: /[\u0980-\u09FF]/ },
+    { labels: ["Punjabi"], pattern: /[\u0A00-\u0A7F]/ },
+    { labels: ["Gujarati"], pattern: /[\u0A80-\u0AFF]/ },
+    { labels: ["Odia"], pattern: /[\u0B00-\u0B7F]/ },
+    { labels: ["Tamil"], pattern: /[\u0B80-\u0BFF]/ },
+    { labels: ["Telugu"], pattern: /[\u0C00-\u0C7F]/ },
+    { labels: ["Kannada"], pattern: /[\u0C80-\u0CFF]/ },
+    { labels: ["Malayalam"], pattern: /[\u0D00-\u0D7F]/ },
+    {
+      labels: ["Hindi", "Marathi", "Nepali"],
+      pattern: /[\u0900-\u097F]/,
+    },
+  ];
 
-const detectTranscriptLanguage = (text: string) => {
-  const devanagariCount = (text.match(/[\u0900-\u097F]/g) || []).length;
-  const latinCount = (text.match(/[A-Za-z]/g) || []).length;
+  const matchingScript = scriptMatchers.find(({ pattern }) =>
+    pattern.test(text)
+  );
 
-  if (devanagariCount === 0 && latinCount === 0) {
-    return null;
+  if (matchingScript) {
+    return matchingScript.labels.includes(selectedLanguage.label)
+      ? selectedLanguage.label
+      : matchingScript.labels[0];
   }
 
-  return devanagariCount >= latinCount ? "Hindi" : "English";
+  return /[A-Za-z]/.test(text) ? "English" : selectedLanguage.label;
 };
 
 const appendUniqueMessages = (
@@ -550,6 +665,8 @@ export default function AskSaiScreen() {
     useState<string | null>(null);
   const [voicePartialTranscript, setVoicePartialTranscript] = useState("");
   const [voiceFinalTranscript, setVoiceFinalTranscript] = useState("");
+  const [selectedLanguage, setSelectedLanguage] =
+    useState<AiLanguageOption>(AI_LANGUAGES[0]);
 
   const canSubmit = useMemo(
     () => question.trim().length >= 3 && !isSubmitting,
@@ -588,6 +705,23 @@ export default function AskSaiScreen() {
 
   const isVoiceControlActive =
     isListening || voiceConnectionState !== "idle";
+
+  const selectLanguage = useCallback(
+    (language: AiLanguageOption) => {
+      if (isVoiceControlActive || isSubmitting) {
+        return;
+      }
+
+      setSelectedLanguage(language);
+      setVoiceError("");
+      trackProductEvent("Ask Sai Language Selected", {
+        language: language.label,
+        locale: language.locale,
+        pillar: "experiences",
+      });
+    },
+    [isSubmitting, isVoiceControlActive]
+  );
 
   useEffect(() => {
     voiceConnectionStateRef.current = voiceConnectionState;
@@ -1123,7 +1257,7 @@ export default function AskSaiScreen() {
         await Speech.stop();
         setIsSpeaking(true);
         Speech.speak(textToSpeak, {
-          language: getSpeechLanguage(),
+          language: selectedLanguage.locale,
           pitch: 1,
           rate: Platform.OS === "ios" ? 0.48 : 0.9,
           onDone: () => setIsSpeaking(false),
@@ -1151,7 +1285,7 @@ export default function AskSaiScreen() {
         pillar: "experiences",
       });
     },
-    []
+    [selectedLanguage.locale]
   );
 
   const speakAnswer = useCallback(async () => {
@@ -1772,7 +1906,7 @@ export default function AskSaiScreen() {
         setSafetyNote("");
         const response = await askDevoteeQuestion({
           conversationId,
-          locale: AI_REPLY_LOCALE,
+          locale: selectedLanguage.locale,
           pillar: "experiences",
           question: questionToAsk,
           voice: false,
@@ -1837,7 +1971,14 @@ export default function AskSaiScreen() {
         setIsSubmitting(false);
       }
     },
-    [conversationId, loadConversations, question, speakText, stopSpeech]
+    [
+      conversationId,
+      loadConversations,
+      question,
+      selectedLanguage.locale,
+      speakText,
+      stopSpeech,
+    ]
   );
 
   useEffect(() => {
@@ -1964,7 +2105,7 @@ export default function AskSaiScreen() {
           ],
           continuous: true,
           interimResults: true,
-          lang: getSpeechLanguage(),
+          lang: selectedLanguage.locale,
           maxAlternatives: 3,
           requiresOnDeviceRecognition: false,
         });
@@ -1991,7 +2132,7 @@ export default function AskSaiScreen() {
         return false;
       }
     },
-    []
+    [selectedLanguage.locale]
   );
 
   const handleVoiceQuestion = useCallback(async () => {
@@ -2141,17 +2282,17 @@ export default function AskSaiScreen() {
 
         const voiceSessionPayload = {
           conversationId,
-          locale: VOICE_PRIMARY_LOCALE,
+          locale: selectedLanguage.locale,
           pillar: "experiences" as const,
-          secondaryLocale: VOICE_SECONDARY_LOCALE,
+          secondaryLocale: selectedLanguage.secondaryLocale,
           ttsVoiceId: ELEVENLABS_VOICE_ID,
           voiceProvider: VOICE_PROVIDER,
         };
 
         logVoiceProductionCheck("voice language contract", {
-          answerLocale: AI_REPLY_LOCALE,
-          primarySpeechLocale: VOICE_PRIMARY_LOCALE,
-          secondarySpeechLocale: VOICE_SECONDARY_LOCALE,
+          answerLocale: selectedLanguage.locale,
+          primarySpeechLocale: selectedLanguage.locale,
+          secondarySpeechLocale: selectedLanguage.secondaryLocale,
         });
 
         let session: DevoteeAiVoiceSession;
@@ -2423,6 +2564,8 @@ export default function AskSaiScreen() {
     conversationId,
     handleVoiceServerEvent,
     isListening,
+    selectedLanguage.locale,
+    selectedLanguage.secondaryLocale,
     startSpeechRecognitionFallback,
     stopSpeech,
     voiceConnectionState,
@@ -2672,7 +2815,8 @@ export default function AskSaiScreen() {
   const modalTranscript =
     voicePartialTranscript || voiceFinalTranscript || question;
   const detectedTranscriptLanguage = detectTranscriptLanguage(
-    voicePartialTranscript || voiceFinalTranscript
+    voicePartialTranscript || voiceFinalTranscript,
+    selectedLanguage
   );
   const hasModalTranscript = modalTranscript.trim().length >= 3;
   const isVoiceThinking =
@@ -2730,7 +2874,7 @@ export default function AskSaiScreen() {
             : "The voice connection stopped. Please try once more."
           : isVoiceFinished
             ? "You can read the answer or ask another question."
-            : "Speak in Hindi or English. Your reply will come in Hindi.";
+            : `Speak in ${selectedLanguage.label}. English words can be mixed in.`;
   const voicePrimaryLabel = isListening
     ? "Finish & Ask"
     : isVoicePlaying
@@ -2901,9 +3045,65 @@ export default function AskSaiScreen() {
             style={styles.card}
           >
             <View style={styles.questionHeader}>
-              {/* <Text style={styles.label}>Your question</Text> */}
-            
+              <View style={styles.languageTitleRow}>
+                <Languages color="#B45309" size={19} strokeWidth={2.4} />
+                <View style={styles.languageTitleCopy}>
+                  <Text style={styles.languageTitle}>Choose your language</Text>
+                  <Text style={styles.languageSubtitle}>
+                    Sai will listen and reply in the selected language.
+                  </Text>
+                </View>
+              </View>
             </View>
+
+            <ScrollView
+              contentContainerStyle={styles.languageScroller}
+              horizontal
+              keyboardShouldPersistTaps="handled"
+              showsHorizontalScrollIndicator={false}
+            >
+              {AI_LANGUAGES.map((language) => {
+                const isSelected =
+                  language.locale === selectedLanguage.locale;
+
+                return (
+                  <Pressable
+                    accessibilityLabel={`Use ${language.label} for Ask Sai`}
+                    accessibilityRole="button"
+                    accessibilityState={{
+                      disabled: isVoiceControlActive || isSubmitting,
+                      selected: isSelected,
+                    }}
+                    disabled={isVoiceControlActive || isSubmitting}
+                    key={language.locale}
+                    onPress={() => selectLanguage(language)}
+                    style={({ pressed }) => [
+                      styles.languageChip,
+                      isSelected && styles.languageChipSelected,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.languageNativeLabel,
+                        isSelected && styles.languageChipTextSelected,
+                      ]}
+                    >
+                      {language.nativeLabel}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.languageEnglishLabel,
+                        isSelected && styles.languageChipTextSelected,
+                      ]}
+                    >
+                      {language.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
             <TextInput
               multiline
               onChangeText={setQuestion}
@@ -2920,8 +3120,8 @@ export default function AskSaiScreen() {
             <View style={styles.voiceModeHint}>
               <Volume2 color="#B45309" size={16} strokeWidth={2.3} />
               <Text style={styles.voiceModeHintText}>
-                Speak naturally in your preferred language. Your words stay in the
-                detected language, and Sai replies in your preferred language.
+                Speak naturally in {selectedLanguage.label}. English words can
+                be mixed in, and Sai will reply in {selectedLanguage.label}.
               </Text>
             </View>
             {/* just remove */}
@@ -3224,6 +3424,14 @@ export default function AskSaiScreen() {
                   </View>
                 </View>
 
+                <View style={styles.voiceLanguageBadge}>
+                  <Languages color="#92400E" size={17} strokeWidth={2.4} />
+                  <Text style={styles.voiceLanguageBadgeText}>
+                    Listening in {selectedLanguage.nativeLabel} (
+                    {selectedLanguage.label})
+                  </Text>
+                </View>
+
                 {isVoiceStarting || isListening ? (
                   <View
                     accessibilityLiveRegion="polite"
@@ -3298,7 +3506,7 @@ export default function AskSaiScreen() {
                   <Text style={styles.voiceModalTranscriptLabel}>
                     {modalTranscript
                       ? `${detectedTranscriptLanguage || "Speech"} detected · Review your words`
-                      : "Hindi + English listening"}
+                      : `${selectedLanguage.label} + English listening`}
                   </Text>
                   <TextInput
                     editable={!isVoiceThinking && !isVoicePlaying}
@@ -3619,6 +3827,62 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 10,
+  },
+  languageTitleRow: {
+    alignItems: "center",
+    flex: 1,
+    flexDirection: "row",
+    gap: 10,
+  },
+  languageTitleCopy: {
+    flex: 1,
+  },
+  languageTitle: {
+    color: "#2F2A24",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  languageSubtitle: {
+    color: "#786A5A",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  languageScroller: {
+    gap: 9,
+    paddingBottom: 14,
+    paddingRight: 8,
+  },
+  languageChip: {
+    alignItems: "center",
+    backgroundColor: "#FFFDF8",
+    borderColor: "#E7D7C0",
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 62,
+    minWidth: 92,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+  },
+  languageChipSelected: {
+    backgroundColor: "#B45309",
+    borderColor: "#B45309",
+  },
+  languageNativeLabel: {
+    color: "#3F352B",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  languageEnglishLabel: {
+    color: "#786A5A",
+    fontSize: 11,
+    fontWeight: "800",
+    marginTop: 3,
+  },
+  languageChipTextSelected: {
+    color: "#FFFFFF",
   },
   voiceStatePill: {
     backgroundColor: "#F8FAFC",
@@ -3994,6 +4258,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 14,
     marginBottom: 18,
+  },
+  voiceLanguageBadge: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 7,
+    marginBottom: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  voiceLanguageBadgeText: {
+    color: "#7C2D12",
+    fontSize: 13,
+    fontWeight: "900",
   },
   voiceModalIcon: {
     alignItems: "center",

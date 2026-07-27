@@ -95,9 +95,9 @@ export type DevoteeAiVoiceState =
 
 export type CreateDevoteeAiVoiceSessionPayload = {
   conversationId?: string;
-  locale?: "hi-IN" | "en-IN";
+  locale?: string;
   pillar?: DevoteeAiPillar;
-  secondaryLocale?: "hi-IN" | "en-IN";
+  secondaryLocale?: string;
   ttsVoiceId?: string;
   voiceProvider?: "elevenlabs" | "mock";
 };
