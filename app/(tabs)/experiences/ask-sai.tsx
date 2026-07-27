@@ -2779,13 +2779,13 @@ export default function AskSaiScreen() {
         colors={["#FFF8E7", "#FFFFFF", "#F7FBFF"]}
         style={styles.gradient}
       >
-        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
           <View style={styles.titleRow}>
             <View style={styles.iconBubble}>
               <Sparkles color="#B45309" size={22} strokeWidth={2.4} />
             </View>
             <View style={styles.titleCopy}>
-              <Text style={styles.eyebrow}>SAI GUIDANCE</Text>
+              <Text style={styles.eyebrow}>SAI FAMILY</Text>
               <Text style={styles.title}>Ask Sai</Text>
             </View>
           </View>
@@ -2798,7 +2798,7 @@ export default function AskSaiScreen() {
           bounces
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: insets.bottom + 28 },
+            { paddingBottom: insets.bottom + 8 },
           ]}
           keyboardDismissMode={
             Platform.OS === "ios" ? "interactive" : "on-drag"
@@ -2808,7 +2808,7 @@ export default function AskSaiScreen() {
         >
           <View style={styles.heroPanel}>
             <View style={styles.heroActions}>
-              <Pressable
+              {/* <Pressable
                 onPress={resetConversation}
                 style={({ pressed }) => [
                   styles.smallActionButton,
@@ -2817,9 +2817,9 @@ export default function AskSaiScreen() {
               >
                 <Plus color="#B45309" size={16} strokeWidth={2.4} />
                 <Text style={styles.smallActionText}>New</Text>
-              </Pressable>
+              </Pressable> */}
 
-              {conversationId ? (
+              {/* {conversationId ? (
                 <Pressable
                   onPress={deleteCurrentConversation}
                   style={({ pressed }) => [
@@ -2831,14 +2831,14 @@ export default function AskSaiScreen() {
                   <Trash2 color="#B91C1C" size={16} strokeWidth={2.4} />
                   <Text style={styles.deleteActionText}>Delete</Text>
                 </Pressable>
-              ) : null}
+              ) : null} */}
             </View>
 
             <Text style={styles.heroTitle}>
-              Ask with faith. Receive a calm, practical reply.
+              Ask with faith. Receive a calm, practical reply. 
             </Text>
             <Text style={styles.heroText}>
-              This assistant is here for spiritual reflection and app help. For
+              Sai is here for spiritual reflection and app help. For
               medical, legal, or emergency matters, please speak with the right
               professional.
             </Text>
@@ -2852,7 +2852,7 @@ export default function AskSaiScreen() {
           ) : null}
 
           <View style={styles.historyBlock}>
-            <View style={styles.historyHeader}>
+            {/* <View style={styles.historyHeader}>
               <View style={styles.historyTitleRow}>
                 <History color="#B45309" size={18} strokeWidth={2.4} />
                 <Text style={styles.sectionTitle}>Recent guidance</Text>
@@ -2860,9 +2860,9 @@ export default function AskSaiScreen() {
               {isLoadingHistory ? (
                 <ActivityIndicator color="#B45309" size="small" />
               ) : null}
-            </View>
+            </View> */}
 
-            {conversations.length > 0 ? (
+            {/* {conversations.length > 0 ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -2891,7 +2891,7 @@ export default function AskSaiScreen() {
               <Text style={styles.emptyHistoryText}>
                 Your recent questions will appear here.
               </Text>
-            )}
+            )} */}
           </View>
 
           <View
@@ -2901,25 +2901,8 @@ export default function AskSaiScreen() {
             style={styles.card}
           >
             <View style={styles.questionHeader}>
-              <Text style={styles.label}>Your question</Text>
-              <View
-                style={[
-                  styles.voiceStatePill,
-                  voiceAiState === "error" && styles.voiceStatePillError,
-                  voiceAiState === "listening" && styles.voiceStatePillActive,
-                  voiceAiState === "speaking" && styles.voiceStatePillActive,
-                  voiceAiState === "thinking" && styles.voiceStatePillThinking,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.voiceStateText,
-                    voiceAiState !== "idle" && styles.voiceStateTextActive,
-                  ]}
-                >
-                  {voiceStateLabel}
-                </Text>
-              </View>
+              {/* <Text style={styles.label}>Your question</Text> */}
+            
             </View>
             <TextInput
               multiline
@@ -2937,8 +2920,8 @@ export default function AskSaiScreen() {
             <View style={styles.voiceModeHint}>
               <Volume2 color="#B45309" size={16} strokeWidth={2.3} />
               <Text style={styles.voiceModeHintText}>
-                Speak naturally in Hindi or English. Your words stay in the
-                detected language, and Sai guidance replies in Hindi.
+                Speak naturally in your preferred language. Your words stay in the
+                detected language, and Sai replies in your preferred language.
               </Text>
             </View>
             {/* just remove */}
@@ -2997,6 +2980,27 @@ export default function AskSaiScreen() {
             ) : null}
 
             <View style={styles.inputActions}>
+              
+
+              <Pressable
+                disabled={!canSubmit}
+                onPress={() => submitQuestion()}
+                style={({ pressed }) => [
+                  styles.askButton,
+                  pressed && styles.pressed,
+                  !canSubmit && styles.disabledButton,
+                ]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Send color="#FFFFFF" size={18} strokeWidth={2.4} />
+                    <Text style={styles.askButtonText}>Ask now</Text>
+                  </>
+                )}
+              </Pressable>
+
               <Pressable
                 disabled={isSubmitting}
                 onPress={openVoiceModal}
@@ -3017,27 +3021,8 @@ export default function AskSaiScreen() {
                     isVoiceControlActive && styles.micButtonTextActive,
                   ]}
                 >
-                  {isVoiceControlActive ? "Stop" : "Speak"}
+                  {isVoiceControlActive ? "Stop" : "Ask Sai"}
                 </Text>
-              </Pressable>
-
-              <Pressable
-                disabled={!canSubmit}
-                onPress={() => submitQuestion()}
-                style={({ pressed }) => [
-                  styles.askButton,
-                  pressed && styles.pressed,
-                  !canSubmit && styles.disabledButton,
-                ]}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Send color="#FFFFFF" size={18} strokeWidth={2.4} />
-                    <Text style={styles.askButtonText}>Ask now</Text>
-                  </>
-                )}
               </Pressable>
             </View>
           </View>
@@ -3191,7 +3176,8 @@ export default function AskSaiScreen() {
       <Modal
         animationType="fade"
         onRequestClose={closeVoiceModal}
-        transparent
+        // transparent
+        
         visible={isVoiceModalVisible}
       >
         <KeyboardAvoidingView
@@ -3459,9 +3445,9 @@ const styles = StyleSheet.create({
   titleRow: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 12,
+    gap: 18,
     paddingHorizontal: 18,
-    paddingBottom: 14,
+    paddingBottom: 4,
   },
   iconBubble: {
     alignItems: "center",
@@ -3489,7 +3475,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 18,
-    paddingTop: 18,
+    paddingTop: 4,
   },
   heroPanel: {
     backgroundColor: "#FFFFFF",
@@ -3504,9 +3490,9 @@ const styles = StyleSheet.create({
   },
   heroActions: {
     flexDirection: "row",
-    gap: 10,
+    // gap: 10,
     justifyContent: "flex-end",
-    marginBottom: 14,
+    // marginBottom: 14,
   },
   smallActionButton: {
     alignItems: "center",
@@ -3535,8 +3521,8 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     color: "#23201D",
-    fontSize: 22,
-    fontWeight: "900",
+    fontSize: 20,
+    fontWeight: "800",
     lineHeight: 29,
   },
   heroText: {
@@ -3619,7 +3605,7 @@ const styles = StyleSheet.create({
     borderColor: "#F3E1BE",
     borderRadius: 22,
     borderWidth: 1,
-    marginTop: 16,
+    // marginTop: 16,
     padding: 16,
   },
   label: {
