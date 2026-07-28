@@ -37,7 +37,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
 
     // auto-dismiss after the welcome moment
     if (onFinish) {
-      const t = setTimeout(onFinish, 2000);
+      const t = setTimeout(onFinish, 3500);
       return () => {
         clearTimeout(t);
       };

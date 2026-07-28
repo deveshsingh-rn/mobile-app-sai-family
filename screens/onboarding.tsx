@@ -3,18 +3,18 @@
  * ────────────────────────────────────────────────────────────
  * 2 slides:
  *   1. Welcome         → emotional hook, single "Begin" CTA, no skip
- *   2. Personalize     → shows the core app pillars already included
+ *   2. Four pillars    → explains how the Sai family comes together
  *
- * onDone accepts optional interests[] so the parent can persist
- * selections for feed ranking / notification prefs.
+ * onDone accepts optional pillar ids for future onboarding analytics.
  * ────────────────────────────────────────────────────────────
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Image,
   ImageSourcePropType,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -29,9 +29,7 @@ import {
   BookOpen,
   Building2,
   CalendarDays,
-  HandHeart,
   HeartHandshake,
-  Star,
   Users,
 } from "lucide-react-native";
 import Animated, {
@@ -61,19 +59,17 @@ const C = {
 const WELCOME_MESSAGE_AUDIO =
   require("../assets/images/welcome-message.mp3");
 
-/* ─── Interests (drive personalization) ──────────────────── */
-type InterestId =
-  | "blessings"
+/* ─── Four product pillars ───────────────────────────────── */
+type PillarId =
+  | "experiences"
   | "events"
   | "sangha"
-  | "teachings"
-  | "seva"
   | "directory";
 
-type Interest = {
-  id: InterestId;
+type Pillar = {
+  id: PillarId;
   title: string;
-  subtitle: string;
+  description: string;
   Icon: React.ComponentType<{
     color?: string;
     size?: number;
@@ -81,18 +77,35 @@ type Interest = {
   }>;
 };
 
-const INTERESTS: Interest[] = [
-  { id: "blessings", title: "Daily blessings", subtitle: "Prayers & darshan", Icon: Star },
-  { id: "events", title: "Sacred events", subtitle: "Bhajans & satsangs", Icon: CalendarDays },
-  { id: "sangha", title: "Community", subtitle: "Devotee bonds", Icon: Users },
-  { id: "teachings", title: "Baba's wisdom", subtitle: "Teachings & quotes", Icon: BookOpen },
-  { id: "seva", title: "Seva & service", subtitle: "Give back", Icon: HandHeart },
-  { id: "directory", title: "Devotee services", subtitle: "Trusted businesses", Icon: Building2 },
+const PILLARS: Pillar[] = [
+  {
+    id: "experiences",
+    title: "Experiences",
+    description: "Share prayers, miracles, teachings, and moments of faith.",
+    Icon: BookOpen,
+  },
+  {
+    id: "events",
+    title: "Events",
+    description: "Discover bhajans, satsangs, seva, and sacred gatherings.",
+    Icon: CalendarDays,
+  },
+  {
+    id: "directory",
+    title: "Sai Connect",
+    description: "Find trusted services and businesses from fellow devotees.",
+    Icon: Building2,
+  },
+  {
+    id: "sangha",
+    title: "Local community",
+    description: "Build meaningful bonds, join groups, and grow together.",
+    Icon: Users,
+  },
 ];
 
 type OnboardingScreenProps = {
-  /** Called on completion. Receives selected interests (may be empty). */
-  onDone: (interests?: InterestId[]) => void;
+  onDone: (pillars?: PillarId[]) => void;
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -252,15 +265,13 @@ function WelcomeSlide({
 }
 
 /* ═══════════════════════════════════════════════════════════
-   SLIDE 2 — Personalize (retention lever)
+   SLIDE 2 — Four pillars
    ═══════════════════════════════════════════════════════════ */
-function PersonalizeSlide({
-  image,
+function PillarsSlide({
   index,
   progress,
   width,
 }: {
-  image: ImageSourcePropType;
   index: number;
   progress: SharedValue<number>;
   width: number;
@@ -284,62 +295,56 @@ function PersonalizeSlide({
 
   return (
     <Animated.View style={[styles.slide, { width }, animatedStyle]}>
-      <View style={styles.personalizeBody}>
-        <View style={styles.personalizeHeader}>
-          <View style={styles.smallImageRing}>
-            <View style={styles.smallImageWell}>
-              <Image resizeMode="stretch" source={image} style={styles.smallImage} />
-            </View>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.slideEyebrow}>PERSONALIZE</Text>
-            <Text style={styles.slideTitle}>How can we serve{"\n"}your journey?</Text>
-          </View>
+      <ScrollView
+        bounces={false}
+        contentContainerStyle={styles.pillarsBody}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.pillarsIntro}>
+          <Text style={styles.pillarsTitle}>
+            Welcome to Sai Ki Family 🙏
+          </Text>
+          <Text style={styles.pillarsMessage}>
+            More than an app—this is a global family of Sai devotees. Every
+            feature you see here is built around a simple purpose: to help you
+            deepen your connection with Sai Baba, serve others, and grow
+            together as one community.
+          </Text>
+          <Text style={styles.pillarsLead}>
+            These are the pillars that bring our family together:
+          </Text>
         </View>
 
-        <View style={styles.counterRow}>
-          <Text style={styles.counterLabel}>INCLUDED FOR YOU</Text>
-          <View style={[styles.counterChip, styles.counterChipActive]}>
-            <Text style={[styles.counterChipText, styles.counterChipTextActive]}>
-              6 pillars ready
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.interestGrid}>
-          {INTERESTS.map((interest) => {
-            const Icon = interest.Icon;
+        <View style={styles.pillarList}>
+          {PILLARS.map((pillar, pillarIndex) => {
+            const Icon = pillar.Icon;
             return (
-              <View
-                key={interest.id}
-                style={[
-                  styles.interestCard,
-                  styles.interestCardSelected,
-                ]}
-              >
-                <View style={[styles.interestIcon, styles.interestIconActive]}>
+              <View key={pillar.id} style={styles.pillarCard}>
+                <View style={styles.pillarNumber}>
+                  <Text style={styles.pillarNumberText}>
+                    {pillarIndex + 1}
+                  </Text>
+                </View>
+                <View style={styles.pillarIcon}>
                   <Icon
                     color="#FFFFFF"
-                    size={22}
-                    strokeWidth={2}
+                    size={21}
+                    strokeWidth={2.2}
                   />
                 </View>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text
-                    numberOfLines={2}
-                    style={[styles.interestTitle, styles.interestTitleActive]}
-                  >
-                    {interest.title}
+                <View style={styles.pillarCopy}>
+                  <Text style={styles.pillarTitle}>
+                    {pillar.title}
                   </Text>
-                  <Text numberOfLines={2} style={styles.interestSubtitle}>
-                    {interest.subtitle}
+                  <Text style={styles.pillarDescription}>
+                    {pillar.description}
                   </Text>
                 </View>
               </View>
             );
           })}
         </View>
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 }
@@ -352,9 +357,8 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const progress = useSharedValue(0);
 
-  const image = require("../assets/images/saijii.jpg");
   const image2 = require("../assets/images/saijii.jpg");
-  const allInterests = INTERESTS.map((interest) => interest.id);
+  const allPillars = PILLARS.map((pillar) => pillar.id);
 
   const isFirst = activeIndex === 0;
   const isLast = activeIndex === 1;
@@ -378,7 +382,7 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
 
   const handleNext = () => {
     if (isLast) {
-      onDone(allInterests);
+      onDone(allPillars);
       return;
     }
     moveTo(activeIndex + 1);
@@ -442,8 +446,7 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
           progress={progress}
           width={width}
         />
-        <PersonalizeSlide
-          image={image}
+        <PillarsSlide
           index={1}
           progress={progress}
           width={width}
@@ -688,122 +691,90 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   /* Slide 2 */
-  personalizeBody: {
-    flex: 1,
-    paddingTop: 2,
+  pillarsBody: {
+    paddingBottom: 10,
+    paddingTop: 4,
   },
-  personalizeHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    paddingBottom: 12,
+  pillarsIntro: {
+    marginBottom: 14,
   },
-  smallImageRing: {
-    alignItems: "center",
-    backgroundColor: C.saffronBg,
-    borderColor: C.saffronBorder,
-    borderRadius: 100,
-    borderWidth: 1.5,
-    height: 56,
-    justifyContent: "center",
-    width: 56,
-  },
-  smallImageWell: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 100,
-    height: 46,
-    justifyContent: "center",
-    overflow: "hidden",
-    width: 46,
-  },
-  smallImage: { height: 44, width: 44 },
-  slideEyebrow: {
-    color: C.saffronText,
-    fontSize: 13.5,
-    fontWeight: "700",
-    letterSpacing: 1.5,
-  },
-  slideTitle: {
-    color: C.ink,
+  pillarsTitle: {
+    color: C.maroon,
     fontFamily: "Georgia",
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: "700",
-    letterSpacing: -0.3,
-    lineHeight: 29,
-    marginTop: 2,
+    lineHeight: 31,
   },
-  counterRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  counterLabel: {
+  pillarsMessage: {
     color: C.inkSecondary,
-    fontSize: 11,
+    fontSize: 15,
     fontWeight: "600",
-    letterSpacing: 0.6,
+    lineHeight: 22,
+    marginTop: 10,
   },
-  counterChip: {
-    borderColor: C.separator,
-    borderRadius: 100,
-    borderWidth: 1,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
+  pillarsLead: {
+    color: C.saffronText,
+    fontSize: 15,
+    fontWeight: "800",
+    lineHeight: 21,
+    marginTop: 12,
   },
-  counterChipActive: {
-    backgroundColor: C.saffronBg,
-    borderColor: C.saffronBorder,
+  pillarList: {
+    gap: 10,
   },
-  counterChipText: { color: C.inkTertiary, fontSize: 11, fontWeight: "600" },
-  counterChipTextActive: { color: C.saffronText },
-  interestGrid: {
-    flex: 1,
-    gap: 9,
-    paddingBottom: 2,
-  },
-  interestCard: {
+  pillarCard: {
     alignItems: "center",
     backgroundColor: C.surface,
-    borderColor: C.separator,
+    borderColor: C.saffronBorder,
     borderRadius: 16,
-    borderWidth: 1.5,
+    borderWidth: 1,
     flexDirection: "row",
-    gap: 14,
-    minHeight: 67,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    minHeight: 78,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
     position: "relative",
   },
-  interestCardSelected: { backgroundColor: C.saffronBg, borderColor: C.saffron },
-  interestIcon: {
+  pillarNumber: {
     alignItems: "center",
     backgroundColor: C.saffronBg,
+    borderColor: C.saffronBorder,
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 30,
+    justifyContent: "center",
+    marginRight: 10,
+    width: 30,
+  },
+  pillarNumberText: {
+    color: C.saffronText,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  pillarIcon: {
+    alignItems: "center",
+    backgroundColor: C.saffron,
     borderRadius: 13,
     height: 44,
     justifyContent: "center",
+    marginRight: 12,
     width: 44,
   },
-  interestIconActive: {
-    backgroundColor: C.saffron,
+  pillarCopy: {
+    flex: 1,
+    minWidth: 0,
   },
-  interestTitle: {
-    color: C.ink,
+  pillarTitle: {
+    color: C.saffronText,
     fontSize: 17,
-    fontWeight: "800",
-    letterSpacing: -0.1,
+    fontWeight: "900",
     lineHeight: 21,
   },
-  interestTitleActive: {
-    color: C.saffronText,
-  },
-  interestSubtitle: {
+  pillarDescription: {
     color: C.inkSecondary,
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: "600",
-    lineHeight: 18,
-    marginTop: 2,
+    lineHeight: 19,
+    marginTop: 3,
   },
   /* Footer */
   footer: {

@@ -42,7 +42,7 @@ const TABS = [
   },
   {
     Icon: Building2,
-    label: "Business Directory",
+    label: "Sai Connect",
     name: "directory",
   },
   {

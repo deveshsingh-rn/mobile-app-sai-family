@@ -95,7 +95,7 @@ const AI_LANGUAGES: AiLanguageOption[] = [
     label: "English",
     locale: "en-IN",
     nativeLabel: "English",
-    secondaryLocale: "hi-IN",
+    secondaryLocale: "en-IN",
   },
   {
     label: "Marathi",
@@ -178,8 +178,6 @@ const VOICE_PROVIDER: "elevenlabs" | "mock" =
   process.env.EXPO_PUBLIC_AI_VOICE_PROVIDER === "mock"
     ? "mock"
     : "elevenlabs";
-const ELEVENLABS_VOICE_ID =
-  process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID || undefined;
 const VOICE_DEBUG_ENABLED =
   __DEV__ || FULL_DUPLEX_VOICE_ENABLED;
 const SAI_RAM_CYCLE_MS = 1800;
@@ -528,8 +526,20 @@ const getVoiceErrorMessage = (code?: string, fallback?: string) => {
       return "Voice listening is not ready yet.";
     case "VOICE_TTS_NOT_CONFIGURED":
       return "Voice response is not ready yet.";
+    case "VOICE_TTS_QUOTA_EXCEEDED":
+      return "Your written reply is ready. Voice has reached its current usage limit, so please try listening again later.";
+    case "VOICE_TTS_AUTH_FAILED":
+      return "Your written reply is ready, but the voice service needs backend configuration. Please try voice again later.";
+    case "VOICE_TTS_VOICE_NOT_FOUND":
+      return "Your written reply is ready, but the selected Sai voice is temporarily unavailable.";
+    case "VOICE_TTS_MODEL_UNSUPPORTED":
+      return "Your written reply is ready, but the configured voice model cannot generate this audio.";
+    case "VOICE_TTS_OUTPUT_FORMAT_UNSUPPORTED":
+      return "Your written reply is ready, but the voice service returned an unsupported audio format.";
+    case "VOICE_TTS_EMPTY_TEXT":
+      return "The voice reply was empty. Please read the written guidance or ask again.";
     case "VOICE_TTS_FAILED":
-      return "Voice response failed. Please try again.";
+      return "Your written reply is ready, but its voice could not be generated. You can read the reply or try voice again.";
     case "VOICE_LANGUAGE_UNSUPPORTED":
       return "Your written reply is ready, but voice is not available for this language yet.";
     default:
@@ -1070,6 +1080,8 @@ export default function AskSaiScreen() {
         voiceLivePlaybackFailedRef.current = true;
         return;
       }
+
+      void stopWaitingTone();
 
       if (event.format.startsWith("mp3")) {
         voiceAudioChunkPartsRef.current.push(event.data);
@@ -1855,8 +1867,12 @@ export default function AskSaiScreen() {
 
         case "error":
           logVoiceDebug("Server error event", {
+            answerLength: voiceAnswerBufferRef.current.length,
             code: event.code,
+            locale: selectedLanguage.locale,
             message: event.message,
+            outputFormat: voiceSessionRef.current?.audio?.outputFormat,
+            providers: voiceSessionRef.current?.providers,
             turnId: event.turnId,
           });
           setVoiceConnectionState("error");
@@ -1874,6 +1890,7 @@ export default function AskSaiScreen() {
       loadConversations,
       playBufferedVoiceAudio,
       question,
+      selectedLanguage.locale,
       speakText,
       startConnectedVoiceStreaming,
       stopSpeech,
@@ -2279,7 +2296,6 @@ export default function AskSaiScreen() {
 
         logVoiceDebug("Creating voice session", {
           conversationId,
-          hasTtsVoiceId: Boolean(ELEVENLABS_VOICE_ID),
           provider: VOICE_PROVIDER,
         });
 
@@ -2288,7 +2304,6 @@ export default function AskSaiScreen() {
           locale: selectedLanguage.locale,
           pillar: "experiences" as const,
           secondaryLocale: selectedLanguage.secondaryLocale,
-          ttsVoiceId: ELEVENLABS_VOICE_ID,
           voiceProvider: VOICE_PROVIDER,
         };
 
@@ -3180,11 +3195,6 @@ export default function AskSaiScreen() {
                     Turn: {activeVoiceTurnId}
                   </Text>
                 ) : null}
-                {ELEVENLABS_VOICE_ID ? (
-                  <Text style={styles.voiceSessionText}>
-                    Voice ID: {ELEVENLABS_VOICE_ID}
-                  </Text>
-                ) : null}
               </View>
             ) : null}
 
@@ -3596,18 +3606,6 @@ export default function AskSaiScreen() {
                 ]}
               >
                 <Pressable
-                  onPress={closeVoiceModal}
-                  style={({ pressed }) => [
-                    styles.voiceModalSecondaryButton,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.voiceModalSecondaryText}>
-                    {isVoicePlaying || isVoiceFinished ? "Close" : "Cancel"}
-                  </Text>
-                </Pressable>
-
-                <Pressable
                   disabled={isVoiceSubmitDisabled}
                   onPress={
                     canInterruptVoiceReply ||
@@ -3649,6 +3647,18 @@ export default function AskSaiScreen() {
                       )}
                     </>
                   )}
+                </Pressable>
+
+                <Pressable
+                  onPress={closeVoiceModal}
+                  style={({ pressed }) => [
+                    styles.voiceModalSecondaryButton,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={styles.voiceModalSecondaryText}>
+                    {isVoicePlaying || isVoiceFinished ? "Close" : "Cancel"}
+                  </Text>
                 </Pressable>
               </View>
             </View>
@@ -3861,13 +3871,13 @@ const styles = StyleSheet.create({
   },
   languageTitle: {
     color: "#2F2A24",
-    fontSize: 17,
-    fontWeight: "900",
+    fontSize: 15,
+    fontWeight: "700",
   },
   languageSubtitle: {
     color: "#786A5A",
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 10,
+    fontWeight: "500",
     lineHeight: 17,
     marginTop: 2,
   },
@@ -3883,7 +3893,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     justifyContent: "center",
-    minHeight: 62,
+    minHeight: 52,
+    maxHeight: 52,
     minWidth: 92,
     paddingHorizontal: 13,
     paddingVertical: 8,
@@ -3894,8 +3905,8 @@ const styles = StyleSheet.create({
   },
   languageNativeLabel: {
     color: "#3F352B",
-    fontSize: 17,
-    fontWeight: "900",
+    fontSize: 15,
+    fontWeight: "700",
   },
   languageEnglishLabel: {
     color: "#786A5A",

@@ -99,7 +99,6 @@ export type CreateDevoteeAiVoiceSessionPayload = {
   locale?: string;
   pillar?: DevoteeAiPillar;
   secondaryLocale?: string;
-  ttsVoiceId?: string;
   voiceProvider?: "elevenlabs" | "mock";
 };
 
@@ -209,6 +208,7 @@ type BackendDevoteeAiResponse = {
   cached?: boolean;
   conversationId?: string;
   latencyMs?: number | null;
+  locale?: string;
   messageId?: string;
   model?: string | null;
   reply?: string;
@@ -342,6 +342,7 @@ export async function askDevoteeQuestion(
       cached: data.cached,
       conversationId: data.conversationId,
       latencyMs: data.latencyMs,
+      locale: data.locale,
       messageId: data.messageId,
       model: data.model,
       safetyNote: data.safetyNote,
@@ -465,7 +466,6 @@ export async function createDevoteeAiVoiceSession(
         locale: payload?.locale || "hi-IN",
         pillar: payload?.pillar || "experiences",
         secondaryLocale: payload?.secondaryLocale || "en-IN",
-        ttsVoiceId: payload?.ttsVoiceId,
         voiceProvider: payload?.voiceProvider || "elevenlabs",
         conversationId: payload?.conversationId,
       }
