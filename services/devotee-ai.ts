@@ -28,6 +28,7 @@ export type AskDevoteeQuestionResponse = {
   cached?: boolean;
   conversationId?: string;
   latencyMs?: number | null;
+  locale?: string;
   messageId?: string;
   model?: string | null;
   safetyNote?: string | null;
@@ -167,6 +168,7 @@ export type DevoteeAiVoiceServerEvent =
       type: "state";
     }
   | {
+      locale?: string;
       text: string;
       turnId: string;
       type: "transcript_partial" | "transcript_final" | "answer_delta";

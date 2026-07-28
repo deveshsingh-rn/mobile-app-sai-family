@@ -530,6 +530,8 @@ const getVoiceErrorMessage = (code?: string, fallback?: string) => {
       return "Voice response is not ready yet.";
     case "VOICE_TTS_FAILED":
       return "Voice response failed. Please try again.";
+    case "VOICE_LANGUAGE_UNSUPPORTED":
+      return "Your written reply is ready, but voice is not available for this language yet.";
     default:
       return fallback || "Voice guidance is unavailable right now.";
   }
@@ -1635,6 +1637,7 @@ export default function AskSaiScreen() {
         case "answer_delta":
           if (!voiceTimingRef.current.firstAnswerAt) {
             voiceTimingRef.current.firstAnswerAt = Date.now();
+            void stopWaitingTone();
             logVoiceDebug("First answer delta received", {
               msSinceTap:
                 voiceTimingRef.current.tapAt
@@ -2818,6 +2821,7 @@ export default function AskSaiScreen() {
     voicePartialTranscript || voiceFinalTranscript,
     selectedLanguage
   );
+  const isRtlLanguage = selectedLanguage.locale === "ur-IN";
   const hasModalTranscript = modalTranscript.trim().length >= 3;
   const isVoiceThinking =
     voiceConnectionState === "thinking" ||
@@ -3112,7 +3116,7 @@ export default function AskSaiScreen() {
               placeholder="Write your question here..."
               placeholderTextColor="#A8A29E"
               returnKeyType="done"
-              style={styles.input}
+              style={[styles.input, isRtlLanguage && styles.rtlText]}
               submitBehavior="blurAndSubmit"
               textAlignVertical="top"
               value={question}
@@ -3150,7 +3154,12 @@ export default function AskSaiScreen() {
                     ? ` in ${detectedTranscriptLanguage}`
                     : ""}
                 </Text>
-                <Text style={styles.voiceTranscriptText}>
+                <Text
+                  style={[
+                    styles.voiceTranscriptText,
+                    isRtlLanguage && styles.rtlText,
+                  ]}
+                >
                   {voicePartialTranscript || voiceFinalTranscript}
                 </Text>
               </View>
@@ -3271,7 +3280,14 @@ export default function AskSaiScreen() {
                 ) : null}
               </View>
 
-              <Text style={styles.answerText}>{answer}</Text>
+              <Text
+                style={[
+                  styles.answerText,
+                  isRtlLanguage && styles.rtlText,
+                ]}
+              >
+                {answer}
+              </Text>
 
               <View style={styles.metaRow}>
                 {typeof lastResponse?.latencyMs === "number" ? (
@@ -3517,7 +3533,10 @@ export default function AskSaiScreen() {
                     placeholder="Speak naturally. You can share your problem, prayer, or question."
                     placeholderTextColor="#9A8265"
                     returnKeyType="done"
-                    style={styles.voiceModalTranscriptInput}
+                    style={[
+                      styles.voiceModalTranscriptInput,
+                      isRtlLanguage && styles.rtlText,
+                    ]}
                     submitBehavior="blurAndSubmit"
                     textAlignVertical="top"
                     value={modalTranscript}
@@ -3555,7 +3574,10 @@ export default function AskSaiScreen() {
                     </Text>
                     <Text
                       numberOfLines={4}
-                      style={styles.voiceModalAnswerText}
+                      style={[
+                        styles.voiceModalAnswerText,
+                        isRtlLanguage && styles.rtlText,
+                      ]}
                     >
                       {answer}
                     </Text>
@@ -4049,6 +4071,10 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.88,
     transform: [{ scale: 0.98 }],
+  },
+  rtlText: {
+    textAlign: "right",
+    writingDirection: "rtl",
   },
   suggestionsBlock: {
     marginTop: 18,
