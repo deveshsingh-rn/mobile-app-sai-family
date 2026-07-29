@@ -752,7 +752,7 @@ export default function DirectoryScreen() {
                   fontWeight: '800',
                   letterSpacing: -0.5,
                 }}>
-                Sai Directory
+                Sai Connect
               </Text>
 
               <Text
@@ -875,6 +875,68 @@ export default function DirectoryScreen() {
         contentContainerStyle={{
           paddingBottom: 30,
         }}>
+        <View
+          accessible
+          accessibilityLabel="Welcome to Sai Ki Family. A trusted global community where Sai devotees empower one another through business, careers, collaboration, mentorship, emergency support, and acts of kindness."
+          style={{
+            backgroundColor: '#FFF8EC',
+            borderBottomColor: '#F1D9B5',
+            borderBottomWidth: 1,
+            borderTopColor: '#F1D9B5',
+            borderTopWidth: 1,
+            paddingHorizontal: 24,
+            paddingVertical: 22,
+          }}>
+          <View
+            style={{
+              alignItems: 'center',
+              flexDirection: 'row',
+            }}>
+            <View
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#F97316',
+                borderRadius: 22,
+                height: 44,
+                justifyContent: 'center',
+                width: 44,
+              }}>
+              <MaterialCommunityIcons
+                color="#FFFFFF"
+                name="hand-heart-outline"
+                size={23}
+              />
+            </View>
+
+            <Text
+              style={{
+                color: '#7C2D12',
+                flex: 1,
+                fontSize: 21,
+                fontWeight: '800',
+                lineHeight: 28,
+                marginLeft: 14,
+              }}>
+              Welcome to Sai Ki Family 🙏
+            </Text>
+          </View>
+
+          <Text
+            style={{
+              color: '#4B4037',
+              fontSize: 16,
+              fontWeight: '500',
+              lineHeight: 25,
+              marginTop: 15,
+            }}>
+            A trusted global community where Sai devotees empower one
+            another through business, careers, collaboration, mentorship,
+            emergency support, and acts of kindness. Together, we grow by
+            living Sai Baba&apos;s timeless values of faith, honesty,
+            compassion, and selfless service.
+          </Text>
+        </View>
+
           <View
             style={{
               paddingHorizontal: 24,
