@@ -366,26 +366,58 @@ export const experiencesReducer = (
             : state.detail,
       };
 
-      case UPDATE_EXPERIENCE_SUCCESS:
-  return {
-    ...state,
+    case UPDATE_EXPERIENCE_SUCCESS: {
+      const updateItem = (experience: typeof action.payload) =>
+        experience.id === action.payload.id
+          ? {
+              ...experience,
+              ...action.payload,
+            }
+          : experience;
 
-    feed: state.feed.map((exp) =>
-      exp.id === action.payload.id
-        ? action.payload
-        : exp
-    ),
-  };
+      return {
+        ...state,
+        bookmarkedFeed:
+          state.bookmarkedFeed.map(updateItem),
+        detail:
+          state.detail?.id === action.payload.id
+            ? {
+                ...state.detail,
+                ...action.payload,
+              }
+            : state.detail,
+        feed: state.feed.map(updateItem),
+        searchResults:
+          state.searchResults.map(updateItem),
+      };
+    }
 
-  case DELETE_EXPERIENCE_SUCCESS:
-  return {
-    ...state,
-
-    feed: state.feed.filter(
-      (exp) =>
-        exp.id !== action.payload.id
-    ),
-  };
+    case DELETE_EXPERIENCE_SUCCESS:
+      return {
+        ...state,
+        bookmarkedFeed:
+          state.bookmarkedFeed.filter(
+            (experience) =>
+              experience.id !== action.payload.id
+          ),
+        comments:
+          state.detail?.id === action.payload.id
+            ? []
+            : state.comments,
+        detail:
+          state.detail?.id === action.payload.id
+            ? null
+            : state.detail,
+        feed: state.feed.filter(
+          (experience) =>
+            experience.id !== action.payload.id
+        ),
+        searchResults:
+          state.searchResults.filter(
+            (experience) =>
+              experience.id !== action.payload.id
+          ),
+      };
 
     default:
       return state;

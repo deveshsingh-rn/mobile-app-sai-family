@@ -27,6 +27,7 @@ import CommentInput from "@/components/experiences/CommentInput";
 import CommentItem from "@/components/experiences/CommentItem";
 import {
   addCommentRequest,
+  deleteExperienceRequest,
   fetchExperienceDetailRequest,
   toggleBookmarkRequest,
   toggleLikeRequest,
@@ -137,6 +138,26 @@ export default function ExperienceDetailScreen() {
     }
   }, [dispatch, experienceId, userId]);
 
+  const handleEdit = useCallback(() => {
+    if (experienceId) {
+      router.push({
+        pathname: "/experiences/edit" as any,
+        params: { id: experienceId },
+      });
+    }
+  }, [experienceId]);
+
+  const handleDelete = useCallback(() => {
+    if (!experienceId) {
+      return;
+    }
+
+    dispatch(
+      deleteExperienceRequest(experienceId)
+    );
+    router.back();
+  }, [dispatch, experienceId]);
+
   const header = useMemo(() => {
     if (!detail) {
       return null;
@@ -145,12 +166,15 @@ export default function ExperienceDetailScreen() {
     return (
       <View>
         <ExperienceCard
+          currentUserId={userId}
           item={detail}
           hideBorder
           disableNavigation
           onBookmark={handleBookmark}
           onLike={handleLike}
           onRepost={handleRepost}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
         />
 
         <View style={styles.commentHeader}>
@@ -168,8 +192,11 @@ export default function ExperienceDetailScreen() {
     comments.length,
     detail,
     handleBookmark,
+    handleDelete,
+    handleEdit,
     handleLike,
     handleRepost,
+    userId,
   ]);
 
   if (loading && !detail) {

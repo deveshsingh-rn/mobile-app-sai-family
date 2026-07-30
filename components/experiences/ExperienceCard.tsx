@@ -1,8 +1,11 @@
 import React from "react";
 
 import {
+  ActionSheetIOS,
+  Alert,
   Image,
   GestureResponderEvent,
+  Platform,
   Pressable,
   Share,
   StyleSheet,
@@ -17,6 +20,7 @@ import {
   Bookmark,
   Heart,
   MessageCircle,
+  MoreHorizontal,
   Repeat2,
   Play,
   MapPin,
@@ -32,20 +36,26 @@ import {
 } from "@/store/experiences/actions";
 
 type Props = {
+  currentUserId?: string;
   item: any;
   disableNavigation?: boolean;
   hideBorder?: boolean;
   isActive?: boolean;
   onBookmark?: () => void;
+  onDelete?: () => void;
+  onEdit?: () => void;
   onLike?: () => void;
   onRepost?: () => void;
 };
 
 export function ExperienceCard({
+  currentUserId,
   disableNavigation,
   hideBorder,
   item,
   onBookmark,
+  onDelete,
+  onEdit,
   onLike,
   onRepost,
 }: Props) {
@@ -86,8 +96,86 @@ export function ExperienceCard({
     });
   };
 
+  const isOwner =
+    Boolean(currentUserId) &&
+    currentUserId ===
+      (item.authorId || item.author?.id);
+
+  const confirmDelete = () => {
+    Alert.alert(
+      "Delete experience?",
+      "This experience and its conversations will be removed permanently.",
+      [
+        {
+          style: "cancel",
+          text: "Keep experience",
+        },
+        {
+          onPress: onDelete,
+          style: "destructive",
+          text: "Delete",
+        },
+      ]
+    );
+  };
+
+  const showOwnerActions = (
+    event: GestureResponderEvent
+  ) => {
+    event.stopPropagation();
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          cancelButtonIndex: 2,
+          destructiveButtonIndex: 1,
+          options: [
+            "Edit experience",
+            "Delete experience",
+            "Cancel",
+          ],
+          title: "Manage your experience",
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            onEdit?.();
+          } else if (buttonIndex === 1) {
+            confirmDelete();
+          }
+        }
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Manage your experience",
+      "Choose what you would like to do.",
+      [
+        {
+          onPress: onEdit,
+          text: "Edit experience",
+        },
+        {
+          onPress: confirmDelete,
+          style: "destructive",
+          text: "Delete experience",
+        },
+        {
+          style: "cancel",
+          text: "Cancel",
+        },
+      ]
+    );
+  };
+
   const authorInitial =
     item.authorName?.charAt(0)?.toUpperCase() || "S";
+  const createdLabel = item.createdAt
+    ? new Intl.DateTimeFormat("en-IN", {
+        day: "numeric",
+        month: "short",
+      }).format(new Date(item.createdAt))
+    : "";
 
   return (
     <Pressable
@@ -105,19 +193,28 @@ export function ExperienceCard({
         {/* USER */}
 
         <View style={styles.header}>
-          <LinearGradient
-            colors={[
-              "#f6deb0",
-              "#ecb96b",
-            ]}
-            style={styles.avatar}
-          >
-            <Text
-              style={styles.avatarText}
+          {item.authorProfileImageUrl ? (
+            <Image
+              source={{
+                uri: item.authorProfileImageUrl,
+              }}
+              style={styles.avatar}
+            />
+          ) : (
+            <LinearGradient
+              colors={[
+                "#f6deb0",
+                "#ecb96b",
+              ]}
+              style={styles.avatar}
             >
-              {authorInitial}
-            </Text>
-          </LinearGradient>
+              <Text
+                style={styles.avatarText}
+              >
+                {authorInitial}
+              </Text>
+            </LinearGradient>
+          )}
 
           <View
             style={styles.headerInfo}
@@ -129,24 +226,51 @@ export function ExperienceCard({
               {item.authorName || "Sai Devotee"}
             </Text>
 
-            <Text
-              numberOfLines={1}
-              style={styles.handle}
-            >
-              @{item.authorHandle || "saifamily"}
-            </Text>
+            <View style={styles.authorMeta}>
+              <Text
+                numberOfLines={1}
+                style={styles.handle}
+              >
+                @{item.authorHandle || "saifamily"}
+              </Text>
+              {!!createdLabel && (
+                <>
+                  <View style={styles.metaDot} />
+                  <Text style={styles.dateText}>
+                    {createdLabel}
+                  </Text>
+                </>
+              )}
+            </View>
           </View>
 
-          {!!item.category && (
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>
-                {String(item.category)}
-              </Text>
-            </View>
-          )}
+          {isOwner ? (
+            <Pressable
+              accessibilityLabel="Manage your experience"
+              hitSlop={8}
+              onPress={showOwnerActions}
+              style={({ pressed }) => [
+                styles.moreButton,
+                pressed && styles.actionPressed,
+              ]}
+            >
+              <MoreHorizontal
+                color="#57534E"
+                size={24}
+              />
+            </Pressable>
+          ) : null}
         </View>
 
         {/* CONTENT */}
+
+        {!!item.category && (
+          <View style={styles.categoryBadge}>
+            <Text style={styles.categoryText}>
+              {String(item.category)}
+            </Text>
+          </View>
+        )}
 
         <Text
           numberOfLines={
@@ -395,6 +519,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  authorMeta: {
+    alignItems: "center",
+    flexDirection: "row",
+    marginTop: 3,
+  },
+
   name: {
     color: "#1F2937",
 
@@ -403,20 +533,47 @@ const styles = StyleSheet.create({
   },
 
   handle: {
-    marginTop: 2,
-
     color: "#78716C",
-
+    flexShrink: 1,
     fontSize: 13,
     fontWeight: "700",
   },
 
+  metaDot: {
+    backgroundColor: "#A8A29E",
+    borderRadius: 2,
+    height: 3,
+    marginHorizontal: 7,
+    width: 3,
+  },
+
+  dateText: {
+    color: "#78716C",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  moreButton: {
+    alignItems: "center",
+    backgroundColor: "#FAF7F2",
+    borderRadius: 18,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+
+  actionPressed: {
+    opacity: 0.65,
+  },
+
   categoryBadge: {
+    alignSelf: "flex-start",
     backgroundColor: "#FFF7ED",
     borderColor: "#FED7AA",
     borderRadius: 999,
     borderWidth: 1,
     maxWidth: 112,
+    marginTop: 14,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },

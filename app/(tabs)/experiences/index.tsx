@@ -42,6 +42,7 @@ import {
 
 import {
   fetchExperiencesRequest,
+  deleteExperienceRequest,
   toggleLikeRequest,
   toggleBookmarkRequest,
   toggleRepostRequest,
@@ -371,6 +372,25 @@ export default function HomeScreen() {
     );
   }, [account?.id, dispatch]);
 
+  const handleEdit = useCallback(
+    (experienceId: string) => {
+      router.push({
+        pathname: "/experiences/edit" as any,
+        params: { id: experienceId },
+      });
+    },
+    []
+  );
+
+  const handleDelete = useCallback(
+    (experienceId: string) => {
+      dispatch(
+        deleteExperienceRequest(experienceId)
+      );
+    },
+    [dispatch]
+  );
+
   const openAskSai = useCallback(() => {
     router.push("/(tabs)/experiences/ask-sai" as any);
   }, []);
@@ -402,6 +422,9 @@ export default function HomeScreen() {
 
     return (
       <ExperienceCard
+        currentUserId={
+          account?.id || account?.authorId
+        }
         item={item}
         onLike={() =>
           handleLike(item.id)
@@ -412,10 +435,25 @@ export default function HomeScreen() {
         onRepost={() =>
           handleRepost(item.id)
         }
+        onEdit={() =>
+          handleEdit(item.id)
+        }
+        onDelete={() =>
+          handleDelete(item.id)
+        }
         isActive={isActive}
       />
     );
-  }, [activeViewableId, handleLike, handleBookmark, handleRepost]);
+  }, [
+    account?.authorId,
+    account?.id,
+    activeViewableId,
+    handleBookmark,
+    handleDelete,
+    handleEdit,
+    handleLike,
+    handleRepost,
+  ]);
 
   // ───────────────── LOADER ─────────────────
 
