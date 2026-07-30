@@ -296,7 +296,6 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "#FAFAF9",
     flex: 1,
-    marginBottom: 120,
   },
 
   topBar: {

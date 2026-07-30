@@ -153,6 +153,20 @@ export default function CustomTabBar({
   navigation,
   state,
 }: any) {
+  const activeRoute = state.routes[state.index];
+  const nestedState = activeRoute?.state;
+  const nestedRoute =
+    nestedState?.routes?.[
+      nestedState.index ?? 0
+    ];
+  const isExperienceDetail =
+    activeRoute?.name === "experiences" &&
+    nestedRoute?.name === "[id]";
+
+  if (isExperienceDetail) {
+    return null;
+  }
+
   return (
     <View pointerEvents="box-none" style={styles.wrapper}>
       <BlurView intensity={70} tint="light" style={styles.dock}>

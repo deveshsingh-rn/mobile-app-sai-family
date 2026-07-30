@@ -3,15 +3,15 @@ import React from "react";
 import {
   ActionSheetIOS,
   Alert,
-  Image,
   GestureResponderEvent,
+  Image,
+  Linking,
   Platform,
   Pressable,
   Share,
   StyleSheet,
   Text,
   View,
-  Linking,
 } from "react-native";
 
 import { useRouter } from "expo-router";
@@ -19,11 +19,11 @@ import { useRouter } from "expo-router";
 import {
   Bookmark,
   Heart,
+  MapPin,
   MessageCircle,
   MoreHorizontal,
-  Repeat2,
   Play,
-  MapPin,
+  Repeat2,
   Share2,
 } from "lucide-react-native";
 
@@ -34,6 +34,41 @@ import { useDispatch } from "react-redux";
 import {
   toggleLikeRequest,
 } from "@/store/experiences/actions";
+
+const formatCount = (value?: number) => {
+  const count = Number(value) || 0;
+
+  if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(
+      count >= 10_000_000 ? 0 : 1
+    )}M`;
+  }
+
+  if (count >= 1_000) {
+    return `${(count / 1_000).toFixed(
+      count >= 10_000 ? 0 : 1
+    )}K`;
+  }
+
+  return String(count);
+};
+
+const formatCreatedAt = (value?: string) => {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+  }).format(date);
+};
 
 type Props = {
   currentUserId?: string;
@@ -170,12 +205,11 @@ export function ExperienceCard({
 
   const authorInitial =
     item.authorName?.charAt(0)?.toUpperCase() || "S";
-  const createdLabel = item.createdAt
-    ? new Intl.DateTimeFormat("en-IN", {
-        day: "numeric",
-        month: "short",
-      }).format(new Date(item.createdAt))
-    : "";
+  const createdLabel = formatCreatedAt(
+    item.createdAt
+  );
+  const authorHandle =
+    item.authorHandle || "saifamily";
 
   return (
     <Pressable
@@ -190,11 +224,10 @@ export function ExperienceCard({
           hideBorder && styles.cardNoBorder,
         ]}
       >
-        {/* USER */}
-
-        <View style={styles.header}>
+        <View style={styles.socialRow}>
           {item.authorProfileImageUrl ? (
             <Image
+              accessibilityLabel={`${item.authorName || "Sai devotee"} profile photo`}
               source={{
                 uri: item.authorProfileImageUrl,
               }}
@@ -216,59 +249,77 @@ export function ExperienceCard({
             </LinearGradient>
           )}
 
-          <View
-            style={styles.headerInfo}
-          >
-            <Text
-              numberOfLines={1}
-              style={styles.name}
-            >
-              {item.authorName || "Sai Devotee"}
-            </Text>
+          <View style={styles.postBody}>
+            <View style={styles.header}>
+              <View style={styles.identityLine}>
+                <Text
+                  numberOfLines={1}
+                  style={styles.name}
+                >
+                  {item.authorName || "Sai Devotee"}
+                </Text>
 
-            <View style={styles.authorMeta}>
-              <Text
-                numberOfLines={1}
-                style={styles.handle}
-              >
-                @{item.authorHandle || "saifamily"}
-              </Text>
-              {!!createdLabel && (
-                <>
-                  <View style={styles.metaDot} />
-                  <Text style={styles.dateText}>
-                    {createdLabel}
-                  </Text>
-                </>
-              )}
+                <Text
+                  numberOfLines={1}
+                  style={styles.handle}
+                >
+                  @{authorHandle}
+                </Text>
+
+                {!!createdLabel && (
+                  <>
+                    <View style={styles.metaDot} />
+                    <Text style={styles.dateText}>
+                      {createdLabel}
+                    </Text>
+                  </>
+                )}
+              </View>
+
+              {isOwner ? (
+                <Pressable
+                  accessibilityLabel="Manage your experience"
+                  hitSlop={8}
+                  onPress={showOwnerActions}
+                  style={({ pressed }) => [
+                    styles.moreButton,
+                    pressed && styles.actionPressed,
+                  ]}
+                >
+                  <MoreHorizontal
+                    color="#6B7280"
+                    size={20}
+                  />
+                </Pressable>
+              ) : null}
             </View>
           </View>
-
-          {isOwner ? (
-            <Pressable
-              accessibilityLabel="Manage your experience"
-              hitSlop={8}
-              onPress={showOwnerActions}
-              style={({ pressed }) => [
-                styles.moreButton,
-                pressed && styles.actionPressed,
-              ]}
-            >
-              <MoreHorizontal
-                color="#57534E"
-                size={24}
-              />
-            </Pressable>
-          ) : null}
         </View>
 
-        {/* CONTENT */}
+        {(item.category || item.location) && (
+          <View style={styles.contextRow}>
+            {!!item.category && (
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryText}>
+                  {String(item.category)}
+                </Text>
+              </View>
+            )}
 
-        {!!item.category && (
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText}>
-              {String(item.category)}
-            </Text>
+            {!!item.location && (
+              <View style={styles.locationRow}>
+                <MapPin
+                  color="#9CA3AF"
+                  size={12}
+                />
+                <Text
+                  numberOfLines={1}
+                  style={styles.locationText}
+                >
+                  {item.location}
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -286,172 +337,229 @@ export function ExperienceCard({
         {!disableNavigation &&
           item.content?.length > 90 && (
             <Text style={styles.readMore}>
-              Read full experience
+              Show more
             </Text>
           )}
 
-        {!!item.location && (
-          <View style={styles.locationRow}>
-            <MapPin color="#9CA3AF" size={14} />
-            <Text numberOfLines={1} style={styles.locationText}>
-              {item.location}
-            </Text>
-          </View>
-        )}
+        {!!item.mediaAttachments?.length &&
+          (() => {
+            const media =
+              item.mediaAttachments[0];
+            const isVideo =
+              media.type === "video";
+            const mediaUri = isVideo
+              ? media.thumbnailUrl
+              : media.url;
 
-        {/* MEDIA */}
-
-        {!!item.mediaAttachments?.length && (() => {
-          const media = item.mediaAttachments[0];
-          const isVideo = media.type === "video";
-          const mediaUri = isVideo ? media.thumbnailUrl : media.url;
-
-          return (
-            <Pressable
-              style={styles.mediaContainer}
-              onPress={(e) => {
-                e.stopPropagation();
-                if (isVideo && media.url) {
-                  Linking.openURL(media.url);
-                } else {
-                  router.push(`/experiences/${item.id}`);
+            return (
+              <Pressable
+                accessibilityLabel={
+                  isVideo
+                    ? "Open experience video"
+                    : "Open experience photo"
                 }
-              }}
-            >
-              {mediaUri ? (
-                <Image
-                  source={{ uri: mediaUri }}
-                  style={styles.media}
-                />
-              ) : (
-                <View style={[styles.media, { backgroundColor: 'rgba(0,0,0,0.1)' }]} />
-              )}
-              {isVideo && (
-                <View style={styles.playOverlay}>
-                  <View style={styles.playButtonBackground}>
-                    <Play size={32} color="#fff" fill="#fff" />
-                  </View>
-                </View>
-              )}
-            </Pressable>
-          );
-        })()}
+                style={styles.mediaContainer}
+                onPress={(event) => {
+                  event.stopPropagation();
 
-        {/* ACTIONS */}
+                  if (
+                    isVideo &&
+                    media.url
+                  ) {
+                    void Linking.openURL(
+                      media.url
+                    );
+                  } else {
+                    router.push(
+                      `/experiences/${item.id}`
+                    );
+                  }
+                }}
+              >
+                {mediaUri ? (
+                  <Image
+                    resizeMode="cover"
+                    source={{
+                      uri: mediaUri,
+                    }}
+                    style={styles.media}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.media,
+                      styles.mediaPlaceholder,
+                    ]}
+                  />
+                )}
+
+                {isVideo && (
+                  <View
+                    style={styles.playOverlay}
+                  >
+                    <View
+                      style={
+                        styles.playButtonBackground
+                      }
+                    >
+                      <Play
+                        color="#FFFFFF"
+                        fill="#FFFFFF"
+                        size={24}
+                      />
+                    </View>
+                  </View>
+                )}
+              </Pressable>
+            );
+          })()}
 
         <View style={styles.actions}>
-          {/* LIKE */}
-
           <Pressable
-            style={styles.actionButton}
+            accessibilityLabel={`${formatCount(item.likes)} likes`}
+            hitSlop={6}
             onPress={(event) =>
               handleActionPress(
                 event,
                 handleLike
               )
             }
+            style={({ pressed }) => [
+              styles.actionButton,
+              pressed && styles.actionPressed,
+            ]}
           >
             <Heart
-              size={20}
               color={
                 item.likedByMe
-                  ? "#dc2626"
-                  : "#e45b5b"
+                  ? "#E11D48"
+                  : "#6B7280"
               }
               fill={
                 item.likedByMe
-                  ? "#dc2626"
+                  ? "#E11D48"
                   : "transparent"
               }
+              size={18}
             />
-
             <Text
-              style={styles.actionText}
+              style={[
+                styles.actionText,
+                item.likedByMe &&
+                  styles.likeActionText,
+              ]}
             >
-              {item.likes}
+              {formatCount(item.likes)}
             </Text>
           </Pressable>
 
-          {/* COMMENT */}
-
           <Pressable
-            style={styles.actionButton}
+            accessibilityLabel={`${formatCount(item.comments)} comments`}
+            hitSlop={6}
             onPress={(event) =>
               handleActionPress(
                 event,
                 handleOpenDetail
               )
             }
+            style={({ pressed }) => [
+              styles.actionButton,
+              pressed && styles.actionPressed,
+            ]}
           >
             <MessageCircle
-              size={20}
               color="#6B7280"
+              size={18}
             />
-
-            <Text
-              style={styles.actionText}
-            >
-              {item.comments}
+            <Text style={styles.actionText}>
+              {formatCount(item.comments)}
             </Text>
           </Pressable>
 
-          {/* REPOST */}
-
           <Pressable
-            style={styles.actionButton}
+            accessibilityLabel={`${formatCount(item.reposts)} reposts`}
+            hitSlop={6}
             onPress={(event) =>
               handleActionPress(
                 event,
                 onRepost
               )
             }
+            style={({ pressed }) => [
+              styles.actionButton,
+              pressed && styles.actionPressed,
+            ]}
           >
             <Repeat2
-              size={20}
-              color="#16A34A"
+              color={
+                item.repostedByMe
+                  ? "#15803D"
+                  : "#6B7280"
+              }
+              size={18}
             />
-
             <Text
-              style={styles.actionText}
+              style={[
+                styles.actionText,
+                item.repostedByMe &&
+                  styles.repostActionText,
+              ]}
             >
-              {item.reposts}
+              {formatCount(item.reposts)}
             </Text>
           </Pressable>
 
-          {/* BOOKMARK */}
-
           <Pressable
-            style={styles.actionButton}
+            accessibilityLabel={
+              item.bookmarkedByMe
+                ? "Remove bookmark"
+                : "Bookmark experience"
+            }
+            hitSlop={6}
             onPress={(event) =>
               handleActionPress(
                 event,
                 onBookmark
               )
             }
+            style={({ pressed }) => [
+              styles.iconActionButton,
+              pressed && styles.actionPressed,
+            ]}
           >
             <Bookmark
-              size={20}
-              color="#F97316"
+              color={
+                item.bookmarkedByMe
+                  ? "#C2410C"
+                  : "#6B7280"
+              }
               fill={
                 item.bookmarkedByMe
-                  ? "#F97316"
+                  ? "#C2410C"
                   : "transparent"
               }
+              size={18}
             />
           </Pressable>
 
-          {/* SHARE */}
-
           <Pressable
-            style={styles.actionButton}
+            accessibilityLabel="Share experience"
+            hitSlop={6}
             onPress={(event) =>
               handleActionPress(
                 event,
                 handleShare
               )
             }
+            style={({ pressed }) => [
+              styles.iconActionButton,
+              pressed && styles.actionPressed,
+            ]}
           >
-            <Share2 color="#6B7280" size={19} />
+            <Share2
+              color="#6B7280"
+              size={18}
+            />
           </Pressable>
         </View>
       </View>
@@ -461,219 +569,248 @@ export function ExperienceCard({
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 17,
-    borderRadius: 18,
-
-    overflow: "hidden",
-
     backgroundColor: "#FFFFFF",
-
+    borderColor: "#E7E5E4",
+    borderRadius: 20,
     borderWidth: 1,
-
-    borderColor: "#E9D8BD",
-    shadowColor: "#7C2D12",
+    marginBottom: 16,
+    marginHorizontal: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    shadowColor: "#292524",
     shadowOffset: {
+      height: 7,
       width: 0,
-      height: 8,
     },
     shadowOpacity: 0.07,
-    shadowRadius: 20,
-    elevation: 2,
+    shadowRadius: 18,
+    elevation: 3,
   },
   cardNoBorder: {
+    borderRadius: 0,
     borderWidth: 0,
     marginHorizontal: 0,
     shadowOpacity: 0,
   },
 
   pressed: {
-    opacity: 0.9,
+    opacity: 0.94,
+  },
+
+  socialRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
   },
 
   header: {
     alignItems: "center",
     flexDirection: "row",
-    minHeight: 48,
+    minHeight: 24,
   },
 
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-
     alignItems: "center",
+    borderColor: "#F1E4CE",
+    borderRadius: 21,
+    borderWidth: 1,
+    height: 42,
     justifyContent: "center",
+    width: 42,
   },
 
   avatarText: {
     color: "#6B3F05",
-
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "900",
   },
 
-  headerInfo: {
-    marginLeft: 12,
+  postBody: {
     flex: 1,
+    marginLeft: 11,
   },
 
-  authorMeta: {
+  identityLine: {
     alignItems: "center",
+    flex: 1,
     flexDirection: "row",
-    marginTop: 3,
+    minWidth: 0,
   },
 
   name: {
-    color: "#1F2937",
-
-    fontSize: 16,
+    color: "#111827",
+    flexShrink: 1,
+    fontSize: 14.5,
     fontWeight: "900",
   },
 
   handle: {
-    color: "#78716C",
+    color: "#6B7280",
     flexShrink: 1,
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 12,
+    fontWeight: "500",
+    marginLeft: 5,
   },
 
   metaDot: {
-    backgroundColor: "#A8A29E",
+    backgroundColor: "#9CA3AF",
     borderRadius: 2,
     height: 3,
-    marginHorizontal: 7,
+    marginHorizontal: 5,
     width: 3,
   },
 
   dateText: {
-    color: "#78716C",
-    fontSize: 12,
-    fontWeight: "700",
+    color: "#6B7280",
+    fontSize: 11,
+    fontWeight: "500",
   },
 
   moreButton: {
     alignItems: "center",
-    backgroundColor: "#FAF7F2",
-    borderRadius: 18,
-    height: 36,
+    borderRadius: 15,
+    height: 30,
     justifyContent: "center",
-    width: 36,
+    marginLeft: 5,
+    width: 30,
   },
 
   actionPressed: {
-    opacity: 0.65,
+    backgroundColor: "#F3F4F6",
+    opacity: 0.72,
+  },
+
+  contextRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    marginTop: 13,
+    minHeight: 20,
   },
 
   categoryBadge: {
-    alignSelf: "flex-start",
     backgroundColor: "#FFF7ED",
     borderColor: "#FED7AA",
-    borderRadius: 999,
+    borderRadius: 8,
     borderWidth: 1,
-    maxWidth: 112,
-    marginTop: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    maxWidth: 105,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
 
   categoryText: {
-    color: "#C2410C",
-    fontSize: 11,
-    fontWeight: "900",
+    color: "#9A3412",
+    fontSize: 10,
+    fontWeight: "800",
     textTransform: "capitalize",
   },
 
   content: {
-    marginTop: 16,
-
-    color: "#1F2937",
-
+    color: "#292524",
     fontSize: 16,
-    lineHeight: 25,
-    fontWeight: "700",
+    fontWeight: "600",
+    lineHeight: 24,
+    marginTop: 9,
   },
 
   readMore: {
-    color: "#F97316",
-    fontSize: 13,
-    fontWeight: "900",
-    marginTop: 8,
+    color: "#C2410C",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 3,
   },
 
   locationRow: {
     alignItems: "center",
+    flex: 1,
     flexDirection: "row",
-    gap: 6,
-    marginTop: 12,
+    gap: 3,
+    marginLeft: 8,
   },
 
   locationText: {
-    color: "#78716C",
+    color: "#6B7280",
     flex: 1,
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 10,
+    fontWeight: "600",
   },
 
   mediaContainer: {
-    width: "100%",
-    height: 280,
-    marginTop: 16,
+    aspectRatio: 1.55,
+    backgroundColor: "#F3F4F6",
+    borderColor: "#E5E7EB",
     borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 14,
     overflow: "hidden",
     position: "relative",
-    backgroundColor: "#F8F0DC",
+    width: "100%",
   },
 
   media: {
-    width: "100%",
     height: "100%",
+    width: "100%",
+  },
+
+  mediaPlaceholder: {
+    backgroundColor: "#F3F4F6",
   },
 
   playOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(17,24,39,0.16)",
   },
 
   playButtonBackground: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(0,0,0,0.6)",
     alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "rgba(17,24,39,0.78)",
+    borderColor: "rgba(255,255,255,0.82)",
+    borderRadius: 24,
     borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.8)",
+    height: 48,
+    justifyContent: "center",
+    width: 48,
   },
 
   actions: {
-    marginTop: 15,
-    borderTopColor: "#F1E4CE",
-    borderTopWidth: 1,
-    paddingTop: 13,
-
-    flexDirection: "row",
     alignItems: "center",
+    borderTopColor: "#F1F0EE",
+    borderTopWidth: 1,
+    flexDirection: "row",
     justifyContent: "space-between",
+    marginTop: 12,
+    paddingTop: 8,
   },
 
   actionButton: {
     alignItems: "center",
-    borderRadius: 999,
+    borderRadius: 16,
     flexDirection: "row",
-    gap: 6,
-    minHeight: 38,
+    gap: 4,
+    height: 32,
     minWidth: 42,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
+  },
+
+  iconActionButton: {
+    alignItems: "center",
+    borderRadius: 16,
+    height: 32,
+    justifyContent: "center",
+    width: 32,
   },
 
   actionText: {
     color: "#6B7280",
+    fontSize: 11,
+    fontWeight: "600",
+  },
 
-    fontSize: 13,
-    fontWeight: "800",
+  likeActionText: {
+    color: "#E11D48",
+  },
+
+  repostActionText: {
+    color: "#15803D",
   },
 });
