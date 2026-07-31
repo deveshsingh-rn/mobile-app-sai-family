@@ -2883,8 +2883,11 @@ export default function AskSaiScreen() {
             ) : null}
 
             <View style={styles.inputActions}>
-              
- <Pressable
+              <Pressable
+                accessibilityLabel={
+                  isVoiceControlActive ? "Stop voice question" : "Ask Sai by voice"
+                }
+                accessibilityRole="button"
                 disabled={isSubmitting}
                 onPress={openVoiceModal}
                 style={({ pressed }) => [
@@ -2894,9 +2897,9 @@ export default function AskSaiScreen() {
                 ]}
               >
                 <Mic
-                  color={isVoiceControlActive ? "#FFFFFF" : "#B45309"}
-                  size={20}
-                  strokeWidth={2.5}
+                  color="#FFFFFF"
+                  size={18}
+                  strokeWidth={2.4}
                 />
                 <Text
                   style={[
@@ -2907,7 +2910,10 @@ export default function AskSaiScreen() {
                   {isVoiceControlActive ? "Stop" : "Ask Sai"}
                 </Text>
               </Pressable>
+
               <Pressable
+                accessibilityLabel="Submit written question"
+                accessibilityRole="button"
                 disabled={!canSubmit}
                 onPress={() => submitQuestion()}
                 style={({ pressed }) => [
@@ -2925,8 +2931,6 @@ export default function AskSaiScreen() {
                   </>
                 )}
               </Pressable>
-
-             
             </View>
           </View>
 
@@ -3455,23 +3459,23 @@ const styles = StyleSheet.create({
   },
   micButton: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#F1DEC0",
+    backgroundColor: "#C2410C",
+    borderColor: "#C2410C",
     borderRadius: 18,
     borderWidth: 1,
+    flex: 1,
     flexDirection: "row",
-    gap: 8,
+    gap: 9,
     height: 54,
     justifyContent: "center",
-    paddingHorizontal: 15,
   },
   micButtonActive: {
-    backgroundColor: "#B45309",
-    borderColor: "#B45309",
+    backgroundColor: "#9A3412",
+    borderColor: "#9A3412",
   },
   micButtonText: {
-    color: "#B45309",
-    fontSize: 14,
+    color: "#FFFFFF",
+    fontSize: 16,
     fontWeight: "900",
   },
   micButtonTextActive: {
@@ -3480,7 +3484,9 @@ const styles = StyleSheet.create({
   askButton: {
     alignItems: "center",
     backgroundColor: "#C2410C",
+    borderColor: "#C2410C",
     borderRadius: 18,
+    borderWidth: 1,
     flex: 1,
     flexDirection: "row",
     gap: 9,
