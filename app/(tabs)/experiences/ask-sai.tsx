@@ -39,6 +39,7 @@ import {
   ThumbsDown,
   ThumbsUp,
   Volume2,
+  X,
 } from "lucide-react-native";
 
 import {
@@ -1705,7 +1706,6 @@ export default function AskSaiScreen() {
             );
           }
 
-          setQuestion("");
           setVoicePartialTranscript("");
           setVoiceFinalTranscript("");
           voiceFinalTranscriptRef.current = "";
@@ -1796,6 +1796,8 @@ export default function AskSaiScreen() {
         return;
       }
 
+      setQuestion(questionToAsk);
+
       try {
         await stopSpeech();
         voiceAudioChunkPartsRef.current = [];
@@ -1814,7 +1816,6 @@ export default function AskSaiScreen() {
           voice: false,
         });
 
-        setQuestion("");
         setAnswer(response.answer);
         setConversationId(response.conversationId || conversationId);
         setFeedbackMessageId(response.messageId || null);
@@ -2484,6 +2485,13 @@ export default function AskSaiScreen() {
     }, 120);
   }, []);
 
+  const clearQuestion = useCallback(() => {
+    setQuestion("");
+    setVoicePartialTranscript("");
+    setVoiceFinalTranscript("");
+    voiceFinalTranscriptRef.current = "";
+  }, []);
+
   const openVoiceModal = useCallback(() => {
     setIsVoiceModalVisible(true);
 
@@ -2735,15 +2743,29 @@ export default function AskSaiScreen() {
   const isVoiceStarting =
     voiceConnectionState === "connecting" ||
     (voiceConnectionState === "connected" && !isListening);
-  const latestConversationMessage = messages[messages.length - 1];
-  const hasCurrentAnswerInMessages =
-    Boolean(answer.trim()) &&
-    latestConversationMessage?.role === "assistant" &&
-    latestConversationMessage.content === answer;
-  const previousConversationMessages =
-    hasCurrentAnswerInMessages && messages.length >= 2
-      ? messages.slice(0, -2)
-      : messages;
+  const previousConversationTurns = useMemo(() => {
+    const latestConversationMessage = messages[messages.length - 1];
+    const hasCurrentAnswerInMessages =
+      Boolean(answer.trim()) &&
+      latestConversationMessage?.role === "assistant" &&
+      latestConversationMessage.content === answer;
+    const historyMessages =
+      hasCurrentAnswerInMessages && messages.length >= 2
+        ? messages.slice(0, -2)
+        : messages;
+    const turns: DevoteeAiMessage[][] = [];
+
+    historyMessages.forEach((message) => {
+      if (message.role === "user" || turns.length === 0) {
+        turns.push([message]);
+        return;
+      }
+
+      turns[turns.length - 1].push(message);
+    });
+
+    return turns.reverse();
+  }, [answer, messages]);
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -2914,23 +2936,40 @@ export default function AskSaiScreen() {
               </View>
             </View>
 
-            <TextInput
-              accessibilityHint="Long questions can be reviewed by scrolling inside this box"
-              accessibilityLabel="Your question for Ask Sai"
-              maxLength={1000}
-              multiline
-              onChangeText={setQuestion}
-              onFocus={revealQuestionInput}
-              onSubmitEditing={Keyboard.dismiss}
-              placeholder="Write your question or speak on the microphone below..."
-              placeholderTextColor="#A8A29E"
-              returnKeyType="done"
-              scrollEnabled
-              style={styles.input}
-              submitBehavior="blurAndSubmit"
-              textAlignVertical="top"
-              value={question}
-            />
+            <View style={styles.inputContainer}>
+              <TextInput
+                accessibilityHint="Long questions can be reviewed by scrolling inside this box"
+                accessibilityLabel="Your question for Ask Sai"
+                maxLength={1000}
+                multiline
+                onChangeText={setQuestion}
+                onFocus={revealQuestionInput}
+                onSubmitEditing={Keyboard.dismiss}
+                placeholder="Write your question or speak on the microphone below..."
+                placeholderTextColor="#A8A29E"
+                returnKeyType="done"
+                scrollEnabled
+                style={styles.input}
+                submitBehavior="blurAndSubmit"
+                textAlignVertical="top"
+                value={question}
+              />
+
+              {question.length > 0 && !isListening ? (
+                <Pressable
+                  accessibilityLabel="Clear question"
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={clearQuestion}
+                  style={({ pressed }) => [
+                    styles.clearInputButton,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <X color="#9A3412" size={18} strokeWidth={2.5} />
+                </Pressable>
+              ) : null}
+            </View>
             {/* <View style={styles.voiceModeHint}>
               <Volume2 color="#B45309" size={16} strokeWidth={2.3} />
               <Text style={styles.voiceModeHintText}>
@@ -3110,34 +3149,34 @@ export default function AskSaiScreen() {
               </ScrollView>
 
               <View style={styles.metaRow}>
-                {typeof lastResponse?.latencyMs === "number" ? (
+                {/* {typeof lastResponse?.latencyMs === "number" ? (
                   <View style={styles.metaPill}>
                     <Text style={styles.metaText}>
                       {lastResponse.latencyMs} ms
                     </Text>
                   </View>
-                ) : null}
+                ) : null} */}
 
-                {lastResponse?.cached ? (
+                {/* {lastResponse?.cached ? (
                   <View style={styles.metaPill}>
                     <Text style={styles.metaText}>Cached</Text>
                   </View>
-                ) : null}
+                ) : null} */}
 
-                {lastResponse?.model ? (
+                {/* {lastResponse?.model ? (
                   <View style={styles.metaPill}>
                     <Text style={styles.metaText}>
                       {lastResponse.model}
                     </Text>
                   </View>
-                ) : null}
+                ) : null} */}
               </View>
 
-              {safetyNote ? (
+              {/* {safetyNote ? (
                 <Text style={styles.safetyNote}>{safetyNote}</Text>
-              ) : null}
+              ) : null} */}
 
-              {feedbackMessageId ? (
+              {/* {feedbackMessageId ? (
                 <View style={styles.feedbackRow}>
                   <Text style={styles.feedbackTitle}>Was this helpful?</Text>
                   <View style={styles.feedbackActions}>
@@ -3163,27 +3202,33 @@ export default function AskSaiScreen() {
                     </Pressable>
                   </View>
                 </View>
-              ) : null}
+              ) : null} */}
             </View>
           ) : null}
 
-          {previousConversationMessages.length > 0 ? (
+          {previousConversationTurns.length > 0 ? (
             <View style={styles.threadCard}>
-              <Text style={styles.threadTitle}>Earlier in this conversation</Text>
-              {previousConversationMessages.map((message) => (
-                <View
-                  key={message.id}
-                  style={[
-                    styles.messageBubble,
-                    message.role === "assistant"
-                      ? styles.assistantBubble
-                      : styles.userBubble,
-                  ]}
-                >
-                  <Text style={styles.messageRole}>
-                    {message.role === "assistant" ? "Sai assistant" : "You"}
-                  </Text>
-                  <Text style={styles.messageText}>{message.content}</Text>
+              <Text style={styles.threadTitle}>Recent questions</Text>
+              {previousConversationTurns.map((turn) => (
+                <View key={turn.map((message) => message.id).join("-")}>
+                  {turn.map((message) => (
+                    <View
+                      key={message.id}
+                      style={[
+                        styles.messageBubble,
+                        message.role === "assistant"
+                          ? styles.assistantBubble
+                          : styles.userBubble,
+                      ]}
+                    >
+                      <Text style={styles.messageRole}>
+                        {message.role === "assistant"
+                          ? "Sai assistant"
+                          : "You"}
+                      </Text>
+                      <Text style={styles.messageText}>{message.content}</Text>
+                    </View>
+                  ))}
                 </View>
               ))}
             </View>
@@ -3562,6 +3607,9 @@ const styles = StyleSheet.create({
   voiceStateTextActive: {
     color: "#92400E",
   },
+  inputContainer: {
+    position: "relative",
+  },
   input: {
     backgroundColor: "#FFFDF8",
     borderColor: "#F1DEC0",
@@ -3574,7 +3622,22 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     paddingBottom: 14,
     paddingHorizontal: 15,
+    paddingRight: 52,
     paddingTop: 14,
+  },
+  clearInputButton: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: "center",
+    position: "absolute",
+    right: 10,
+    top: 10,
+    width: 32,
+    zIndex: 2,
   },
   voiceModeHint: {
     alignItems: "flex-start",
