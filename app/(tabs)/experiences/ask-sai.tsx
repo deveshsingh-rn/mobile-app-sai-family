@@ -145,6 +145,16 @@ const detectTranscriptLanguage = (
   return /[A-Za-z]/.test(text) ? "English" : "";
 };
 
+const formatUserQuestion = (content: string) => {
+  const trimmedContent = content.trim();
+
+  if (!trimmedContent || trimmedContent.endsWith("?")) {
+    return trimmedContent;
+  }
+
+  return `${trimmedContent.replace(/[.!।]+$/, "")}?`;
+};
+
 const appendUniqueMessages = (
   currentMessages: DevoteeAiMessage[],
   nextMessages: DevoteeAiMessage[]
@@ -3217,7 +3227,11 @@ export default function AskSaiScreen() {
                           ? "Sai assistant"
                           : "You"}
                       </Text>
-                      <Text style={styles.messageText}>{message.content}</Text>
+                      <Text style={styles.messageText}>
+                        {message.role === "user"
+                          ? formatUserQuestion(message.content)
+                          : message.content}
+                      </Text>
                     </View>
                   ))}
                 </View>
