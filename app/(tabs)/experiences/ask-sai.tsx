@@ -11,14 +11,12 @@ import {
   Alert,
   Keyboard,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  useWindowDimensions,
   View,
 } from "react-native";
 
@@ -29,13 +27,13 @@ import { router } from "expo-router";
 import { MotiView } from "moti";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AskSaiVoiceCaptureModal } from "@/components/experiences/AskSaiVoiceCaptureModal";
+
 import {
   ArrowLeft,
-  Languages,
   Mic,
   Mic2,
   Pause,
-  RotateCcw,
   Send,
   ThumbsDown,
   ThumbsUp,
@@ -78,24 +76,14 @@ const BACKEND_MOCK_TRANSCRIPT =
 type AiLanguageOption = {
   label: string;
   locale: DevoteeAiSupportedLocale;
-  nativeLabel: string;
   secondaryLocale: DevoteeAiSupportedLocale;
 };
 
-const AI_LANGUAGES: AiLanguageOption[] = [
-  {
-    label: "Hindi",
-    locale: "hi-IN",
-    nativeLabel: "हिंदी",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "English",
-    locale: "en-IN",
-    nativeLabel: "English",
-    secondaryLocale: "hi-IN",
-  },
-];
+const AUTO_VOICE_LANGUAGE: AiLanguageOption = {
+  label: "Hindi or English",
+  locale: "hi-IN",
+  secondaryLocale: "en-IN",
+};
 
 const FULL_DUPLEX_VOICE_ENABLED =
   process.env.EXPO_PUBLIC_AI_VOICE_ENABLED === "true" ||
@@ -132,14 +120,13 @@ const createVoiceTurnId = () =>
   `turn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const detectTranscriptLanguage = (
-  text: string,
-  selectedLanguage: AiLanguageOption
+  text: string
 ) => {
   if (/[\u0900-\u097F]/.test(text)) {
     return "Hindi";
   }
 
-  return /[A-Za-z]/.test(text) ? "English" : selectedLanguage.label;
+  return /[A-Za-z]/.test(text) ? "English" : "";
 };
 
 const appendUniqueMessages = (
@@ -482,11 +469,8 @@ type PendingVoiceStartContext = {
 
 export default function AskSaiScreen() {
   const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
   const mainScrollRef = useRef<ScrollView>(null);
-  const voiceModalScrollRef = useRef<ScrollView>(null);
   const questionCardYRef = useRef(0);
-  const voiceTranscriptYRef = useRef(0);
   const voiceSocketRef =
     useRef<ReturnType<typeof createDevoteeAiVoiceSocket> | null>(null);
   const handleVoiceQuestionRef = useRef<(() => Promise<void>) | null>(null);
@@ -578,88 +562,19 @@ export default function AskSaiScreen() {
     useState<string | null>(null);
   const [voicePartialTranscript, setVoicePartialTranscript] = useState("");
   const [voiceFinalTranscript, setVoiceFinalTranscript] = useState("");
-  const [selectedLanguage, setSelectedLanguage] =
-    useState<AiLanguageOption>(AI_LANGUAGES[0]);
+  const selectedLanguage = AUTO_VOICE_LANGUAGE;
 
   const canSubmit = useMemo(
     () => question.trim().length >= 3 && !isSubmitting,
     [isSubmitting, question]
   );
 
-  const voiceAiState: DevoteeAiVoiceState = useMemo(() => {
-    if (voiceError) {
-      return "error";
-    }
-
-    if (voiceConnectionState !== "idle") {
-      return voiceConnectionState;
-    }
-
-    if (isListening) {
-      return "listening";
-    }
-
-    if (isSubmitting) {
-      return "thinking";
-    }
-
-    if (isSpeaking) {
-      return "speaking";
-    }
-
-    return "idle";
-  }, [
-    isListening,
-    isSpeaking,
-    isSubmitting,
-    voiceConnectionState,
-    voiceError,
-  ]);
-
   const isVoiceControlActive =
     isListening || voiceConnectionState !== "idle";
-
-  const selectLanguage = useCallback(
-    (language: AiLanguageOption) => {
-      if (isVoiceControlActive || isSubmitting) {
-        return;
-      }
-
-      setSelectedLanguage(language);
-      setVoiceError("");
-      trackProductEvent("Ask Sai Language Selected", {
-        language: language.label,
-        locale: language.locale,
-        pillar: "experiences",
-      });
-    },
-    [isSubmitting, isVoiceControlActive]
-  );
 
   useEffect(() => {
     voiceConnectionStateRef.current = voiceConnectionState;
   }, [voiceConnectionState]);
-
-  const voiceStateLabel = useMemo(() => {
-    switch (voiceAiState) {
-      case "connected":
-        return "Connected";
-      case "connecting":
-        return "Connecting";
-      case "listening":
-        return "Listening";
-      case "thinking":
-        return "Thinking";
-      case "speaking":
-        return "Speaking";
-      case "interrupted":
-        return "Interrupted";
-      case "error":
-        return "Try again";
-      default:
-        return "Ready";
-    }
-  }, [voiceAiState]);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -1480,6 +1395,7 @@ export default function AskSaiScreen() {
             });
           }
           setVoicePartialTranscript(event.text);
+          setQuestion(event.text);
           setVoiceConnectionState("listening");
           break;
 
@@ -1536,6 +1452,8 @@ export default function AskSaiScreen() {
           setVoiceFinalTranscript(event.text);
           setVoicePartialTranscript("");
           setQuestion(event.text);
+          setIsVoiceModalVisible(false);
+          startWaitingTone();
           isMicCaptureReadyRef.current = false;
           setIsListening(false);
           void getSaiAudioStreamModule()
@@ -1793,6 +1711,7 @@ export default function AskSaiScreen() {
       question,
       selectedLanguage.locale,
       speakText,
+      startWaitingTone,
       startConnectedVoiceStreaming,
       stopSpeech,
       stopWaitingTone,
@@ -2494,6 +2413,15 @@ export default function AskSaiScreen() {
     handleVoiceQuestionRef.current = handleVoiceQuestion;
   }, [handleVoiceQuestion]);
 
+  const revealQuestionInput = useCallback(() => {
+    setTimeout(() => {
+      mainScrollRef.current?.scrollTo({
+        animated: true,
+        y: Math.max(0, questionCardYRef.current - 12),
+      });
+    }, 120);
+  }, []);
+
   const openVoiceModal = useCallback(() => {
     setIsVoiceModalVisible(true);
 
@@ -2509,7 +2437,9 @@ export default function AskSaiScreen() {
 
     if (FULL_DUPLEX_VOICE_ENABLED && voiceSocketRef.current) {
       await handleVoiceQuestion();
+      setIsVoiceModalVisible(false);
       startWaitingTone();
+      revealQuestionInput();
       return;
     }
 
@@ -2520,7 +2450,9 @@ export default function AskSaiScreen() {
     ).trim();
 
     if (fallbackQuestion.length >= 3) {
+      setIsVoiceModalVisible(false);
       startWaitingTone();
+      revealQuestionInput();
       try {
         await submitQuestion(fallbackQuestion, { speak: false });
       } finally {
@@ -2536,6 +2468,7 @@ export default function AskSaiScreen() {
     handleVoiceQuestion,
     isSubmitting,
     question,
+    revealQuestionInput,
     startWaitingTone,
     stopWaitingTone,
     submitQuestion,
@@ -2548,13 +2481,6 @@ export default function AskSaiScreen() {
     await stopWaitingTone();
     closeVoiceSession();
   }, [closeVoiceSession, stopWaitingTone]);
-
-  const updateVoiceTranscript = useCallback((nextTranscript: string) => {
-    setQuestion(nextTranscript);
-    setVoiceFinalTranscript(nextTranscript);
-    setVoicePartialTranscript("");
-    voiceFinalTranscriptRef.current = nextTranscript;
-  }, []);
 
   const listenAgainFromModal = useCallback(async () => {
     const activeTurnId = activeVoiceTurnIdRef.current;
@@ -2731,82 +2657,22 @@ export default function AskSaiScreen() {
     [feedbackMessageId]
   );
 
-  const modalTranscript =
-    voicePartialTranscript || voiceFinalTranscript || question;
   const detectedTranscriptLanguage = detectTranscriptLanguage(
-    voicePartialTranscript || voiceFinalTranscript,
-    selectedLanguage
+    voicePartialTranscript || voiceFinalTranscript
   );
-  const hasModalTranscript = modalTranscript.trim().length >= 3;
+  const hasCapturedTranscript = (
+    voicePartialTranscript ||
+    voiceFinalTranscript ||
+    question
+  ).trim().length >= 3;
   const isVoiceThinking =
     voiceConnectionState === "thinking" ||
     voicePlaybackStage === "waiting" ||
     voicePlaybackStage === "buffering" ||
     (isWaitingToneActive && !isSpeaking);
-  const isVoicePlaying =
-    voicePlaybackStage === "playing" && isSpeaking;
-  const isVoiceFinished = voicePlaybackStage === "completed";
-  const hasVoiceFailed =
-    voicePlaybackStage === "failed" || voiceConnectionState === "error";
   const isVoiceStarting =
     voiceConnectionState === "connecting" ||
     (voiceConnectionState === "connected" && !isListening);
-  const canInterruptVoiceReply = isVoicePlaying || isVoiceThinking;
-  const isVoiceSubmitDisabled =
-    isSubmitting ||
-    isVoiceStarting ||
-    (!FULL_DUPLEX_VOICE_ENABLED && !hasModalTranscript);
-  const canListenAgain =
-    !isListening &&
-    !isVoiceThinking &&
-    !isVoicePlaying &&
-    !isVoiceStarting &&
-    (hasVoiceFailed || isVoiceFinished || hasModalTranscript);
-  const voiceModalTitle = isVoicePlaying
-    ? "Sai guidance is playing"
-    : voicePlaybackStage === "buffering"
-      ? "Preparing the voice"
-    : isVoiceStarting
-      ? "Getting microphone ready"
-    : isVoiceThinking
-      ? "Preparing guidance"
-      : isListening
-        ? "Speak now"
-        : hasVoiceFailed
-          ? "Voice could not play"
-          : isVoiceFinished
-            ? "Guidance complete"
-        : "Ask Sai by voice";
-  const voiceModalSubtitle = isVoicePlaying
-    ? "ElevenLabs voice is playing. Turn up media volume if needed."
-    : voicePlaybackStage === "buffering"
-      ? "Your answer is ready. Audio will begin shortly."
-    : isVoiceStarting
-      ? "Please wait. Start speaking only when you see Speak now."
-    : isVoiceThinking
-      ? "Please wait while the written reply and voice are prepared."
-      : isListening
-        ? "The microphone is capturing your voice. Tap Finish & Ask when done."
-        : hasVoiceFailed
-          ? answer
-            ? "Your written reply is safe below. You can try voice again."
-            : "The voice connection stopped. Please try once more."
-          : isVoiceFinished
-            ? "You can read the answer or ask another question."
-            : `Speak in ${selectedLanguage.label}. English words can be mixed in.`;
-  const voicePrimaryLabel = isListening
-    ? "Finish & Ask"
-    : isVoicePlaying
-      ? "Stop & ask again"
-      : isVoiceStarting
-        ? "Please wait..."
-      : isVoiceThinking
-        ? "Cancel & ask again"
-        : hasVoiceFailed
-          ? "Try again"
-          : isVoiceFinished
-            ? "Ask another"
-            : "Start listening";
   const latestConversationMessage = messages[messages.length - 1];
   const hasCurrentAnswerInMessages =
     Boolean(answer.trim()) &&
@@ -2816,23 +2682,6 @@ export default function AskSaiScreen() {
     hasCurrentAnswerInMessages && messages.length >= 2
       ? messages.slice(0, -2)
       : messages;
-  const revealQuestionInput = () => {
-    setTimeout(() => {
-      mainScrollRef.current?.scrollTo({
-        animated: true,
-        y: Math.max(0, questionCardYRef.current - 12),
-      });
-    }, 120);
-  };
-  const revealVoiceTranscript = () => {
-    setTimeout(() => {
-      voiceModalScrollRef.current?.scrollTo({
-        animated: true,
-        y: Math.max(0, voiceTranscriptYRef.current - 12),
-      });
-    }, 120);
-  };
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -2948,64 +2797,13 @@ export default function AskSaiScreen() {
             style={styles.card}
           >
             <View style={styles.questionHeader}>
-              <View style={styles.languageTitleRow}>
-                <Languages color="#B45309" size={19} strokeWidth={2.4} />
-                <View style={styles.languageTitleCopy}>
-                  <Text style={styles.languageTitle}>Choose your language</Text>
-                  <Text style={styles.languageSubtitle}>
-                    Ask in Hindi or English. Sai currently replies in Hindi.
-                  </Text>
-                </View>
-              </View>
+              <Text style={styles.languageTitle}>
+                Ask Sai
+              </Text>
+              <Text style={styles.languageSubtitle}>
+                Write or speak naturally in Hindi or English.
+              </Text>
             </View>
-
-            <ScrollView
-              contentContainerStyle={styles.languageScroller}
-              horizontal
-              keyboardShouldPersistTaps="handled"
-              showsHorizontalScrollIndicator={false}
-            >
-              {AI_LANGUAGES.map((language) => {
-                const isSelected =
-                  language.locale === selectedLanguage.locale;
-
-                return (
-                  <Pressable
-                    accessibilityLabel={`Use ${language.label} for Ask Sai`}
-                    accessibilityRole="button"
-                    accessibilityState={{
-                      disabled: isVoiceControlActive || isSubmitting,
-                      selected: isSelected,
-                    }}
-                    disabled={isVoiceControlActive || isSubmitting}
-                    key={language.locale}
-                    onPress={() => selectLanguage(language)}
-                    style={({ pressed }) => [
-                      styles.languageChip,
-                      isSelected && styles.languageChipSelected,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.languageNativeLabel,
-                        isSelected && styles.languageChipTextSelected,
-                      ]}
-                    >
-                      {language.nativeLabel}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.languageEnglishLabel,
-                        isSelected && styles.languageChipTextSelected,
-                      ]}
-                    >
-                      {language.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
 
             <TextInput
               multiline
@@ -3023,8 +2821,8 @@ export default function AskSaiScreen() {
             <View style={styles.voiceModeHint}>
               <Volume2 color="#B45309" size={16} strokeWidth={2.3} />
               <Text style={styles.voiceModeHintText}>
-                Speak naturally in {selectedLanguage.label}. Hindi and English
-                words can be mixed; Sai currently replies in Hindi.
+                Language is detected automatically. Sai currently replies in
+                Hindi.
               </Text>
             </View>
             {/* just remove */}
@@ -3034,7 +2832,12 @@ export default function AskSaiScreen() {
                 /> */}
 
             <SaiRamWaitingCard
-              active={isSubmitting && !isVoiceModalVisible}
+              active={
+                (isSubmitting ||
+                  isWaitingToneActive ||
+                  isVoiceThinking) &&
+                !isVoiceModalVisible
+              }
             />
 
             {voiceError ? (
@@ -3081,27 +2884,7 @@ export default function AskSaiScreen() {
 
             <View style={styles.inputActions}>
               
-
-              <Pressable
-                disabled={!canSubmit}
-                onPress={() => submitQuestion()}
-                style={({ pressed }) => [
-                  styles.askButton,
-                  pressed && styles.pressed,
-                  !canSubmit && styles.disabledButton,
-                ]}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Send color="#FFFFFF" size={18} strokeWidth={2.4} />
-                    <Text style={styles.askButtonText}>Ask now</Text>
-                  </>
-                )}
-              </Pressable>
-
-              <Pressable
+ <Pressable
                 disabled={isSubmitting}
                 onPress={openVoiceModal}
                 style={({ pressed }) => [
@@ -3124,6 +2907,26 @@ export default function AskSaiScreen() {
                   {isVoiceControlActive ? "Stop" : "Ask Sai"}
                 </Text>
               </Pressable>
+              <Pressable
+                disabled={!canSubmit}
+                onPress={() => submitQuestion()}
+                style={({ pressed }) => [
+                  styles.askButton,
+                  pressed && styles.pressed,
+                  !canSubmit && styles.disabledButton,
+                ]}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Send color="#FFFFFF" size={18} strokeWidth={2.4} />
+                    <Text style={styles.askButtonText}>Ask now</Text>
+                  </>
+                )}
+              </Pressable>
+
+             
             </View>
           </View>
 
@@ -3277,266 +3080,15 @@ export default function AskSaiScreen() {
         </ScrollView>
       </LinearGradient>
 
-      <Modal
-        animationType="fade"
-        onRequestClose={closeVoiceModal}
-        // transparent
-
+      <AskSaiVoiceCaptureModal
+        error={voiceError}
+        hasCapturedTranscript={hasCapturedTranscript}
+        isListening={isListening}
+        isStarting={isVoiceStarting}
+        onCancel={closeVoiceModal}
+        onSubmit={submitVoiceModal}
         visible={isVoiceModalVisible}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.voiceModalKeyboardView}
-        >
-          <View style={styles.voiceModalBackdrop}>
-            <Pressable
-              onPress={closeVoiceModal}
-              style={styles.voiceModalBackdropPress}
-            />
-            <View
-              style={[
-                styles.voiceModalCard,
-                { maxHeight: windowHeight * 0.9 },
-              ]}
-            >
-              <ScrollView
-                ref={voiceModalScrollRef}
-                bounces={false}
-                contentContainerStyle={styles.voiceModalScrollContent}
-                keyboardDismissMode={
-                  Platform.OS === "ios" ? "interactive" : "on-drag"
-                }
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={styles.voiceModalHandle} />
-                <View style={styles.voiceModalHeader}>
-                  <View style={styles.voiceModalIcon}>
-                    {isVoicePlaying ? (
-                      <Volume2 color="#FFFFFF" size={24} strokeWidth={2.5} />
-                    ) : (
-                      <Mic color="#FFFFFF" size={24} strokeWidth={2.5} />
-                    )}
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.voiceModalTitle}>
-                      {voiceModalTitle}
-                    </Text>
-                    <Text style={styles.voiceModalSubtitle}>
-                      {voiceModalSubtitle}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.voiceLanguageBadge}>
-                  <Languages color="#92400E" size={17} strokeWidth={2.4} />
-                  <Text style={styles.voiceLanguageBadgeText}>
-                    Listening in {selectedLanguage.nativeLabel} (
-                    {selectedLanguage.label})
-                  </Text>
-                </View>
-
-                {isVoiceStarting || isListening ? (
-                  <View
-                    accessibilityLiveRegion="polite"
-                    style={[
-                      styles.voiceCaptureStatus,
-                      isListening && styles.voiceCaptureStatusReady,
-                    ]}
-                  >
-                    {isVoiceStarting ? (
-                      <ActivityIndicator color="#B45309" size="small" />
-                    ) : (
-                      <View style={styles.voiceCaptureReadyDot} />
-                    )}
-                    <View style={styles.voiceCaptureStatusCopy}>
-                      <Text
-                        style={[
-                          styles.voiceCaptureStatusTitle,
-                          isListening && styles.voiceCaptureStatusTitleReady,
-                        ]}
-                      >
-                        {isListening
-                          ? "Speak now"
-                          : "Please wait"}
-                      </Text>
-                      <Text style={styles.voiceCaptureStatusText}>
-                        {isListening
-                          ? "Your voice is being captured."
-                          : "Connecting and preparing the microphone."}
-                      </Text>
-                    </View>
-                  </View>
-                ) : null}
-
-                <View style={styles.voiceWavePanel}>
-                  <View
-                    style={[
-                      styles.voiceWaveDot,
-                      (isListening || isVoicePlaying) &&
-                        styles.voiceWaveDotActive,
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.voiceWaveDot,
-                      styles.voiceWaveDotTall,
-                      (isListening ||
-                        isWaitingToneActive ||
-                        isVoicePlaying) &&
-                        styles.voiceWaveDotActive,
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.voiceWaveDot,
-                      (isVoicePlaying || isWaitingToneActive) &&
-                        styles.voiceWaveDotActive,
-                    ]}
-                  />
-                </View>
-
-                <SaiRamWaitingCard
-                  active={isWaitingToneActive}
-                  compact
-                />
-
-                <View
-                  onLayout={(event) => {
-                    voiceTranscriptYRef.current = event.nativeEvent.layout.y;
-                  }}
-                  style={styles.voiceModalTranscriptBox}
-                >
-                  <Text style={styles.voiceModalTranscriptLabel}>
-                    {modalTranscript
-                      ? `${detectedTranscriptLanguage || "Speech"} detected · Review your words`
-                      : `${selectedLanguage.label} + English listening`}
-                  </Text>
-                  <TextInput
-                    editable={!isVoiceThinking && !isVoicePlaying}
-                    multiline
-                    onChangeText={updateVoiceTranscript}
-                    onFocus={revealVoiceTranscript}
-                    onSubmitEditing={Keyboard.dismiss}
-                    placeholder="Speak naturally. You can share your problem, prayer, or question."
-                    placeholderTextColor="#9A8265"
-                    returnKeyType="done"
-                    style={styles.voiceModalTranscriptInput}
-                    submitBehavior="blurAndSubmit"
-                    textAlignVertical="top"
-                    value={modalTranscript}
-                  />
-                </View>
-
-                {canListenAgain ? (
-                  <Pressable
-                    onPress={listenAgainFromModal}
-                    style={({ pressed }) => [
-                      styles.voiceModalRetryButton,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <RotateCcw
-                      color="#B45309"
-                      size={16}
-                      strokeWidth={2.5}
-                    />
-                    <Text style={styles.voiceModalRetryText}>
-                      Listen again
-                    </Text>
-                  </Pressable>
-                ) : null}
-
-                {answer &&
-                (isVoicePlaying || isVoiceFinished || hasVoiceFailed) ? (
-                  <View style={styles.voiceModalAnswerBox}>
-                    <Text style={styles.voiceModalTranscriptLabel}>
-                      {hasVoiceFailed
-                        ? "Written reply"
-                        : isVoicePlaying
-                          ? "Now playing"
-                          : "Sai assistant"}
-                    </Text>
-                    <Text
-                      numberOfLines={4}
-                      style={styles.voiceModalAnswerText}
-                    >
-                      {answer}
-                    </Text>
-                  </View>
-                ) : null}
-
-                {voiceError ? (
-                  <Text style={styles.voiceModalError}>{voiceError}</Text>
-                ) : null}
-              </ScrollView>
-
-              <View
-                style={[
-                  styles.voiceModalActions,
-                  { paddingBottom: Math.max(insets.bottom, 12) },
-                ]}
-              >
-                <Pressable
-                  disabled={isVoiceSubmitDisabled}
-                  onPress={
-                    canInterruptVoiceReply ||
-                    hasVoiceFailed ||
-                    isVoiceFinished
-                      ? listenAgainFromModal
-                      : submitVoiceModal
-                  }
-                  style={({ pressed }) => [
-                    styles.voiceModalPrimaryButton,
-                    isVoiceSubmitDisabled && styles.voiceModalPrimaryDisabled,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  {isVoiceThinking ? (
-                    <>
-                      <RotateCcw
-                        color="#FFFFFF"
-                        size={17}
-                        strokeWidth={2.5}
-                      />
-                      <Text style={styles.voiceModalPrimaryText}>
-                        {voicePrimaryLabel}
-                      </Text>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={styles.voiceModalPrimaryText}>
-                        {voicePrimaryLabel}
-                      </Text>
-                      {isVoicePlaying ? (
-                        <Pause
-                          color="#FFFFFF"
-                          size={17}
-                          strokeWidth={2.5}
-                        />
-                      ) : (
-                        <Send color="#FFFFFF" size={17} strokeWidth={2.5} />
-                      )}
-                    </>
-                  )}
-                </Pressable>
-
-                <Pressable
-                  onPress={closeVoiceModal}
-                  style={({ pressed }) => [
-                    styles.voiceModalSecondaryButton,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.voiceModalSecondaryText}>
-                    {isVoicePlaying || isVoiceFinished ? "Close" : "Cancel"}
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -4117,156 +3669,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     lineHeight: 20,
   },
-  voiceModalBackdrop: {
-    backgroundColor: "rgba(31, 18, 8, 0.42)",
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  voiceModalKeyboardView: {
-    flex: 1,
-  },
-  voiceModalBackdropPress: {
-    flex: 1,
-  },
-  voiceModalCard: {
-    backgroundColor: "#FFFDF8",
-    borderColor: "#F3E1BE",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    borderWidth: 1,
-    flexShrink: 1,
-    overflow: "hidden",
-    paddingHorizontal: 20,
-    shadowColor: "#7C2D12",
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.16,
-    shadowRadius: 24,
-  },
-  voiceModalScrollContent: {
-    paddingBottom: 4,
-    paddingTop: 10,
-  },
-  voiceModalHandle: {
-    alignSelf: "center",
-    backgroundColor: "#E7D3B4",
-    borderRadius: 100,
-    height: 5,
-    marginBottom: 18,
-    width: 46,
-  },
-  voiceModalHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 14,
-    marginBottom: 18,
-  },
-  voiceLanguageBadge: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 7,
-    marginBottom: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  voiceLanguageBadgeText: {
-    color: "#7C2D12",
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  voiceModalIcon: {
-    alignItems: "center",
-    backgroundColor: "#B45309",
-    borderRadius: 22,
-    height: 54,
-    justifyContent: "center",
-    width: 54,
-  },
-  voiceModalTitle: {
-    color: "#23201D",
-    fontSize: 23,
-    fontWeight: "900",
-    letterSpacing: 0,
-  },
-  voiceModalSubtitle: {
-    color: "#6B5A45",
-    fontSize: 14,
-    fontWeight: "700",
-    lineHeight: 20,
-    marginTop: 4,
-  },
-  voiceCaptureStatus: {
-    alignItems: "center",
-    backgroundColor: "#FFF8E7",
-    borderBottomColor: "#F1DEC0",
-    borderBottomWidth: 1,
-    borderTopColor: "#F1DEC0",
-    borderTopWidth: 1,
-    flexDirection: "row",
-    gap: 11,
-    marginBottom: 14,
-    paddingHorizontal: 4,
-    paddingVertical: 11,
-  },
-  voiceCaptureStatusReady: {
-    backgroundColor: "#F0FDF4",
-    borderBottomColor: "#BBF7D0",
-    borderTopColor: "#BBF7D0",
-  },
-  voiceCaptureReadyDot: {
-    backgroundColor: "#16A34A",
-    borderColor: "#BBF7D0",
-    borderRadius: 10,
-    borderWidth: 4,
-    height: 20,
-    width: 20,
-  },
-  voiceCaptureStatusCopy: {
-    flex: 1,
-  },
-  voiceCaptureStatusTitle: {
-    color: "#92400E",
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  voiceCaptureStatusTitleReady: {
-    color: "#166534",
-  },
-  voiceCaptureStatusText: {
-    color: "#6B5A45",
-    fontSize: 13,
-    fontWeight: "700",
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  voiceWavePanel: {
-    alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#F1DEC0",
-    borderRadius: 24,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    height: 86,
-    justifyContent: "center",
-    marginBottom: 14,
-  },
-  voiceWaveDot: {
-    backgroundColor: "#FED7AA",
-    borderRadius: 999,
-    height: 28,
-    width: 12,
-  },
-  voiceWaveDotTall: {
-    height: 52,
-  },
-  voiceWaveDotActive: {
-    backgroundColor: "#B45309",
-  },
   saiRamWaitingCard: {
     alignItems: "center",
     backgroundColor: "#FFFBEB",
@@ -4350,117 +3752,6 @@ const styles = StyleSheet.create({
     color: "#7C2D12",
     fontSize: 12,
     fontVariant: ["tabular-nums"],
-    fontWeight: "900",
-  },
-  voiceModalTranscriptBox: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F0DFC6",
-    borderRadius: 18,
-    borderWidth: 1,
-    marginBottom: 12,
-    minHeight: 106,
-    padding: 14,
-  },
-  voiceModalAnswerBox: {
-    backgroundColor: "#F7FBFF",
-    borderColor: "#DBEAFE",
-    borderRadius: 18,
-    borderWidth: 1,
-    marginBottom: 12,
-    padding: 14,
-  },
-  voiceModalTranscriptLabel: {
-    color: "#B45309",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 0,
-    marginBottom: 6,
-    textTransform: "uppercase",
-  },
-  voiceModalTranscriptText: {
-    color: "#2F2A24",
-    fontSize: 17,
-    fontWeight: "800",
-    lineHeight: 25,
-  },
-  voiceModalTranscriptInput: {
-    color: "#2F2A24",
-    fontSize: 18,
-    fontWeight: "800",
-    lineHeight: 27,
-    minHeight: 112,
-    padding: 0,
-  },
-  voiceModalRetryButton: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 7,
-    marginBottom: 12,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-  },
-  voiceModalRetryText: {
-    color: "#B45309",
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  voiceModalAnswerText: {
-    color: "#26384F",
-    fontSize: 15,
-    fontWeight: "800",
-    lineHeight: 22,
-  },
-  voiceModalError: {
-    color: "#B91C1C",
-    fontSize: 13,
-    fontWeight: "800",
-    lineHeight: 19,
-    marginBottom: 12,
-  },
-  voiceModalActions: {
-    backgroundColor: "#FFFDF8",
-    borderTopColor: "#F3E1BE",
-    borderTopWidth: 1,
-    flexDirection: "row",
-    gap: 12,
-    paddingTop: 12,
-  },
-  voiceModalSecondaryButton: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F0DFC6",
-    borderRadius: 16,
-    borderWidth: 1,
-    flex: 0.42,
-    height: 54,
-    justifyContent: "center",
-  },
-  voiceModalSecondaryText: {
-    color: "#7C2D12",
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  voiceModalPrimaryButton: {
-    alignItems: "center",
-    backgroundColor: "#B45309",
-    borderRadius: 16,
-    flex: 0.58,
-    flexDirection: "row",
-    gap: 8,
-    height: 54,
-    justifyContent: "center",
-  },
-  voiceModalPrimaryDisabled: {
-    opacity: 0.7,
-  },
-  voiceModalPrimaryText: {
-    color: "#FFFFFF",
-    fontSize: 16,
     fontWeight: "900",
   },
 });
