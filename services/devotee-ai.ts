@@ -15,9 +15,18 @@ export type DevoteeAiPillar =
   | "directory"
   | "sangha";
 
+export type DevoteeAiSupportedLocale =
+  | "hi-IN"
+  | "en-IN";
+
+const normalizeDevoteeAiLocale = (
+  locale?: string
+): DevoteeAiSupportedLocale =>
+  locale === "en-IN" ? "en-IN" : "hi-IN";
+
 export type AskDevoteeQuestionPayload = {
   conversationId?: string;
-  locale?: string;
+  locale?: DevoteeAiSupportedLocale;
   question: string;
   pillar?: DevoteeAiPillar;
   voice?: boolean;
@@ -28,7 +37,7 @@ export type AskDevoteeQuestionResponse = {
   cached?: boolean;
   conversationId?: string;
   latencyMs?: number | null;
-  locale?: string;
+  locale?: DevoteeAiSupportedLocale;
   messageId?: string;
   model?: string | null;
   safetyNote?: string | null;
@@ -96,9 +105,9 @@ export type DevoteeAiVoiceState =
 
 export type CreateDevoteeAiVoiceSessionPayload = {
   conversationId?: string;
-  locale?: string;
+  locale?: DevoteeAiSupportedLocale;
   pillar?: DevoteeAiPillar;
-  secondaryLocale?: string;
+  secondaryLocale?: DevoteeAiSupportedLocale;
   voiceProvider?: "elevenlabs" | "mock";
 };
 
@@ -315,7 +324,9 @@ export async function askDevoteeQuestion(
         getAiEndpoint(),
         {
           conversationId: payload.conversationId,
-          locale: payload.locale || "en-IN",
+          locale: normalizeDevoteeAiLocale(
+            payload.locale
+          ),
           pillar: payload.pillar || "experiences",
           question,
           voice: payload.voice || false,
@@ -342,7 +353,9 @@ export async function askDevoteeQuestion(
       cached: data.cached,
       conversationId: data.conversationId,
       latencyMs: data.latencyMs,
-      locale: data.locale,
+      locale: data.locale
+        ? normalizeDevoteeAiLocale(data.locale)
+        : undefined,
       messageId: data.messageId,
       model: data.model,
       safetyNote: data.safetyNote,
@@ -463,9 +476,13 @@ export async function createDevoteeAiVoiceSession(
     const { data } = await apiClient.post<DevoteeAiVoiceSession>(
       `${AI_BASE_PATH}/voice/sessions`,
       {
-        locale: payload?.locale || "hi-IN",
+        locale: normalizeDevoteeAiLocale(
+          payload?.locale
+        ),
         pillar: payload?.pillar || "experiences",
-        secondaryLocale: payload?.secondaryLocale || "en-IN",
+        secondaryLocale: normalizeDevoteeAiLocale(
+          payload?.secondaryLocale || "en-IN"
+        ),
         voiceProvider: payload?.voiceProvider || "elevenlabs",
         conversationId: payload?.conversationId,
       }

@@ -5,7 +5,13 @@ export default function ExperiencesLayout() {
     <Stack screenOptions={{ headerShown: false, animation: 'none' }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="[id]" />
-      <Stack.Screen name="ask-sai" />
+      <Stack.Screen
+        name="ask-sai"
+        options={{
+          animation: "slide_from_right",
+          gestureEnabled: true,
+        }}
+      />
       <Stack.Screen name="post" />
       <Stack.Screen name="edit" />
       <Stack.Screen name="search" />

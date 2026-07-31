@@ -25,26 +25,23 @@ import {
 import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import { MotiView } from "moti";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
-  History,
+  ArrowLeft,
   Languages,
   Mic,
   Mic2,
   Pause,
-  Plus,
   RotateCcw,
   Send,
-  Sparkles,
   ThumbsDown,
   ThumbsUp,
-  Trash2,
   Volume2,
 } from "lucide-react-native";
 
-import { ExperienceTopTabs } from "@/components/experiences";
 import {
   AskDevoteeQuestionResponse,
   createDevoteeAiVoiceSocket,
@@ -55,6 +52,7 @@ import {
   DevoteeAiVoiceServerEvent,
   DevoteeAiVoiceSession,
   DevoteeAiVoiceState,
+  DevoteeAiSupportedLocale,
   endActiveDevoteeAiVoiceSessions,
   fetchDevoteeAiConversationDetail,
   fetchDevoteeAiConversations,
@@ -79,9 +77,9 @@ const BACKEND_MOCK_TRANSCRIPT =
 
 type AiLanguageOption = {
   label: string;
-  locale: string;
+  locale: DevoteeAiSupportedLocale;
   nativeLabel: string;
-  secondaryLocale: string;
+  secondaryLocale: DevoteeAiSupportedLocale;
 };
 
 const AI_LANGUAGES: AiLanguageOption[] = [
@@ -95,79 +93,7 @@ const AI_LANGUAGES: AiLanguageOption[] = [
     label: "English",
     locale: "en-IN",
     nativeLabel: "English",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Marathi",
-    locale: "mr-IN",
-    nativeLabel: "मराठी",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Bengali",
-    locale: "bn-IN",
-    nativeLabel: "বাংলা",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Gujarati",
-    locale: "gu-IN",
-    nativeLabel: "ગુજરાતી",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Punjabi",
-    locale: "pa-IN",
-    nativeLabel: "ਪੰਜਾਬੀ",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Tamil",
-    locale: "ta-IN",
-    nativeLabel: "தமிழ்",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Telugu",
-    locale: "te-IN",
-    nativeLabel: "తెలుగు",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Kannada",
-    locale: "kn-IN",
-    nativeLabel: "ಕನ್ನಡ",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Malayalam",
-    locale: "ml-IN",
-    nativeLabel: "മലയാളം",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Odia",
-    locale: "or-IN",
-    nativeLabel: "ଓଡ଼ିଆ",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Assamese",
-    locale: "as-IN",
-    nativeLabel: "অসমীয়া",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Urdu",
-    locale: "ur-IN",
-    nativeLabel: "اردو",
-    secondaryLocale: "en-IN",
-  },
-  {
-    label: "Nepali",
-    locale: "ne-NP",
-    nativeLabel: "नेपाली",
-    secondaryLocale: "en-IN",
+    secondaryLocale: "hi-IN",
   },
 ];
 
@@ -209,33 +135,8 @@ const detectTranscriptLanguage = (
   text: string,
   selectedLanguage: AiLanguageOption
 ) => {
-  const scriptMatchers: {
-    labels: string[];
-    pattern: RegExp;
-  }[] = [
-    { labels: ["Urdu"], pattern: /[\u0600-\u06FF]/ },
-    { labels: ["Assamese", "Bengali"], pattern: /[\u0980-\u09FF]/ },
-    { labels: ["Punjabi"], pattern: /[\u0A00-\u0A7F]/ },
-    { labels: ["Gujarati"], pattern: /[\u0A80-\u0AFF]/ },
-    { labels: ["Odia"], pattern: /[\u0B00-\u0B7F]/ },
-    { labels: ["Tamil"], pattern: /[\u0B80-\u0BFF]/ },
-    { labels: ["Telugu"], pattern: /[\u0C00-\u0C7F]/ },
-    { labels: ["Kannada"], pattern: /[\u0C80-\u0CFF]/ },
-    { labels: ["Malayalam"], pattern: /[\u0D00-\u0D7F]/ },
-    {
-      labels: ["Hindi", "Marathi", "Nepali"],
-      pattern: /[\u0900-\u097F]/,
-    },
-  ];
-
-  const matchingScript = scriptMatchers.find(({ pattern }) =>
-    pattern.test(text)
-  );
-
-  if (matchingScript) {
-    return matchingScript.labels.includes(selectedLanguage.label)
-      ? selectedLanguage.label
-      : matchingScript.labels[0];
+  if (/[\u0900-\u097F]/.test(text)) {
+    return "Hindi";
   }
 
   return /[A-Za-z]/.test(text) ? "English" : selectedLanguage.label;
@@ -2836,7 +2737,6 @@ export default function AskSaiScreen() {
     voicePartialTranscript || voiceFinalTranscript,
     selectedLanguage
   );
-  const isRtlLanguage = selectedLanguage.locale === "ur-IN";
   const hasModalTranscript = modalTranscript.trim().length >= 3;
   const isVoiceThinking =
     voiceConnectionState === "thinking" ||
@@ -2942,26 +2842,42 @@ export default function AskSaiScreen() {
         colors={["#FFF8E7", "#FFFFFF", "#F7FBFF"]}
         style={styles.gradient}
       >
-        <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
-          <View style={styles.titleRow}>
-            <View style={styles.iconBubble}>
-              <Sparkles color="#B45309" size={22} strokeWidth={2.4} />
-            </View>
-            <View style={styles.titleCopy}>
-              <Text style={styles.eyebrow}>SAI FAMILY</Text>
-              <Text style={styles.title}>Ask Sai</Text>
-            </View>
-          </View>
-
-          <ExperienceTopTabs activeTab="ask" />
-        </View>
+        <Pressable
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+          hitSlop={10}
+          onPress={() =>
+            router.canGoBack()
+              ? router.back()
+              : router.replace(
+                  "/(tabs)/experiences"
+                )
+          }
+          style={({ pressed }) => [
+            styles.floatingBackButton,
+            {
+              top: insets.top + 8,
+            },
+            pressed &&
+              styles.floatingBackButtonPressed,
+          ]}
+        >
+          <ArrowLeft
+            color="#3F2A16"
+            size={22}
+            strokeWidth={2.4}
+          />
+        </Pressable>
 
         <ScrollView
           ref={mainScrollRef}
           bounces
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: insets.bottom + 8 },
+            {
+              paddingBottom: insets.bottom + 18,
+              paddingTop: insets.top + 66,
+            },
           ]}
           keyboardDismissMode={
             Platform.OS === "ios" ? "interactive" : "on-drag"
@@ -2970,40 +2886,8 @@ export default function AskSaiScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.heroPanel}>
-            <View style={styles.heroActions}>
-              {/* <Pressable
-                onPress={resetConversation}
-                style={({ pressed }) => [
-                  styles.smallActionButton,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Plus color="#B45309" size={16} strokeWidth={2.4} />
-                <Text style={styles.smallActionText}>New</Text>
-              </Pressable> */}
-
-              {/* {conversationId ? (
-                <Pressable
-                  onPress={deleteCurrentConversation}
-                  style={({ pressed }) => [
-                    styles.smallActionButton,
-                    styles.deleteActionButton,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Trash2 color="#B91C1C" size={16} strokeWidth={2.4} />
-                  <Text style={styles.deleteActionText}>Delete</Text>
-                </Pressable>
-              ) : null} */}
-            </View>
-
-            <Text style={styles.heroTitle}>
-              Ask with faith. Receive a calm, practical reply. 
-            </Text>
             <Text style={styles.heroText}>
-              Sai is here for spiritual reflection and app help. For
-              medical, legal, or emergency matters, please speak with the right
-              professional.
+             *By using Ask Sai, you agree to the App Terms & Conditions and Disclaimer
             </Text>
           </View>
 
@@ -3069,7 +2953,7 @@ export default function AskSaiScreen() {
                 <View style={styles.languageTitleCopy}>
                   <Text style={styles.languageTitle}>Choose your language</Text>
                   <Text style={styles.languageSubtitle}>
-                    Sai will listen and reply in the selected language.
+                    Ask in Hindi or English. Sai currently replies in Hindi.
                   </Text>
                 </View>
               </View>
@@ -3131,7 +3015,7 @@ export default function AskSaiScreen() {
               placeholder="Write your question here..."
               placeholderTextColor="#A8A29E"
               returnKeyType="done"
-              style={[styles.input, isRtlLanguage && styles.rtlText]}
+              style={styles.input}
               submitBehavior="blurAndSubmit"
               textAlignVertical="top"
               value={question}
@@ -3139,8 +3023,8 @@ export default function AskSaiScreen() {
             <View style={styles.voiceModeHint}>
               <Volume2 color="#B45309" size={16} strokeWidth={2.3} />
               <Text style={styles.voiceModeHintText}>
-                Speak naturally in {selectedLanguage.label}. English words can
-                be mixed in, and Sai will reply in {selectedLanguage.label}.
+                Speak naturally in {selectedLanguage.label}. Hindi and English
+                words can be mixed; Sai currently replies in Hindi.
               </Text>
             </View>
             {/* just remove */}
@@ -3170,10 +3054,7 @@ export default function AskSaiScreen() {
                     : ""}
                 </Text>
                 <Text
-                  style={[
-                    styles.voiceTranscriptText,
-                    isRtlLanguage && styles.rtlText,
-                  ]}
+                  style={styles.voiceTranscriptText}
                 >
                   {voicePartialTranscript || voiceFinalTranscript}
                 </Text>
@@ -3291,10 +3172,7 @@ export default function AskSaiScreen() {
               </View>
 
               <Text
-                style={[
-                  styles.answerText,
-                  isRtlLanguage && styles.rtlText,
-                ]}
+                style={styles.answerText}
               >
                 {answer}
               </Text>
@@ -3403,7 +3281,7 @@ export default function AskSaiScreen() {
         animationType="fade"
         onRequestClose={closeVoiceModal}
         // transparent
-        
+
         visible={isVoiceModalVisible}
       >
         <KeyboardAvoidingView
@@ -3543,10 +3421,7 @@ export default function AskSaiScreen() {
                     placeholder="Speak naturally. You can share your problem, prayer, or question."
                     placeholderTextColor="#9A8265"
                     returnKeyType="done"
-                    style={[
-                      styles.voiceModalTranscriptInput,
-                      isRtlLanguage && styles.rtlText,
-                    ]}
+                    style={styles.voiceModalTranscriptInput}
                     submitBehavior="blurAndSubmit"
                     textAlignVertical="top"
                     value={modalTranscript}
@@ -3584,10 +3459,7 @@ export default function AskSaiScreen() {
                     </Text>
                     <Text
                       numberOfLines={4}
-                      style={[
-                        styles.voiceModalAnswerText,
-                        isRtlLanguage && styles.rtlText,
-                      ]}
+                      style={styles.voiceModalAnswerText}
                     >
                       {answer}
                     </Text>
@@ -3677,45 +3549,37 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  header: {
-    backgroundColor: "rgba(255, 248, 231, 0.96)",
-    borderBottomColor: "#F3E1BE",
-    borderBottomWidth: 1,
-  },
-  titleRow: {
+  floatingBackButton: {
     alignItems: "center",
-    flexDirection: "row",
-    gap: 18,
-    paddingHorizontal: 18,
-    paddingBottom: 4,
-  },
-  iconBubble: {
-    alignItems: "center",
-    backgroundColor: "#FFE8B6",
-    borderRadius: 18,
-    height: 46,
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderColor: "#E9D8BD",
+    borderRadius: 22,
+    borderWidth: 1,
+    height: 44,
     justifyContent: "center",
-    width: 46,
+    left: 18,
+    position: "absolute",
+    shadowColor: "#7C2D12",
+    shadowOffset: {
+      height: 5,
+      width: 0,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    width: 44,
+    zIndex: 20,
+    elevation: 8,
   },
-  titleCopy: {
-    flex: 1,
-  },
-  eyebrow: {
-    color: "#B45309",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 0,
-  },
-  title: {
-    color: "#1F2933",
-    fontSize: 28,
-    fontWeight: "900",
-    letterSpacing: 0,
-    marginTop: 2,
+  floatingBackButtonPressed: {
+    opacity: 0.72,
+    transform: [
+      {
+        scale: 0.96,
+      },
+    ],
   },
   content: {
     paddingHorizontal: 18,
-    paddingTop: 4,
   },
   heroPanel: {
     backgroundColor: "#FFFFFF",
@@ -3761,16 +3625,16 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     color: "#23201D",
-    fontSize: 20,
-    fontWeight: "800",
-    lineHeight: 29,
+    fontSize: 15,
+    fontWeight: "500",
+    // lineHeight: 9,
   },
   heroText: {
     color: "#6B6257",
     fontSize: 14,
     fontWeight: "600",
     lineHeight: 21,
-    marginTop: 10,
+    // marginTop: 10,
   },
   authCard: {
     backgroundColor: "#FEF2F2",

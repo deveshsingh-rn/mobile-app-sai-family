@@ -159,11 +159,12 @@ export default function CustomTabBar({
     nestedState?.routes?.[
       nestedState.index ?? 0
     ];
-  const isExperienceDetail =
+  const isFocusedExperienceScreen =
     activeRoute?.name === "experiences" &&
-    nestedRoute?.name === "[id]";
+    (nestedRoute?.name === "[id]" ||
+      nestedRoute?.name === "ask-sai");
 
-  if (isExperienceDetail) {
+  if (isFocusedExperienceScreen) {
     return null;
   }
 
