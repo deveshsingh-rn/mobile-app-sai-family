@@ -486,7 +486,6 @@ type PendingVoiceStartContext = {
 export default function AskSaiScreen() {
   const insets = useSafeAreaInsets();
   const mainScrollRef = useRef<ScrollView>(null);
-  const answerScrollRef = useRef<ScrollView>(null);
   const questionCardYRef = useRef(0);
   const voiceSocketRef =
     useRef<ReturnType<typeof createDevoteeAiVoiceSocket> | null>(null);
@@ -3134,14 +3133,6 @@ export default function AskSaiScreen() {
               <ScrollView
                 contentContainerStyle={styles.answerScrollContent}
                 nestedScrollEnabled
-                onContentSizeChange={() => {
-                  answerScrollRef.current?.scrollToEnd({ animated: true });
-
-                  if (isVoiceThinking || isSpeaking) {
-                    mainScrollRef.current?.scrollToEnd({ animated: true });
-                  }
-                }}
-                ref={answerScrollRef}
                 showsVerticalScrollIndicator={false}
                 style={styles.answerScroll}
               >
