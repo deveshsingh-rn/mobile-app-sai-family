@@ -9,6 +9,7 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
+  ImageBackground,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -72,18 +73,32 @@ const SUGGESTED_QUESTIONS = [
 
 const BACKEND_MOCK_TRANSCRIPT =
   "Sai Baba mujhe mushkil samay mein dhairya kaise rakhna chahiye?";
+const SAI_BABA_WELCOME_IMAGE = require("@/assets/images/hariom.png");
 
 type AiLanguageOption = {
+  description: string;
   label: string;
   locale: DevoteeAiSupportedLocale;
+  nativeLabel: string;
   secondaryLocale: DevoteeAiSupportedLocale;
 };
 
-const AUTO_VOICE_LANGUAGE: AiLanguageOption = {
-  label: "Hindi or English",
-  locale: "hi-IN",
-  secondaryLocale: "en-IN",
-};
+const ASK_SAI_LANGUAGE_OPTIONS: AiLanguageOption[] = [
+  {
+    description: "Speak Hindi or English. Baba replies in Hindi.",
+    label: "Hindi",
+    locale: "hi-IN",
+    nativeLabel: "हिंदी",
+    secondaryLocale: "en-IN",
+  },
+  {
+    description: "Speak Hindi or English. Baba replies in English.",
+    label: "English",
+    locale: "en-IN",
+    nativeLabel: "English",
+    secondaryLocale: "hi-IN",
+  },
+];
 
 const FULL_DUPLEX_VOICE_ENABLED =
   process.env.EXPO_PUBLIC_AI_VOICE_ENABLED === "true" ||
@@ -563,7 +578,31 @@ export default function AskSaiScreen() {
     useState<string | null>(null);
   const [voicePartialTranscript, setVoicePartialTranscript] = useState("");
   const [voiceFinalTranscript, setVoiceFinalTranscript] = useState("");
-  const selectedLanguage = AUTO_VOICE_LANGUAGE;
+  const [selectedLanguageLocale, setSelectedLanguageLocale] =
+    useState<DevoteeAiSupportedLocale>("hi-IN");
+  const selectedLanguage = useMemo(
+    () =>
+      ASK_SAI_LANGUAGE_OPTIONS.find(
+        (option) => option.locale === selectedLanguageLocale
+      ) || ASK_SAI_LANGUAGE_OPTIONS[0],
+    [selectedLanguageLocale]
+  );
+
+  const selectLanguage = useCallback(
+    (locale: DevoteeAiSupportedLocale) => {
+      if (locale === selectedLanguageLocale) {
+        return;
+      }
+
+      setSelectedLanguageLocale(locale);
+      void Haptics.selectionAsync();
+      trackProductEvent("Ask Sai Language Selected", {
+        locale,
+        pillar: "experiences",
+      });
+    },
+    [selectedLanguageLocale]
+  );
 
   const canSubmit = useMemo(
     () => question.trim().length >= 3 && !isSubmitting,
@@ -2692,33 +2731,6 @@ export default function AskSaiScreen() {
         colors={["#FFF8E7", "#FFFFFF", "#F7FBFF"]}
         style={styles.gradient}
       >
-        <Pressable
-          accessibilityLabel="Go back"
-          accessibilityRole="button"
-          hitSlop={10}
-          onPress={() =>
-            router.canGoBack()
-              ? router.back()
-              : router.replace(
-                  "/(tabs)/experiences"
-                )
-          }
-          style={({ pressed }) => [
-            styles.floatingBackButton,
-            {
-              top: insets.top + 8,
-            },
-            pressed &&
-              styles.floatingBackButtonPressed,
-          ]}
-        >
-          <ArrowLeft
-            color="#3F2A16"
-            size={22}
-            strokeWidth={2.4}
-          />
-        </Pressable>
-
         <ScrollView
           ref={mainScrollRef}
           bounces
@@ -2726,7 +2738,7 @@ export default function AskSaiScreen() {
             styles.content,
             {
               paddingBottom: insets.bottom + 18,
-              paddingTop: insets.top + 66,
+              paddingTop: insets.top + 12,
             },
           ]}
           keyboardDismissMode={
@@ -2735,11 +2747,60 @@ export default function AskSaiScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.heroPanel}>
-            <Text style={styles.heroText}>
-             *By using Ask Sai, you agree to the App Terms & Conditions and Disclaimer
-            </Text>
-          </View>
+          <LinearGradient
+            colors={["#FFF7C2", "#F59E0B", "#F97316"]}
+            end={{ x: 1, y: 1 }}
+            start={{ x: 0, y: 0 }}
+            style={styles.heroImageFrame}
+          >
+            <ImageBackground
+              imageStyle={styles.heroImage}
+              resizeMode="cover"
+              source={SAI_BABA_WELCOME_IMAGE}
+              style={styles.heroImageCard}
+            >
+              <LinearGradient
+                colors={[
+                  "rgba(24, 14, 6, 0.88)",
+                  "rgba(28, 16, 7, 0.58)",
+                  "rgba(32, 18, 8, 0.10)",
+                  "rgba(36, 20, 8, 0)",
+                ]}
+                end={{ x: 1, y: 0.5 }}
+                locations={[0, 0.4, 0.72, 1]}
+                pointerEvents="none"
+                start={{ x: 0, y: 0.5 }}
+                style={StyleSheet.absoluteFill}
+              />
+
+              <Pressable
+                accessibilityLabel="Go back"
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={() =>
+                  router.canGoBack()
+                    ? router.back()
+                    : router.replace("/(tabs)/experiences")
+                }
+                style={({ pressed }) => [
+                  styles.heroBackButton,
+                  pressed && styles.heroBackButtonPressed,
+                ]}
+              >
+                <ArrowLeft color="#3A2108" size={21} strokeWidth={2.5} />
+              </Pressable>
+
+              <View style={styles.heroImageCopy}>
+                <Text style={styles.heroEyebrow}>OM SAI RAM</Text>
+                <Text style={styles.heroImageTitle}>Ask Sai</Text>
+                <Text style={styles.heroImageSubtitle}>
+                  Share what is in your heart. Receive peaceful guidance.
+                </Text>
+              </View>
+            </ImageBackground>
+          </LinearGradient>
+
+          
 
           {authMessage ? (
             <View style={styles.authCard}>
@@ -2798,12 +2859,38 @@ export default function AskSaiScreen() {
             style={styles.card}
           >
             <View style={styles.questionHeader}>
-              <Text style={styles.languageTitle}>
-                Ask Sai
-              </Text>
-              <Text style={styles.languageSubtitle}>
-                Write or speak naturally in Hindi or English.
-              </Text>
+              <View style={styles.languageTitleCopy}>
+                <Text style={styles.languageTitle}>Ask Sai</Text>
+                <Text style={styles.languageSubtitle}>
+                  Choose reply language. You can speak Hindi or English.
+                </Text>
+              </View>
+              <View style={styles.languageToggle}>
+                {ASK_SAI_LANGUAGE_OPTIONS.map((option) => {
+                  const isSelected = option.locale === selectedLanguage.locale;
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      key={option.locale}
+                      onPress={() => selectLanguage(option.locale)}
+                      style={[
+                        styles.languageToggleButton,
+                        isSelected && styles.languageToggleButtonSelected,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.languageToggleText,
+                          isSelected && styles.languageToggleTextSelected,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
 
             <TextInput
@@ -2811,7 +2898,7 @@ export default function AskSaiScreen() {
               onChangeText={setQuestion}
               onFocus={revealQuestionInput}
               onSubmitEditing={Keyboard.dismiss}
-              placeholder="Write your question here..."
+              placeholder="Write your question or speak on the microphone below..."
               placeholderTextColor="#A8A29E"
               returnKeyType="done"
               style={styles.input}
@@ -2819,18 +2906,19 @@ export default function AskSaiScreen() {
               textAlignVertical="top"
               value={question}
             />
-            <View style={styles.voiceModeHint}>
+            {/* <View style={styles.voiceModeHint}>
               <Volume2 color="#B45309" size={16} strokeWidth={2.3} />
               <Text style={styles.voiceModeHintText}>
                 Language is detected automatically. Sai currently replies in
                 Hindi.
               </Text>
-            </View>
-            {/* just remove */}
-            {/* <SaiRamWaitingCard
-                  active={isWaitingToneActive}
-                  compact
-                /> */}
+            </View> */}
+            <View style={styles.heroPanel}>
+            <Text style={styles.heroText}>
+              By using Ask Sai, you agree to the App Terms & Conditions and
+              Disclaimer.
+            </Text>
+          </View>
 
             <SaiRamWaitingCard
               active={
@@ -2908,7 +2996,7 @@ export default function AskSaiScreen() {
                     isVoiceControlActive && styles.micButtonTextActive,
                   ]}
                 >
-                  {isVoiceControlActive ? "Stop" : "Ask Sai"}
+                  {isVoiceControlActive ? "Stop" : "Speak"}
                 </Text>
               </Pressable>
 
@@ -3117,48 +3205,93 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
-  floatingBackButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.96)",
-    borderColor: "#E9D8BD",
-    borderRadius: 22,
-    borderWidth: 1,
-    height: 44,
-    justifyContent: "center",
-    left: 18,
-    position: "absolute",
-    shadowColor: "#7C2D12",
-    shadowOffset: {
-      height: 5,
-      width: 0,
-    },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    width: 44,
-    zIndex: 20,
-    elevation: 8,
+  heroImageFrame: {
+    backgroundColor: "#F59E0B",
+    borderRadius: 26,
+    padding: 3,
+    shadowColor: "#92400E",
+    shadowOffset: { height: 10, width: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+    elevation: 7,
   },
-  floatingBackButtonPressed: {
-    opacity: 0.72,
-    transform: [
-      {
-        scale: 0.96,
-      },
-    ],
+  heroImageCard: {
+    aspectRatio: 2,
+    borderRadius: 23,
+    justifyContent: "space-between",
+    overflow: "hidden",
+    padding: 14,
+  },
+  heroImage: {
+    backgroundColor: "#2C1A0B",
+    borderRadius: 23,
+  },
+  heroBackButton: {
+    alignItems: "center",
+    backgroundColor: "#FFE29A",
+    borderColor: "rgba(255,255,255,0.78)",
+    borderRadius: 20,
+    borderWidth: 2,
+    height: 40,
+    justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOffset: { height: 5, width: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 9,
+    width: 40,
+    zIndex: 2,
+    elevation: 5,
+  },
+  heroBackButtonPressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.96 }],
+  },
+  heroImageCopy: {
+    maxWidth: "62%",
+    position: "relative",
+    zIndex: 1,
+  },
+  heroEyebrow: {
+    color: "#FFE2A0",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 2,
+    textShadowColor: "rgba(0,0,0,0.34)",
+    textShadowOffset: { height: 1, width: 0 },
+    textShadowRadius: 4,
+  },
+  heroImageTitle: {
+    color: "#FFFFFF",
+    fontFamily: "Georgia",
+    fontSize: 29,
+    fontWeight: "900",
+    lineHeight: 34,
+    marginTop: 2,
+    textShadowColor: "rgba(0,0,0,0.38)",
+    textShadowOffset: { height: 1, width: 0 },
+    textShadowRadius: 6,
+  },
+  heroImageSubtitle: {
+    color: "#FFF7E1",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 17,
+    marginTop: 4,
+    textShadowColor: "rgba(0,0,0,0.34)",
+    textShadowOffset: { height: 1, width: 0 },
+    textShadowRadius: 5,
   },
   content: {
     paddingHorizontal: 18,
   },
   heroPanel: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FFFBEB",
     borderColor: "#F3E1BE",
-    borderRadius: 24,
+    borderRadius: 14,
     borderWidth: 1,
-    padding: 18,
-    shadowColor: "#92400E",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   heroActions: {
     flexDirection: "row",
@@ -3198,11 +3331,10 @@ const styles = StyleSheet.create({
     // lineHeight: 9,
   },
   heroText: {
-    color: "#6B6257",
-    fontSize: 14,
+    color: "#7C5A35",
+    fontSize: 11,
     fontWeight: "600",
-    lineHeight: 21,
-    // marginTop: 10,
+    lineHeight: 16,
   },
   authCard: {
     backgroundColor: "#FEF2F2",
@@ -3318,6 +3450,34 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     paddingRight: 8,
   },
+  languageToggle: {
+    alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    padding: 3,
+  },
+  languageToggleButton: {
+    alignItems: "center",
+    borderRadius: 999,
+    justifyContent: "center",
+    minHeight: 34,
+    minWidth: 72,
+    paddingHorizontal: 12,
+  },
+  languageToggleButtonSelected: {
+    backgroundColor: "#B45309",
+  },
+  languageToggleText: {
+    color: "#7C2D12",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  languageToggleTextSelected: {
+    color: "#FFFFFF",
+  },
   languageChip: {
     alignItems: "center",
     backgroundColor: "#FFFDF8",
@@ -3387,7 +3547,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     minHeight: 136,
     paddingHorizontal: 15,
-    paddingTop: 14,
+    paddingTop: 10,
   },
   voiceModeHint: {
     alignItems: "flex-start",

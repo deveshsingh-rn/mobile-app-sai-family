@@ -115,7 +115,7 @@ export function AskSaiVoiceCaptureModal({
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.primaryText}>Finish & Ask</Text>
+              <Text style={styles.primaryText}>Send</Text>
               <Send color="#FFFFFF" size={17} strokeWidth={2.5} />
             </Pressable>
 
