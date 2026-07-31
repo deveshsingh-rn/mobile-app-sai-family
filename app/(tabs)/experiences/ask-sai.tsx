@@ -1328,10 +1328,17 @@ export default function AskSaiScreen() {
       );
 
     try {
-      await pendingStart.audioStream.startSaiAudioStreamAsync({
-        chunkMs: pendingStart.audioChunkMs,
-        sampleRate: pendingStart.audioSampleRate,
-      });
+      const startResult =
+        await pendingStart.audioStream.startSaiAudioStreamAsync({
+          chunkMs: pendingStart.audioChunkMs,
+          sampleRate: pendingStart.audioSampleRate,
+        });
+
+      if (!startResult.started) {
+        throw new Error(
+          "The microphone route is unavailable. Check microphone access or disconnect other audio devices, then try again."
+        );
+      }
 
       if (
         activeVoiceTurnIdRef.current !== pendingStart.turnId ||
@@ -1354,18 +1361,33 @@ export default function AskSaiScreen() {
         turnId: pendingStart.turnId,
       });
     } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "The microphone could not start.";
+
       isMicCaptureReadyRef.current = false;
       setIsListening(false);
       setVoiceConnectionState("error");
       setVoiceError(
-        "The microphone could not start. Please close voice mode and try again."
+        `${errorMessage} Please close voice mode and try again.`
       );
+      audioChunkSubscriptionRef.current?.remove();
+      audioErrorSubscriptionRef.current?.remove();
+      audioChunkSubscriptionRef.current = null;
+      audioErrorSubscriptionRef.current = null;
+      pendingVoiceStartRef.current = null;
+      activeVoiceTurnIdRef.current = null;
+      setActiveVoiceTurnId(null);
+      pendingStart.socketClient.close();
+      voiceSocketRef.current = null;
+      void cleanupBackendVoiceSessions("native-mic-start-failed");
       logVoiceDebug("Native microphone start failed", {
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
         turnId: pendingStart.turnId,
       });
     }
-  }, []);
+  }, [cleanupBackendVoiceSessions]);
 
   const handleVoiceServerEvent = useCallback(
     (event: DevoteeAiVoiceServerEvent) => {

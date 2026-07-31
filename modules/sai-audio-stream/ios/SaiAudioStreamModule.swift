@@ -2,8 +2,9 @@ import AVFoundation
 import ExpoModulesCore
 
 public class SaiAudioStreamModule: Module {
-  private let audioEngine = AVAudioEngine()
+  private var audioEngine: AVAudioEngine?
   private var isRecording = false
+  private var isStarting = false
   private var sequence = 0
 
   public func definition() -> ModuleDefinition {
@@ -22,34 +23,47 @@ public class SaiAudioStreamModule: Module {
     }
 
     AsyncFunction("getStatusAsync") { () -> [String: Bool] in
-      return ["isRecording": self.isRecording]
+      return self.onMainQueue {
+        ["isRecording": self.isRecording]
+      }
     }
 
     AsyncFunction("startAsync") { (options: [String: Any]?) in
-      try self.startRecording(options: options ?? [:])
-      return ["started": true]
+      try self.onMainQueue {
+        try self.startRecording(options: options ?? [:])
+      }
+      return ["started": self.isRecording]
     }
 
     AsyncFunction("stopAsync") {
-      self.stopRecording()
+      self.onMainQueue {
+        self.stopRecording()
+      }
       return ["stopped": true]
     }
 
     OnDestroy {
-      self.stopRecording()
+      self.onMainQueue {
+        self.stopRecording()
+      }
     }
   }
 
   private func startRecording(options: [String: Any]) throws {
-    if isRecording {
+    if isRecording || isStarting {
       return
     }
+
+    isStarting = true
+    defer { isStarting = false }
 
     let session = AVAudioSession.sharedInstance()
     let permission = session.recordPermission
     guard permission == .granted else {
-      sendAudioError(code: "MIC_PERMISSION_DENIED", message: "Microphone permission is required.")
-      return
+      throw makeAudioError(
+        code: "MIC_PERMISSION_DENIED",
+        message: "Microphone permission is required."
+      )
     }
 
     let requestedSampleRate = Double(options["sampleRate"] as? Int ?? 16000)
@@ -59,8 +73,14 @@ public class SaiAudioStreamModule: Module {
       : 16000
     let chunkMs = min(max(requestedChunkMs, 20), 1000)
 
-    audioEngine.stop()
-    audioEngine.reset()
+    guard sampleRate >= 8000, sampleRate <= 192000 else {
+      throw makeAudioError(
+        code: "UNSUPPORTED_SAMPLE_RATE",
+        message: "The requested microphone sample rate is not supported."
+      )
+    }
+
+    stopAudioEngine()
 
     do {
       try session.setCategory(
@@ -68,28 +88,50 @@ public class SaiAudioStreamModule: Module {
         mode: .voiceChat,
         options: [.defaultToSpeaker, .allowBluetooth]
       )
-      try session.setPreferredSampleRate(sampleRate)
-      try session.setPreferredIOBufferDuration(Double(chunkMs) / 1000.0)
+      try session.setPreferredIOBufferDuration(
+        min(Double(chunkMs) / 1000.0, 0.02)
+      )
       try session.setActive(true)
     } catch {
-      sendAudioError(code: "AUDIO_SESSION_FAILED", message: error.localizedDescription)
-      return
+      deactivateSession()
+      throw makeAudioError(
+        code: "AUDIO_SESSION_FAILED",
+        message: error.localizedDescription
+      )
     }
 
-    let inputNode = audioEngine.inputNode
+    guard session.isInputAvailable, !session.currentRoute.inputs.isEmpty else {
+      deactivateSession()
+      throw makeAudioError(
+        code: "AUDIO_INPUT_UNAVAILABLE",
+        message: "No active microphone input is available. Disconnect other audio devices and try again."
+      )
+    }
+
+    // A fresh engine avoids retaining a stale input format after route changes,
+    // phone calls, Bluetooth transitions, or previous playback sessions.
+    let engine = AVAudioEngine()
+    let inputNode = engine.inputNode
     let inputFormat = inputNode.outputFormat(forBus: 0)
 
-    guard
-      inputFormat.sampleRate.isFinite,
-      inputFormat.sampleRate > 0,
-      inputFormat.channelCount > 0
-    else {
+#if DEBUG
+    let inputRoutes = session.currentRoute.inputs
+      .map { "\($0.portType.rawValue):\($0.portName)" }
+      .joined(separator: ",")
+    print(
+      "[SaiAudioStream] route=\(inputRoutes) hardwareRate=\(inputFormat.sampleRate) " +
+      "hardwareChannels=\(inputFormat.channelCount) targetRate=\(Int(sampleRate))"
+    )
+#endif
+
+    guard isValidInputFormat(inputFormat) else {
+      engine.stop()
+      engine.reset()
       deactivateSession()
-      sendAudioError(
+      throw makeAudioError(
         code: "INVALID_INPUT_AUDIO_FORMAT",
         message: "The microphone returned an invalid audio format. Check the active input route and try again."
       )
-      return
     }
 
     guard let desiredFormat = AVAudioFormat(
@@ -99,17 +141,18 @@ public class SaiAudioStreamModule: Module {
       interleaved: true
     ) else {
       deactivateSession()
-      sendAudioError(code: "UNSUPPORTED_AUDIO_FORMAT", message: "Could not create PCM audio format.")
-      return
+      throw makeAudioError(
+        code: "UNSUPPORTED_AUDIO_FORMAT",
+        message: "Could not create the required 16 kHz mono PCM audio format."
+      )
     }
 
     guard let converter = AVAudioConverter(from: inputFormat, to: desiredFormat) else {
       deactivateSession()
-      sendAudioError(
+      throw makeAudioError(
         code: "AUDIO_CONVERTER_UNAVAILABLE",
         message: "Could not convert the microphone audio to 16 kHz mono PCM."
       )
-      return
     }
 
     let inputFramesPerChunk = max(
@@ -121,13 +164,23 @@ public class SaiAudioStreamModule: Module {
 
     sequence = 0
 
-    inputNode.removeTap(onBus: 0)
     inputNode.installTap(
       onBus: 0,
       bufferSize: inputFramesPerChunk,
-      format: nil
+      format: inputFormat
     ) { [weak self] buffer, _ in
       guard let self, self.isRecording else {
+        return
+      }
+
+      guard self.isValidInputFormat(buffer.format) else {
+        self.sendAudioError(
+          code: "INVALID_CAPTURE_AUDIO_FORMAT",
+          message: "The microphone audio route changed to an unsupported format. Please try again."
+        )
+        DispatchQueue.main.async { [weak self] in
+          self?.stopRecording()
+        }
         return
       }
 
@@ -198,30 +251,60 @@ public class SaiAudioStreamModule: Module {
     }
 
     do {
+      audioEngine = engine
       isRecording = true
-      audioEngine.prepare()
-      try audioEngine.start()
+      engine.prepare()
+      try engine.start()
     } catch {
       isRecording = false
       inputNode.removeTap(onBus: 0)
-      audioEngine.stop()
-      audioEngine.reset()
+      engine.stop()
+      engine.reset()
+      audioEngine = nil
       deactivateSession()
-      sendAudioError(code: "RECORDER_START_FAILED", message: error.localizedDescription)
+      throw makeAudioError(
+        code: "RECORDER_START_FAILED",
+        message: error.localizedDescription
+      )
     }
   }
 
   private func stopRecording() {
-    guard isRecording else {
+    isRecording = false
+    isStarting = false
+    stopAudioEngine()
+
+    deactivateSession(reportError: true)
+  }
+
+  private func stopAudioEngine() {
+    guard let engine = audioEngine else {
       return
     }
 
-    isRecording = false
-    audioEngine.inputNode.removeTap(onBus: 0)
-    audioEngine.stop()
-    audioEngine.reset()
+    engine.inputNode.removeTap(onBus: 0)
+    engine.stop()
+    engine.reset()
+    audioEngine = nil
+  }
 
-    deactivateSession(reportError: true)
+  private func isValidInputFormat(_ format: AVAudioFormat) -> Bool {
+    let sampleRate = format.sampleRate
+    let channelCount = format.channelCount
+
+    return sampleRate.isFinite &&
+      sampleRate >= 8000 &&
+      sampleRate <= 192000 &&
+      channelCount >= 1 &&
+      channelCount <= 8
+  }
+
+  private func onMainQueue<T>(_ work: () throws -> T) rethrows -> T {
+    if Thread.isMainThread {
+      return try work()
+    }
+
+    return try DispatchQueue.main.sync(execute: work)
   }
 
   private func deactivateSession(reportError: Bool = false) {
@@ -242,5 +325,18 @@ public class SaiAudioStreamModule: Module {
       "code": code,
       "message": message
     ])
+  }
+
+  private func makeAudioError(code: String, message: String) -> NSError {
+    sendAudioError(code: code, message: message)
+
+    return NSError(
+      domain: "SaiAudioStream",
+      code: 1,
+      userInfo: [
+        NSLocalizedDescriptionKey: message,
+        "code": code
+      ]
+    )
   }
 }
