@@ -3037,7 +3037,7 @@ export default function AskSaiScreen() {
                 ) : (
                   <>
                     <Send color="#FFFFFF" size={18} strokeWidth={2.4} />
-                    <Text style={styles.askButtonText}>Ask now</Text>
+                    <Text style={styles.askButtonText}>Write</Text>
                   </>
                 )}
               </Pressable>
@@ -3049,7 +3049,7 @@ export default function AskSaiScreen() {
               <View style={styles.answerHeader}>
                 <View>
                   <Text style={styles.answerEyebrow}>REPLY</Text>
-                  <Text style={styles.answerTitle}>Sai assistant says</Text>
+                  <Text style={styles.answerTitle}>Sai Assistant says</Text>
                 </View>
                 {voiceHadAudioChunksRef.current ||
                 !FULL_DUPLEX_VOICE_ENABLED ||
