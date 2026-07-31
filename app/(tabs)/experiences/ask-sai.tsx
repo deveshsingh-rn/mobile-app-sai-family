@@ -470,6 +470,7 @@ type PendingVoiceStartContext = {
 export default function AskSaiScreen() {
   const insets = useSafeAreaInsets();
   const mainScrollRef = useRef<ScrollView>(null);
+  const answerScrollRef = useRef<ScrollView>(null);
   const questionCardYRef = useRef(0);
   const voiceSocketRef =
     useRef<ReturnType<typeof createDevoteeAiVoiceSocket> | null>(null);
@@ -2978,11 +2979,22 @@ export default function AskSaiScreen() {
                 ) : null}
               </View>
 
-              <Text
-                style={styles.answerText}
+              <ScrollView
+                contentContainerStyle={styles.answerScrollContent}
+                nestedScrollEnabled
+                onContentSizeChange={() => {
+                  answerScrollRef.current?.scrollToEnd({ animated: true });
+
+                  if (isVoiceThinking || isSpeaking) {
+                    mainScrollRef.current?.scrollToEnd({ animated: true });
+                  }
+                }}
+                ref={answerScrollRef}
+                showsVerticalScrollIndicator={false}
+                style={styles.answerScroll}
               >
-                {answer}
-              </Text>
+                <Text style={styles.answerText}>{answer}</Text>
+              </ScrollView>
 
               <View style={styles.metaRow}>
                 {typeof lastResponse?.latencyMs === "number" ? (
@@ -3537,10 +3549,17 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   answerCard: {
-    backgroundColor: "#23201D",
+    backgroundColor: "#FFFBEB",
+    borderColor: "#F4D58D",
     borderRadius: 24,
+    borderWidth: 1,
     marginTop: 10,
     padding: 18,
+    shadowColor: "#92400E",
+    shadowOffset: { height: 8, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 3,
   },
   answerHeader: {
     alignItems: "center",
@@ -3549,13 +3568,13 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   answerEyebrow: {
-    color: "#FACC15",
+    color: "#B45309",
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 0,
   },
   answerTitle: {
-    color: "#FFFFFF",
+    color: "#5A2D0C",
     fontSize: 19,
     fontWeight: "900",
     marginTop: 2,
@@ -3577,10 +3596,21 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   answerText: {
-    color: "#FFF7ED",
-    fontSize: 16,
-    fontWeight: "700",
-    lineHeight: 25,
+    color: "#7C2D12",
+    fontSize: 17,
+    fontWeight: "600",
+    lineHeight: 28,
+  },
+  answerScroll: {
+    backgroundColor: "rgba(255,255,255,0.74)",
+    borderColor: "#F3E1BE",
+    borderRadius: 16,
+    borderWidth: 1,
+    maxHeight: 238,
+  },
+  answerScrollContent: {
+    paddingHorizontal: 14,
+    paddingVertical: 13,
   },
   metaRow: {
     flexDirection: "row",
@@ -3589,33 +3619,33 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   metaPill: {
-    backgroundColor: "rgba(255, 247, 237, 0.12)",
-    borderColor: "rgba(253, 230, 138, 0.24)",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   metaText: {
-    color: "#FDE68A",
+    color: "#9A3412",
     fontSize: 11,
     fontWeight: "900",
   },
   safetyNote: {
-    color: "#FDE68A",
+    color: "#92400E",
     fontSize: 13,
     fontWeight: "700",
     lineHeight: 19,
     marginTop: 14,
   },
   feedbackRow: {
-    borderTopColor: "rgba(255, 247, 237, 0.14)",
+    borderTopColor: "#F3E1BE",
     borderTopWidth: 1,
     marginTop: 18,
     paddingTop: 16,
   },
   feedbackTitle: {
-    color: "#FFF7ED",
+    color: "#5A2D0C",
     fontSize: 13,
     fontWeight: "900",
     marginBottom: 10,
@@ -3626,7 +3656,7 @@ const styles = StyleSheet.create({
   },
   feedbackButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.14)",
+    backgroundColor: "#B45309",
     borderRadius: 999,
     flexDirection: "row",
     gap: 7,
