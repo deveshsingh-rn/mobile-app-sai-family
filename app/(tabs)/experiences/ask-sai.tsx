@@ -2860,7 +2860,6 @@ export default function AskSaiScreen() {
           >
             <View style={styles.questionHeader}>
               <View style={styles.languageTitleCopy}>
-                <Text style={styles.languageTitle}>Ask Sai</Text>
                 <Text style={styles.languageSubtitle}>
                   Choose reply language. You can speak Hindi or English.
                 </Text>
