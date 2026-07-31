@@ -6,7 +6,6 @@ import React, {
 } from "react";
 
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -28,6 +27,9 @@ import {
   MapPin,
 } from "lucide-react-native";
 
+import {
+  ExperienceEditSkeleton,
+} from "@/components/experiences";
 import {
   fetchExperienceCategoriesRequest,
   fetchExperienceDetailRequest,
@@ -134,17 +136,7 @@ export default function EditExperienceScreen() {
     loading &&
     detail?.id !== experienceId
   ) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator
-          color="#F97316"
-          size="large"
-        />
-        <Text style={styles.loadingText}>
-          Preparing your experience...
-        </Text>
-      </View>
-    );
+    return <ExperienceEditSkeleton />;
   }
 
   return (
@@ -302,18 +294,6 @@ export default function EditExperienceScreen() {
 }
 
 const styles = StyleSheet.create({
-  centered: {
-    alignItems: "center",
-    backgroundColor: "#FFFCF7",
-    flex: 1,
-    justifyContent: "center",
-  },
-  loadingText: {
-    color: "#78716C",
-    fontSize: 15,
-    fontWeight: "700",
-    marginTop: 14,
-  },
   container: {
     backgroundColor: "#FFFCF7",
     flex: 1,

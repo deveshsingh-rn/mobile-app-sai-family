@@ -5,7 +5,6 @@ import React, {
 } from "react";
 
 import {
-  ActivityIndicator,
   RefreshControl,
   StyleSheet,
   Text,
@@ -24,6 +23,7 @@ import {
 import {
   ExperienceCard,
   ExperienceCardSkeleton,
+  ExperienceListFooterSkeleton,
   ExperienceTopTabs,
 } from "@/components/experiences";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
@@ -238,12 +238,7 @@ export default function BookmarkedExperiencesScreen() {
     }
 
     return (
-      <View style={styles.footer}>
-        <ActivityIndicator
-          color="#b97813"
-          size="small"
-        />
-      </View>
+      <ExperienceListFooterSkeleton />
     );
   };
 

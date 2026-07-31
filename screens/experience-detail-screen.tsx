@@ -5,7 +5,6 @@ import React, {
 } from "react";
 
 import {
-  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -22,7 +21,10 @@ import {
 
 import { ArrowLeft } from "lucide-react-native";
 
-import { ExperienceCard } from "@/components/experiences";
+import {
+  ExperienceCard,
+  ExperienceDetailSkeleton,
+} from "@/components/experiences";
 import CommentInput from "@/components/experiences/CommentInput";
 import CommentItem from "@/components/experiences/CommentItem";
 import {
@@ -200,14 +202,7 @@ export default function ExperienceDetailScreen() {
   ]);
 
   if (loading && !detail) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator
-          color="#c17d17"
-          size="large"
-        />
-      </View>
-    );
+    return <ExperienceDetailSkeleton />;
   }
 
   if (!detail) {
@@ -329,13 +324,6 @@ const styles = StyleSheet.create({
 
   topSpacer: {
     width: 40,
-  },
-
-  loader: {
-    alignItems: "center",
-    backgroundColor: "#FAFAF9",
-    flex: 1,
-    justifyContent: "center",
   },
 
   content: {

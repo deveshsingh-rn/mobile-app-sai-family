@@ -7,7 +7,6 @@ import React, {
 } from "react";
 
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -28,6 +27,7 @@ import {
 import {
   ExperienceCard,
   ExperienceCardSkeleton,
+  ExperienceListFooterSkeleton,
   ExperienceTopTabs,
 } from "@/components/experiences";
 
@@ -316,12 +316,7 @@ export default function SearchExperiencesScreen() {
     }
 
     return (
-      <View style={styles.footer}>
-        <ActivityIndicator
-          color="#b97813"
-          size="small"
-        />
-      </View>
+      <ExperienceListFooterSkeleton />
     );
   };
 

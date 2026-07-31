@@ -6,7 +6,6 @@ import React, {
 } from "react";
 
 import {
-  ActivityIndicator,
   Animated,
   Easing,
   ImageBackground,
@@ -32,6 +31,7 @@ import {
   CategoryChips,
   ExperienceCard,
   ExperienceCardSkeleton,
+  ExperienceListFooterSkeleton,
   ExperienceTopTabs,
 } from "@/components/experiences";
 
@@ -463,12 +463,7 @@ export default function HomeScreen() {
     }
 
     return (
-      <View style={styles.footer}>
-        <ActivityIndicator
-          size="small"
-          color="#b97813"
-        />
-      </View>
+      <ExperienceListFooterSkeleton />
     );
   };
 
