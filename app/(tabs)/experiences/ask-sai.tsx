@@ -2915,6 +2915,9 @@ export default function AskSaiScreen() {
             </View>
 
             <TextInput
+              accessibilityHint="Long questions can be reviewed by scrolling inside this box"
+              accessibilityLabel="Your question for Ask Sai"
+              maxLength={1000}
               multiline
               onChangeText={setQuestion}
               onFocus={revealQuestionInput}
@@ -2922,6 +2925,7 @@ export default function AskSaiScreen() {
               placeholder="Write your question or speak on the microphone below..."
               placeholderTextColor="#A8A29E"
               returnKeyType="done"
+              scrollEnabled
               style={styles.input}
               submitBehavior="blurAndSubmit"
               textAlignVertical="top"
@@ -3566,9 +3570,11 @@ const styles = StyleSheet.create({
     color: "#23201D",
     fontSize: 16,
     fontWeight: "700",
-    minHeight: 136,
+    height: 150,
+    lineHeight: 24,
+    paddingBottom: 14,
     paddingHorizontal: 15,
-    paddingTop: 10,
+    paddingTop: 14,
   },
   voiceModeHint: {
     alignItems: "flex-start",
