@@ -2,6 +2,7 @@ import React from "react";
 
 import {
   ActionSheetIOS,
+  ActivityIndicator,
   Alert,
   GestureResponderEvent,
   Image,
@@ -17,17 +18,20 @@ import {
 import { useRouter } from "expo-router";
 
 import {
+  AudioLines,
   Bookmark,
   Heart,
   MapPin,
   MessageCircle,
   MoreHorizontal,
+  Pause,
   Play,
   Repeat2,
   Share2,
 } from "lucide-react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
+import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 
 import { useDispatch } from "react-redux";
 
@@ -69,6 +73,89 @@ const formatCreatedAt = (value?: string) => {
     month: "short",
   }).format(date);
 };
+
+const formatAudioTime = (value?: number) => {
+  const totalSeconds = Math.max(0, Math.floor(Number(value) || 0));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
+
+function ExperienceAudioAttachment({ url }: { url: string }) {
+  const player = useAudioPlayer(url, {
+    downloadFirst: true,
+    updateInterval: 250,
+  });
+  const status = useAudioPlayerStatus(player);
+  const progress =
+    status.duration > 0
+      ? Math.min(1, status.currentTime / status.duration)
+      : 0;
+
+  const togglePlayback = async (event: GestureResponderEvent) => {
+    event.stopPropagation();
+
+    if (status.playing) {
+      player.pause();
+      return;
+    }
+
+    if (
+      status.duration > 0 &&
+      status.currentTime >= status.duration - 0.2
+    ) {
+      await player.seekTo(0);
+    }
+
+    player.play();
+  };
+
+  return (
+    <Pressable
+      accessibilityLabel={status.playing ? "Pause audio experience" : "Play audio experience"}
+      accessibilityRole="button"
+      onPress={togglePlayback}
+      style={({ pressed }) => [
+        styles.audioAttachment,
+        pressed && styles.audioAttachmentPressed,
+      ]}
+    >
+      <View style={styles.audioPlayButton}>
+        {status.isBuffering ? (
+          <ActivityIndicator color="#FFFFFF" size="small" />
+        ) : status.playing ? (
+          <Pause color="#FFFFFF" fill="#FFFFFF" size={19} />
+        ) : (
+          <Play color="#FFFFFF" fill="#FFFFFF" size={19} />
+        )}
+      </View>
+
+      <View style={styles.audioAttachmentBody}>
+        <View style={styles.audioAttachmentHeading}>
+          <AudioLines color="#9A3412" size={17} strokeWidth={2.2} />
+          <Text style={styles.audioAttachmentTitle}>Voice experience</Text>
+        </View>
+        <View style={styles.audioProgressTrack}>
+          <View
+            style={[
+              styles.audioProgressFill,
+              { width: `${progress * 100}%` },
+            ]}
+          />
+        </View>
+        <View style={styles.audioTimeRow}>
+          <Text style={styles.audioTimeText}>
+            {formatAudioTime(status.currentTime)}
+          </Text>
+          <Text style={styles.audioTimeText}>
+            {status.duration > 0 ? formatAudioTime(status.duration) : "Audio"}
+          </Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
 
 type Props = {
   currentUserId?: string;
@@ -208,9 +295,6 @@ export function ExperienceCard({
   const createdLabel = formatCreatedAt(
     item.createdAt
   );
-  const authorHandle =
-    item.authorHandle || "saifamily";
-
   return (
     <Pressable
       onPress={handleOpenDetail}
@@ -259,13 +343,6 @@ export function ExperienceCard({
                   {item.authorName || "Sai Devotee"}
                 </Text>
 
-                <Text
-                  numberOfLines={1}
-                  style={styles.handle}
-                >
-                  @{authorHandle}
-                </Text>
-
                 {!!createdLabel && (
                   <>
                     <View style={styles.metaDot} />
@@ -293,35 +370,29 @@ export function ExperienceCard({
                 </Pressable>
               ) : null}
             </View>
+
+            {(item.category || item.location) && (
+              <View style={styles.contextRow}>
+                {!!item.category && (
+                  <View style={styles.categoryBadge}>
+                    <Text numberOfLines={1} style={styles.categoryText}>
+                      {String(item.category)}
+                    </Text>
+                  </View>
+                )}
+
+                {!!item.location && (
+                  <View style={styles.locationRow}>
+                    <MapPin color="#9CA3AF" size={12} />
+                    <Text numberOfLines={1} style={styles.locationText}>
+                      {item.location}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         </View>
-
-        {(item.category || item.location) && (
-          <View style={styles.contextRow}>
-            {!!item.category && (
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>
-                  {String(item.category)}
-                </Text>
-              </View>
-            )}
-
-            {!!item.location && (
-              <View style={styles.locationRow}>
-                <MapPin
-                  color="#9CA3AF"
-                  size={12}
-                />
-                <Text
-                  numberOfLines={1}
-                  style={styles.locationText}
-                >
-                  {item.location}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
 
         <Text
           numberOfLines={
@@ -345,11 +416,26 @@ export function ExperienceCard({
           (() => {
             const media =
               item.mediaAttachments[0];
+            const isAudio =
+              media.type === "audio";
             const isVideo =
               media.type === "video";
             const mediaUri = isVideo
               ? media.thumbnailUrl
               : media.url;
+
+            if (isAudio) {
+              return media.url ? (
+                <ExperienceAudioAttachment url={media.url} />
+              ) : (
+                <View style={styles.audioUnavailable}>
+                  <AudioLines color="#9A3412" size={20} />
+                  <Text style={styles.audioUnavailableText}>
+                    Audio is unavailable
+                  </Text>
+                </View>
+              );
+            }
 
             return (
               <Pressable
@@ -643,14 +729,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 
-  handle: {
-    color: "#6B7280",
-    flexShrink: 1,
-    fontSize: 12,
-    fontWeight: "500",
-    marginLeft: 5,
-  },
-
   metaDot: {
     backgroundColor: "#9CA3AF",
     borderRadius: 2,
@@ -682,8 +760,9 @@ const styles = StyleSheet.create({
   contextRow: {
     alignItems: "center",
     flexDirection: "row",
-    marginTop: 13,
-    minHeight: 20,
+    marginTop: 5,
+    minHeight: 18,
+    minWidth: 0,
   },
 
   categoryBadge: {
@@ -691,7 +770,7 @@ const styles = StyleSheet.create({
     borderColor: "#FED7AA",
     borderRadius: 8,
     borderWidth: 1,
-    maxWidth: 105,
+    maxWidth: 100,
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
@@ -723,7 +802,8 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     gap: 3,
-    marginLeft: 8,
+    marginLeft: 7,
+    minWidth: 0,
   },
 
   locationText: {
@@ -731,6 +811,97 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 10,
     fontWeight: "600",
+  },
+
+  audioAttachment: {
+    alignItems: "center",
+    backgroundColor: "#FFF8ED",
+    borderColor: "#F3DFC0",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    marginTop: 14,
+    minHeight: 82,
+    padding: 12,
+  },
+
+  audioAttachmentPressed: {
+    backgroundColor: "#FFF2DE",
+    opacity: 0.82,
+  },
+
+  audioPlayButton: {
+    alignItems: "center",
+    backgroundColor: "#292524",
+    borderRadius: 23,
+    height: 46,
+    justifyContent: "center",
+    width: 46,
+  },
+
+  audioAttachmentBody: {
+    flex: 1,
+    marginLeft: 12,
+    minWidth: 0,
+  },
+
+  audioAttachmentHeading: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+  },
+
+  audioAttachmentTitle: {
+    color: "#292524",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  audioProgressTrack: {
+    backgroundColor: "#E7D7BF",
+    borderRadius: 2,
+    height: 4,
+    marginTop: 9,
+    overflow: "hidden",
+    width: "100%",
+  },
+
+  audioProgressFill: {
+    backgroundColor: "#C2410C",
+    borderRadius: 2,
+    height: "100%",
+  },
+
+  audioTimeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 5,
+  },
+
+  audioTimeText: {
+    color: "#78716C",
+    fontSize: 10,
+    fontVariant: ["tabular-nums"],
+    fontWeight: "600",
+  },
+
+  audioUnavailable: {
+    alignItems: "center",
+    backgroundColor: "#FFF8ED",
+    borderColor: "#F3DFC0",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 14,
+    minHeight: 60,
+    paddingHorizontal: 14,
+  },
+
+  audioUnavailableText: {
+    color: "#78716C",
+    fontSize: 13,
+    fontWeight: "700",
   },
 
   mediaContainer: {
