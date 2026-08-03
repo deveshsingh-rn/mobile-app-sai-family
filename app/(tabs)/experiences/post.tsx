@@ -31,6 +31,7 @@ import { useDispatch, useSelector } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as Location from "expo-location";
+import { ExpoSpeechRecognitionModule } from "expo-speech-recognition";
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,
@@ -88,16 +89,6 @@ const formatRecordingDuration = (durationMillis: number) => {
 
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
-
-async function getSpeechRecognitionModule() {
-  const speechRecognition = await import("expo-speech-recognition");
-
-  if (!speechRecognition.ExpoSpeechRecognitionModule) {
-    throw new Error("Speech recognition is unavailable in this build.");
-  }
-
-  return speechRecognition.ExpoSpeechRecognitionModule;
-}
 
 export default function PremiumPostScreen() {
   const dispatch = useDispatch();
@@ -200,61 +191,48 @@ export default function PremiumPostScreen() {
   }, [attachCurrentLocation]);
 
   useEffect(() => {
-    let mounted = true;
-    let resultSubscription: { remove: () => void } | undefined;
-    let errorSubscription: { remove: () => void } | undefined;
-    let endSubscription: { remove: () => void } | undefined;
+    const resultSubscription = ExpoSpeechRecognitionModule.addListener(
+      "result",
+      (event: {
+        isFinal: boolean;
+        results?: { transcript?: string }[];
+      }) => {
+        const transcript = event.results?.[0]?.transcript?.trim();
 
-    void getSpeechRecognitionModule()
-      .then((speechRecognitionModule) => {
-        if (!mounted) {
+        if (!transcript) {
           return;
         }
 
-        resultSubscription = speechRecognitionModule.addListener(
-          "result",
-          (event: {
-            isFinal: boolean;
-            results?: { transcript?: string }[];
-          }) => {
-            const transcript = event.results?.[0]?.transcript?.trim();
-
-            if (!transcript) {
-              return;
-            }
-
-            setContent(
-              [contentBeforeDictationRef.current, transcript]
-                .filter(Boolean)
-                .join(" ")
-            );
-
-            if (event.isFinal) {
-              setIsDictating(false);
-            }
-          }
+        setContent(
+          [contentBeforeDictationRef.current, transcript]
+            .filter(Boolean)
+            .join(" ")
         );
-        errorSubscription = speechRecognitionModule.addListener(
-          "error",
-          (event: { message?: string }) => {
-            setIsDictating(false);
-            Alert.alert(
-              "Voice typing unavailable",
-              event.message || "Please try again or type your experience."
-            );
-          }
-        );
-        endSubscription = speechRecognitionModule.addListener("end", () => {
+
+        if (event.isFinal) {
           setIsDictating(false);
-        });
-      })
-      .catch(() => undefined);
+        }
+      }
+    );
+    const errorSubscription = ExpoSpeechRecognitionModule.addListener(
+      "error",
+      (event: { message?: string }) => {
+        setIsDictating(false);
+        Alert.alert(
+          "Voice typing unavailable",
+          event.message || "Please try again or type your experience."
+        );
+      }
+    );
+    const endSubscription = ExpoSpeechRecognitionModule.addListener(
+      "end",
+      () => setIsDictating(false)
+    );
 
     return () => {
-      mounted = false;
-      resultSubscription?.remove();
-      errorSubscription?.remove();
-      endSubscription?.remove();
+      resultSubscription.remove();
+      errorSubscription.remove();
+      endSubscription.remove();
     };
   }, []);
 
@@ -349,8 +327,8 @@ export default function PremiumPostScreen() {
 
   const startEnglishDictation = async () => {
     try {
-      const speechRecognitionModule = await getSpeechRecognitionModule();
-      const permission = await speechRecognitionModule.requestPermissionsAsync();
+      const permission =
+        await ExpoSpeechRecognitionModule.requestPermissionsAsync();
 
       if (!permission.granted) {
         Alert.alert(
@@ -363,7 +341,7 @@ export default function PremiumPostScreen() {
       contentBeforeDictationRef.current = content.trim();
       setVoiceMenuVisible(false);
       setIsDictating(true);
-      speechRecognitionModule.start({
+      ExpoSpeechRecognitionModule.start({
         continuous: false,
         interimResults: true,
         lang: "en-IN",
@@ -542,7 +520,36 @@ export default function PremiumPostScreen() {
         <View style={styles.composerSurface}>
           <View style={styles.categorySection}>
             <View style={styles.categoryHeading}>
-              <Text style={styles.categoryTitle}>Choose category</Text>
+              <View style={{ flexDirection: "row",borderWidth: 1, borderColor: "#d1c9b8", alignItems: "center", gap: 24, paddingBottom: 4 }}>
+                 <Text style={styles.categoryTitle}>Choose category </Text>
+                {/* ───────────────── LOCATION ───────────────── */}
+
+          {isLocating ? (
+            <View style={styles.locationPill}>
+              <ActivityIndicator color="#A34A0A" size="small" />
+              <Text style={styles.locationText}>Adding current location</Text>
+            </View>
+          ) : !!location ? (
+            <View
+              style={
+                styles.locationPill
+              }
+            >
+              <MapPin
+                size={14}
+                color="#a66d11"
+              />
+
+              <Text
+                style={
+                  styles.locationText
+                }
+              >
+                {location}
+              </Text>
+            </View>
+          ) : null}</View>
+             
               <Text style={styles.categoryHint}>Helps devotees discover your post</Text>
             </View>
             <View style={styles.categoryRail}>
@@ -698,33 +705,7 @@ export default function PremiumPostScreen() {
             </View>
           )}
 
-          {/* ───────────────── LOCATION ───────────────── */}
-
-          {isLocating ? (
-            <View style={styles.locationPill}>
-              <ActivityIndicator color="#A34A0A" size="small" />
-              <Text style={styles.locationText}>Adding current location</Text>
-            </View>
-          ) : !!location ? (
-            <View
-              style={
-                styles.locationPill
-              }
-            >
-              <MapPin
-                size={14}
-                color="#a66d11"
-              />
-
-              <Text
-                style={
-                  styles.locationText
-                }
-              >
-                {location}
-              </Text>
-            </View>
-          ) : null}
+          
         </View>
       </ScrollView>
 
@@ -1092,6 +1073,7 @@ const styles = StyleSheet.create({
     color: "#292524",
     fontSize: 15,
     fontWeight: "800",
+    // borderWidth: 1,
   },
 
   categoryHint: {
