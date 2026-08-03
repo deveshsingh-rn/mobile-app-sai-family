@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  InputAccessoryView,
   Keyboard,
   KeyboardAvoidingView,
   type LayoutChangeEvent,
@@ -43,7 +42,6 @@ import {
 
 import {
   ArrowLeft,
-  Check,
   ChevronRight,
   CircleStop,
   FileAudio,
@@ -80,8 +78,6 @@ type SelectedMedia = {
   name?: string;
   mimeType?: string;
 };
-
-const COMPOSER_ACCESSORY_ID = "experience-post-composer-accessory";
 
 const formatRecordingDuration = (durationMillis: number) => {
   const totalSeconds = Math.max(0, Math.floor(durationMillis / 1000));
@@ -604,11 +600,6 @@ export default function PremiumPostScreen() {
             value={content}
             onChangeText={setContent}
             multiline
-            inputAccessoryViewID={
-              Platform.OS === "ios"
-                ? COMPOSER_ACCESSORY_ID
-                : undefined
-            }
             onBlur={() =>
               setIsComposerFocused(false)
             }
@@ -616,6 +607,7 @@ export default function PremiumPostScreen() {
             onLayout={captureInputOffset}
             onSubmitEditing={dismissKeyboard}
             returnKeyType="done"
+            submitBehavior="blurAndSubmit"
             textAlignVertical="top"
             placeholder="What would you like to share with the Sai Family?"
             placeholderTextColor="#b78c56"
@@ -729,34 +721,19 @@ export default function PremiumPostScreen() {
 
       {/* ───────────────── TOOLBAR ───────────────── */}
 
-      {Platform.OS !== "ios" && isComposerFocused && (
-        <View style={styles.androidDoneBar}>
-          <Pressable
-            onPress={dismissKeyboard}
-            style={styles.keyboardDoneButton}
-          >
-            <Check
-              color="#FFFFFF"
-              size={16}
-              strokeWidth={2.5}
-            />
-            <Text style={styles.keyboardDoneText}>
-              Done
-            </Text>
-          </Pressable>
-        </View>
-      )}
-
-      {!isComposerFocused ? (
-        <View
-          style={[
-            styles.toolbar,
-            { paddingBottom: Math.max(insets.bottom, 12) },
-          ]}
-        >
+      <View
+        style={[
+          styles.toolbar,
+          {
+            paddingBottom: isComposerFocused
+              ? 10
+              : Math.max(insets.bottom, 12),
+          },
+        ]}
+      >
         <View style={styles.actions}>
           <ActionButton
-            label="Photo"
+            label="Image"
             icon={
               <ImageIcon
                 size={20}
@@ -779,7 +756,7 @@ export default function PremiumPostScreen() {
 
           <ActionButton
             active={isDictating || audioRecorderState.isRecording}
-            label="Voice"
+            label="Audio"
             icon={
               <Mic
                 size={20}
@@ -793,35 +770,7 @@ export default function PremiumPostScreen() {
             onPress={() => setVoiceMenuVisible(true)}
           />
         </View>
-        </View>
-      ) : null}
-
-      {Platform.OS === "ios" && (
-        <InputAccessoryView
-          nativeID={
-            COMPOSER_ACCESSORY_ID
-          }
-        >
-          <View style={styles.keyboardAccessory}>
-            <Text style={styles.keyboardAccessoryHint}>
-              Experience note
-            </Text>
-            <Pressable
-              onPress={dismissKeyboard}
-              style={styles.keyboardDoneButton}
-            >
-              <Check
-                color="#FFFFFF"
-                size={16}
-                strokeWidth={2.5}
-              />
-              <Text style={styles.keyboardDoneText}>
-                Done
-              </Text>
-            </Pressable>
-          </View>
-        </InputAccessoryView>
-      )}
+      </View>
 
       <Modal
         animationType="fade"
@@ -1279,15 +1228,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
-  androidDoneBar: {
-    alignItems: "flex-end",
-    backgroundColor: "rgba(255,252,247,0.96)",
-    borderTopColor: "#E7D7BE",
-    borderTopWidth: 1,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-
   actionButton: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
@@ -1323,39 +1263,6 @@ const styles = StyleSheet.create({
 
   disabledButton: {
     opacity: 0.5,
-  },
-
-  keyboardAccessory: {
-    alignItems: "center",
-    backgroundColor: "#FFFCF7",
-    borderTopColor: "#E7D7BE",
-    borderTopWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-
-  keyboardAccessoryHint: {
-    color: "#78716C",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-
-  keyboardDoneButton: {
-    alignItems: "center",
-    backgroundColor: "#23201D",
-    borderRadius: 999,
-    flexDirection: "row",
-    gap: 6,
-    minHeight: 38,
-    paddingHorizontal: 14,
-  },
-
-  keyboardDoneText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "900",
   },
 
   modalBackdrop: {
