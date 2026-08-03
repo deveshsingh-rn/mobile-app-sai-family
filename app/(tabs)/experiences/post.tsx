@@ -132,10 +132,14 @@ export default function PremiumPostScreen() {
   const audioRecorderState = useAudioRecorderState(audioRecorder, 250);
 
   const isDisabled = useMemo(() => {
+    const hasContent = Boolean(content.trim());
+    const audioNeedsDescription =
+      selectedMedia?.type === "audio" && !hasContent;
+
     return (
-      (!content.trim() &&
-        !selectedMedia) ||
-      !selectedCategory
+      (!hasContent && !selectedMedia) ||
+      !selectedCategory ||
+      audioNeedsDescription
     );
   }, [content, selectedMedia, selectedCategory]);
 
@@ -414,6 +418,14 @@ export default function PremiumPostScreen() {
   // ───────────────── POST ─────────────────
 
   const handlePost = () => {
+    if (selectedMedia?.type === "audio" && !content.trim()) {
+      Alert.alert(
+        "Add a description",
+        "Please write a short description before publishing an audio experience."
+      );
+      return;
+    }
+
     const userId =
       account?.id ||
       account?.authorId;
@@ -676,40 +688,28 @@ export default function PremiumPostScreen() {
 
               {selectedMedia.type ===
                 "audio" && (
-                <View
-                  style={
-                    styles.audioCard
-                  }
-                >
-                  <FileAudio
-                    size={24}
-                    color="#a66d11"
-                  />
+                <View style={styles.audioSelection}>
+                  <View style={styles.audioCard}>
+                    <FileAudio
+                      size={24}
+                      color="#a66d11"
+                    />
 
-                  <View
-                    style={
-                      styles.audioInfo
-                    }
-                  >
-                    <Text
-                      style={
-                        styles.audioTitle
-                      }
-                    >
-                      Audio Selected
-                    </Text>
+                    <View style={styles.audioInfo}>
+                      <Text style={styles.audioTitle}>
+                        Audio selected
+                      </Text>
 
-                    <Text
-                      numberOfLines={1}
-                      style={
-                        styles.audioName
-                      }
-                    >
-                      {
-                        selectedMedia.name
-                      }
-                    </Text>
+                      <Text numberOfLines={1} style={styles.audioName}>
+                        {selectedMedia.name}
+                      </Text>
+                    </View>
                   </View>
+                  {!content.trim() ? (
+                    <Text style={styles.audioRequirement}>
+                      Add a short description above to publish this audio.
+                    </Text>
+                  ) : null}
                 </View>
               )}
             </View>
@@ -1173,6 +1173,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF7ED",
   },
 
+  audioSelection: {
+    backgroundColor: "#FFF7ED",
+  },
+
   audioInfo: {
     marginLeft: 14,
     flex: 1,
@@ -1188,6 +1192,18 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: "#6B7280",
     fontSize: 14,
+  },
+
+  audioRequirement: {
+    borderTopColor: "#FED7AA",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    color: "#B42318",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18,
+    paddingBottom: 11,
+    paddingHorizontal: 14,
+    paddingTop: 9,
   },
 
   locationPill: {

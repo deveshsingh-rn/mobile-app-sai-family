@@ -31,7 +31,12 @@ import {
 } from "lucide-react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
-import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
+import {
+  setAudioModeAsync,
+  setIsAudioActiveAsync,
+  useAudioPlayer,
+  useAudioPlayerStatus,
+} from "expo-audio";
 
 import { useDispatch } from "react-redux";
 
@@ -96,19 +101,34 @@ function ExperienceAudioAttachment({ url }: { url: string }) {
   const togglePlayback = async (event: GestureResponderEvent) => {
     event.stopPropagation();
 
-    if (status.playing) {
-      player.pause();
-      return;
-    }
+    try {
+      if (status.playing) {
+        player.pause();
+        return;
+      }
 
-    if (
-      status.duration > 0 &&
-      status.currentTime >= status.duration - 0.2
-    ) {
-      await player.seekTo(0);
-    }
+      await setIsAudioActiveAsync(true);
+      await setAudioModeAsync({
+        allowsRecording: false,
+        playsInSilentMode: true,
+      });
+      player.muted = false;
+      player.volume = 1;
 
-    player.play();
+      if (
+        status.duration > 0 &&
+        status.currentTime >= status.duration - 0.2
+      ) {
+        await player.seekTo(0);
+      }
+
+      player.play();
+    } catch {
+      Alert.alert(
+        "Audio unavailable",
+        "This audio could not be played. Please try again."
+      );
+    }
   };
 
   return (
