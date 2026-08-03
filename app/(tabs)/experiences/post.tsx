@@ -13,6 +13,7 @@ import {
   InputAccessoryView,
   Keyboard,
   KeyboardAvoidingView,
+  type LayoutChangeEvent,
   Platform,
   Pressable,
   ScrollView,
@@ -128,6 +129,8 @@ export default function PremiumPostScreen() {
   const [isDictating, setIsDictating] = useState(false);
   const [voiceMenuVisible, setVoiceMenuVisible] = useState(false);
   const contentBeforeDictationRef = useRef("");
+  const composerScrollRef = useRef<ScrollView>(null);
+  const inputOffsetRef = useRef(0);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const audioRecorderState = useAudioRecorderState(audioRecorder, 250);
@@ -440,6 +443,33 @@ export default function PremiumPostScreen() {
     setIsComposerFocused(false);
   };
 
+  const revealComposerInput = useCallback(() => {
+    setIsComposerFocused(true);
+
+    setTimeout(() => {
+      composerScrollRef.current?.scrollTo({
+        animated: true,
+        y: Math.max(0, inputOffsetRef.current - 14),
+      });
+    }, Platform.OS === "ios" ? 180 : 120);
+  }, []);
+
+  const captureInputOffset = (event: LayoutChangeEvent) => {
+    inputOffsetRef.current = event.nativeEvent.layout.y;
+  };
+
+  useEffect(() => {
+    const eventName =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const subscription = Keyboard.addListener(eventName, () => {
+      if (isComposerFocused) {
+        revealComposerInput();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [isComposerFocused, revealComposerInput]);
+
   const handleBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -503,6 +533,7 @@ export default function PremiumPostScreen() {
       {/* ───────────────── BODY ───────────────── */}
 
       <ScrollView
+        ref={composerScrollRef}
         style={styles.body}
         contentContainerStyle={
           styles.bodyContent
@@ -520,36 +551,24 @@ export default function PremiumPostScreen() {
         <View style={styles.composerSurface}>
           <View style={styles.categorySection}>
             <View style={styles.categoryHeading}>
-              <View style={{ flexDirection: "row",borderWidth: 1, borderColor: "#d1c9b8", alignItems: "center", gap: 24, paddingBottom: 4 }}>
-                 <Text style={styles.categoryTitle}>Choose category </Text>
-                {/* ───────────────── LOCATION ───────────────── */}
-
-          {isLocating ? (
-            <View style={styles.locationPill}>
-              <ActivityIndicator color="#A34A0A" size="small" />
-              <Text style={styles.locationText}>Adding current location</Text>
-            </View>
-          ) : !!location ? (
-            <View
-              style={
-                styles.locationPill
-              }
-            >
-              <MapPin
-                size={14}
-                color="#a66d11"
-              />
-
-              <Text
-                style={
-                  styles.locationText
-                }
-              >
-                {location}
-              </Text>
-            </View>
-          ) : null}</View>
-             
+              <View style={styles.categoryMetaRow}>
+                <Text style={styles.categoryTitle}>Choose category</Text>
+                {isLocating ? (
+                  <View style={styles.locationPill}>
+                    <ActivityIndicator color="#A34A0A" size="small" />
+                    <Text numberOfLines={1} style={styles.locationText}>
+                      Finding location
+                    </Text>
+                  </View>
+                ) : location ? (
+                  <View style={styles.locationPill}>
+                    <MapPin color="#A34A0A" size={13} strokeWidth={2.2} />
+                    <Text numberOfLines={1} style={styles.locationText}>
+                      {location}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
               <Text style={styles.categoryHint}>Helps devotees discover your post</Text>
             </View>
             <View style={styles.categoryRail}>
@@ -593,15 +612,14 @@ export default function PremiumPostScreen() {
             onBlur={() =>
               setIsComposerFocused(false)
             }
-            onFocus={() =>
-              setIsComposerFocused(true)
-            }
+            onFocus={revealComposerInput}
+            onLayout={captureInputOffset}
             onSubmitEditing={dismissKeyboard}
             returnKeyType="done"
             textAlignVertical="top"
             placeholder="What would you like to share with the Sai Family?"
             placeholderTextColor="#b78c56"
-            style={styles.input}
+            style={[styles.input, isComposerFocused && styles.inputFocused]}
           />
 
           {/* ───────────────── MEDIA PREVIEW ───────────────── */}
@@ -729,12 +747,13 @@ export default function PremiumPostScreen() {
         </View>
       )}
 
-      <View
-        style={[
-          styles.toolbar,
-          { paddingBottom: Math.max(insets.bottom, 12) },
-        ]}
-      >
+      {!isComposerFocused ? (
+        <View
+          style={[
+            styles.toolbar,
+            { paddingBottom: Math.max(insets.bottom, 12) },
+          ]}
+        >
         <View style={styles.actions}>
           <ActionButton
             label="Photo"
@@ -774,7 +793,8 @@ export default function PremiumPostScreen() {
             onPress={() => setVoiceMenuVisible(true)}
           />
         </View>
-      </View>
+        </View>
+      ) : null}
 
       {Platform.OS === "ios" && (
         <InputAccessoryView
@@ -1051,6 +1071,15 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
+  inputFocused: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#C2410C",
+    shadowColor: "#9A3412",
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+
   sectionLabel: {
     color: "#292524",
     fontSize: 16,
@@ -1067,6 +1096,14 @@ const styles = StyleSheet.create({
 
   categoryHeading: {
     paddingHorizontal: 18,
+  },
+
+  categoryMetaRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    justifyContent: "space-between",
+    minHeight: 34,
   },
 
   categoryTitle: {
@@ -1205,17 +1242,21 @@ const styles = StyleSheet.create({
   },
 
   locationPill: {
-    marginTop: 12,
-    alignSelf: "flex-start",
     alignItems: "center",
+    backgroundColor: "#FFF7ED",
+    borderRadius: 999,
+    flex: 1,
     flexDirection: "row",
+    gap: 5,
+    justifyContent: "flex-end",
+    maxWidth: "62%",
     minHeight: 32,
+    paddingHorizontal: 9,
   },
 
   locationText: {
-    marginLeft: 6,
-
-    color: "#78716C",
+    color: "#9A3412",
+    flexShrink: 1,
     fontSize: 12,
     fontWeight: "700",
   },
