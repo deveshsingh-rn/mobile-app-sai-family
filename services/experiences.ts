@@ -15,7 +15,78 @@ export type CreateExperiencePayload = {
     uri: string;
     type: "image" | "video" | "audio";
     name?: string;
+    mimeType?: string;
   } | null;
+};
+
+const MEDIA_METADATA_BY_EXTENSION: Record<
+  string,
+  { mimeType: string; extension: string }
+> = {
+  jpeg: { extension: "jpg", mimeType: "image/jpeg" },
+  jpg: { extension: "jpg", mimeType: "image/jpeg" },
+  m4a: { extension: "m4a", mimeType: "audio/mp4" },
+  mov: { extension: "mov", mimeType: "video/quicktime" },
+  mp3: { extension: "mp3", mimeType: "audio/mpeg" },
+  mp4: { extension: "mp4", mimeType: "video/mp4" },
+  png: { extension: "png", mimeType: "image/png" },
+  wav: { extension: "wav", mimeType: "audio/wav" },
+  webm: { extension: "webm", mimeType: "audio/webm" },
+  webp: { extension: "webp", mimeType: "image/webp" },
+};
+
+const normalizeExperienceMediaMetadata = (
+  media: NonNullable<CreateExperiencePayload["media"]>
+) => {
+  const sourceName = media.name || media.uri.split("/").pop() || "";
+  const extension = sourceName
+    .split("?")[0]
+    .split(".")
+    .pop()
+    ?.toLowerCase();
+  const inferred = extension
+    ? MEDIA_METADATA_BY_EXTENSION[extension]
+    : undefined;
+
+  if (media.type === "audio") {
+    const normalizedMimeType =
+      media.mimeType === "audio/x-m4a"
+        ? "audio/mp4"
+        : media.mimeType;
+    const audioMetadata =
+      inferred?.mimeType.startsWith("audio/")
+        ? inferred
+        : normalizedMimeType === "audio/wav"
+          ? MEDIA_METADATA_BY_EXTENSION.wav
+          : normalizedMimeType === "audio/webm"
+            ? MEDIA_METADATA_BY_EXTENSION.webm
+            : normalizedMimeType === "audio/mpeg"
+              ? MEDIA_METADATA_BY_EXTENSION.mp3
+              : MEDIA_METADATA_BY_EXTENSION.m4a;
+
+    return {
+      mimeType: audioMetadata.mimeType,
+      name:
+        extension && inferred?.mimeType.startsWith("audio/")
+          ? sourceName
+          : `experience-audio-${Date.now()}.${audioMetadata.extension}`,
+    };
+  }
+
+  const fallback =
+    media.type === "video"
+      ? MEDIA_METADATA_BY_EXTENSION.mp4
+      : MEDIA_METADATA_BY_EXTENSION.jpg;
+  const metadata =
+    inferred?.mimeType.startsWith(`${media.type}/`) ? inferred : fallback;
+
+  return {
+    mimeType: metadata.mimeType,
+    name:
+      extension && inferred?.mimeType.startsWith(`${media.type}/`)
+        ? sourceName
+        : `experience-${media.type}-${Date.now()}.${metadata.extension}`,
+  };
 };
 
 export async function apiFetchExperiences(
@@ -156,21 +227,12 @@ export async function apiCreateExperience(
   }
 
   if (payload.media) {
-    let mimeType = "image/jpeg";
-    let ext = "jpg";
-
-    if (payload.media.type === "video") {
-      mimeType = "video/mp4";
-      ext = "mp4";
-    } else if (payload.media.type === "audio") {
-      mimeType = "audio/mpeg";
-      ext = "mp3";
-    }
+    const metadata = normalizeExperienceMediaMetadata(payload.media);
 
     formData.append("mediaFiles", {
       uri: payload.media.uri,
-      type: mimeType,
-      name: payload.media.name || `media-${Date.now()}.${ext}`,
+      type: metadata.mimeType,
+      name: metadata.name,
     } as any);
   }
 

@@ -81,6 +81,7 @@ type SelectedMedia = {
   uri: string;
   type: MediaType;
   name?: string;
+  mimeType?: string;
 };
 
 const COMPOSER_ACCESSORY_ID = "experience-post-composer-accessory";
@@ -290,6 +291,7 @@ export default function PremiumPostScreen() {
         uri: asset.uri,
         type: "image",
         name: asset.fileName || undefined,
+        mimeType: asset.mimeType,
       });
     }
   };
@@ -320,6 +322,7 @@ export default function PremiumPostScreen() {
         uri: asset.uri,
         type: "video",
         name: asset.fileName || undefined,
+        mimeType: asset.mimeType,
       });
     }
   };
@@ -341,6 +344,7 @@ export default function PremiumPostScreen() {
         uri: asset.uri,
         type: "audio",
         name: asset.name,
+        mimeType: asset.mimeType || undefined,
       });
     }
   };
@@ -412,7 +416,8 @@ export default function PremiumPostScreen() {
 
       if (audioRecorder.uri) {
         setSelectedMedia({
-          name: `Sai voice experience ${new Date().toLocaleTimeString()}.m4a`,
+          mimeType: "audio/mp4",
+          name: `voice-experience-${Date.now()}.m4a`,
           type: "audio",
           uri: audioRecorder.uri,
         });
@@ -517,7 +522,7 @@ export default function PremiumPostScreen() {
           {/* ───────────────── USER ───────────────── */}
 
           <View style={styles.userRow}>
-            <LinearGradient
+            {/* <LinearGradient
               colors={[
                 "#f6deb0",
                 "#ecb96b",
@@ -531,9 +536,9 @@ export default function PremiumPostScreen() {
                   0
                 ) || "D"}
               </Text>
-            </LinearGradient>
+            </LinearGradient> */}
 
-            <View
+            {/* <View
               style={styles.userInfo}
             >
               <Text
@@ -559,12 +564,12 @@ export default function PremiumPostScreen() {
                   Public Experience
                 </Text>
               </View>
-            </View>
+            </View> */}
           </View>
 
           {/* ───────────────── INPUT ───────────────── */}
 
-          <Text style={styles.sectionLabel}>Experience category</Text>
+          {/* <Text style={styles.sectionLabel}>Experience category</Text> */}
           <View style={styles.categoryRail}>
             <CategoryChips
               activeValue={selectedCategory}
@@ -1170,7 +1175,7 @@ const styles = StyleSheet.create({
   },
 
   sectionLabel: {
-    marginTop: 22,
+    // marginTop: 22,
     color: "#1F2937",
     fontSize: 13,
     fontWeight: "900",
@@ -1209,7 +1214,7 @@ const styles = StyleSheet.create({
 
   categoryRail: {
     marginHorizontal: -17,
-    marginTop: 6,
+    marginTop: 1,
   },
 
   composerHeading: {
@@ -1327,14 +1332,14 @@ const styles = StyleSheet.create({
   },
 
   locationPill: {
-    marginTop: 18,
+    marginTop: 8,
 
     alignSelf: "flex-start",
 
     borderRadius: 999,
 
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingHorizontal: 24,
+    paddingVertical: 3,
 
     flexDirection: "row",
     alignItems: "center",
