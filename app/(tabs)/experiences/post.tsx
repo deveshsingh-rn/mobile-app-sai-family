@@ -24,6 +24,7 @@ import {
 } from "react-native";
 
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useDispatch, useSelector } from "react-redux";
 
@@ -38,30 +39,25 @@ import {
   useAudioRecorderState,
 } from "expo-audio";
 
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
-
 import {
+  ArrowLeft,
   Check,
   ChevronRight,
   CircleStop,
   FileAudio,
-  Globe2,
   Image as ImageIcon,
   Languages,
   MapPin,
   Mic,
   Play,
   Radio,
+  Send,
   Upload,
   Video,
   X,
 } from "lucide-react-native";
 
-import {
-  CategoryChips,
-  ExperienceTopTabs,
-} from "@/components/experiences";
+import { CategoryChips } from "@/components/experiences";
 
 import {
   createExperienceRequest,
@@ -106,6 +102,7 @@ async function getSpeechRecognitionModule() {
 
 export default function PremiumPostScreen() {
   const dispatch = useDispatch();
+  const insets = useSafeAreaInsets();
 
   const creating = useSelector(
     selectCreateExperienceLoading
@@ -466,6 +463,15 @@ export default function PremiumPostScreen() {
     setIsComposerFocused(false);
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(tabs)/experiences" as never);
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -476,25 +482,45 @@ export default function PremiumPostScreen() {
       }
       keyboardVerticalOffset={0}
     >
-      {/* ───────────────── BACKGROUND ───────────────── */}
+      <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
+        <Pressable
+          accessibilityLabel="Back to experiences"
+          accessibilityRole="button"
+          hitSlop={6}
+          onPress={handleBack}
+          style={({ pressed }) => [
+            styles.headerIconButton,
+            pressed && styles.headerButtonPressed,
+          ]}
+        >
+          <ArrowLeft color="#292524" size={24} strokeWidth={2.2} />
+        </Pressable>
 
-      <LinearGradient
-        colors={[
-          "#FAFAF9",
-          "#FFF7ED",
-          "#FAFAF9",
-        ]}
-        style={
-          StyleSheet.absoluteFillObject
-        }
-      />
+        <View style={styles.headerCopy}>
+          <Text style={styles.headerTitle}>New experience</Text>
+          <Text style={styles.headerSubtitle}>Share with Sai Family</Text>
+        </View>
 
-      {/* ───────────────── HEADER ───────────────── */}
-
-      <View style={styles.fixedTop}>
-       
-
-        <ExperienceTopTabs activeTab="post" />
+        <Pressable
+          accessibilityLabel="Publish experience"
+          accessibilityRole="button"
+          disabled={isDisabled || creating}
+          onPress={handlePost}
+          style={({ pressed }) => [
+            styles.publishButton,
+            (isDisabled || creating) && styles.disabledButton,
+            pressed && !isDisabled && styles.headerButtonPressed,
+          ]}
+        >
+          {creating ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <>
+              <Send color="#FFFFFF" size={17} strokeWidth={2.3} />
+              <Text style={styles.publishText}>Publish</Text>
+            </>
+          )}
+        </Pressable>
       </View>
 
       {/* ───────────────── BODY ───────────────── */}
@@ -514,62 +540,7 @@ export default function PremiumPostScreen() {
           false
         }
       >
-        <BlurView
-          intensity={45}
-          tint="light"
-          style={styles.card}
-        >
-          {/* ───────────────── USER ───────────────── */}
-
-          <View style={styles.userRow}>
-            {/* <LinearGradient
-              colors={[
-                "#f6deb0",
-                "#ecb96b",
-              ]}
-              style={styles.avatar}
-            >
-              <Text
-                style={styles.avatarText}
-              >
-                {account?.name?.charAt(
-                  0
-                ) || "D"}
-              </Text>
-            </LinearGradient> */}
-
-            {/* <View
-              style={styles.userInfo}
-            >
-              <Text
-                style={styles.userName}
-              >
-                {account?.name ||
-                  "Devotee"}
-              </Text>
-
-              <View
-                style={styles.publicRow}
-              >
-                <Globe2
-                  size={12}
-                  color="#9d6912"
-                />
-
-                <Text
-                  style={
-                    styles.publicText
-                  }
-                >
-                  Public Experience
-                </Text>
-              </View>
-            </View> */}
-          </View>
-
-          {/* ───────────────── INPUT ───────────────── */}
-
-          {/* <Text style={styles.sectionLabel}>Experience category</Text> */}
+        <View style={styles.composerSurface}>
           <View style={styles.categoryRail}>
             <CategoryChips
               activeValue={selectedCategory}
@@ -749,7 +720,7 @@ export default function PremiumPostScreen() {
               </Text>
             </View>
           ) : null}
-        </BlurView>
+        </View>
       </ScrollView>
 
       {/* ───────────────── TOOLBAR ───────────────── */}
@@ -772,11 +743,17 @@ export default function PremiumPostScreen() {
         </View>
       )}
 
-      <BlurView
-        intensity={80}
-        tint="light"
-        style={styles.toolbar}
+      <View
+        style={[
+          styles.toolbar,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
       >
+        <View style={styles.toolbarCopy}>
+          <Text style={styles.toolbarTitle}>Add to your post</Text>
+          <Text style={styles.toolbarHint}>Photo, video, or voice</Text>
+        </View>
+
         <View style={styles.actions}>
           <ActionButton
             label="Choose an image"
@@ -816,50 +793,7 @@ export default function PremiumPostScreen() {
             onPress={() => setVoiceMenuVisible(true)}
           />
         </View>
-
-        <Pressable
-          disabled={
-            isDisabled || creating
-          }
-          onPress={handlePost}
-          style={[
-            styles.postButton,
-            (isDisabled ||
-              creating) &&
-              styles.disabledButton,
-          ]}
-        >
-          <LinearGradient
-            colors={[
-              "#e0a03a",
-              "#ba7512",
-            ]}
-            start={{
-              x: 0,
-              y: 0,
-            }}
-            end={{
-              x: 1,
-              y: 1,
-            }}
-            style={
-              styles.postGradient
-            }
-          >
-            {creating ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text
-                style={
-                  styles.postText
-                }
-              >
-                Post
-              </Text>
-            )}
-          </LinearGradient>
-        </Pressable>
-      </BlurView>
+      </View>
 
       {Platform.OS === "ios" && (
         <InputAccessoryView
@@ -1037,63 +971,68 @@ function VoiceOption({
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: "#FFFCF8",
     flex: 1,
-    marginBottom: 100,
-  },
-
-  fixedTop: {
-    paddingTop: 55,
-    zIndex: 20,
-    backgroundColor: "#FFFCF7",
-    borderBottomColor: "#E9D8BD",
-    borderBottomWidth: 1,
   },
 
   header: {
-    paddingHorizontal: 18,
-    paddingBottom: 15,
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent:
-      "space-between",
+    backgroundColor: "#FFFCF8",
+    borderBottomColor: "#EDE7DE",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    minHeight: 64,
+    paddingBottom: 10,
+    paddingHorizontal: 14,
   },
 
   headerTitle: {
-    color: "#1F2937",
-    fontSize: 23,
-    fontWeight: "900",
+    color: "#292524",
+    fontSize: 17,
+    fontWeight: "800",
   },
 
-  headerLeft: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10,
-  },
-
-  headerIcon: {
-    alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
-    borderRadius: 14,
-    borderWidth: 1,
-    height: 44,
-    justifyContent: "center",
-    width: 44,
-  },
-
-  eyebrow: {
-    color: "#F97316",
+  headerSubtitle: {
+    color: "#78716C",
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: "600",
+    marginTop: 1,
   },
 
-  primaryAction: {
+  headerCopy: {
+    flex: 1,
+    marginLeft: 10,
+  },
+
+  headerIconButton: {
     alignItems: "center",
-    backgroundColor: "#23201D",
-    borderRadius: 14,
+    borderRadius: 12,
     height: 44,
     justifyContent: "center",
     width: 44,
+  },
+
+  headerButtonPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
+  },
+
+  publishButton: {
+    alignItems: "center",
+    backgroundColor: "#292524",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 7,
+    justifyContent: "center",
+    minHeight: 42,
+    minWidth: 104,
+    paddingHorizontal: 14,
+  },
+
+  publishText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
   },
 
   body: {
@@ -1101,120 +1040,41 @@ const styles = StyleSheet.create({
   },
 
   bodyContent: {
-    padding: 17,
-    paddingBottom: 160,
+    flexGrow: 1,
+    paddingBottom: 24,
   },
 
-  card: {
-    borderRadius: 18,
-    overflow: "hidden",
-    padding: 17,
-
+  composerSurface: {
     backgroundColor: "#FFFFFF",
-
-    borderWidth: 1,
-
-    borderColor: "#E9D8BD",
-  },
-
-  userRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  avatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  avatarText: {
-    color: "#6b4304",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-
-  userInfo: {
-    marginLeft: 12,
-  },
-
-  userName: {
-    color: "#1F2937",
-    fontSize: 17,
-    fontWeight: "900",
-  },
-
-  publicRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 4,
-    gap: 5,
-  },
-
-  publicText: {
-    color: "#F97316",
-    fontSize: 13,
-    fontWeight: "800",
+    flex: 1,
+    minHeight: 460,
+    paddingBottom: 18,
+    paddingHorizontal: 16,
   },
 
   input: {
-    backgroundColor: "#FFFBF5",
-    borderColor: "#E9D8BD",
-    borderRadius: 16,
-    borderWidth: 1,
+    backgroundColor: "#FFFFFF",
     marginTop: 12,
-    minHeight: 160,
-    padding: 14,
-
-    color: "#1F2937",
-    fontSize: 18,
-    lineHeight: 28,
-    fontWeight: "700",
+    minHeight: 190,
+    paddingHorizontal: 0,
+    paddingVertical: 4,
+    color: "#292524",
+    fontSize: 17,
+    lineHeight: 26,
+    fontWeight: "500",
   },
 
   sectionLabel: {
-    // marginTop: 22,
-    color: "#1F2937",
-    fontSize: 13,
-    fontWeight: "900",
-    textTransform: "uppercase",
-  },
-
-  categoryRow: {
-    gap: 10,
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-
-  categoryChip: {
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E7D7BE",
-  },
-
-  categoryChipActive: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
-  },
-
-  categoryText: {
-    color: "#6B7280",
-    fontSize: 14,
+    color: "#292524",
+    fontSize: 16,
     fontWeight: "800",
   },
 
-  categoryTextActive: {
-    color: "#fffaf0",
-  },
-
   categoryRail: {
-    marginHorizontal: -17,
-    marginTop: 1,
+    borderBottomColor: "#F0EBE4",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginHorizontal: -16,
+    marginBottom: 18,
   },
 
   composerHeading: {
@@ -1358,30 +1218,37 @@ const styles = StyleSheet.create({
   },
 
   toolbar: {
-    position: "absolute",
-
-    left: 0,
-    right: 0,
-    bottom: 0,
-
-    paddingHorizontal: 18,
-
-    paddingTop: 15,
-
-    paddingBottom:
-      Platform.OS === "ios"
-        ? 34
-        : 16,
-
-    borderTopWidth: 1,
-
-    borderTopColor: "#E7D7BE",
+    alignItems: "center",
+    backgroundColor: "#FFFCF8",
+    borderTopColor: "#EDE7DE",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    minHeight: 70,
+    paddingHorizontal: 16,
+    paddingTop: 10,
   },
 
   actions: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    flexDirection: "row",
+    gap: 8,
+  },
+
+  toolbarCopy: {
+    flex: 1,
+  },
+
+  toolbarTitle: {
+    color: "#292524",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+
+  toolbarHint: {
+    color: "#78716C",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 2,
   },
 
   androidDoneBar: {
@@ -1389,15 +1256,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,252,247,0.96)",
     borderTopColor: "#E7D7BE",
     borderTopWidth: 1,
-    bottom:
-      Platform.OS === "ios"
-        ? 102
-        : 84,
-    left: 0,
     paddingHorizontal: 18,
     paddingVertical: 10,
-    position: "absolute",
-    right: 0,
   },
 
   actionButton: {
@@ -1423,18 +1283,6 @@ const styles = StyleSheet.create({
   actionButtonPressed: {
     opacity: 0.7,
     transform: [{ scale: 0.97 }],
-  },
-
-  postButton: {
-    position: "absolute",
-    right: 18,
-    bottom:
-      Platform.OS === "ios"
-        ? 34
-        : 16,
-
-    overflow: "hidden",
-    borderRadius: 999,
   },
 
   disabledButton: {
@@ -1471,18 +1319,6 @@ const styles = StyleSheet.create({
   keyboardDoneText: {
     color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "900",
-  },
-
-  postGradient: {
-    paddingHorizontal: 36,
-    paddingVertical: 15,
-    borderRadius: 999,
-  },
-
-  postText: {
-    color: "#fff",
-    fontSize: 16,
     fontWeight: "900",
   },
 

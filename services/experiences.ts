@@ -26,9 +26,15 @@ const MEDIA_METADATA_BY_EXTENSION: Record<
   jpeg: { extension: "jpg", mimeType: "image/jpeg" },
   jpg: { extension: "jpg", mimeType: "image/jpeg" },
   m4a: { extension: "m4a", mimeType: "audio/mp4" },
+  aac: { extension: "aac", mimeType: "audio/aac" },
+  amr: { extension: "amr", mimeType: "audio/amr" },
+  "3gp": { extension: "3gp", mimeType: "audio/3gpp" },
+  "3gpp": { extension: "3gp", mimeType: "audio/3gpp" },
   mov: { extension: "mov", mimeType: "video/quicktime" },
   mp3: { extension: "mp3", mimeType: "audio/mpeg" },
   mp4: { extension: "mp4", mimeType: "video/mp4" },
+  oga: { extension: "ogg", mimeType: "audio/ogg" },
+  ogg: { extension: "ogg", mimeType: "audio/ogg" },
   png: { extension: "png", mimeType: "image/png" },
   wav: { extension: "wav", mimeType: "audio/wav" },
   webm: { extension: "webm", mimeType: "audio/webm" },
@@ -50,9 +56,15 @@ const normalizeExperienceMediaMetadata = (
 
   if (media.type === "audio") {
     const normalizedMimeType =
-      media.mimeType === "audio/x-m4a"
+      media.mimeType === "audio/x-m4a" || media.mimeType === "audio/m4a"
         ? "audio/mp4"
-        : media.mimeType;
+        : media.mimeType === "audio/mp3" || media.mimeType === "audio/x-mp3"
+          ? "audio/mpeg"
+          : media.mimeType === "audio/x-wav" || media.mimeType === "audio/wave" || media.mimeType === "audio/vnd.wave"
+            ? "audio/wav"
+            : media.mimeType === "audio/x-aac" || media.mimeType === "audio/aacp"
+              ? "audio/aac"
+              : media.mimeType;
     const audioMetadata =
       inferred?.mimeType.startsWith("audio/")
         ? inferred
