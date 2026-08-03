@@ -57,8 +57,6 @@ import {
   X,
 } from "lucide-react-native";
 
-import { CategoryChips } from "@/components/experiences";
-
 import {
   createExperienceRequest,
   fetchExperienceCategoriesRequest,
@@ -68,6 +66,7 @@ import {
   selectCreateExperienceLoading,
   selectExperienceCategories,
 } from "@/store/experiences/selectors";
+import { CategoryChips } from "@/components/experiences";
 type MediaType =
   | "image"
   | "video"
@@ -497,8 +496,8 @@ export default function PremiumPostScreen() {
         </Pressable>
 
         <View style={styles.headerCopy}>
-          <Text style={styles.headerTitle}>New experience</Text>
-          <Text style={styles.headerSubtitle}>Share with Sai Family</Text>
+          <Text style={styles.headerTitle}>Create</Text>
+          <Text style={styles.headerSubtitle}>New experience</Text>
         </View>
 
         <Pressable
@@ -541,24 +540,30 @@ export default function PremiumPostScreen() {
         }
       >
         <View style={styles.composerSurface}>
-          <View style={styles.categoryRail}>
-            <CategoryChips
-              activeValue={selectedCategory}
-              categories={categories.map(
-                (item: { category: string; label: string }) => ({
-                  label: item.label,
-                  value: item.category,
-                })
-              )}
-              onChange={setSelectedCategory}
-            />
+          <View style={styles.categorySection}>
+            <View style={styles.categoryHeading}>
+              <Text style={styles.categoryTitle}>Choose category</Text>
+              <Text style={styles.categoryHint}>Helps devotees discover your post</Text>
+            </View>
+            <View style={styles.categoryRail}>
+              <CategoryChips
+                activeValue={selectedCategory}
+                categories={categories.map(
+                  (item: { category: string; label: string }) => ({
+                    label: item.label,
+                    value: item.category,
+                  })
+                )}
+                onChange={setSelectedCategory}
+              />
+            </View>
           </View>
 
           <View style={styles.composerHeading}>
             <View>
-              <Text style={styles.sectionLabel}>Your experience</Text>
+              <Text style={styles.sectionLabel}>Share your experience</Text>
               <Text style={styles.composerHint}>
-                Type naturally or use voice typing.
+                Write from the heart. You can also use voice.
               </Text>
             </View>
             {isDictating ? (
@@ -587,7 +592,7 @@ export default function PremiumPostScreen() {
             onSubmitEditing={dismissKeyboard}
             returnKeyType="done"
             textAlignVertical="top"
-            placeholder="Share what happened and how Sai touched your life..."
+            placeholder="What would you like to share with the Sai Family?"
             placeholderTextColor="#b78c56"
             style={styles.input}
           />
@@ -749,29 +754,24 @@ export default function PremiumPostScreen() {
           { paddingBottom: Math.max(insets.bottom, 12) },
         ]}
       >
-        <View style={styles.toolbarCopy}>
-          <Text style={styles.toolbarTitle}>Add to your post</Text>
-          <Text style={styles.toolbarHint}>Photo, video, or voice</Text>
-        </View>
-
         <View style={styles.actions}>
           <ActionButton
-            label="Choose an image"
+            label="Photo"
             icon={
               <ImageIcon
                 size={20}
-                color="#d18b1c"
+                color="#292524"
               />
             }
             onPress={pickImage}
           />
 
           <ActionButton
-            label="Choose a video"
+            label="Video"
             icon={
               <Video
                 size={20}
-                color="#d18b1c"
+                color="#292524"
               />
             }
             onPress={pickVideo}
@@ -779,7 +779,7 @@ export default function PremiumPostScreen() {
 
           <ActionButton
             active={isDictating || audioRecorderState.isRecording}
-            label="Voice and audio options"
+            label="Voice"
             icon={
               <Mic
                 size={20}
@@ -922,7 +922,7 @@ function ActionButton({
 }) {
   return (
     <Pressable
-      accessibilityLabel={label}
+      accessibilityLabel={`${label} attachment`}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [
@@ -932,6 +932,9 @@ function ActionButton({
       ]}
     >
       {icon}
+      <Text style={[styles.actionLabel, active && styles.activeActionLabel]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -1048,16 +1051,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     flex: 1,
     minHeight: 460,
-    paddingBottom: 18,
-    paddingHorizontal: 16,
+    paddingBottom: 20,
+    paddingHorizontal: 18,
   },
 
   input: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FAF8F4",
+    borderColor: "#E9E2D8",
+    borderRadius: 14,
+    borderWidth: 1,
     marginTop: 12,
     minHeight: 190,
-    paddingHorizontal: 0,
-    paddingVertical: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     color: "#292524",
     fontSize: 17,
     lineHeight: 26,
@@ -1070,11 +1076,34 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 
-  categoryRail: {
-    borderBottomColor: "#F0EBE4",
+  categorySection: {
+    borderBottomColor: "#ECE7DF",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    marginHorizontal: -16,
-    marginBottom: 18,
+    marginBottom: 20,
+    marginHorizontal: -18,
+    paddingTop: 16,
+  },
+
+  categoryHeading: {
+    paddingHorizontal: 18,
+  },
+
+  categoryTitle: {
+    color: "#292524",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+
+  categoryHint: {
+    color: "#78716C",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+
+  categoryRail: {
+    marginTop: 5,
+    paddingBottom: 4,
   },
 
   composerHeading: {
@@ -1116,15 +1145,17 @@ const styles = StyleSheet.create({
   },
 
   mediaContainer: {
-    marginTop: 18,
-    borderRadius: 16,
+    borderColor: "#EEE8DF",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 16,
     overflow: "hidden",
   },
 
   media: {
     width: "100%",
-    height: 280,
-    borderRadius: 16,
+    aspectRatio: 4 / 3,
+    height: undefined,
   },
 
   closeButton: {
@@ -1192,29 +1223,19 @@ const styles = StyleSheet.create({
   },
 
   locationPill: {
-    marginTop: 8,
-
+    marginTop: 12,
     alignSelf: "flex-start",
-
-    borderRadius: 999,
-
-    paddingHorizontal: 24,
-    paddingVertical: 3,
-
-    flexDirection: "row",
     alignItems: "center",
-
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
-    borderWidth: 1,
+    flexDirection: "row",
+    minHeight: 32,
   },
 
   locationText: {
     marginLeft: 6,
 
-    color: "#C2410C",
-    fontSize: 14,
-    fontWeight: "800",
+    color: "#78716C",
+    fontSize: 12,
+    fontWeight: "700",
   },
 
   toolbar: {
@@ -1223,32 +1244,16 @@ const styles = StyleSheet.create({
     borderTopColor: "#EDE7DE",
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
-    minHeight: 70,
+    minHeight: 76,
     paddingHorizontal: 16,
     paddingTop: 10,
   },
 
   actions: {
     alignItems: "center",
+    flex: 1,
     flexDirection: "row",
     gap: 8,
-  },
-
-  toolbarCopy: {
-    flex: 1,
-  },
-
-  toolbarTitle: {
-    color: "#292524",
-    fontSize: 14,
-    fontWeight: "800",
-  },
-
-  toolbarHint: {
-    color: "#78716C",
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 2,
   },
 
   androidDoneBar: {
@@ -1261,18 +1266,16 @@ const styles = StyleSheet.create({
   },
 
   actionButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-
     alignItems: "center",
-    justifyContent: "center",
-
     backgroundColor: "#FFFFFF",
-
-    borderWidth: 1,
-
     borderColor: "#E7DED2",
+    borderRadius: 13,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: "row",
+    gap: 8,
+    height: 48,
+    justifyContent: "center",
   },
 
   activeActionButton: {
@@ -1283,6 +1286,16 @@ const styles = StyleSheet.create({
   actionButtonPressed: {
     opacity: 0.7,
     transform: [{ scale: 0.97 }],
+  },
+
+  actionLabel: {
+    color: "#44403C",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  activeActionLabel: {
+    color: "#FFFFFF",
   },
 
   disabledButton: {
