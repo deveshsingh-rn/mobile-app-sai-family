@@ -11,7 +11,6 @@ import {
   Animated,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 
@@ -123,17 +122,6 @@ function ExperienceNavigationItem({
         />
       </Animated.View>
 
-      <Text
-        numberOfLines={1}
-        style={[
-          styles.label,
-          active && styles.activeLabel,
-          primary && styles.primaryLabel,
-        ]}
-      >
-        {label}
-      </Text>
-
       {active ? <View style={styles.activeIndicator} /> : null}
     </Pressable>
   );
@@ -152,6 +140,11 @@ export function ExperienceTopTabs({
 
     if (onTabChange) {
       onTabChange(tab.key);
+      return;
+    }
+
+    if (tab.key === "feed") {
+      router.replace(tab.href as never);
       return;
     }
 
@@ -183,8 +176,8 @@ const styles = StyleSheet.create({
     borderTopColor: "#F3E8D5",
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
-    height: 66,
-    paddingHorizontal: 8,
+    height: 54,
+    paddingHorizontal: 18,
   },
   tab: {
     alignItems: "center",
@@ -199,9 +192,9 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: "center",
     borderRadius: 15,
-    height: 34,
+    height: 38,
     justifyContent: "center",
-    width: 42,
+    width: 46,
   },
   activeIconContainer: {
     backgroundColor: "#FFF7ED",
@@ -219,30 +212,13 @@ const styles = StyleSheet.create({
     width: 48,
     elevation: 5,
   },
-  label: {
-    color: "#78716C",
-    fontSize: 11,
-    fontWeight: "700",
-    lineHeight: 14,
-    marginTop: 2,
-    textAlign: "center",
-  },
-  activeLabel: {
-    color: "#9A3412",
-    fontWeight: "900",
-  },
-  primaryLabel: {
-    color: "#9A3412",
-    fontWeight: "900",
-    marginTop: 0,
-  },
   activeIndicator: {
     backgroundColor: "#F97316",
     borderRadius: 999,
     bottom: 0,
     height: 3,
-    left: "27%",
+    left: "31%",
     position: "absolute",
-    right: "27%",
+    right: "31%",
   },
 });

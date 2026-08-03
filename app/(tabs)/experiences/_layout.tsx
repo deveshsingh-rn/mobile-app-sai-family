@@ -12,11 +12,23 @@ export default function ExperiencesLayout() {
           gestureEnabled: true,
         }}
       />
-      <Stack.Screen name="post" />
-      <Stack.Screen name="edit" />
-      <Stack.Screen name="search" />
+      <Stack.Screen
+        name="post"
+        options={{ animation: "slide_from_right", gestureEnabled: true }}
+      />
+      <Stack.Screen
+        name="edit"
+        options={{ animation: "slide_from_right", gestureEnabled: true }}
+      />
+      <Stack.Screen
+        name="search"
+        options={{ animation: "slide_from_right", gestureEnabled: true }}
+      />
       {/* <Stack.Screen name="category" /> */}
-      <Stack.Screen name="bookmarks" />
+      <Stack.Screen
+        name="bookmarks"
+        options={{ animation: "slide_from_right", gestureEnabled: true }}
+      />
     </Stack>
   );
 }
