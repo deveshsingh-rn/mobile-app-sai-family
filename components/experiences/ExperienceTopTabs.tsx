@@ -1,18 +1,13 @@
 import { useRouter } from "expo-router";
 import {
+  ArrowLeft,
   Bookmark,
-  House,
   Search,
   SquarePlus,
   type LucideIcon,
 } from "lucide-react-native";
-import React, { useEffect, useRef } from "react";
-import {
-  Animated,
-  Pressable,
-  StyleSheet,
-  View,
-} from "react-native";
+import React from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 
 export type ExperienceTopTabKey =
   | "feed"
@@ -26,103 +21,65 @@ type ExperienceTopTabsProps = {
   onTabChange?: (tab: ExperienceTopTabKey) => void;
 };
 
-type ExperienceNavigationTab = {
+type ExperienceNavigationAction = {
   href: string;
   Icon: LucideIcon;
-  key: Exclude<ExperienceTopTabKey, "category">;
+  key: "search" | "post" | "bookmarks";
   label: string;
-  primary?: boolean;
 };
 
-const EXPERIENCE_TABS: ExperienceNavigationTab[] = [
-  {
-    href: "/(tabs)/experiences",
-    Icon: House,
-    key: "feed",
-    label: "Feed",
-  },
+const EXPERIENCE_ACTIONS: ExperienceNavigationAction[] = [
   {
     href: "/(tabs)/experiences/search",
     Icon: Search,
     key: "search",
-    label: "Search",
+    label: "Search experiences",
   },
   {
     href: "/(tabs)/experiences/post",
     Icon: SquarePlus,
     key: "post",
-    label: "Post",
-    primary: true,
+    label: "Create a post",
   },
   {
     href: "/(tabs)/experiences/bookmarks",
     Icon: Bookmark,
     key: "bookmarks",
-    label: "Saved",
+    label: "Saved experiences",
   },
 ];
 
-function ExperienceNavigationItem({
+function ToolbarAction({
   active,
   Icon,
   label,
   onPress,
-  primary = false,
 }: {
   active: boolean;
   Icon: LucideIcon;
   label: string;
   onPress: () => void;
-  primary?: boolean;
 }) {
-  const progress = useRef(new Animated.Value(active ? 1 : 0)).current;
-
-  useEffect(() => {
-    Animated.spring(progress, {
-      damping: 17,
-      mass: 0.75,
-      stiffness: 190,
-      toValue: active ? 1 : 0,
-      useNativeDriver: true,
-    }).start();
-  }, [active, progress]);
-
-  const iconScale = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.08],
-  });
-
   return (
     <Pressable
-      accessibilityLabel={`${label} experiences`}
-      accessibilityRole="tab"
+      accessibilityLabel={label}
+      accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      hitSlop={4}
+      hitSlop={6}
       onPress={onPress}
       style={({ pressed }) => [
-        styles.tab,
-        pressed && styles.tabPressed,
+        styles.iconButton,
+        active && styles.activeIconButton,
+        pressed && styles.pressedIconButton,
       ]}
     >
-      <Animated.View
-        style={[
-          styles.iconContainer,
-          primary && styles.primaryIconContainer,
-          active && !primary && styles.activeIconContainer,
-          {
-            transform: [{ scale: iconScale }],
-          },
-        ]}
-      >
-        <Icon
-          color={primary ? "#FFFFFF" : active ? "#C2410C" : "#78716C"}
-          fill={active && !primary && label !== "Search" ? "#FFEDD5" : "none"}
-          size={primary ? 24 : 23}
-          strokeWidth={active || primary ? 2.5 : 2.1}
-        />
-      </Animated.View>
-
-      {active ? <View style={styles.activeIndicator} /> : null}
+      <Icon
+        color={active ? "#C2410C" : "#292524"}
+        fill={active && Icon === Bookmark ? "#C2410C" : "none"}
+        size={23}
+        strokeWidth={active ? 2.45 : 2.15}
+      />
+      {active ? <View style={styles.activeDot} /> : null}
     </Pressable>
   );
 }
@@ -132,93 +89,112 @@ export function ExperienceTopTabs({
   onTabChange,
 }: ExperienceTopTabsProps) {
   const router = useRouter();
+  const showBackButton = activeTab !== "feed";
 
-  const handleTabPress = (tab: ExperienceNavigationTab) => {
-    if (tab.key === activeTab) {
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(tabs)/experiences" as never);
+  };
+
+  const handleActionPress = (action: ExperienceNavigationAction) => {
+    if (action.key === activeTab) {
       return;
     }
 
     if (onTabChange) {
-      onTabChange(tab.key);
+      onTabChange(action.key);
       return;
     }
 
-    if (tab.key === "feed") {
-      router.replace(tab.href as never);
-      return;
-    }
-
-    router.push(tab.href as never);
+    router.push(action.href as never);
   };
 
   return (
-    <View accessibilityRole="tablist" style={styles.wrapper}>
-      {EXPERIENCE_TABS.map((tab) => (
-        <ExperienceNavigationItem
-          active={activeTab === tab.key}
-          Icon={tab.Icon}
-          key={tab.key}
-          label={tab.label}
-          onPress={() => handleTabPress(tab)}
-          primary={tab.primary}
-        />
-      ))}
+    <View style={styles.wrapper}>
+      {showBackButton ? (
+        <Pressable
+          accessibilityLabel="Back to experiences"
+          accessibilityRole="button"
+          hitSlop={6}
+          onPress={handleBack}
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.pressedIconButton,
+          ]}
+        >
+          <ArrowLeft color="#292524" size={24} strokeWidth={2.2} />
+        </Pressable>
+      ) : (
+        <View style={styles.backButtonPlaceholder} />
+      )}
+
+      <View style={styles.actions}>
+        {EXPERIENCE_ACTIONS.map((action) => (
+          <ToolbarAction
+            active={activeTab === action.key}
+            Icon={action.Icon}
+            key={action.key}
+            label={action.label}
+            onPress={() => handleActionPress(action)}
+          />
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
-    alignItems: "stretch",
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "#E9D8BD",
+    alignItems: "center",
+    backgroundColor: "#FFFCF7",
+    borderBottomColor: "#EEE7DC",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#F3E8D5",
-    borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
-    height: 54,
-    paddingHorizontal: 18,
+    height: 52,
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
   },
-  tab: {
+  actions: {
     alignItems: "center",
-    flex: 1,
+    flexDirection: "row",
+    gap: 4,
+  },
+  backButton: {
+    alignItems: "center",
+    borderRadius: 12,
+    height: 44,
     justifyContent: "center",
-    minWidth: 0,
+    width: 44,
+  },
+  backButtonPlaceholder: {
+    height: 44,
+    width: 44,
+  },
+  iconButton: {
+    alignItems: "center",
+    borderRadius: 12,
+    height: 44,
+    justifyContent: "center",
     position: "relative",
+    width: 44,
   },
-  tabPressed: {
-    opacity: 0.68,
+  activeIconButton: {
+    backgroundColor: "#FFF4E8",
   },
-  iconContainer: {
-    alignItems: "center",
-    borderRadius: 15,
-    height: 38,
-    justifyContent: "center",
-    width: 46,
+  pressedIconButton: {
+    backgroundColor: "#F5EFE7",
+    opacity: 0.76,
   },
-  activeIconContainer: {
-    backgroundColor: "#FFF7ED",
-  },
-  primaryIconContainer: {
+  activeDot: {
     backgroundColor: "#C2410C",
-    borderColor: "#FED7AA",
-    borderRadius: 17,
-    borderWidth: 2,
-    height: 40,
-    shadowColor: "#9A3412",
-    shadowOffset: { height: 5, width: 0 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    width: 48,
-    elevation: 5,
-  },
-  activeIndicator: {
-    backgroundColor: "#F97316",
-    borderRadius: 999,
-    bottom: 0,
+    borderRadius: 2,
+    bottom: 4,
     height: 3,
-    left: "31%",
     position: "absolute",
-    right: "31%",
+    width: 3,
   },
 });
