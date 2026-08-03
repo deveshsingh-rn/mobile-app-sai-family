@@ -40,7 +40,10 @@ import {
   ThumbsUp,
   Volume2,
   X,
+  RotateCcw,
 } from "lucide-react-native";
+
+
 
 import {
   AskDevoteeQuestionResponse,
@@ -2975,7 +2978,8 @@ export default function AskSaiScreen() {
                     pressed && styles.pressed,
                   ]}
                 >
-                  <X color="#9A3412" size={18} strokeWidth={2.5} />
+                  <RotateCcw
+                  color="#9A3412" size={18} strokeWidth={2.5} />
                 </Pressable>
               ) : null}
             </View>
