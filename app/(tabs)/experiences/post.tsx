@@ -296,30 +296,7 @@ export default function PremiumPostScreen() {
       {/* ───────────────── HEADER ───────────────── */}
 
       <View style={styles.fixedTop}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.headerIcon}>
-              <UserCircle2
-                size={23}
-                color="#1F2937"
-              />
-            </View>
-
-            <View>
-              <Text style={styles.eyebrow}>Create</Text>
-              <Text style={styles.headerTitle}>
-                Share Experience
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.primaryAction}>
-            <Sparkles
-              size={17}
-              color="#FFFFFF"
-            />
-          </View>
-        </View>
+       
 
         <ExperienceTopTabs activeTab="post" />
       </View>

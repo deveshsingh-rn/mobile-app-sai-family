@@ -245,33 +245,7 @@ export default function BookmarkedExperiencesScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.fixedTop}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.headerIcon}>
-              <UserCircle2
-                color="#1F2937"
-                size={23}
-                strokeWidth={1.8}
-              />
-            </View>
-
-            <View>
-              <Text style={styles.eyebrow}>Saved</Text>
-              <Text style={styles.headerTitle}>
-                Bookmarks
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.headerActions}>
-            <View style={styles.headerAction}>
-              <Search color="#1F2937" size={18} strokeWidth={2} />
-            </View>
-            <View style={styles.primaryAction}>
-              <Sparkles color="#FFFFFF" size={17} strokeWidth={2} />
-            </View>
-          </View>
-        </View>
+     
 
         <ExperienceTopTabs activeTab="bookmarks" />
       </View>

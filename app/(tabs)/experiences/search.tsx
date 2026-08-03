@@ -323,33 +323,6 @@ export default function SearchExperiencesScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.fixedTop}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.headerIcon}>
-              <UserCircle2
-                size={23}
-                color="#1F2937"
-                strokeWidth={1.8}
-              />
-            </View>
-
-            <View>
-              <Text style={styles.eyebrow}>Discover</Text>
-              <Text style={styles.headerTitle}>
-                Search
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.primaryAction}>
-            <Sparkles
-              size={17}
-              color="#FFFFFF"
-              strokeWidth={2}
-            />
-          </View>
-        </View>
-
         <ExperienceTopTabs activeTab="search" />
 
         <View style={styles.searchWrap}>
