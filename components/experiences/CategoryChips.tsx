@@ -1,3 +1,13 @@
+import {
+  BookHeart,
+  Eye,
+  Grid2X2,
+  HandHeart,
+  MoonStar,
+  Sparkles,
+  SunMedium,
+  type LucideIcon,
+} from "lucide-react-native";
 import React from "react";
 import {
   Pressable,
@@ -18,6 +28,16 @@ type CategoryChipsProps = {
   onChange?: (value: string) => void;
 };
 
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  all: Grid2X2,
+  blessings: SunMedium,
+  darshan: Eye,
+  dreams: MoonStar,
+  first: BookHeart,
+  miracles: Sparkles,
+  prayers: HandHeart,
+};
+
 export function CategoryChips({
   activeValue,
   categories,
@@ -35,6 +55,7 @@ export function CategoryChips({
     >
       {categories.map((category) => {
         const isActive = activeValue === category.value;
+        const CategoryIcon = CATEGORY_ICONS[category.value] ?? Sparkles;
 
         return (
           <Pressable
@@ -50,6 +71,11 @@ export function CategoryChips({
               pressed && styles.pressed,
             ]}
           >
+            <CategoryIcon
+              color={isActive ? "#FFFFFF" : "#A34A0A"}
+              size={17}
+              strokeWidth={isActive ? 2.35 : 2}
+            />
             <Text
               numberOfLines={1}
               style={[styles.label, isActive ? styles.activeText : styles.inactiveText]}
@@ -67,46 +93,57 @@ export function CategoryChips({
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    gap: 2,
-    paddingHorizontal: 12,
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
   },
   pressed: {
-    backgroundColor: "#F7F2EA",
-    opacity: 0.7,
+    opacity: 0.72,
+    transform: [{ scale: 0.98 }],
   },
   chip: {
     alignItems: "center",
-    height: 40,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 7,
+    height: 44,
     justifyContent: "center",
-    minWidth: 52,
-    paddingHorizontal: 12,
+    minWidth: 74,
+    overflow: "hidden",
+    paddingHorizontal: 14,
     position: "relative",
   },
   activeChip: {
-    backgroundColor: "transparent",
+    backgroundColor: "#292524",
+    borderColor: "#292524",
+    shadowColor: "#1C1917",
+    shadowOffset: { height: 3, width: 0 },
+    shadowOpacity: 0.16,
+    shadowRadius: 6,
+    elevation: 3,
   },
   inactiveChip: {
-    backgroundColor: "transparent",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7DED2",
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
     letterSpacing: 0,
   },
   activeText: {
-    color: "#1C1917",
-    fontWeight: "800",
+    color: "#FFFFFF",
   },
   inactiveText: {
-    color: "#78716C",
+    color: "#44403C",
   },
   activeAccent: {
-    backgroundColor: "#C2410C",
-    borderRadius: 2,
+    backgroundColor: "#F59E0B",
     bottom: 0,
-    height: 2,
-    left: 12,
+    height: 3,
+    left: 14,
     position: "absolute",
-    right: 12,
+    right: 14,
   },
 });
