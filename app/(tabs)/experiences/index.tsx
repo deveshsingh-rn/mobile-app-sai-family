@@ -968,8 +968,7 @@ const styles = StyleSheet.create({
   },
 
   categoriesWrapper: {
-    paddingBottom: 12,
-    paddingTop: 4,
+    paddingBottom: 4,
   },
 
   content: {
