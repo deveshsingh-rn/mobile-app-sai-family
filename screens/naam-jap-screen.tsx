@@ -7,13 +7,21 @@ import {
   Check,
   ChevronRight,
   CircleEllipsis,
+  Clock3,
+  Edit3,
+  Hand,
   House,
+  Minus,
+  MoreHorizontal,
+  Pencil,
+  Plus,
   RotateCcw,
   Share2,
-  Sparkles,
+  Trash2,
   Undo2,
   Volume2,
 } from "lucide-react-native";
+import { MotiView } from "moti";
 import React, {
   useCallback,
   useEffect,
@@ -26,27 +34,32 @@ import {
   Alert,
   AppState,
   Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   Share,
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   View,
-  useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Circle } from "react-native-svg";
 
 import {
   createDefaultNaamJapData,
   getLocalDateKey,
   loadNaamJapData,
   type NaamJapData,
+  type NaamJapName,
   saveNaamJapData,
 } from "@/services/naam-jap-storage";
 
 type NaamJapTab = "home" | "insights" | "experience" | "more";
+type NaamJapSheet = "more" | "names" | "target" | null;
+type FloatingNaamItem = { id: string; left: number; label: string };
 
 const SAI_IMAGE = require("@/assets/images/saijii.jpg");
 const TARGETS: NaamJapData["target"][] = [27, 54, 108];
@@ -71,10 +84,13 @@ const getDateKeyOffset = (offset: number) => {
 export default function NaamJapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<NaamJapTab>("home");
   const [data, setData] = useState<NaamJapData>(createDefaultNaamJapData);
   const [hydrated, setHydrated] = useState(false);
+  const [activeSheet, setActiveSheet] = useState<NaamJapSheet>(null);
+  const [floatingNaams, setFloatingNaams] = useState<FloatingNaamItem[]>([]);
+  const [nameDraft, setNameDraft] = useState("");
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const dataRef = useRef(data);
   const hydratedRef = useRef(false);
 
@@ -131,12 +147,13 @@ export default function NaamJapScreen() {
     data.sessionCount === 0
       ? 0
       : ((data.sessionCount - 1) % data.target) + 1;
-  const progress = roundCount / data.target;
   const completedMalas = Math.floor(data.totalCount / 108);
-  const ringSize = Math.min(width - 88, 236);
-  const ringStroke = 10;
-  const radius = (ringSize - ringStroke) / 2;
-  const circumference = 2 * Math.PI * radius;
+  const todayMalas = Math.floor(data.todayCount / 108);
+  const selectedName =
+    data.jaapNames.find((item) => item.id === data.selectedNameId) ||
+    data.jaapNames[0];
+  const targetNaamCount = data.targetMalas * 108;
+  const targetProgress = Math.min(1, data.sessionCount / targetNaamCount);
 
   const weeklyCounts = useMemo(() => {
     const today = getLocalDateKey();
@@ -180,6 +197,107 @@ export default function NaamJapScreen() {
       };
     });
   }, []);
+
+  const countNaam = useCallback(() => {
+    const currentName =
+      dataRef.current.jaapNames.find(
+        (item) => item.id === dataRef.current.selectedNameId
+      ) || dataRef.current.jaapNames[0];
+    const id = `${Date.now()}-${Math.random()}`;
+
+    setFloatingNaams((current) => [
+      ...current.slice(-5),
+      {
+        id,
+        label: currentName?.label || "Sai Ram",
+        left: 12 + Math.random() * 58,
+      },
+    ]);
+    increment();
+  }, [increment]);
+
+  useEffect(() => {
+    if (!data.autoCountSeconds || activeTab !== "home") {
+      return;
+    }
+
+    const interval = setInterval(countNaam, data.autoCountSeconds * 1000);
+
+    return () => clearInterval(interval);
+  }, [activeTab, countNaam, data.autoCountSeconds]);
+
+  const closeSheet = () => {
+    setActiveSheet(null);
+    setEditingNameId(null);
+    setNameDraft("");
+  };
+
+  const saveName = () => {
+    const label = nameDraft.trim();
+
+    if (!label) {
+      return;
+    }
+
+    setData((current) => {
+      if (editingNameId) {
+        return {
+          ...current,
+          jaapNames: current.jaapNames.map((item) =>
+            item.id === editingNameId ? { ...item, label } : item
+          ),
+        };
+      }
+
+      const newName: NaamJapName = {
+        id: `${Date.now()}`,
+        label,
+      };
+
+      return {
+        ...current,
+        jaapNames: [...current.jaapNames, newName],
+        selectedNameId: newName.id,
+      };
+    });
+    setEditingNameId(null);
+    setNameDraft("");
+  };
+
+  const editName = (name: NaamJapName) => {
+    setEditingNameId(name.id);
+    setNameDraft(name.label);
+  };
+
+  const deleteName = (name: NaamJapName) => {
+    if (data.jaapNames.length === 1) {
+      Alert.alert("Keep one Naam", "At least one Naam is required for Jaap.");
+      return;
+    }
+
+    Alert.alert("Delete this Naam?", name.label, [
+      { style: "cancel", text: "Cancel" },
+      {
+        onPress: () =>
+          setData((current) => {
+            const remaining = current.jaapNames.filter(
+              (item) => item.id !== name.id
+            );
+
+            return {
+              ...current,
+              jaapNames: remaining,
+              selectedNameId:
+                current.selectedNameId === name.id
+                  ? remaining[0].id
+                  : current.selectedNameId,
+            };
+          }),
+        style: "destructive",
+        text: "Delete",
+      },
+    ]);
+  };
 
   const undoLast = () => {
     setData((current) => {
@@ -265,13 +383,24 @@ export default function NaamJapScreen() {
         >
           <ArrowLeft color="#292524" size={24} />
         </Pressable>
-        <View style={styles.headerCopy}>
-          <Text style={styles.headerEyebrow}>DAILY PRACTICE</Text>
-          <Text style={styles.headerTitle}>Sai Naam Jap</Text>
-        </View>
-        <View style={styles.malaBadge}>
-          <Sparkles color="#9A3412" size={15} />
-          <Text style={styles.malaBadgeText}>{completedMalas}</Text>
+        <Text style={styles.headerTitle}>Naam Jap</Text>
+        <View style={styles.headerActions}>
+          <Pressable
+            accessibilityLabel="Naam Jap options"
+            accessibilityRole="button"
+            onPress={() => setActiveSheet("more")}
+            style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+          >
+            <MoreHorizontal color="#292524" size={24} />
+          </Pressable>
+          <Pressable
+            accessibilityLabel="Edit mala goal"
+            accessibilityRole="button"
+            onPress={() => setActiveSheet("target")}
+            style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+          >
+            <Edit3 color="#292524" size={21} />
+          </Pressable>
         </View>
       </View>
 
@@ -281,82 +410,86 @@ export default function NaamJapScreen() {
       >
         {activeTab === "home" ? (
           <>
-            <View style={styles.welcomeBand}>
-              <Image source={SAI_IMAGE} style={styles.saiImage} />
-              <View style={styles.welcomeCopy}>
-                <Text style={styles.welcomeTitle}>Om Sai Ram</Text>
-                <Text style={styles.welcomeText}>
-                  Keep your attention on Sai. Tap once with every Naam.
+            <Pressable
+              accessibilityHint="Opens your saved Naam list"
+              accessibilityRole="button"
+              onPress={() => setActiveSheet("names")}
+              style={({ pressed }) => [styles.naamHeading, pressed && styles.pressed]}
+            >
+              <View style={styles.naamHeadingCopy}>
+                <Text style={styles.naamEyebrow}>YOUR JAAP</Text>
+                <Text numberOfLines={2} style={styles.naamTitle}>
+                  {selectedName?.label || "Sai Ram"}
                 </Text>
               </View>
+              <View style={styles.editNameButton}>
+                <Pencil color="#9A3412" size={18} />
+              </View>
+            </Pressable>
+
+            <View style={styles.malaCards}>
+              <MalaStatCard
+                count={data.todayCount}
+                label="Today’s malas"
+                malas={todayMalas}
+              />
+              <MalaStatCard
+                count={data.totalCount}
+                label="Lifetime malas"
+                malas={completedMalas}
+              />
             </View>
 
-            <View style={styles.statRow}>
-              <Stat label="Today" value={data.todayCount} />
-              <View style={styles.statDivider} />
-              <Stat label="Lifetime" value={data.totalCount} />
-              <View style={styles.statDivider} />
-              <Stat label="108 Malas" value={completedMalas} />
+            <View style={styles.goalRow}>
+              <Text style={styles.goalText}>
+                {data.sessionCount.toLocaleString("en-IN")} / {targetNaamCount.toLocaleString("en-IN")} Naam
+              </Text>
+              <Text style={styles.goalText}>{data.targetMalas} mala goal</Text>
+            </View>
+            <View style={styles.goalTrack}>
+              <View style={[styles.goalProgress, { width: `${targetProgress * 100}%` }]} />
             </View>
 
-            <View style={styles.counterArea}>
-              <Svg height={ringSize} width={ringSize}>
-                <Circle
-                  cx={ringSize / 2}
-                  cy={ringSize / 2}
-                  fill="none"
-                  r={radius}
-                  stroke="#F0E8DD"
-                  strokeWidth={ringStroke}
+            <Pressable
+              accessibilityHint="Counts one repetition"
+              accessibilityLabel={`Count ${selectedName?.label || "Sai Ram"}`}
+              accessibilityRole="button"
+              onPress={countNaam}
+              style={({ pressed }) => [styles.tapField, pressed && styles.tapFieldPressed]}
+            >
+              {floatingNaams.map((item) => (
+                <FloatingNaam
+                  item={item}
+                  key={item.id}
+                  onDone={() =>
+                    setFloatingNaams((current) =>
+                      current.filter((entry) => entry.id !== item.id)
+                    )
+                  }
                 />
-                <Circle
-                  cx={ringSize / 2}
-                  cy={ringSize / 2}
-                  fill="none"
-                  r={radius}
-                  rotation="-90"
-                  origin={`${ringSize / 2}, ${ringSize / 2}`}
-                  stroke="#C2410C"
-                  strokeDasharray={`${circumference} ${circumference}`}
-                  strokeDashoffset={circumference * (1 - progress)}
-                  strokeLinecap="round"
-                  strokeWidth={ringStroke}
-                />
-              </Svg>
-              <Pressable
-                accessibilityHint="Increases your Sai Naam count by one"
-                accessibilityLabel={`Count ${roundCount} of ${data.target}`}
-                accessibilityRole="button"
-                onPress={increment}
-                style={({ pressed }) => [
-                  styles.counterButton,
-                  { height: ringSize - 34, width: ringSize - 34 },
-                  pressed && styles.counterPressed,
-                ]}
-              >
-                <Text style={styles.counterMantra}>SAI</Text>
-                <Text style={styles.counterValue}>{roundCount}</Text>
-                <Text style={styles.counterTarget}>of {data.target}</Text>
-                <Text style={styles.counterPrompt}>TAP TO COUNT</Text>
-              </Pressable>
-            </View>
+              ))}
+              <View style={styles.tapPrompt}>
+                <View style={styles.handCircle}>
+                  <Hand color="#9A3412" size={34} strokeWidth={1.8} />
+                </View>
+                <Text style={styles.tapTitle}>Tap for every Naam</Text>
+                <Text style={styles.tapDescription}>
+                  Keep your mind on Sai and tap gently
+                </Text>
+              </View>
+              {data.autoCountSeconds ? (
+                <View style={styles.autoBadge}>
+                  <Clock3 color="#166534" size={14} />
+                  <Text style={styles.autoBadgeText}>
+                    Auto every {data.autoCountSeconds}s
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
 
-            <Text style={styles.roundText}>
-              Session total: {data.sessionCount} Naam
-            </Text>
             <View style={styles.secondaryActions}>
-              <SmallAction
-                disabled={data.sessionCount === 0}
-                Icon={Undo2}
-                label="Undo"
-                onPress={undoLast}
-              />
-              <SmallAction
-                disabled={data.sessionCount === 0}
-                Icon={RotateCcw}
-                label="Reset session"
-                onPress={resetSession}
-              />
+              <SmallAction disabled={data.sessionCount === 0} Icon={Undo2} label="Undo" onPress={undoLast} />
+              <SmallAction disabled={data.sessionCount === 0} Icon={RotateCcw} label="Reset" onPress={resetSession} />
             </View>
           </>
         ) : null}
@@ -531,16 +664,327 @@ export default function NaamJapScreen() {
           );
         })}
       </View>
+
+      <NaamJapBottomSheet
+        activeSheet={activeSheet}
+        closeSheet={closeSheet}
+        data={data}
+        deleteName={deleteName}
+        editName={editName}
+        editingNameId={editingNameId}
+        nameDraft={nameDraft}
+        saveName={saveName}
+        selectedName={selectedName}
+        setData={setData}
+        setNameDraft={setNameDraft}
+      />
     </View>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function FloatingNaam({
+  item,
+  onDone,
+}: {
+  item: FloatingNaamItem;
+  onDone: () => void;
+}) {
+  const onDoneRef = useRef(onDone);
+
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  }, [onDone]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => onDoneRef.current(), 1750);
+    return () => clearTimeout(timeout);
+  }, []);
+
   return (
-    <View style={styles.stat}>
-      <Text style={styles.statValue}>{value.toLocaleString("en-IN")}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <MotiView
+      animate={{ opacity: 0, scale: 1.08, translateY: -190 }}
+      from={{ opacity: 1, scale: 0.78, translateY: 0 }}
+      style={[styles.floatingNaam, { left: `${item.left}%` }]}
+      transition={{ duration: 1650, type: "timing" }}
+    >
+      <Text numberOfLines={1} style={styles.floatingNaamText}>
+        {item.label}
+      </Text>
+    </MotiView>
+  );
+}
+
+function MalaStatCard({
+  count,
+  label,
+  malas,
+}: {
+  count: number;
+  label: string;
+  malas: number;
+}) {
+  return (
+    <View style={styles.malaStatCard}>
+      <Text style={styles.malaStatLabel}>{label}</Text>
+      <View style={styles.malaStatValueRow}>
+        <Text style={styles.malaStatValue}>{malas.toLocaleString("en-IN")}</Text>
+        <Text style={styles.malaStatUnit}>mala</Text>
+      </View>
+      <Text style={styles.malaStatCount}>
+        {count.toLocaleString("en-IN")} Naam
+      </Text>
     </View>
+  );
+}
+
+function NaamJapBottomSheet({
+  activeSheet,
+  closeSheet,
+  data,
+  deleteName,
+  editName,
+  editingNameId,
+  nameDraft,
+  saveName,
+  selectedName,
+  setData,
+  setNameDraft,
+}: {
+  activeSheet: NaamJapSheet;
+  closeSheet: () => void;
+  data: NaamJapData;
+  deleteName: (name: NaamJapName) => void;
+  editName: (name: NaamJapName) => void;
+  editingNameId: string | null;
+  nameDraft: string;
+  saveName: () => void;
+  selectedName?: NaamJapName;
+  setData: React.Dispatch<React.SetStateAction<NaamJapData>>;
+  setNameDraft: React.Dispatch<React.SetStateAction<string>>;
+}) {
+  return (
+    <Modal
+      animationType="slide"
+      onRequestClose={closeSheet}
+      presentationStyle="overFullScreen"
+      transparent
+      visible={Boolean(activeSheet)}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.modalRoot}
+      >
+        <Pressable
+          accessibilityLabel="Close"
+          onPress={closeSheet}
+          style={styles.modalBackdrop}
+        />
+        <View style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+
+          {activeSheet === "more" ? (
+            <>
+              <Text style={styles.sheetTitle}>Counter options</Text>
+              <Text style={styles.sheetDescription}>
+                Choose whether each Naam is counted by touch or on a gentle timer.
+              </Text>
+              <View style={styles.sheetSettingRow}>
+                <View style={styles.sheetSettingIcon}>
+                  <Clock3 color="#9A3412" size={21} />
+                </View>
+                <View style={styles.sheetSettingCopy}>
+                  <Text style={styles.sheetSettingTitle}>Automatic counter</Text>
+                  <Text style={styles.sheetSettingText}>
+                    Count one Naam at your chosen interval
+                  </Text>
+                </View>
+                <Switch
+                  onValueChange={(enabled) =>
+                    setData((current) => ({
+                      ...current,
+                      autoCountSeconds: enabled
+                        ? current.autoCountSeconds || 1
+                        : null,
+                    }))
+                  }
+                  trackColor={{ false: "#D6D3D1", true: "#86EFAC" }}
+                  thumbColor={data.autoCountSeconds ? "#166534" : "#FFFFFF"}
+                  value={Boolean(data.autoCountSeconds)}
+                />
+              </View>
+              {data.autoCountSeconds ? (
+                <View style={styles.intervalSection}>
+                  <Text style={styles.intervalLabel}>Count every</Text>
+                  <View style={styles.intervalOptions}>
+                    {[1, 2, 5].map((seconds) => {
+                      const active = data.autoCountSeconds === seconds;
+                      return (
+                        <Pressable
+                          key={seconds}
+                          onPress={() =>
+                            setData((current) => ({
+                              ...current,
+                              autoCountSeconds: seconds,
+                            }))
+                          }
+                          style={[
+                            styles.intervalButton,
+                            active && styles.activeIntervalButton,
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.intervalButtonText,
+                              active && styles.activeIntervalButtonText,
+                            ]}
+                          >
+                            {seconds} sec
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              ) : null}
+            </>
+          ) : null}
+
+          {activeSheet === "target" ? (
+            <>
+              <Text style={styles.sheetTitle}>Set your mala goal</Text>
+              <Text style={styles.sheetDescription}>
+                One mala contains 108 Naam. Choose a comfortable goal for this session.
+              </Text>
+              <View style={styles.targetStepper}>
+                <Pressable
+                  accessibilityLabel="Reduce mala goal"
+                  disabled={data.targetMalas <= 1}
+                  onPress={() =>
+                    setData((current) => ({
+                      ...current,
+                      targetMalas: Math.max(1, current.targetMalas - 1),
+                    }))
+                  }
+                  style={({ pressed }) => [
+                    styles.stepperButton,
+                    data.targetMalas <= 1 && styles.disabled,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Minus color="#292524" size={25} />
+                </Pressable>
+                <View style={styles.targetValueCopy}>
+                  <Text style={styles.targetValue}>{data.targetMalas}</Text>
+                  <Text style={styles.targetValueLabel}>malas</Text>
+                </View>
+                <Pressable
+                  accessibilityLabel="Increase mala goal"
+                  disabled={data.targetMalas >= 10000}
+                  onPress={() =>
+                    setData((current) => ({
+                      ...current,
+                      targetMalas: Math.min(10000, current.targetMalas + 1),
+                    }))
+                  }
+                  style={({ pressed }) => [styles.stepperButton, pressed && styles.pressed]}
+                >
+                  <Plus color="#292524" size={25} />
+                </Pressable>
+              </View>
+              <Text style={styles.targetSummary}>
+                {(data.targetMalas * 108).toLocaleString("en-IN")} total Naam
+              </Text>
+              <Pressable onPress={closeSheet} style={styles.sheetPrimaryButton}>
+                <Text style={styles.sheetPrimaryButtonText}>Save goal</Text>
+              </Pressable>
+            </>
+          ) : null}
+
+          {activeSheet === "names" ? (
+            <>
+              <Text style={styles.sheetTitle}>Choose your Naam</Text>
+              <Text style={styles.sheetDescription}>
+                Select, add, rename, or remove the Naam used for your Jaap.
+              </Text>
+              <View style={styles.nameInputRow}>
+                <TextInput
+                  accessibilityLabel="Naam"
+                  maxLength={40}
+                  onChangeText={setNameDraft}
+                  onSubmitEditing={saveName}
+                  placeholder="Add a Naam"
+                  placeholderTextColor="#A8A29E"
+                  returnKeyType="done"
+                  style={styles.nameInput}
+                  value={nameDraft}
+                />
+                <Pressable
+                  disabled={!nameDraft.trim()}
+                  onPress={saveName}
+                  style={({ pressed }) => [
+                    styles.saveNameButton,
+                    !nameDraft.trim() && styles.disabled,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text style={styles.saveNameButtonText}>
+                    {editingNameId ? "Save" : "Add"}
+                  </Text>
+                </Pressable>
+              </View>
+              <ScrollView
+                contentContainerStyle={styles.nameList}
+                keyboardShouldPersistTaps="handled"
+                style={styles.nameListScroll}
+              >
+                {data.jaapNames.map((name) => {
+                  const selected = selectedName?.id === name.id;
+                  return (
+                    <View key={name.id} style={styles.nameRow}>
+                      <Pressable
+                        onPress={() =>
+                          setData((current) => ({
+                            ...current,
+                            selectedNameId: name.id,
+                          }))
+                        }
+                        style={styles.nameSelectArea}
+                      >
+                        <View style={[styles.nameCheck, selected && styles.activeNameCheck]}>
+                          {selected ? <Check color="#FFFFFF" size={15} /> : null}
+                        </View>
+                        <Text numberOfLines={1} style={styles.nameRowText}>
+                          {name.label}
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityLabel={`Edit ${name.label}`}
+                        hitSlop={6}
+                        onPress={() => editName(name)}
+                        style={styles.nameAction}
+                      >
+                        <Pencil color="#57534E" size={18} />
+                      </Pressable>
+                      <Pressable
+                        accessibilityLabel={`Delete ${name.label}`}
+                        hitSlop={6}
+                        onPress={() => deleteName(name)}
+                        style={styles.nameAction}
+                      >
+                        <Trash2 color="#B42318" size={18} />
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+              <Pressable onPress={closeSheet} style={styles.sheetPrimaryButton}>
+                <Text style={styles.sheetPrimaryButtonText}>Done</Text>
+              </Pressable>
+            </>
+          ) : null}
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -623,9 +1067,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 44,
   },
+  headerActions: {
+    alignItems: "center",
+    flexDirection: "row",
+  },
   headerCopy: { flex: 1, marginLeft: 8 },
   headerEyebrow: { color: "#C2410C", fontSize: 10, fontWeight: "800" },
-  headerTitle: { color: "#292524", fontSize: 19, fontWeight: "900", marginTop: 1 },
+  headerTitle: {
+    color: "#292524",
+    flex: 1,
+    fontSize: 19,
+    fontWeight: "900",
+    marginLeft: 8,
+  },
   malaBadge: {
     alignItems: "center",
     backgroundColor: "#FFF1DF",
@@ -637,6 +1091,155 @@ const styles = StyleSheet.create({
   },
   malaBadgeText: { color: "#9A3412", fontSize: 13, fontWeight: "800" },
   content: { paddingBottom: 36 },
+  naamHeading: {
+    alignItems: "center",
+    backgroundColor: "#FFFCF8",
+    borderBottomColor: "#E9E2D8",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+  },
+  naamHeadingCopy: { flex: 1 },
+  naamEyebrow: {
+    color: "#C2410C",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  naamTitle: {
+    color: "#1C1917",
+    fontSize: 34,
+    fontWeight: "900",
+    lineHeight: 41,
+    marginTop: 3,
+  },
+  editNameButton: {
+    alignItems: "center",
+    backgroundColor: "#FFF1DF",
+    borderRadius: 14,
+    height: 44,
+    justifyContent: "center",
+    marginLeft: 14,
+    width: 44,
+  },
+  malaCards: {
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+  },
+  malaStatCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E9E2D8",
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    padding: 14,
+  },
+  malaStatLabel: {
+    color: "#78716C",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  malaStatValueRow: {
+    alignItems: "baseline",
+    flexDirection: "row",
+    gap: 5,
+    marginTop: 7,
+  },
+  malaStatValue: { color: "#1C1917", fontSize: 27, fontWeight: "900" },
+  malaStatUnit: { color: "#57534E", fontSize: 11, fontWeight: "700" },
+  malaStatCount: {
+    color: "#A8A29E",
+    fontSize: 10,
+    fontWeight: "600",
+    marginTop: 3,
+  },
+  goalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginHorizontal: 18,
+    marginTop: 14,
+  },
+  goalText: { color: "#78716C", fontSize: 10, fontWeight: "700" },
+  goalTrack: {
+    backgroundColor: "#E7E5E4",
+    borderRadius: 4,
+    height: 5,
+    marginHorizontal: 18,
+    marginTop: 7,
+    overflow: "hidden",
+  },
+  goalProgress: {
+    backgroundColor: "#C2410C",
+    borderRadius: 4,
+    height: "100%",
+  },
+  tapField: {
+    alignItems: "center",
+    backgroundColor: "#FFFDF9",
+    borderColor: "#E5DDD1",
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 310,
+    justifyContent: "center",
+    marginHorizontal: 16,
+    marginTop: 14,
+    overflow: "hidden",
+    position: "relative",
+  },
+  tapFieldPressed: { backgroundColor: "#FFF8ED" },
+  tapPrompt: { alignItems: "center", paddingHorizontal: 24 },
+  handCircle: {
+    alignItems: "center",
+    backgroundColor: "#FFF1DF",
+    borderColor: "#FED7AA",
+    borderRadius: 34,
+    borderWidth: 1,
+    height: 68,
+    justifyContent: "center",
+    width: 68,
+  },
+  tapTitle: {
+    color: "#292524",
+    fontSize: 18,
+    fontWeight: "900",
+    marginTop: 13,
+  },
+  tapDescription: {
+    color: "#78716C",
+    fontSize: 12,
+    marginTop: 5,
+    textAlign: "center",
+  },
+  floatingNaam: {
+    backgroundColor: "#C2410C",
+    borderRadius: 999,
+    bottom: 28,
+    maxWidth: "72%",
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    position: "absolute",
+    shadowColor: "#7C2D12",
+    shadowOffset: { height: 5, width: 0 },
+    shadowOpacity: 0.18,
+    shadowRadius: 9,
+    zIndex: 4,
+  },
+  floatingNaamText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
+  autoBadge: {
+    alignItems: "center",
+    backgroundColor: "#ECFDF3",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    position: "absolute",
+    right: 10,
+    top: 10,
+  },
+  autoBadgeText: { color: "#166534", fontSize: 10, fontWeight: "800" },
   welcomeBand: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
@@ -807,4 +1410,155 @@ const styles = StyleSheet.create({
   activeTabIcon: { backgroundColor: "#FFF1DF" },
   tabLabel: { color: "#78716C", fontSize: 10, fontWeight: "700", marginTop: 2 },
   activeTabLabel: { color: "#C2410C", fontWeight: "900" },
+  modalRoot: { flex: 1, justifyContent: "flex-end" },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(28, 25, 23, 0.42)",
+  },
+  sheet: {
+    backgroundColor: "#FFFCF8",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "82%",
+    paddingBottom: 28,
+    paddingHorizontal: 18,
+    paddingTop: 10,
+  },
+  sheetHandle: {
+    alignSelf: "center",
+    backgroundColor: "#D6D3D1",
+    borderRadius: 2,
+    height: 4,
+    marginBottom: 18,
+    width: 42,
+  },
+  sheetTitle: { color: "#1C1917", fontSize: 23, fontWeight: "900" },
+  sheetDescription: {
+    color: "#78716C",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 5,
+  },
+  sheetSettingRow: {
+    alignItems: "center",
+    borderBottomColor: "#E7E5E4",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    marginTop: 18,
+    paddingBottom: 16,
+  },
+  sheetSettingIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF1DF",
+    borderRadius: 12,
+    height: 44,
+    justifyContent: "center",
+    width: 44,
+  },
+  sheetSettingCopy: { flex: 1, marginLeft: 11 },
+  sheetSettingTitle: { color: "#292524", fontSize: 15, fontWeight: "800" },
+  sheetSettingText: { color: "#78716C", fontSize: 11, marginTop: 2 },
+  intervalSection: { marginTop: 16 },
+  intervalLabel: { color: "#57534E", fontSize: 12, fontWeight: "800" },
+  intervalOptions: { flexDirection: "row", gap: 8, marginTop: 9 },
+  intervalButton: {
+    alignItems: "center",
+    backgroundColor: "#F5F5F4",
+    borderColor: "#E7E5E4",
+    borderRadius: 10,
+    borderWidth: 1,
+    flex: 1,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  activeIntervalButton: { backgroundColor: "#166534", borderColor: "#166534" },
+  intervalButtonText: { color: "#57534E", fontSize: 13, fontWeight: "800" },
+  activeIntervalButtonText: { color: "#FFFFFF" },
+  targetStepper: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 26,
+  },
+  stepperButton: {
+    alignItems: "center",
+    backgroundColor: "#F5F5F4",
+    borderColor: "#E7E5E4",
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 54,
+    justifyContent: "center",
+    width: 54,
+  },
+  targetValueCopy: { alignItems: "center", minWidth: 128 },
+  targetValue: { color: "#1C1917", fontSize: 46, fontWeight: "900" },
+  targetValueLabel: { color: "#78716C", fontSize: 12, fontWeight: "700" },
+  targetSummary: {
+    color: "#9A3412",
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 14,
+    textAlign: "center",
+  },
+  sheetPrimaryButton: {
+    alignItems: "center",
+    backgroundColor: "#292524",
+    borderRadius: 12,
+    justifyContent: "center",
+    marginTop: 20,
+    minHeight: 52,
+  },
+  sheetPrimaryButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
+  nameInputRow: { flexDirection: "row", gap: 8, marginTop: 16 },
+  nameInput: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#D6D3D1",
+    borderRadius: 11,
+    borderWidth: 1,
+    color: "#292524",
+    flex: 1,
+    fontSize: 15,
+    minHeight: 48,
+    paddingHorizontal: 13,
+  },
+  saveNameButton: {
+    alignItems: "center",
+    backgroundColor: "#C2410C",
+    borderRadius: 11,
+    justifyContent: "center",
+    minWidth: 68,
+    paddingHorizontal: 14,
+  },
+  saveNameButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
+  nameListScroll: { maxHeight: 280, marginTop: 12 },
+  nameList: { gap: 7 },
+  nameRow: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7E5E4",
+    borderRadius: 11,
+    borderWidth: 1,
+    flexDirection: "row",
+    minHeight: 52,
+    paddingHorizontal: 10,
+  },
+  nameSelectArea: { alignItems: "center", flex: 1, flexDirection: "row" },
+  nameCheck: {
+    alignItems: "center",
+    borderColor: "#D6D3D1",
+    borderRadius: 10,
+    borderWidth: 1,
+    height: 21,
+    justifyContent: "center",
+    width: 21,
+  },
+  activeNameCheck: { backgroundColor: "#C2410C", borderColor: "#C2410C" },
+  nameRowText: {
+    color: "#292524",
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "800",
+    marginLeft: 10,
+  },
+  nameAction: { alignItems: "center", height: 40, justifyContent: "center", width: 38 },
 });

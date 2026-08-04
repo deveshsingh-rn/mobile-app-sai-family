@@ -7,14 +7,28 @@ export type NaamJapDailyCount = {
   date: string;
 };
 
+export type NaamJapName = {
+  id: string;
+  label: string;
+};
+
 export type NaamJapData = {
+  autoCountSeconds: number | null;
   date: string;
   hapticsEnabled: boolean;
   history: NaamJapDailyCount[];
+  jaapNames: NaamJapName[];
+  selectedNameId: string;
   sessionCount: number;
   target: 27 | 54 | 108;
+  targetMalas: number;
   todayCount: number;
   totalCount: number;
+};
+
+const DEFAULT_NAME: NaamJapName = {
+  id: "sai-ram",
+  label: "Sai Ram",
 };
 
 export const getLocalDateKey = () => {
@@ -27,11 +41,15 @@ export const getLocalDateKey = () => {
 };
 
 export const createDefaultNaamJapData = (): NaamJapData => ({
+  autoCountSeconds: null,
   date: getLocalDateKey(),
   hapticsEnabled: true,
   history: [],
+  jaapNames: [DEFAULT_NAME],
+  selectedNameId: DEFAULT_NAME.id,
   sessionCount: 0,
   target: 108,
+  targetMalas: 1,
   todayCount: 0,
   totalCount: 0,
 });
@@ -69,13 +87,38 @@ export async function loadNaamJapData(): Promise<NaamJapData> {
 
     const parsed = JSON.parse(stored) as Partial<NaamJapData>;
     const defaults = createDefaultNaamJapData();
+    const jaapNames = Array.isArray(parsed.jaapNames)
+      ? parsed.jaapNames.filter(
+          (item): item is NaamJapName =>
+            typeof item?.id === "string" &&
+            typeof item?.label === "string" &&
+            Boolean(item.label.trim())
+        )
+      : defaults.jaapNames;
+    const safeNames = jaapNames.length ? jaapNames : defaults.jaapNames;
+    const selectedNameId = safeNames.some(
+      (item) => item.id === parsed.selectedNameId
+    )
+      ? String(parsed.selectedNameId)
+      : safeNames[0].id;
     const data: NaamJapData = {
       ...defaults,
       ...parsed,
+      autoCountSeconds:
+        typeof parsed.autoCountSeconds === "number" &&
+        parsed.autoCountSeconds >= 1
+          ? Math.min(60, Math.round(parsed.autoCountSeconds))
+          : null,
       history: Array.isArray(parsed.history) ? parsed.history : [],
+      jaapNames: safeNames,
+      selectedNameId,
       target: [27, 54, 108].includes(Number(parsed.target))
         ? (Number(parsed.target) as NaamJapData["target"])
         : 108,
+      targetMalas:
+        typeof parsed.targetMalas === "number"
+          ? Math.min(10000, Math.max(1, Math.round(parsed.targetMalas)))
+          : 1,
     };
 
     return normalizeForToday(data);
