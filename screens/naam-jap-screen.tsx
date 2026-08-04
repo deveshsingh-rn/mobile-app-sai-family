@@ -1,4 +1,6 @@
 import * as Haptics from "expo-haptics";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
   ArrowLeft,
@@ -373,7 +375,23 @@ export default function NaamJapScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
+      <LinearGradient
+        colors={["#FFF8ED", "#F3F7F2", "#F8F3FA"]}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <Image
+        resizeMode="cover"
+        source={SAI_IMAGE}
+        style={styles.backgroundSai}
+      />
+
+      <BlurView
+        intensity={76}
+        tint="light"
+        style={[styles.header, { paddingTop: insets.top + 6 }]}
+      >
         <Pressable
           accessibilityLabel="Close Naam Jap"
           accessibilityRole="button"
@@ -402,7 +420,7 @@ export default function NaamJapScreen() {
             <Edit3 color="#292524" size={21} />
           </Pressable>
         </View>
-      </View>
+      </BlurView>
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -416,6 +434,19 @@ export default function NaamJapScreen() {
               onPress={() => setActiveSheet("names")}
               style={({ pressed }) => [styles.naamHeading, pressed && styles.pressed]}
             >
+              <BlurView
+                intensity={64}
+                pointerEvents="none"
+                style={StyleSheet.absoluteFill}
+                tint="light"
+              />
+              <LinearGradient
+                colors={["rgba(255,255,255,0.48)", "rgba(255,247,237,0.18)"]}
+                end={{ x: 1, y: 1 }}
+                pointerEvents="none"
+                start={{ x: 0, y: 0 }}
+                style={StyleSheet.absoluteFill}
+              />
               <View style={styles.naamHeadingCopy}>
                 <Text style={styles.naamEyebrow}>YOUR JAAP</Text>
                 <Text numberOfLines={2} style={styles.naamTitle}>
@@ -457,6 +488,14 @@ export default function NaamJapScreen() {
               onPress={countNaam}
               style={({ pressed }) => [styles.tapField, pressed && styles.tapFieldPressed]}
             >
+              <LinearGradient
+                colors={["#17483D", "#12342F", "#221F2D"]}
+                end={{ x: 1, y: 1 }}
+                pointerEvents="none"
+                start={{ x: 0, y: 0 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <View pointerEvents="none" style={styles.tapFieldGlow} />
               {floatingNaams.map((item) => (
                 <FloatingNaam
                   item={item}
@@ -470,7 +509,7 @@ export default function NaamJapScreen() {
               ))}
               <View style={styles.tapPrompt}>
                 <View style={styles.handCircle}>
-                  <Hand color="#9A3412" size={34} strokeWidth={1.8} />
+                  <Hand color="#FBBF24" size={34} strokeWidth={1.8} />
                 </View>
                 <Text style={styles.tapTitle}>Tap for every Naam</Text>
                 <Text style={styles.tapDescription}>
@@ -638,7 +677,11 @@ export default function NaamJapScreen() {
         ) : null}
       </ScrollView>
 
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+      <BlurView
+        intensity={82}
+        tint="light"
+        style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 10) }]}
+      >
         {TAB_ITEMS.map(({ Icon, key, label }) => {
           const active = activeTab === key;
 
@@ -663,7 +706,7 @@ export default function NaamJapScreen() {
             </Pressable>
           );
         })}
-      </View>
+      </BlurView>
 
       <NaamJapBottomSheet
         activeSheet={activeSheet}
@@ -724,7 +767,7 @@ function MalaStatCard({
   malas: number;
 }) {
   return (
-    <View style={styles.malaStatCard}>
+    <BlurView intensity={58} tint="light" style={styles.malaStatCard}>
       <Text style={styles.malaStatLabel}>{label}</Text>
       <View style={styles.malaStatValueRow}>
         <Text style={styles.malaStatValue}>{malas.toLocaleString("en-IN")}</Text>
@@ -733,7 +776,7 @@ function MalaStatCard({
       <Text style={styles.malaStatCount}>
         {count.toLocaleString("en-IN")} Naam
       </Text>
-    </View>
+    </BlurView>
   );
 }
 
@@ -779,7 +822,7 @@ function NaamJapBottomSheet({
           onPress={closeSheet}
           style={styles.modalBackdrop}
         />
-        <View style={styles.sheet}>
+        <BlurView intensity={92} tint="light" style={styles.sheet}>
           <View style={styles.sheetHandle} />
 
           {activeSheet === "more" ? (
@@ -982,7 +1025,7 @@ function NaamJapBottomSheet({
               </Pressable>
             </>
           ) : null}
-        </View>
+        </BlurView>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -1043,7 +1086,15 @@ function SmallAction({
 }
 
 const styles = StyleSheet.create({
-  screen: { backgroundColor: "#F8F7F4", flex: 1 },
+  screen: { backgroundColor: "#F7F3EE", flex: 1 },
+  backgroundSai: {
+    height: 510,
+    opacity: 0.075,
+    position: "absolute",
+    right: -82,
+    top: 78,
+    width: 310,
+  },
   loadingScreen: {
     alignItems: "center",
     backgroundColor: "#FFF7ED",
@@ -1052,17 +1103,25 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    backgroundColor: "#FFFCF8",
-    borderBottomColor: "#E9E2D8",
+    backgroundColor: "rgba(255,255,255,0.56)",
+    borderBottomColor: "rgba(255,255,255,0.88)",
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     minHeight: 66,
     paddingBottom: 10,
     paddingHorizontal: 14,
+    shadowColor: "#243C35",
+    shadowOffset: { height: 5, width: 0 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    zIndex: 5,
   },
   headerButton: {
     alignItems: "center",
-    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.42)",
+    borderColor: "rgba(255,255,255,0.9)",
+    borderRadius: 8,
+    borderWidth: 1,
     height: 44,
     justifyContent: "center",
     width: 44,
@@ -1090,15 +1149,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
   },
   malaBadgeText: { color: "#9A3412", fontSize: 13, fontWeight: "800" },
-  content: { paddingBottom: 36 },
+  content: { paddingBottom: 38, paddingTop: 14 },
   naamHeading: {
     alignItems: "center",
-    backgroundColor: "#FFFCF8",
-    borderBottomColor: "#E9E2D8",
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    backgroundColor: "rgba(255,255,255,0.5)",
+    borderColor: "rgba(255,255,255,0.9)",
+    borderRadius: 8,
+    borderWidth: 1,
     flexDirection: "row",
+    marginHorizontal: 16,
+    overflow: "hidden",
     paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingVertical: 19,
+    shadowColor: "#35534A",
+    shadowOffset: { height: 8, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
   },
   naamHeadingCopy: { flex: 1 },
   naamEyebrow: {
@@ -1115,8 +1181,10 @@ const styles = StyleSheet.create({
   },
   editNameButton: {
     alignItems: "center",
-    backgroundColor: "#FFF1DF",
-    borderRadius: 14,
+    backgroundColor: "rgba(255,240,219,0.72)",
+    borderColor: "rgba(255,255,255,0.92)",
+    borderRadius: 8,
+    borderWidth: 1,
     height: 44,
     justifyContent: "center",
     marginLeft: 14,
@@ -1129,12 +1197,17 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   malaStatCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E9E2D8",
+    backgroundColor: "rgba(255,255,255,0.48)",
+    borderColor: "rgba(255,255,255,0.94)",
     borderRadius: 8,
     borderWidth: 1,
     flex: 1,
+    overflow: "hidden",
     padding: 14,
+    shadowColor: "#2D4A41",
+    shadowOffset: { height: 7, width: 0 },
+    shadowOpacity: 0.07,
+    shadowRadius: 15,
   },
   malaStatLabel: {
     color: "#78716C",
@@ -1163,7 +1236,7 @@ const styles = StyleSheet.create({
   },
   goalText: { color: "#78716C", fontSize: 10, fontWeight: "700" },
   goalTrack: {
-    backgroundColor: "#E7E5E4",
+    backgroundColor: "rgba(255,255,255,0.7)",
     borderRadius: 4,
     height: 5,
     marginHorizontal: 18,
@@ -1171,14 +1244,14 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   goalProgress: {
-    backgroundColor: "#C2410C",
+    backgroundColor: "#D97706",
     borderRadius: 4,
     height: "100%",
   },
   tapField: {
     alignItems: "center",
-    backgroundColor: "#FFFDF9",
-    borderColor: "#E5DDD1",
+    backgroundColor: "#12342F",
+    borderColor: "rgba(255,255,255,0.72)",
     borderRadius: 8,
     borderWidth: 1,
     height: 310,
@@ -1187,13 +1260,23 @@ const styles = StyleSheet.create({
     marginTop: 14,
     overflow: "hidden",
     position: "relative",
+    shadowColor: "#12342F",
+    shadowOffset: { height: 12, width: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 22,
   },
-  tapFieldPressed: { backgroundColor: "#FFF8ED" },
+  tapFieldPressed: { opacity: 0.94, transform: [{ scale: 0.995 }] },
+  tapFieldGlow: {
+    ...StyleSheet.absoluteFillObject,
+    borderColor: "rgba(255,255,255,0.14)",
+    borderRadius: 8,
+    borderWidth: 1,
+  },
   tapPrompt: { alignItems: "center", paddingHorizontal: 24 },
   handCircle: {
     alignItems: "center",
-    backgroundColor: "#FFF1DF",
-    borderColor: "#FED7AA",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.3)",
     borderRadius: 34,
     borderWidth: 1,
     height: 68,
@@ -1201,20 +1284,22 @@ const styles = StyleSheet.create({
     width: 68,
   },
   tapTitle: {
-    color: "#292524",
+    color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "900",
     marginTop: 13,
   },
   tapDescription: {
-    color: "#78716C",
+    color: "rgba(255,255,255,0.7)",
     fontSize: 12,
     marginTop: 5,
     textAlign: "center",
   },
   floatingNaam: {
-    backgroundColor: "#C2410C",
+    backgroundColor: "#D97706",
+    borderColor: "rgba(255,255,255,0.64)",
     borderRadius: 999,
+    borderWidth: 1,
     bottom: 28,
     maxWidth: "72%",
     paddingHorizontal: 14,
@@ -1292,9 +1377,9 @@ const styles = StyleSheet.create({
   secondaryActions: { flexDirection: "row", gap: 10, justifyContent: "center", marginTop: 14 },
   smallAction: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E7E2DA",
-    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.58)",
+    borderColor: "rgba(255,255,255,0.9)",
+    borderRadius: 8,
     borderWidth: 1,
     flexDirection: "row",
     gap: 7,
@@ -1310,16 +1395,16 @@ const styles = StyleSheet.create({
   pageDescription: { color: "#78716C", fontSize: 14, lineHeight: 21, marginTop: 6 },
   metricGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, padding: 18 },
   metric: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E9E3DA",
-    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.56)",
+    borderColor: "rgba(255,255,255,0.9)",
+    borderRadius: 8,
     borderWidth: 1,
     padding: 15,
     width: "48%",
   },
   metricValue: { color: "#292524", fontSize: 24, fontWeight: "900" },
   metricLabel: { color: "#78716C", fontSize: 12, fontWeight: "700", marginTop: 5 },
-  chartSection: { backgroundColor: "#FFFFFF", borderTopColor: "#ECE6DD", borderTopWidth: 1, padding: 18 },
+  chartSection: { backgroundColor: "rgba(255,255,255,0.56)", borderTopColor: "rgba(255,255,255,0.9)", borderTopWidth: 1, padding: 18 },
   sectionTitle: { color: "#292524", fontSize: 17, fontWeight: "900" },
   chart: { alignItems: "flex-end", flexDirection: "row", gap: 8, height: 180, marginTop: 18 },
   chartColumn: { alignItems: "center", flex: 1, height: "100%", justifyContent: "flex-end" },
@@ -1358,7 +1443,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   outlineActionText: { color: "#9A3412", fontSize: 14, fontWeight: "800" },
-  settingSection: { backgroundColor: "#FFFFFF", marginTop: 22, padding: 18 },
+  settingSection: { backgroundColor: "rgba(255,255,255,0.56)", marginTop: 22, padding: 18 },
   settingLabel: { color: "#292524", fontSize: 15, fontWeight: "800" },
   targetControl: { flexDirection: "row", gap: 8, marginTop: 12 },
   targetOption: {
@@ -1376,8 +1461,8 @@ const styles = StyleSheet.create({
   activeTargetText: { color: "#FFFFFF" },
   settingRow: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderTopColor: "#ECE6DD",
+    backgroundColor: "rgba(255,255,255,0.56)",
+    borderTopColor: "rgba(255,255,255,0.9)",
     borderTopWidth: 1,
     flexDirection: "row",
     padding: 18,
@@ -1398,8 +1483,8 @@ const styles = StyleSheet.create({
   },
   dangerActionText: { color: "#B42318", fontSize: 14, fontWeight: "800" },
   bottomBar: {
-    backgroundColor: "#FFFFFF",
-    borderTopColor: "#E7E2DA",
+    backgroundColor: "rgba(255,255,255,0.6)",
+    borderTopColor: "rgba(255,255,255,0.92)",
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     paddingHorizontal: 8,
@@ -1407,7 +1492,7 @@ const styles = StyleSheet.create({
   },
   tabButton: { alignItems: "center", flex: 1, minHeight: 52 },
   tabIcon: { alignItems: "center", borderRadius: 12, height: 30, justifyContent: "center", width: 40 },
-  activeTabIcon: { backgroundColor: "#FFF1DF" },
+  activeTabIcon: { backgroundColor: "rgba(255,225,183,0.7)" },
   tabLabel: { color: "#78716C", fontSize: 10, fontWeight: "700", marginTop: 2 },
   activeTabLabel: { color: "#C2410C", fontWeight: "900" },
   modalRoot: { flex: 1, justifyContent: "flex-end" },
@@ -1416,10 +1501,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(28, 25, 23, 0.42)",
   },
   sheet: {
-    backgroundColor: "#FFFCF8",
+    backgroundColor: "rgba(255,252,248,0.86)",
+    borderColor: "rgba(255,255,255,0.92)",
+    borderWidth: 1,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: "82%",
+    overflow: "hidden",
     paddingBottom: 28,
     paddingHorizontal: 18,
     paddingTop: 10,
