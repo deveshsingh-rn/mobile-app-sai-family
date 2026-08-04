@@ -220,6 +220,14 @@ function AppLayoutContent() {
         <Stack.Screen name="sangha-profile" options={{ headerShown: false }} />
         <Stack.Screen name="sangha-chat" options={{ headerShown: false }} />
         <Stack.Screen name="group-details" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="naam-jap"
+          options={{
+            animation: "slide_from_right",
+            gestureEnabled: true,
+            headerShown: false,
+          }}
+        />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />
