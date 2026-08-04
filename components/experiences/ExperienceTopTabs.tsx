@@ -2,12 +2,15 @@ import { useRouter } from "expo-router";
 import {
   ArrowLeft,
   Bookmark,
+  Plus,
   Search,
-  SquarePlus,
   type LucideIcon,
 } from "lucide-react-native";
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+
+import { useAppSelector } from "@/store/hooks";
+import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 
 export type ExperienceTopTabKey =
   | "feed"
@@ -30,17 +33,18 @@ type ExperienceNavigationAction = {
 
 const EXPERIENCE_ACTIONS: ExperienceNavigationAction[] = [
   {
+    href: "/(tabs)/experiences/post",
+    Icon: Plus,
+    key: "post",
+    label: "Create a post",
+  },
+  {
     href: "/(tabs)/experiences/search",
     Icon: Search,
     key: "search",
     label: "Search experiences",
-  },
-  {
-    href: "/(tabs)/experiences/post",
-    Icon: SquarePlus,
-    key: "post",
-    label: "Create a post",
-  },
+  }
+  ,
   {
     href: "/(tabs)/experiences/bookmarks",
     Icon: Bookmark,
@@ -84,12 +88,57 @@ function ToolbarAction({
   );
 }
 
+function CreateProfileAction({
+  active,
+  name,
+  onPress,
+  profileImageUrl,
+}: {
+  active: boolean;
+  name?: string;
+  onPress: () => void;
+  profileImageUrl?: string;
+}) {
+  const initial = name?.trim().charAt(0).toUpperCase() || "S";
+
+  return (
+    <Pressable
+      accessibilityLabel="Create a post"
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      hitSlop={6}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.createButton,
+        active && styles.activeCreateButton,
+        pressed && styles.pressedIconButton,
+      ]}
+    >
+      {profileImageUrl ? (
+        <Image source={{ uri: profileImageUrl }} style={styles.createAvatar} />
+      ) : (
+        <View style={[styles.createAvatar, styles.createAvatarFallback]}>
+          <Text style={styles.createAvatarText}>{initial}</Text>
+        </View>
+      )}
+      <View style={styles.createBadge}>
+        <Plus color="#FFFFFF" size={11} strokeWidth={3} />
+      </View>
+    </Pressable>
+  );
+}
+
 export function ExperienceTopTabs({
   activeTab,
   onTabChange,
 }: ExperienceTopTabsProps) {
   const router = useRouter();
+  const account = useAppSelector(selectDevoteeAccount);
   const showBackButton = activeTab !== "feed";
+  const profileImageUrl =
+    account?.profileImage?.uri ||
+    account?.profileImageUrl ||
+    account?.profile?.profileImageUrl;
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -133,15 +182,25 @@ export function ExperienceTopTabs({
       )}
 
       <View style={styles.actions}>
-        {EXPERIENCE_ACTIONS.map((action) => (
-          <ToolbarAction
-            active={activeTab === action.key}
-            Icon={action.Icon}
-            key={action.key}
-            label={action.label}
-            onPress={() => handleActionPress(action)}
-          />
-        ))}
+        {EXPERIENCE_ACTIONS.map((action) =>
+          action.key === "post" ? (
+            <CreateProfileAction
+              active={activeTab === action.key}
+              key={action.key}
+              name={account?.name}
+              onPress={() => handleActionPress(action)}
+              profileImageUrl={profileImageUrl}
+            />
+          ) : (
+            <ToolbarAction
+              active={activeTab === action.key}
+              Icon={action.Icon}
+              key={action.key}
+              label={action.label}
+              onPress={() => handleActionPress(action)}
+            />
+          )
+        )}
       </View>
     </View>
   );
@@ -181,6 +240,50 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "relative",
     width: 44,
+  },
+  createButton: {
+    alignItems: "center",
+    borderColor: "transparent",
+    borderRadius: 14,
+    borderWidth: 1.5,
+    height: 44,
+    justifyContent: "center",
+    position: "relative",
+    width: 44,
+  },
+  activeCreateButton: {
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
+  },
+  createAvatar: {
+    backgroundColor: "#F1E4CE",
+    borderColor: "#FFFFFF",
+    borderRadius: 17,
+    borderWidth: 1.5,
+    height: 34,
+    width: 34,
+  },
+  createAvatarFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  createAvatarText: {
+    color: "#6B3F05",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  createBadge: {
+    alignItems: "center",
+    backgroundColor: "#C2410C",
+    borderColor: "#FFFCF7",
+    borderRadius: 8,
+    borderWidth: 2,
+    bottom: 2,
+    height: 17,
+    justifyContent: "center",
+    position: "absolute",
+    right: 1,
+    width: 17,
   },
   activeIconButton: {
     backgroundColor: "#FFF4E8",

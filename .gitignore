@@ -18,6 +18,7 @@ yarn-error.*
 *.p12
 *.key
 *.mobileprovision
+credentials.json
 devesh.html
 eventcalenderscreen.html
 eventcardoverview.html
