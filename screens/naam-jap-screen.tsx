@@ -213,7 +213,7 @@ export default function NaamJapScreen() {
       {
         id,
         label: currentName?.label || "Sai Ram",
-        left: 12 + Math.random() * 58,
+        left: 6 + Math.random() * 38,
       },
     ]);
     increment();
@@ -377,12 +377,6 @@ export default function NaamJapScreen() {
   return (
     <View style={styles.screen}>
       <NaamJapSkiaBackground />
-      <Image
-        resizeMode="cover"
-        source={SAI_IMAGE}
-        style={styles.backgroundSai}
-      />
-
       <BlurView
         intensity={76}
         tint="light"
@@ -1141,15 +1135,7 @@ function SmallAction({
 }
 
 const styles = StyleSheet.create({
-  screen: { backgroundColor: "#F7F3EE", flex: 1 },
-  backgroundSai: {
-    height: 510,
-    opacity: 0.075,
-    position: "absolute",
-    right: -82,
-    top: 78,
-    width: 310,
-  },
+  screen: { backgroundColor: "#FFFFFF", flex: 1 },
   loadingScreen: {
     alignItems: "center",
     backgroundColor: "#FFF7ED",
@@ -1417,9 +1403,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     bottom: 28,
-    maxWidth: "72%",
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    maxWidth: "86%",
+    minHeight: 48,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
     position: "absolute",
     shadowColor: "#7C2D12",
     shadowOffset: { height: 5, width: 0 },
@@ -1427,7 +1414,7 @@ const styles = StyleSheet.create({
     shadowRadius: 9,
     zIndex: 4,
   },
-  floatingNaamText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
+  floatingNaamText: { color: "#f6f3f1", fontSize: 17, fontWeight: "900" },
   autoBadge: {
     alignItems: "center",
     backgroundColor: "#ECFDF3",
