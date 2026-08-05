@@ -50,6 +50,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { NaamJapSkiaBackground } from "@/components/naam-jap/NaamJapSkiaBackground";
 import {
   createDefaultNaamJapData,
   getLocalDateKey,
@@ -375,12 +376,7 @@ export default function NaamJapScreen() {
 
   return (
     <View style={styles.screen}>
-      <LinearGradient
-        colors={["#FFF8ED", "#F3F7F2", "#F8F3FA"]}
-        end={{ x: 1, y: 1 }}
-        start={{ x: 0, y: 0 }}
-        style={StyleSheet.absoluteFill}
-      />
+      <NaamJapSkiaBackground />
       <Image
         resizeMode="cover"
         source={SAI_IMAGE}
@@ -428,37 +424,53 @@ export default function NaamJapScreen() {
       >
         {activeTab === "home" ? (
           <>
-            <Pressable
-              accessibilityHint="Opens your saved Naam list"
-              accessibilityRole="button"
-              onPress={() => setActiveSheet("names")}
-              style={({ pressed }) => [styles.naamHeading, pressed && styles.pressed]}
+            <MotiView
+              animate={{ opacity: 1, translateY: 0 }}
+              from={{ opacity: 0, translateY: 12 }}
+              transition={{ delay: 30, duration: 420, type: "timing" }}
             >
-              <BlurView
-                intensity={64}
-                pointerEvents="none"
-                style={StyleSheet.absoluteFill}
-                tint="light"
-              />
-              <LinearGradient
-                colors={["rgba(255,255,255,0.48)", "rgba(255,247,237,0.18)"]}
-                end={{ x: 1, y: 1 }}
-                pointerEvents="none"
-                start={{ x: 0, y: 0 }}
-                style={StyleSheet.absoluteFill}
-              />
-              <View style={styles.naamHeadingCopy}>
-                <Text style={styles.naamEyebrow}>YOUR JAAP</Text>
-                <Text numberOfLines={2} style={styles.naamTitle}>
-                  {selectedName?.label || "Sai Ram"}
-                </Text>
-              </View>
-              <View style={styles.editNameButton}>
-                <Pencil color="#9A3412" size={18} />
-              </View>
-            </Pressable>
+              <Pressable
+                accessibilityHint="Opens your saved Naam list"
+                accessibilityRole="button"
+                onPress={() => setActiveSheet("names")}
+                style={({ pressed }) => [
+                  styles.naamHeading,
+                  pressed && styles.iosCardPressed,
+                ]}
+              >
+                <BlurView
+                  intensity={64}
+                  pointerEvents="none"
+                  style={StyleSheet.absoluteFill}
+                  tint="light"
+                />
+                <LinearGradient
+                  colors={["rgba(255,255,255,0.58)", "rgba(235,246,239,0.2)"]}
+                  end={{ x: 1, y: 1 }}
+                  pointerEvents="none"
+                  start={{ x: 0, y: 0 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.naamAccent} />
+                <View style={styles.naamHeadingCopy}>
+                  <Text style={styles.naamEyebrow}>YOUR JAAP</Text>
+                  <Text numberOfLines={2} style={styles.naamTitle}>
+                    {selectedName?.label || "Sai Ram"}
+                  </Text>
+                  <Text style={styles.naamHint}>Tap to choose or create a Naam</Text>
+                </View>
+                <View style={styles.editNameButton}>
+                  <Pencil color="#8A4B12" size={18} />
+                </View>
+              </Pressable>
+            </MotiView>
 
-            <View style={styles.malaCards}>
+            <MotiView
+              animate={{ opacity: 1, translateY: 0 }}
+              from={{ opacity: 0, translateY: 14 }}
+              style={styles.malaCards}
+              transition={{ delay: 110, duration: 440, type: "timing" }}
+            >
               <MalaStatCard
                 count={data.todayCount}
                 label="Today’s malas"
@@ -469,62 +481,105 @@ export default function NaamJapScreen() {
                 label="Lifetime malas"
                 malas={completedMalas}
               />
-            </View>
+            </MotiView>
 
-            <View style={styles.goalRow}>
-              <Text style={styles.goalText}>
-                {data.sessionCount.toLocaleString("en-IN")} / {targetNaamCount.toLocaleString("en-IN")} Naam
-              </Text>
-              <Text style={styles.goalText}>{data.targetMalas} mala goal</Text>
-            </View>
-            <View style={styles.goalTrack}>
-              <View style={[styles.goalProgress, { width: `${targetProgress * 100}%` }]} />
-            </View>
-
-            <Pressable
-              accessibilityHint="Counts one repetition"
-              accessibilityLabel={`Count ${selectedName?.label || "Sai Ram"}`}
-              accessibilityRole="button"
-              onPress={countNaam}
-              style={({ pressed }) => [styles.tapField, pressed && styles.tapFieldPressed]}
+            <MotiView
+              animate={{ opacity: 1 }}
+              from={{ opacity: 0 }}
+              transition={{ delay: 180, duration: 420, type: "timing" }}
             >
-              <LinearGradient
-                colors={["#17483D", "#12342F", "#221F2D"]}
-                end={{ x: 1, y: 1 }}
-                pointerEvents="none"
-                start={{ x: 0, y: 0 }}
-                style={StyleSheet.absoluteFill}
-              />
-              <View pointerEvents="none" style={styles.tapFieldGlow} />
-              {floatingNaams.map((item) => (
-                <FloatingNaam
-                  item={item}
-                  key={item.id}
-                  onDone={() =>
-                    setFloatingNaams((current) =>
-                      current.filter((entry) => entry.id !== item.id)
-                    )
-                  }
-                />
-              ))}
-              <View style={styles.tapPrompt}>
-                <View style={styles.handCircle}>
-                  <Hand color="#FBBF24" size={34} strokeWidth={1.8} />
-                </View>
-                <Text style={styles.tapTitle}>Tap for every Naam</Text>
-                <Text style={styles.tapDescription}>
-                  Keep your mind on Sai and tap gently
+              <View style={styles.goalRow}>
+                <Text style={styles.goalText}>
+                  {data.sessionCount.toLocaleString("en-IN")} / {targetNaamCount.toLocaleString("en-IN")} Naam
                 </Text>
+                <Text style={styles.goalText}>{data.targetMalas} mala goal</Text>
               </View>
-              {data.autoCountSeconds ? (
-                <View style={styles.autoBadge}>
-                  <Clock3 color="#166534" size={14} />
-                  <Text style={styles.autoBadgeText}>
-                    Auto every {data.autoCountSeconds}s
+              <View style={styles.goalTrack}>
+                <MotiView
+                  animate={{ width: `${targetProgress * 100}%` }}
+                  style={styles.goalProgress}
+                  transition={{ duration: 280, type: "timing" }}
+                />
+              </View>
+            </MotiView>
+
+            <MotiView
+              animate={{ opacity: 1, scale: 1, translateY: 0 }}
+              from={{ opacity: 0, scale: 0.975, translateY: 18 }}
+              style={styles.tapFieldShell}
+              transition={{ delay: 210, duration: 480, type: "timing" }}
+            >
+              <Pressable
+                accessibilityHint="Counts one repetition"
+                accessibilityLabel={`Count ${selectedName?.label || "Sai Ram"}`}
+                accessibilityRole="button"
+                onPress={countNaam}
+                style={({ pressed }) => [
+                  styles.tapField,
+                  pressed && styles.tapFieldPressed,
+                ]}
+              >
+                <LinearGradient
+                  colors={["#163F37", "#102D2A", "#24212F"]}
+                  end={{ x: 1, y: 1 }}
+                  pointerEvents="none"
+                  start={{ x: 0, y: 0 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View pointerEvents="none" style={styles.tapFieldGlow} />
+                <View style={styles.liveCount}>
+                  <Text style={styles.liveCountValue}>{roundCount}</Text>
+                  <Text style={styles.liveCountTarget}> / 108</Text>
+                </View>
+                {floatingNaams.map((item) => (
+                  <FloatingNaam
+                    item={item}
+                    key={item.id}
+                    onDone={() =>
+                      setFloatingNaams((current) =>
+                        current.filter((entry) => entry.id !== item.id)
+                      )
+                    }
+                  />
+                ))}
+                <View style={styles.tapPrompt}>
+                  <View style={styles.handStage}>
+                    <MotiView
+                      animate={{ opacity: 0, scale: 1.65 }}
+                      from={{ opacity: 0.32, scale: 0.82 }}
+                      style={styles.handPulse}
+                      transition={{ duration: 1900, loop: true, type: "timing" }}
+                    />
+                    <MotiView
+                      animate={{ scale: 1.04 }}
+                      from={{ scale: 0.98 }}
+                      transition={{
+                        duration: 1300,
+                        loop: true,
+                        repeatReverse: true,
+                        type: "timing",
+                      }}
+                    >
+                      <View style={styles.handCircle}>
+                        <Hand color="#FBBF24" size={34} strokeWidth={1.8} />
+                      </View>
+                    </MotiView>
+                  </View>
+                  <Text style={styles.tapTitle}>Tap for every Naam</Text>
+                  <Text style={styles.tapDescription}>
+                    Keep your mind on Sai and tap gently
                   </Text>
                 </View>
-              ) : null}
-            </Pressable>
+                {data.autoCountSeconds ? (
+                  <View style={styles.autoBadge}>
+                    <Clock3 color="#166534" size={14} />
+                    <Text style={styles.autoBadgeText}>
+                      Auto every {data.autoCountSeconds}s
+                    </Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            </MotiView>
 
             <View style={styles.secondaryActions}>
               <SmallAction disabled={data.sessionCount === 0} Icon={Undo2} label="Undo" onPress={undoLast} />
@@ -1120,7 +1175,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.42)",
     borderColor: "rgba(255,255,255,0.9)",
-    borderRadius: 8,
+    borderCurve: "continuous",
+    borderRadius: 15,
     borderWidth: 1,
     height: 44,
     justifyContent: "center",
@@ -1154,7 +1210,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.5)",
     borderColor: "rgba(255,255,255,0.9)",
-    borderRadius: 8,
+    borderCurve: "continuous",
+    borderRadius: 26,
     borderWidth: 1,
     flexDirection: "row",
     marginHorizontal: 16,
@@ -1168,7 +1225,7 @@ const styles = StyleSheet.create({
   },
   naamHeadingCopy: { flex: 1 },
   naamEyebrow: {
-    color: "#C2410C",
+    color: "#9A5A18",
     fontSize: 10,
     fontWeight: "900",
   },
@@ -1179,11 +1236,30 @@ const styles = StyleSheet.create({
     lineHeight: 41,
     marginTop: 3,
   },
+  naamHint: {
+    color: "#78716C",
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  naamAccent: {
+    backgroundColor: "#D89737",
+    bottom: 16,
+    left: 0,
+    position: "absolute",
+    top: 16,
+    width: 3,
+  },
+  iosCardPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.985 }],
+  },
   editNameButton: {
     alignItems: "center",
     backgroundColor: "rgba(255,240,219,0.72)",
     borderColor: "rgba(255,255,255,0.92)",
-    borderRadius: 8,
+    borderCurve: "continuous",
+    borderRadius: 15,
     borderWidth: 1,
     height: 44,
     justifyContent: "center",
@@ -1199,7 +1275,8 @@ const styles = StyleSheet.create({
   malaStatCard: {
     backgroundColor: "rgba(255,255,255,0.48)",
     borderColor: "rgba(255,255,255,0.94)",
-    borderRadius: 8,
+    borderCurve: "continuous",
+    borderRadius: 22,
     borderWidth: 1,
     flex: 1,
     overflow: "hidden",
@@ -1248,36 +1325,75 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     height: "100%",
   },
+  tapFieldShell: {
+    borderCurve: "continuous",
+    borderRadius: 28,
+    marginHorizontal: 16,
+    marginTop: 14,
+    shadowColor: "#12342F",
+    shadowOffset: { height: 14, width: 0 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+  },
   tapField: {
     alignItems: "center",
     backgroundColor: "#12342F",
     borderColor: "rgba(255,255,255,0.72)",
-    borderRadius: 8,
+    borderCurve: "continuous",
+    borderRadius: 28,
     borderWidth: 1,
     height: 310,
     justifyContent: "center",
-    marginHorizontal: 16,
-    marginTop: 14,
     overflow: "hidden",
     position: "relative",
-    shadowColor: "#12342F",
-    shadowOffset: { height: 12, width: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 22,
   },
   tapFieldPressed: { opacity: 0.94, transform: [{ scale: 0.995 }] },
   tapFieldGlow: {
     ...StyleSheet.absoluteFillObject,
     borderColor: "rgba(255,255,255,0.14)",
-    borderRadius: 8,
+    borderCurve: "continuous",
+    borderRadius: 28,
     borderWidth: 1,
   },
+  liveCount: {
+    alignItems: "baseline",
+    flexDirection: "row",
+    left: 20,
+    position: "absolute",
+    top: 17,
+  },
+  liveCountValue: {
+    color: "#FFFFFF",
+    fontSize: 29,
+    fontWeight: "900",
+  },
+  liveCountTarget: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   tapPrompt: { alignItems: "center", paddingHorizontal: 24 },
+  handStage: {
+    alignItems: "center",
+    height: 88,
+    justifyContent: "center",
+    width: 88,
+  },
+  handPulse: {
+    backgroundColor: "rgba(251,191,36,0.18)",
+    borderColor: "rgba(251,191,36,0.38)",
+    borderRadius: 44,
+    borderWidth: 1,
+    height: 88,
+    position: "absolute",
+    width: 88,
+  },
   handCircle: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.12)",
     borderColor: "rgba(255,255,255,0.3)",
-    borderRadius: 34,
+    borderCurve: "continuous",
+    borderRadius: 22,
     borderWidth: 1,
     height: 68,
     justifyContent: "center",
@@ -1379,7 +1495,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.58)",
     borderColor: "rgba(255,255,255,0.9)",
-    borderRadius: 8,
+    borderCurve: "continuous",
+    borderRadius: 15,
     borderWidth: 1,
     flexDirection: "row",
     gap: 7,
@@ -1492,7 +1609,7 @@ const styles = StyleSheet.create({
   },
   tabButton: { alignItems: "center", flex: 1, minHeight: 52 },
   tabIcon: { alignItems: "center", borderRadius: 12, height: 30, justifyContent: "center", width: 40 },
-  activeTabIcon: { backgroundColor: "rgba(255,225,183,0.7)" },
+  activeTabIcon: { backgroundColor: "rgba(255,225,183,0.7)", borderCurve: "continuous", borderRadius: 12 },
   tabLabel: { color: "#78716C", fontSize: 10, fontWeight: "700", marginTop: 2 },
   activeTabLabel: { color: "#C2410C", fontWeight: "900" },
   modalRoot: { flex: 1, justifyContent: "flex-end" },
@@ -1504,8 +1621,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,252,248,0.86)",
     borderColor: "rgba(255,255,255,0.92)",
     borderWidth: 1,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderCurve: "continuous",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     maxHeight: "82%",
     overflow: "hidden",
     paddingBottom: 28,
