@@ -433,7 +433,7 @@ export default function NaamJapScreen() {
                 ]}
               >
                 <BlurView
-                  intensity={64}
+                  intensity={14}
                   pointerEvents="none"
                   style={StyleSheet.absoluteFill}
                   tint="light"
@@ -1144,7 +1144,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.56)",
+    backgroundColor: "rgba(230, 229, 229, 0.74)",
     borderBottomColor: "rgba(255,255,255,0.88)",
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
@@ -1159,7 +1159,7 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.42)",
+    backgroundColor: "rgba(255,255,255,0.12)",
     borderColor: "rgba(255,255,255,0.9)",
     borderCurve: "continuous",
     borderRadius: 15,
@@ -1194,7 +1194,7 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 38, paddingTop: 14 },
   naamHeading: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.5)",
+    backgroundColor: "rgba(201, 200, 200, 0.59)",
     borderColor: "rgba(255,255,255,0.9)",
     borderCurve: "continuous",
     borderRadius: 26,
@@ -1221,6 +1221,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     lineHeight: 41,
     marginTop: 3,
+    paddingTop: 10,
   },
   naamHint: {
     color: "#78716C",
@@ -1259,7 +1260,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   malaStatCard: {
-    backgroundColor: "rgba(255,255,255,0.48)",
+    backgroundColor: "rgba(201, 200, 200, 0.59)",
     borderColor: "rgba(255,255,255,0.94)",
     borderCurve: "continuous",
     borderRadius: 22,
