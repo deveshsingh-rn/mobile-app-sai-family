@@ -514,7 +514,7 @@ export default function NaamJapScreen() {
                 ]}
               >
                 <LinearGradient
-                  colors={["#163F37", "#102D2A", "#24212F"]}
+                  colors={["#f5f4d1", "#c5e2de", "#d2cceb"]}
                   end={{ x: 1, y: 1 }}
                   pointerEvents="none"
                   start={{ x: 0, y: 0 }}
@@ -1346,16 +1346,17 @@ const styles = StyleSheet.create({
     alignItems: "baseline",
     flexDirection: "row",
     left: 20,
+     color: "#161515",
     position: "absolute",
     top: 17,
   },
   liveCountValue: {
-    color: "#FFFFFF",
+    color: "#161515",
     fontSize: 29,
     fontWeight: "900",
   },
   liveCountTarget: {
-    color: "rgba(255,255,255,0.5)",
+    color: "rgba(58, 55, 55, 0.9)",
     fontSize: 12,
     fontWeight: "700",
   },
@@ -1387,13 +1388,13 @@ const styles = StyleSheet.create({
     width: 68,
   },
   tapTitle: {
-    color: "#FFFFFF",
+    color: "#161515",
     fontSize: 18,
     fontWeight: "900",
     marginTop: 13,
   },
   tapDescription: {
-    color: "rgba(255,255,255,0.7)",
+    color: "rgba(77, 75, 75, 0.7)",
     fontSize: 12,
     marginTop: 5,
     textAlign: "center",
