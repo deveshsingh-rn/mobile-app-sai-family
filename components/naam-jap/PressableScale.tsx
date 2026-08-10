@@ -1,14 +1,17 @@
 import { MotiView } from "moti";
-import React, { useState } from "react";
+import React, { ReactNode, useState } from "react";
 import { Pressable, PressableProps, StyleProp, ViewStyle } from "react-native";
 
-type PressableScaleProps = PressableProps & {
+type PressableScaleProps = Omit<PressableProps, "children" | "style"> & {
+  children?: ReactNode;
+  containerStyle?: StyleProp<ViewStyle>;
   style?: StyleProp<ViewStyle>;
   scaleTo?: number;
 };
 
 export function PressableScale({
   children,
+  containerStyle,
   style,
   scaleTo = 0.96,
   ...rest
@@ -26,6 +29,7 @@ export function PressableScale({
         setPressed(false);
         rest.onPressOut?.(e);
       }}
+      style={containerStyle}
     >
       <MotiView
         animate={{ scale: pressed ? scaleTo : 1 }}

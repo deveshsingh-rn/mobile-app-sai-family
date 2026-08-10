@@ -57,6 +57,7 @@ import {
   loadNaamJapData,
   type NaamJapData,
   type NaamJapName,
+  normalizeForToday,
   saveNaamJapData,
 } from "@/services/naam-jap-storage";
 
@@ -73,8 +74,6 @@ const TAB_ITEMS = [
   { Icon: BookHeart, key: "experience" as const, label: "Experience" },
   { Icon: CircleEllipsis, key: "more" as const, label: "More" },
 ];
-
-const TAB_WIDTH_PERCENT = 100 / TAB_ITEMS.length;
 
 const getDateKeyOffset = (offset: number) => {
   const date = new Date();
@@ -96,6 +95,9 @@ export default function NaamJapScreen() {
   const [floatingNaams, setFloatingNaams] = useState<FloatingNaamItem[]>([]);
   const [nameDraft, setNameDraft] = useState("");
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [isAppActive, setIsAppActive] = useState(
+    AppState.currentState === "active"
+  );
   const dataRef = useRef(data);
   const hydratedRef = useRef(false);
 
@@ -134,7 +136,11 @@ export default function NaamJapScreen() {
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState !== "active" && hydratedRef.current) {
+      setIsAppActive(nextState === "active");
+
+      if (nextState === "active" && hydratedRef.current) {
+        setData((current) => normalizeForToday(current));
+      } else if (nextState !== "active" && hydratedRef.current) {
         void saveNaamJapData(dataRef.current);
       }
     });
@@ -148,6 +154,20 @@ export default function NaamJapScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setData((current) =>
+        current.date === getLocalDateKey() ? current : normalizeForToday(current)
+      );
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [hydrated]);
+
   const roundCount =
     data.sessionCount === 0
       ? 0
@@ -159,6 +179,7 @@ export default function NaamJapScreen() {
     data.jaapNames[0];
   const targetNaamCount = data.targetMalas * 108;
   const targetProgress = Math.min(1, data.sessionCount / targetNaamCount);
+  const goalReached = data.sessionCount >= targetNaamCount;
 
   const weeklyCounts = useMemo(() => {
     const today = getLocalDateKey();
@@ -222,14 +243,27 @@ export default function NaamJapScreen() {
   }, [increment]);
 
   useEffect(() => {
-    if (!data.autoCountSeconds || activeTab !== "home") {
+    if (
+      !data.autoCountSeconds ||
+      activeTab !== "home" ||
+      !isAppActive ||
+      activeSheet !== null ||
+      goalReached
+    ) {
       return;
     }
 
     const interval = setInterval(countNaam, data.autoCountSeconds * 1000);
 
     return () => clearInterval(interval);
-  }, [activeTab, countNaam, data.autoCountSeconds]);
+  }, [
+    activeSheet,
+    activeTab,
+    countNaam,
+    data.autoCountSeconds,
+    goalReached,
+    isAppActive,
+  ]);
 
   const switchTab = useCallback((tab: NaamJapTab) => {
     void Haptics.selectionAsync();
@@ -246,6 +280,26 @@ export default function NaamJapScreen() {
     const label = nameDraft.trim();
 
     if (!label) {
+      return;
+    }
+
+    const duplicate = data.jaapNames.some(
+      (item) =>
+        item.id !== editingNameId &&
+        item.label.localeCompare(label, undefined, { sensitivity: "accent" }) ===
+          0
+    );
+
+    if (duplicate) {
+      Alert.alert(
+        "Naam already saved",
+        "Choose it from the list or enter another Naam."
+      );
+      return;
+    }
+
+    if (!editingNameId && data.jaapNames.length >= 30) {
+      Alert.alert("Naam list is full", "You can keep up to 30 saved Naam.");
       return;
     }
 
@@ -277,6 +331,11 @@ export default function NaamJapScreen() {
   const editName = (name: NaamJapName) => {
     setEditingNameId(name.id);
     setNameDraft(name.label);
+  };
+
+  const cancelEditName = () => {
+    setEditingNameId(null);
+    setNameDraft("");
   };
 
   const deleteName = (name: NaamJapName) => {
@@ -360,9 +419,13 @@ export default function NaamJapScreen() {
   };
 
   const shareProgress = async () => {
-    await Share.share({
-      message: `Om Sai Ram. I completed ${data.todayCount} Sai Naam Jap today with Sai Ki Family.`,
-    });
+    try {
+      await Share.share({
+        message: `Om Sai Ram. I completed ${data.todayCount} Sai Naam Jap today with Sai Ki Family.`,
+      });
+    } catch {
+      Alert.alert("Unable to share", "Please try again in a moment.");
+    }
   };
 
   const goBack = () => {
@@ -422,6 +485,7 @@ export default function NaamJapScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        style={styles.pageScroll}
       >
         {activeTab === "home" ? (
           <>
@@ -491,7 +555,11 @@ export default function NaamJapScreen() {
                 <Text style={styles.goalText}>
                   {data.sessionCount.toLocaleString("en-IN")} / {targetNaamCount.toLocaleString("en-IN")} Naam
                 </Text>
-                <Text style={styles.goalText}>{data.targetMalas} mala goal</Text>
+                <Text
+                  style={[styles.goalText, goalReached && styles.goalCompleteText]}
+                >
+                  {goalReached ? "Goal complete" : `${data.targetMalas} mala goal`}
+                </Text>
               </View>
               <View style={styles.goalTrack}>
                 <MotiView
@@ -539,26 +607,10 @@ export default function NaamJapScreen() {
                 ))}
                 <View style={styles.tapPrompt}>
                   <View style={styles.handStage}>
-                    <MotiView
-                      animate={{ opacity: 0, scale: 1.65 }}
-                      from={{ opacity: 0.32, scale: 0.82 }}
-                      style={styles.handPulse}
-                      transition={{ duration: 1900, loop: true, type: "timing" }}
-                    />
-                    <MotiView
-                      animate={{ scale: 1.04 }}
-                      from={{ scale: 0.98 }}
-                      transition={{
-                        duration: 1300,
-                        loop: true,
-                        repeatReverse: true,
-                        type: "timing",
-                      }}
-                    >
-                      <View style={styles.handCircle}>
-                        <Hand color="#FBBF24" size={34} strokeWidth={1.8} />
-                      </View>
-                    </MotiView>
+                    <View style={styles.handPulse} />
+                    <View style={styles.handCircle}>
+                      <Hand color="#6B716E" size={34} strokeWidth={1.8} />
+                    </View>
                   </View>
                   <Text style={styles.tapTitle}>Tap for every Naam</Text>
                   <Text style={styles.tapDescription}>
@@ -569,7 +621,9 @@ export default function NaamJapScreen() {
                   <View style={styles.autoBadge}>
                     <Clock3 color="#166534" size={14} />
                     <Text style={styles.autoBadgeText}>
-                      Auto every {data.autoCountSeconds}s
+                      {goalReached
+                        ? "Auto paused at goal"
+                        : `Auto every ${data.autoCountSeconds}s`}
                     </Text>
                   </View>
                 ) : null}
@@ -676,6 +730,7 @@ export default function NaamJapScreen() {
               <View style={styles.targetControl}>
                 {TARGETS.map((target) => (
                   <PressableScale
+                    containerStyle={styles.targetOptionContainer}
                     key={target}
                     onPress={() => {
                       void Haptics.selectionAsync();
@@ -733,52 +788,53 @@ export default function NaamJapScreen() {
         ) : null}
       </ScrollView>
 
-      <BlurView
-        intensity={82}
-        tint="light"
-        style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 10) }]}
+      <View
+        style={[
+          styles.bottomDock,
+          { paddingBottom: Math.max(insets.bottom, 6) },
+        ]}
       >
-        <MotiView
-          animate={{
-            left: `${
-              TAB_ITEMS.findIndex((t) => t.key === activeTab) *
-              TAB_WIDTH_PERCENT
-            }%`,
-          }}
-          style={[styles.tabIndicator, { width: `${TAB_WIDTH_PERCENT}%` }]}
-          transition={{ damping: 18, stiffness: 200, type: "spring" }}
-        >
-          <View style={styles.tabIndicatorPill} />
-        </MotiView>
-        {TAB_ITEMS.map(({ Icon, key, label }) => {
-          const active = activeTab === key;
+        <View style={styles.bottomBar}>
+          {TAB_ITEMS.map(({ Icon, key, label }) => {
+            const active = activeTab === key;
 
-          return (
-            <PressableScale
-              accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
-              key={key}
-              onPress={() => switchTab(key)}
-              scaleTo={0.9}
-              style={styles.tabButton}
-            >
-              <View style={styles.tabIcon}>
-                <Icon
-                  color={active ? "#C2410C" : "#78716C"}
-                  size={21}
-                  strokeWidth={active ? 2.4 : 2}
-                />
-              </View>
-              <Text style={[styles.tabLabel, active && styles.activeTabLabel]}>
-                {label}
-              </Text>
-            </PressableScale>
-          );
-        })}
-      </BlurView>
+            return (
+              <PressableScale
+                accessibilityLabel={label}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                containerStyle={styles.tabButtonContainer}
+                key={key}
+                onPress={() => switchTab(key)}
+                scaleTo={0.94}
+                style={styles.tabButton}
+              >
+                <View
+                  style={[styles.tabIcon, active && styles.activeTabIcon]}
+                >
+                  <Icon
+                    color={active ? "#47685B" : "#858B87"}
+                    size={22}
+                    strokeWidth={active ? 2.4 : 2}
+                  />
+                </View>
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                  style={[styles.tabLabel, active && styles.activeTabLabel]}
+                >
+                  {label}
+                </Text>
+              </PressableScale>
+            );
+          })}
+        </View>
+      </View>
 
       <NaamJapBottomSheet
         activeSheet={activeSheet}
+        cancelEditName={cancelEditName}
         closeSheet={closeSheet}
         data={data}
         deleteName={deleteName}
@@ -871,6 +927,7 @@ function MalaStatCard({
 
 function NaamJapBottomSheet({
   activeSheet,
+  cancelEditName,
   closeSheet,
   data,
   deleteName,
@@ -883,6 +940,7 @@ function NaamJapBottomSheet({
   setNameDraft,
 }: {
   activeSheet: NaamJapSheet;
+  cancelEditName: () => void;
   closeSheet: () => void;
   data: NaamJapData;
   deleteName: (name: NaamJapName) => void;
@@ -894,6 +952,57 @@ function NaamJapBottomSheet({
   setData: React.Dispatch<React.SetStateAction<NaamJapData>>;
   setNameDraft: React.Dispatch<React.SetStateAction<string>>;
 }) {
+  const insets = useSafeAreaInsets();
+  const holdActiveRef = useRef(false);
+  const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stepTargetMalas = useCallback(
+    (step: number) => {
+      setData((current) => ({
+        ...current,
+        targetMalas: Math.min(10000, Math.max(1, current.targetMalas + step)),
+      }));
+    },
+    [setData]
+  );
+
+  const clearTargetHold = useCallback(() => {
+    if (holdTimeoutRef.current) {
+      clearTimeout(holdTimeoutRef.current);
+      holdTimeoutRef.current = null;
+    }
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    holdActiveRef.current = false;
+  }, []);
+
+  const startTargetHold = useCallback(
+    (step: number) => {
+      holdTimeoutRef.current = setTimeout(() => {
+        holdActiveRef.current = true;
+        void Haptics.selectionAsync();
+        stepTargetMalas(step);
+        holdIntervalRef.current = setInterval(() => stepTargetMalas(step), 80);
+      }, 420);
+    },
+    [stepTargetMalas]
+  );
+
+  const tapTargetMalas = useCallback(
+    (step: number) => {
+      if (holdActiveRef.current) {
+        return;
+      }
+      stepTargetMalas(step);
+    },
+    [stepTargetMalas]
+  );
+
+  useEffect(() => clearTargetHold, [clearTargetHold]);
+
   return (
     <Modal
       animationType="slide"
@@ -908,11 +1017,19 @@ function NaamJapBottomSheet({
       >
         <PressableScale
           accessibilityLabel="Close"
+          containerStyle={StyleSheet.absoluteFill}
           onPress={closeSheet}
           scaleTo={1}
           style={styles.modalBackdrop}
         />
-        <BlurView intensity={92} tint="light" style={styles.sheet}>
+        <BlurView
+          intensity={92}
+          tint="light"
+          style={[
+            styles.sheet,
+            { paddingBottom: Math.max(insets.bottom + 12, 28) },
+          ]}
+        >
           <View style={styles.sheetHandle} />
 
           {activeSheet === "more" ? (
@@ -953,6 +1070,7 @@ function NaamJapBottomSheet({
                       const active = data.autoCountSeconds === seconds;
                       return (
                         <PressableScale
+                          containerStyle={styles.intervalButtonContainer}
                           key={seconds}
                           onPress={() =>
                             setData((current) => ({
@@ -993,12 +1111,9 @@ function NaamJapBottomSheet({
                 <PressableScale
                   accessibilityLabel="Reduce mala goal"
                   disabled={data.targetMalas <= 1}
-                  onPress={() =>
-                    setData((current) => ({
-                      ...current,
-                      targetMalas: Math.max(1, current.targetMalas - 1),
-                    }))
-                  }
+                  onPress={() => tapTargetMalas(-1)}
+                  onPressIn={() => startTargetHold(-1)}
+                  onPressOut={clearTargetHold}
                   scaleTo={0.88}
                   style={[
                     styles.stepperButton,
@@ -1021,14 +1136,14 @@ function NaamJapBottomSheet({
                 <PressableScale
                   accessibilityLabel="Increase mala goal"
                   disabled={data.targetMalas >= 10000}
-                  onPress={() =>
-                    setData((current) => ({
-                      ...current,
-                      targetMalas: Math.min(10000, current.targetMalas + 1),
-                    }))
-                  }
+                  onPress={() => tapTargetMalas(1)}
+                  onPressIn={() => startTargetHold(1)}
+                  onPressOut={clearTargetHold}
                   scaleTo={0.88}
-                  style={styles.stepperButton}
+                  style={[
+                    styles.stepperButton,
+                    data.targetMalas >= 10000 && styles.disabled,
+                  ]}
                 >
                   <Plus color="#292524" size={25} />
                 </PressableScale>
@@ -1052,6 +1167,20 @@ function NaamJapBottomSheet({
               <Text style={styles.sheetDescription}>
                 Select, add, rename, or remove the Naam used for your Jaap.
               </Text>
+              {editingNameId ? (
+                <View style={styles.editingBanner}>
+                  <Text style={styles.editingBannerText}>Editing Naam</Text>
+                  <PressableScale
+                    accessibilityLabel="Cancel editing"
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    onPress={cancelEditName}
+                    scaleTo={0.9}
+                  >
+                    <Text style={styles.editingBannerCancel}>Cancel</Text>
+                  </PressableScale>
+                </View>
+              ) : null}
               <View style={styles.nameInputRow}>
                 <TextInput
                   accessibilityLabel="Naam"
@@ -1065,6 +1194,8 @@ function NaamJapBottomSheet({
                   value={nameDraft}
                 />
                 <PressableScale
+                  accessibilityLabel={editingNameId ? "Save Naam" : "Add Naam"}
+                  accessibilityRole="button"
                   disabled={!nameDraft.trim()}
                   onPress={saveName}
                   scaleTo={0.93}
@@ -1073,9 +1204,11 @@ function NaamJapBottomSheet({
                     !nameDraft.trim() && styles.disabled,
                   ]}
                 >
-                  <Text style={styles.saveNameButtonText}>
-                    {editingNameId ? "Save" : "Add"}
-                  </Text>
+                  {editingNameId ? (
+                    <Check color="#FFFFFF" size={21} strokeWidth={2.6} />
+                  ) : (
+                    <Plus color="#FFFFFF" size={22} strokeWidth={2.6} />
+                  )}
                 </PressableScale>
               </View>
               <ScrollView
@@ -1085,9 +1218,14 @@ function NaamJapBottomSheet({
               >
                 {data.jaapNames.map((name) => {
                   const selected = selectedName?.id === name.id;
+                  const editing = editingNameId === name.id;
                   return (
-                    <View key={name.id} style={styles.nameRow}>
+                    <View
+                      key={name.id}
+                      style={[styles.nameRow, editing && styles.editingNameRow]}
+                    >
                       <PressableScale
+                        containerStyle={styles.nameSelectContainer}
                         onPress={() =>
                           setData((current) => ({
                             ...current,
@@ -1198,17 +1336,17 @@ function SmallAction({
 }
 
 const styles = StyleSheet.create({
-  screen: { backgroundColor: "#FFFFFF", flex: 1 },
+  screen: { backgroundColor: "#F8FAF8", flex: 1 },
   loadingScreen: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
+    backgroundColor: "#F8FAF8",
     flex: 1,
     justifyContent: "center",
   },
   header: {
     alignItems: "center",
-    backgroundColor: "rgba(230, 229, 229, 0.74)",
-    borderBottomColor: "rgba(255,255,255,0.88)",
+    backgroundColor: "rgba(255,255,255,0.82)",
+    borderBottomColor: "rgba(220,225,222,0.9)",
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     minHeight: 66,
@@ -1222,8 +1360,8 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,255,255,0.7)",
+    borderColor: "rgba(216,222,218,0.92)",
     borderCurve: "continuous",
     borderRadius: 15,
     borderWidth: 1,
@@ -1245,6 +1383,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     marginLeft: 8,
   },
+  pageScroll: { flex: 1 },
   malaBadge: {
     alignItems: "center",
     backgroundColor: "#FFF1DF",
@@ -1258,8 +1397,8 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 38, paddingTop: 14 },
   naamHeading: {
     alignItems: "center",
-    backgroundColor: "rgba(201, 200, 200, 0.55)",
-    borderColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,255,255,0.72)",
+    borderColor: "rgba(218,225,220,0.95)",
     borderCurve: "continuous",
     borderRadius: 26,
     borderWidth: 1,
@@ -1270,8 +1409,8 @@ const styles = StyleSheet.create({
     paddingVertical: 19,
     shadowColor: "#1C1917",
     shadowOffset: { height: 6, width: 0 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
+    shadowOpacity: 0.045,
+    shadowRadius: 14,
   },
   naamHeadingCopy: { flex: 1 },
   naamEyebrow: {
@@ -1321,8 +1460,8 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   malaStatCard: {
-    backgroundColor: "rgba(201, 200, 200, 0.5)",
-    borderColor: "rgba(255,255,255,0.94)",
+    backgroundColor: "rgba(255,255,255,0.7)",
+    borderColor: "rgba(218,225,220,0.95)",
     borderCurve: "continuous",
     borderRadius: 24,
     borderWidth: 1,
@@ -1331,8 +1470,8 @@ const styles = StyleSheet.create({
     padding: 14,
     shadowColor: "#1C1917",
     shadowOffset: { height: 6, width: 0 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
   },
   malaStatLabel: {
     color: "#78716C",
@@ -1360,8 +1499,9 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   goalText: { color: "#78716C", fontSize: 10, fontWeight: "700" },
+  goalCompleteText: { color: "#47705E", fontWeight: "900" },
   goalTrack: {
-    backgroundColor: "rgba(255,255,255,0.7)",
+    backgroundColor: "rgba(215,222,218,0.72)",
     borderRadius: 4,
     height: 5,
     marginHorizontal: 18,
@@ -1369,7 +1509,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   goalProgress: {
-    backgroundColor: "#D97706",
+    backgroundColor: "#668375",
     borderRadius: 4,
     height: "100%",
   },
@@ -1378,10 +1518,10 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     marginHorizontal: 16,
     marginTop: 14,
-    shadowColor: "#12342F",
-    shadowOffset: { height: 14, width: 0 },
-    shadowOpacity: 0.22,
-    shadowRadius: 24,
+    shadowColor: "#29463D",
+    shadowOffset: { height: 9, width: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
   },
   tapField: {
     alignItems: "center",
@@ -1397,7 +1537,7 @@ const styles = StyleSheet.create({
   },
   tapFieldGlow: {
     alignSelf: "center",
-    backgroundColor: "rgba(251,191,36,0.10)",
+    backgroundColor: "rgba(255,255,255,0.16)",
     borderRadius: 130,
     height: 260,
     position: "absolute",
@@ -1436,8 +1576,8 @@ const styles = StyleSheet.create({
     width: 88,
   },
   handPulse: {
-    backgroundColor: "rgba(251,191,36,0.18)",
-    borderColor: "rgba(251,191,36,0.38)",
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderColor: "rgba(255,255,255,0.36)",
     borderRadius: 44,
     borderWidth: 1,
     height: 88,
@@ -1446,8 +1586,8 @@ const styles = StyleSheet.create({
   },
   handCircle: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderColor: "rgba(255,255,255,0.3)",
+    backgroundColor: "rgba(255,255,255,0.36)",
+    borderColor: "rgba(255,255,255,0.64)",
     borderCurve: "continuous",
     borderRadius: 22,
     borderWidth: 1,
@@ -1468,7 +1608,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   floatingNaam: {
-    backgroundColor: "#D97706",
+    backgroundColor: "#536F63",
     borderColor: "rgba(255,255,255,0.64)",
     borderRadius: 999,
     borderWidth: 1,
@@ -1478,7 +1618,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 13,
     position: "absolute",
-    shadowColor: "#7C2D12",
+    shadowColor: "#29463D",
     shadowOffset: { height: 5, width: 0 },
     shadowOpacity: 0.18,
     shadowRadius: 9,
@@ -1563,7 +1703,7 @@ const styles = StyleSheet.create({
   smallActionText: { color: "#57534E", fontSize: 13, fontWeight: "700" },
   disabled: { opacity: 0.4 },
   pressed: { opacity: 0.7 },
-  sectionIntro: { paddingHorizontal: 20, paddingTop: 24 },
+  sectionIntro: { paddingHorizontal: 20, paddingTop: 24 ,marginBottom: 6},
   sectionEyebrow: { color: "#C2410C", fontSize: 11, fontWeight: "900", letterSpacing: 0.8 },
   pageTitle: { color: "#292524", fontSize: 28, fontWeight: "900", marginTop: 5 },
   pageDescription: { color: "#78716C", fontSize: 14, lineHeight: 21, marginTop: 6 },
@@ -1664,6 +1804,7 @@ const styles = StyleSheet.create({
   },
   settingLabel: { color: "#292524", fontSize: 15, fontWeight: "800" },
   targetControl: { flexDirection: "row", gap: 8, marginTop: 12 },
+  targetOptionContainer: { flex: 1 },
   targetOption: {
     alignItems: "center",
     backgroundColor: "#F5F5F4",
@@ -1710,34 +1851,42 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   dangerActionText: { color: "#B42318", fontSize: 14, fontWeight: "800" },
-  bottomBar: {
-    backgroundColor: "rgba(255,255,255,0.6)",
-    borderTopColor: "rgba(255,255,255,0.92)",
+  bottomDock: {
+    backgroundColor: "rgba(255,255,255,0.98)",
+    borderTopColor: "#DDE3DF",
     borderTopWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    paddingHorizontal: 8,
-    paddingTop: 7,
-    position: "relative",
+    flexShrink: 0,
+    width: "100%",
   },
-  tabIndicator: {
+  bottomBar: {
     alignItems: "center",
-    height: 34,
-    justifyContent: "center",
-    paddingHorizontal: 10,
-    position: "absolute",
-    top: 7,
+    flexDirection: "row",
+    height: 64,
+    paddingHorizontal: 8,
   },
-  tabIndicatorPill: {
-    backgroundColor: "rgba(255,225,183,0.7)",
+  tabButton: {
+    alignItems: "center",
+    height: 64,
+    justifyContent: "center",
+    width: "100%",
+  },
+  tabButtonContainer: { flex: 1, height: 64, minWidth: 0 },
+  tabIcon: {
+    alignItems: "center",
     borderCurve: "continuous",
     borderRadius: 14,
-    height: 34,
-    width: "78%",
+    height: 30,
+    justifyContent: "center",
+    width: 48,
   },
-  tabButton: { alignItems: "center", flex: 1, minHeight: 52 },
-  tabIcon: { alignItems: "center", height: 30, justifyContent: "center", width: 40 },
-  tabLabel: { color: "#78716C", fontSize: 10, fontWeight: "700", marginTop: 2 },
-  activeTabLabel: { color: "#C2410C", fontWeight: "900" },
+  activeTabIcon: { backgroundColor: "rgba(99,130,116,0.14)" },
+  tabLabel: {
+    color: "#858B87",
+    fontSize: 10,
+    fontWeight: "700",
+    marginTop: 1,
+  },
+  activeTabLabel: { color: "#47685B", fontWeight: "900" },
   modalRoot: { flex: 1, justifyContent: "flex-end" },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -1793,6 +1942,7 @@ const styles = StyleSheet.create({
   intervalSection: { marginTop: 16 },
   intervalLabel: { color: "#57534E", fontSize: 12, fontWeight: "800" },
   intervalOptions: { flexDirection: "row", gap: 8, marginTop: 9 },
+  intervalButtonContainer: { flex: 1 },
   intervalButton: {
     alignItems: "center",
     backgroundColor: "#F5F5F4",
@@ -1844,12 +1994,24 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   sheetPrimaryButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
+  editingBanner: {
+    alignItems: "center",
+    backgroundColor: "#FFF1DF",
+    borderRadius: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  editingBannerText: { color: "#9A3412", fontSize: 12, fontWeight: "800" },
+  editingBannerCancel: { color: "#9A3412", fontSize: 12, fontWeight: "900" },
   nameInputRow: { flexDirection: "row", gap: 8, marginTop: 16 },
   nameInput: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#D6D3D1",
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderColor: "#D5DDD8",
     borderCurve: "continuous",
-    borderRadius: 11,
+    borderRadius: 14,
     borderWidth: 1,
     color: "#292524",
     flex: 1,
@@ -1859,14 +2021,17 @@ const styles = StyleSheet.create({
   },
   saveNameButton: {
     alignItems: "center",
-    backgroundColor: "#C2410C",
+    backgroundColor: "#557568",
     borderCurve: "continuous",
-    borderRadius: 11,
+    borderRadius: 14,
+    height: 48,
     justifyContent: "center",
-    minWidth: 68,
-    paddingHorizontal: 14,
+    shadowColor: "#29463D",
+    shadowOffset: { height: 4, width: 0 },
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    width: 48,
   },
-  saveNameButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
   nameListScroll: { marginTop: 12, maxHeight: 280 },
   nameList: { gap: 7 },
   nameRow: {
@@ -1880,7 +2045,9 @@ const styles = StyleSheet.create({
     minHeight: 52,
     paddingHorizontal: 10,
   },
+  editingNameRow: { borderColor: "#D97706", borderWidth: 1.5 },
   nameSelectArea: { alignItems: "center", flex: 1, flexDirection: "row" },
+  nameSelectContainer: { flex: 1 },
   nameCheck: {
     alignItems: "center",
     borderColor: "#D6D3D1",

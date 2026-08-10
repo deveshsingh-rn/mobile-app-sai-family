@@ -1,5 +1,4 @@
 import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
-import { MotiView } from "moti";
 import React, { useMemo } from "react";
 import {
   StyleSheet,
@@ -69,19 +68,7 @@ export function NaamJapSkiaBackground() {
   } = skia;
 
   return (
-    // only change: slightly wider opacity swing, slower loop feels calmer
-<MotiView
-  animate={{ opacity: 1 }}
-  from={{ opacity: 0.78 }}
-  pointerEvents="none"
-  style={StyleSheet.absoluteFill}
-  transition={{
-    duration: 4800,
-    loop: true,
-    repeatReverse: true,
-    type: "timing",
-  }}
->
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Canvas style={StyleSheet.absoluteFill}>
         <Fill>
           <LinearGradient
@@ -125,7 +112,7 @@ export function NaamJapSkiaBackground() {
           style="stroke"
         />
       </Canvas>
-    </MotiView>
+    </View>
   );
 }
 
@@ -138,28 +125,8 @@ function NaamJapGradientFallback() {
         start={{ x: 0, y: 0 }}
         style={StyleSheet.absoluteFill}
       />
-      <MotiView
-        animate={{ opacity: 0.045, translateX: 22 }}
-        from={{ opacity: 0.018, translateX: -12 }}
-        style={[styles.fallbackBand, styles.warmBand]}
-        transition={{
-          duration: 4300,
-          loop: true,
-          repeatReverse: true,
-          type: "timing",
-        }}
-      />
-      <MotiView
-        animate={{ opacity: 0.035, translateX: -18 }}
-        from={{ opacity: 0.014, translateX: 14 }}
-        style={[styles.fallbackBand, styles.coolBand]}
-        transition={{
-          duration: 5100,
-          loop: true,
-          repeatReverse: true,
-          type: "timing",
-        }}
-      />
+      <View style={[styles.fallbackBand, styles.warmBand]} />
+      <View style={[styles.fallbackBand, styles.coolBand]} />
     </View>
   );
 }
@@ -168,6 +135,7 @@ const styles = StyleSheet.create({
   fallbackBand: {
     borderRadius: 100,
     height: 150,
+    opacity: 0.035,
     position: "absolute",
     width: "125%",
   },

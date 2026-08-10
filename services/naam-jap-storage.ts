@@ -31,6 +31,60 @@ const DEFAULT_NAME: NaamJapName = {
   label: "Sai Ram",
 };
 
+const MAX_COUNT = Number.MAX_SAFE_INTEGER;
+const MAX_SAVED_NAMES = 30;
+
+const toSafeCount = (value: unknown) =>
+  typeof value === "number" && Number.isFinite(value)
+    ? Math.min(MAX_COUNT, Math.max(0, Math.floor(value)))
+    : 0;
+
+const isDateKey = (value: unknown): value is string =>
+  typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+const sanitizeNames = (value: unknown, fallback: NaamJapName[]) => {
+  if (!Array.isArray(value)) {
+    return fallback;
+  }
+
+  const seenIds = new Set<string>();
+  const names = value
+    .filter(
+      (item): item is NaamJapName =>
+        typeof item?.id === "string" && typeof item?.label === "string"
+    )
+    .map((item) => ({ id: item.id.trim(), label: item.label.trim().slice(0, 40) }))
+    .filter((item) => {
+      if (!item.id || !item.label || seenIds.has(item.id)) {
+        return false;
+      }
+
+      seenIds.add(item.id);
+      return true;
+    })
+    .slice(0, MAX_SAVED_NAMES);
+
+  return names.length ? names : fallback;
+};
+
+const sanitizeHistory = (value: unknown): NaamJapDailyCount[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const byDate = new Map<string, number>();
+
+  value.forEach((item) => {
+    if (isDateKey(item?.date)) {
+      byDate.set(item.date, toSafeCount(item.count));
+    }
+  });
+
+  return Array.from(byDate, ([date, count]) => ({ count, date }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-30);
+};
+
 export const getLocalDateKey = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -54,7 +108,7 @@ export const createDefaultNaamJapData = (): NaamJapData => ({
   totalCount: 0,
 });
 
-const normalizeForToday = (data: NaamJapData): NaamJapData => {
+export const normalizeForToday = (data: NaamJapData): NaamJapData => {
   const today = getLocalDateKey();
 
   if (data.date === today) {
@@ -87,15 +141,7 @@ export async function loadNaamJapData(): Promise<NaamJapData> {
 
     const parsed = JSON.parse(stored) as Partial<NaamJapData>;
     const defaults = createDefaultNaamJapData();
-    const jaapNames = Array.isArray(parsed.jaapNames)
-      ? parsed.jaapNames.filter(
-          (item): item is NaamJapName =>
-            typeof item?.id === "string" &&
-            typeof item?.label === "string" &&
-            Boolean(item.label.trim())
-        )
-      : defaults.jaapNames;
-    const safeNames = jaapNames.length ? jaapNames : defaults.jaapNames;
+    const safeNames = sanitizeNames(parsed.jaapNames, defaults.jaapNames);
     const selectedNameId = safeNames.some(
       (item) => item.id === parsed.selectedNameId
     )
@@ -109,9 +155,15 @@ export async function loadNaamJapData(): Promise<NaamJapData> {
         parsed.autoCountSeconds >= 1
           ? Math.min(60, Math.round(parsed.autoCountSeconds))
           : null,
-      history: Array.isArray(parsed.history) ? parsed.history : [],
+      date: isDateKey(parsed.date) ? parsed.date : defaults.date,
+      hapticsEnabled:
+        typeof parsed.hapticsEnabled === "boolean"
+          ? parsed.hapticsEnabled
+          : defaults.hapticsEnabled,
+      history: sanitizeHistory(parsed.history),
       jaapNames: safeNames,
       selectedNameId,
+      sessionCount: toSafeCount(parsed.sessionCount),
       target: [27, 54, 108].includes(Number(parsed.target))
         ? (Number(parsed.target) as NaamJapData["target"])
         : 108,
@@ -119,6 +171,11 @@ export async function loadNaamJapData(): Promise<NaamJapData> {
         typeof parsed.targetMalas === "number"
           ? Math.min(10000, Math.max(1, Math.round(parsed.targetMalas)))
           : 1,
+      todayCount: toSafeCount(parsed.todayCount),
+      totalCount: Math.max(
+        toSafeCount(parsed.totalCount),
+        toSafeCount(parsed.todayCount)
+      ),
     };
 
     return normalizeForToday(data);
@@ -127,6 +184,12 @@ export async function loadNaamJapData(): Promise<NaamJapData> {
   }
 }
 
-export async function saveNaamJapData(data: NaamJapData) {
-  await AsyncStorage.setItem(NAAM_JAP_STORAGE_KEY, JSON.stringify(data));
+export async function saveNaamJapData(data: NaamJapData): Promise<boolean> {
+  try {
+    await AsyncStorage.setItem(NAAM_JAP_STORAGE_KEY, JSON.stringify(data));
+    return true;
+  } catch (error) {
+    console.warn("[NaamJap] Unable to save local progress", error);
+    return false;
+  }
 }
