@@ -69,18 +69,19 @@ export function NaamJapSkiaBackground() {
   } = skia;
 
   return (
-    <MotiView
-      animate={{ opacity: 0.98 }}
-      from={{ opacity: 0.82 }}
-      pointerEvents="none"
-      style={StyleSheet.absoluteFill}
-      transition={{
-        duration: 4200,
-        loop: true,
-        repeatReverse: true,
-        type: "timing",
-      }}
-    >
+    // only change: slightly wider opacity swing, slower loop feels calmer
+<MotiView
+  animate={{ opacity: 1 }}
+  from={{ opacity: 0.78 }}
+  pointerEvents="none"
+  style={StyleSheet.absoluteFill}
+  transition={{
+    duration: 4800,
+    loop: true,
+    repeatReverse: true,
+    type: "timing",
+  }}
+>
       <Canvas style={StyleSheet.absoluteFill}>
         <Fill>
           <LinearGradient

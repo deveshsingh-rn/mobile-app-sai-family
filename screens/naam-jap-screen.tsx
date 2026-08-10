@@ -39,7 +39,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   ScrollView,
   Share,
   StyleSheet,
@@ -51,6 +50,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { NaamJapSkiaBackground } from "@/components/naam-jap/NaamJapSkiaBackground";
+import { PressableScale } from "@/components/naam-jap/PressableScale";
 import {
   createDefaultNaamJapData,
   getLocalDateKey,
@@ -73,6 +73,8 @@ const TAB_ITEMS = [
   { Icon: BookHeart, key: "experience" as const, label: "Experience" },
   { Icon: CircleEllipsis, key: "more" as const, label: "More" },
 ];
+
+const TAB_WIDTH_PERCENT = 100 / TAB_ITEMS.length;
 
 const getDateKeyOffset = (offset: number) => {
   const date = new Date();
@@ -229,6 +231,11 @@ export default function NaamJapScreen() {
     return () => clearInterval(interval);
   }, [activeTab, countNaam, data.autoCountSeconds]);
 
+  const switchTab = useCallback((tab: NaamJapTab) => {
+    void Haptics.selectionAsync();
+    setActiveTab(tab);
+  }, []);
+
   const closeSheet = () => {
     setActiveSheet(null);
     setEditingNameId(null);
@@ -382,33 +389,33 @@ export default function NaamJapScreen() {
         tint="light"
         style={[styles.header, { paddingTop: insets.top + 6 }]}
       >
-        <Pressable
+        <PressableScale
           accessibilityLabel="Close Naam Jap"
           accessibilityRole="button"
           hitSlop={6}
           onPress={goBack}
-          style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+          style={styles.headerButton}
         >
           <ArrowLeft color="#292524" size={24} />
-        </Pressable>
+        </PressableScale>
         <Text style={styles.headerTitle}>Naam Jap</Text>
         <View style={styles.headerActions}>
-          <Pressable
+          <PressableScale
             accessibilityLabel="Naam Jap options"
             accessibilityRole="button"
             onPress={() => setActiveSheet("more")}
-            style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+            style={[styles.headerButton, { marginRight: 8 }]}
           >
             <MoreHorizontal color="#292524" size={24} />
-          </Pressable>
-          <Pressable
+          </PressableScale>
+          <PressableScale
             accessibilityLabel="Edit mala goal"
             accessibilityRole="button"
             onPress={() => setActiveSheet("target")}
-            style={({ pressed }) => [styles.headerButton, pressed && styles.pressed]}
+            style={styles.headerButton}
           >
             <Edit3 color="#292524" size={21} />
-          </Pressable>
+          </PressableScale>
         </View>
       </BlurView>
 
@@ -423,23 +430,21 @@ export default function NaamJapScreen() {
               from={{ opacity: 0, translateY: 12 }}
               transition={{ delay: 30, duration: 420, type: "timing" }}
             >
-              <Pressable
+              <PressableScale
                 accessibilityHint="Opens your saved Naam list"
                 accessibilityRole="button"
                 onPress={() => setActiveSheet("names")}
-                style={({ pressed }) => [
-                  styles.naamHeading,
-                  pressed && styles.iosCardPressed,
-                ]}
+                scaleTo={0.985}
+                style={styles.naamHeading}
               >
                 <BlurView
-                  intensity={14}
+                  intensity={20}
                   pointerEvents="none"
                   style={StyleSheet.absoluteFill}
                   tint="light"
                 />
                 <LinearGradient
-                  colors={["rgba(255,255,255,0.58)", "rgba(235,246,239,0.2)"]}
+                  colors={["rgba(255,255,255,0.62)", "rgba(235,246,239,0.22)"]}
                   end={{ x: 1, y: 1 }}
                   pointerEvents="none"
                   start={{ x: 0, y: 0 }}
@@ -456,7 +461,7 @@ export default function NaamJapScreen() {
                 <View style={styles.editNameButton}>
                   <Pencil color="#8A4B12" size={18} />
                 </View>
-              </Pressable>
+              </PressableScale>
             </MotiView>
 
             <MotiView
@@ -492,7 +497,7 @@ export default function NaamJapScreen() {
                 <MotiView
                   animate={{ width: `${targetProgress * 100}%` }}
                   style={styles.goalProgress}
-                  transition={{ duration: 280, type: "timing" }}
+                  transition={{ damping: 20, stiffness: 120, type: "spring" }}
                 />
               </View>
             </MotiView>
@@ -503,15 +508,13 @@ export default function NaamJapScreen() {
               style={styles.tapFieldShell}
               transition={{ delay: 210, duration: 480, type: "timing" }}
             >
-              <Pressable
+              <PressableScale
                 accessibilityHint="Counts one repetition"
                 accessibilityLabel={`Count ${selectedName?.label || "Sai Ram"}`}
                 accessibilityRole="button"
                 onPress={countNaam}
-                style={({ pressed }) => [
-                  styles.tapField,
-                  pressed && styles.tapFieldPressed,
-                ]}
+                scaleTo={0.985}
+                style={styles.tapField}
               >
                 <LinearGradient
                   colors={["#f5f4d1", "#c5e2de", "#d2cceb"]}
@@ -521,10 +524,8 @@ export default function NaamJapScreen() {
                   style={StyleSheet.absoluteFill}
                 />
                 <View pointerEvents="none" style={styles.tapFieldGlow} />
-                <View style={styles.liveCount}>
-                  <Text style={styles.liveCountValue}>{roundCount}</Text>
-                  <Text style={styles.liveCountTarget}> / 108</Text>
-                </View>
+                <View pointerEvents="none" style={styles.tapFieldEdge} />
+                <LiveCounter round={roundCount} target={data.target} />
                 {floatingNaams.map((item) => (
                   <FloatingNaam
                     item={item}
@@ -572,7 +573,7 @@ export default function NaamJapScreen() {
                     </Text>
                   </View>
                 ) : null}
-              </Pressable>
+              </PressableScale>
             </MotiView>
 
             <View style={styles.secondaryActions}>
@@ -605,16 +606,15 @@ export default function NaamJapScreen() {
                   <View key={item.date} style={styles.chartColumn}>
                     <Text style={styles.chartValue}>{item.count}</Text>
                     <View style={styles.chartTrack}>
-                      <View
-                        style={[
-                          styles.chartBar,
-                          {
-                            height: Math.max(
-                              item.count ? 12 : 2,
-                              (item.count / maxWeeklyCount) * 120
-                            ),
-                          },
-                        ]}
+                      <MotiView
+                        animate={{
+                          height: Math.max(
+                            item.count ? 12 : 2,
+                            (item.count / maxWeeklyCount) * 120
+                          ),
+                        }}
+                        style={styles.chartBar}
+                        transition={{ damping: 18, stiffness: 140, type: "spring" }}
                       />
                     </View>
                     <Text style={styles.chartLabel}>{item.label}</Text>
@@ -644,21 +644,23 @@ export default function NaamJapScreen() {
                 </Text>
               </View>
             </View>
-            <Pressable
+            <PressableScale
               onPress={() => router.push("/(tabs)/experiences/post" as never)}
-              style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}
+              scaleTo={0.97}
+              style={styles.primaryAction}
             >
               <BookHeart color="#FFFFFF" size={20} />
               <Text style={styles.primaryActionText}>Share an experience</Text>
               <ChevronRight color="#FFFFFF" size={20} />
-            </Pressable>
-            <Pressable
+            </PressableScale>
+            <PressableScale
               onPress={shareProgress}
-              style={({ pressed }) => [styles.outlineAction, pressed && styles.pressed]}
+              scaleTo={0.97}
+              style={styles.outlineAction}
             >
               <Share2 color="#9A3412" size={19} />
               <Text style={styles.outlineActionText}>Share today’s count</Text>
-            </Pressable>
+            </PressableScale>
           </>
         ) : null}
 
@@ -673,9 +675,13 @@ export default function NaamJapScreen() {
               <Text style={styles.settingLabel}>Count target</Text>
               <View style={styles.targetControl}>
                 {TARGETS.map((target) => (
-                  <Pressable
+                  <PressableScale
                     key={target}
-                    onPress={() => setData((current) => ({ ...current, target }))}
+                    onPress={() => {
+                      void Haptics.selectionAsync();
+                      setData((current) => ({ ...current, target }));
+                    }}
+                    scaleTo={0.94}
                     style={[
                       styles.targetOption,
                       data.target === target && styles.activeTargetOption,
@@ -692,7 +698,7 @@ export default function NaamJapScreen() {
                     {data.target === target ? (
                       <Check color="#FFFFFF" size={14} />
                     ) : null}
-                  </Pressable>
+                  </PressableScale>
                 ))}
               </View>
             </View>
@@ -715,13 +721,14 @@ export default function NaamJapScreen() {
                 value={data.hapticsEnabled}
               />
             </View>
-            <Pressable
+            <PressableScale
               onPress={resetToday}
-              style={({ pressed }) => [styles.dangerAction, pressed && styles.pressed]}
+              scaleTo={0.97}
+              style={styles.dangerAction}
             >
               <RotateCcw color="#B42318" size={19} />
               <Text style={styles.dangerActionText}>Reset today’s count</Text>
-            </Pressable>
+            </PressableScale>
           </>
         ) : null}
       </ScrollView>
@@ -731,18 +738,31 @@ export default function NaamJapScreen() {
         tint="light"
         style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 10) }]}
       >
+        <MotiView
+          animate={{
+            left: `${
+              TAB_ITEMS.findIndex((t) => t.key === activeTab) *
+              TAB_WIDTH_PERCENT
+            }%`,
+          }}
+          style={[styles.tabIndicator, { width: `${TAB_WIDTH_PERCENT}%` }]}
+          transition={{ damping: 18, stiffness: 200, type: "spring" }}
+        >
+          <View style={styles.tabIndicatorPill} />
+        </MotiView>
         {TAB_ITEMS.map(({ Icon, key, label }) => {
           const active = activeTab === key;
 
           return (
-            <Pressable
+            <PressableScale
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               key={key}
-              onPress={() => setActiveTab(key)}
+              onPress={() => switchTab(key)}
+              scaleTo={0.9}
               style={styles.tabButton}
             >
-              <View style={[styles.tabIcon, active && styles.activeTabIcon]}>
+              <View style={styles.tabIcon}>
                 <Icon
                   color={active ? "#C2410C" : "#78716C"}
                   size={21}
@@ -752,7 +772,7 @@ export default function NaamJapScreen() {
               <Text style={[styles.tabLabel, active && styles.activeTabLabel]}>
                 {label}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </BlurView>
@@ -771,6 +791,21 @@ export default function NaamJapScreen() {
         setNameDraft={setNameDraft}
       />
     </View>
+  );
+}
+
+function LiveCounter({ round, target }: { round: number; target: number }) {
+  return (
+    <MotiView
+      key={round}
+      animate={{ opacity: 1, scale: 1 }}
+      from={{ opacity: 0.6, scale: 1.18 }}
+      style={styles.liveCount}
+      transition={{ damping: 12, stiffness: 220, type: "spring" }}
+    >
+      <Text style={styles.liveCountValue}>{round}</Text>
+      <Text style={styles.liveCountTarget}> / {target}</Text>
+    </MotiView>
   );
 }
 
@@ -794,10 +829,15 @@ function FloatingNaam({
 
   return (
     <MotiView
-      animate={{ opacity: 0, scale: 1.08, translateY: -190 }}
-      from={{ opacity: 1, scale: 0.78, translateY: 0 }}
+      animate={{ opacity: 0, scale: 1.1, translateY: -200 }}
+      from={{ opacity: 1, scale: 0.7, translateY: 0 }}
       style={[styles.floatingNaam, { left: `${item.left}%` }]}
-      transition={{ duration: 1650, type: "timing" }}
+      transition={{
+        damping: 14,
+        opacity: { duration: 1500, type: "timing" },
+        stiffness: 90,
+        type: "spring",
+      }}
     >
       <Text numberOfLines={1} style={styles.floatingNaamText}>
         {item.label}
@@ -816,7 +856,7 @@ function MalaStatCard({
   malas: number;
 }) {
   return (
-    <BlurView intensity={58} tint="light" style={styles.malaStatCard}>
+    <BlurView intensity={70} tint="light" style={styles.malaStatCard}>
       <Text style={styles.malaStatLabel}>{label}</Text>
       <View style={styles.malaStatValueRow}>
         <Text style={styles.malaStatValue}>{malas.toLocaleString("en-IN")}</Text>
@@ -866,9 +906,10 @@ function NaamJapBottomSheet({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.modalRoot}
       >
-        <Pressable
+        <PressableScale
           accessibilityLabel="Close"
           onPress={closeSheet}
+          scaleTo={1}
           style={styles.modalBackdrop}
         />
         <BlurView intensity={92} tint="light" style={styles.sheet}>
@@ -911,7 +952,7 @@ function NaamJapBottomSheet({
                     {[1, 2, 5].map((seconds) => {
                       const active = data.autoCountSeconds === seconds;
                       return (
-                        <Pressable
+                        <PressableScale
                           key={seconds}
                           onPress={() =>
                             setData((current) => ({
@@ -919,6 +960,7 @@ function NaamJapBottomSheet({
                               autoCountSeconds: seconds,
                             }))
                           }
+                          scaleTo={0.94}
                           style={[
                             styles.intervalButton,
                             active && styles.activeIntervalButton,
@@ -932,7 +974,7 @@ function NaamJapBottomSheet({
                           >
                             {seconds} sec
                           </Text>
-                        </Pressable>
+                        </PressableScale>
                       );
                     })}
                   </View>
@@ -948,7 +990,7 @@ function NaamJapBottomSheet({
                 One mala contains 108 Naam. Choose a comfortable goal for this session.
               </Text>
               <View style={styles.targetStepper}>
-                <Pressable
+                <PressableScale
                   accessibilityLabel="Reduce mala goal"
                   disabled={data.targetMalas <= 1}
                   onPress={() =>
@@ -957,19 +999,26 @@ function NaamJapBottomSheet({
                       targetMalas: Math.max(1, current.targetMalas - 1),
                     }))
                   }
-                  style={({ pressed }) => [
+                  scaleTo={0.88}
+                  style={[
                     styles.stepperButton,
                     data.targetMalas <= 1 && styles.disabled,
-                    pressed && styles.pressed,
                   ]}
                 >
                   <Minus color="#292524" size={25} />
-                </Pressable>
+                </PressableScale>
                 <View style={styles.targetValueCopy}>
-                  <Text style={styles.targetValue}>{data.targetMalas}</Text>
+                  <MotiView
+                    key={data.targetMalas}
+                    animate={{ opacity: 1, scale: 1 }}
+                    from={{ opacity: 0.5, scale: 1.15 }}
+                    transition={{ damping: 14, stiffness: 240, type: "spring" }}
+                  >
+                    <Text style={styles.targetValue}>{data.targetMalas}</Text>
+                  </MotiView>
                   <Text style={styles.targetValueLabel}>malas</Text>
                 </View>
-                <Pressable
+                <PressableScale
                   accessibilityLabel="Increase mala goal"
                   disabled={data.targetMalas >= 10000}
                   onPress={() =>
@@ -978,17 +1027,22 @@ function NaamJapBottomSheet({
                       targetMalas: Math.min(10000, current.targetMalas + 1),
                     }))
                   }
-                  style={({ pressed }) => [styles.stepperButton, pressed && styles.pressed]}
+                  scaleTo={0.88}
+                  style={styles.stepperButton}
                 >
                   <Plus color="#292524" size={25} />
-                </Pressable>
+                </PressableScale>
               </View>
               <Text style={styles.targetSummary}>
                 {(data.targetMalas * 108).toLocaleString("en-IN")} total Naam
               </Text>
-              <Pressable onPress={closeSheet} style={styles.sheetPrimaryButton}>
+              <PressableScale
+                onPress={closeSheet}
+                scaleTo={0.97}
+                style={styles.sheetPrimaryButton}
+              >
                 <Text style={styles.sheetPrimaryButtonText}>Save goal</Text>
-              </Pressable>
+              </PressableScale>
             </>
           ) : null}
 
@@ -1010,19 +1064,19 @@ function NaamJapBottomSheet({
                   style={styles.nameInput}
                   value={nameDraft}
                 />
-                <Pressable
+                <PressableScale
                   disabled={!nameDraft.trim()}
                   onPress={saveName}
-                  style={({ pressed }) => [
+                  scaleTo={0.93}
+                  style={[
                     styles.saveNameButton,
                     !nameDraft.trim() && styles.disabled,
-                    pressed && styles.pressed,
                   ]}
                 >
                   <Text style={styles.saveNameButtonText}>
                     {editingNameId ? "Save" : "Add"}
                   </Text>
-                </Pressable>
+                </PressableScale>
               </View>
               <ScrollView
                 contentContainerStyle={styles.nameList}
@@ -1033,13 +1087,14 @@ function NaamJapBottomSheet({
                   const selected = selectedName?.id === name.id;
                   return (
                     <View key={name.id} style={styles.nameRow}>
-                      <Pressable
+                      <PressableScale
                         onPress={() =>
                           setData((current) => ({
                             ...current,
                             selectedNameId: name.id,
                           }))
                         }
+                        scaleTo={0.98}
                         style={styles.nameSelectArea}
                       >
                         <View style={[styles.nameCheck, selected && styles.activeNameCheck]}>
@@ -1048,30 +1103,36 @@ function NaamJapBottomSheet({
                         <Text numberOfLines={1} style={styles.nameRowText}>
                           {name.label}
                         </Text>
-                      </Pressable>
-                      <Pressable
+                      </PressableScale>
+                      <PressableScale
                         accessibilityLabel={`Edit ${name.label}`}
                         hitSlop={6}
                         onPress={() => editName(name)}
+                        scaleTo={0.85}
                         style={styles.nameAction}
                       >
                         <Pencil color="#57534E" size={18} />
-                      </Pressable>
-                      <Pressable
+                      </PressableScale>
+                      <PressableScale
                         accessibilityLabel={`Delete ${name.label}`}
                         hitSlop={6}
                         onPress={() => deleteName(name)}
+                        scaleTo={0.85}
                         style={styles.nameAction}
                       >
                         <Trash2 color="#B42318" size={18} />
-                      </Pressable>
+                      </PressableScale>
                     </View>
                   );
                 })}
               </ScrollView>
-              <Pressable onPress={closeSheet} style={styles.sheetPrimaryButton}>
+              <PressableScale
+                onPress={closeSheet}
+                scaleTo={0.97}
+                style={styles.sheetPrimaryButton}
+              >
                 <Text style={styles.sheetPrimaryButtonText}>Done</Text>
-              </Pressable>
+              </PressableScale>
             </>
           ) : null}
         </BlurView>
@@ -1099,11 +1160,16 @@ function SectionIntro({
   title: string;
 }) {
   return (
-    <View style={styles.sectionIntro}>
+    <MotiView
+      animate={{ opacity: 1, translateY: 0 }}
+      from={{ opacity: 0, translateY: 10 }}
+      style={styles.sectionIntro}
+      transition={{ duration: 380, type: "timing" }}
+    >
       <Text style={styles.sectionEyebrow}>{eyebrow}</Text>
       <Text style={styles.pageTitle}>{title}</Text>
       <Text style={styles.pageDescription}>{text}</Text>
-    </View>
+    </MotiView>
   );
 }
 
@@ -1119,18 +1185,15 @@ function SmallAction({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <PressableScale
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.smallAction,
-        disabled && styles.disabled,
-        pressed && styles.pressed,
-      ]}
+      scaleTo={0.92}
+      style={[styles.smallAction, disabled && styles.disabled]}
     >
       <Icon color="#57534E" size={17} />
       <Text style={styles.smallActionText}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -1151,9 +1214,9 @@ const styles = StyleSheet.create({
     minHeight: 66,
     paddingBottom: 10,
     paddingHorizontal: 14,
-    shadowColor: "#243C35",
+    shadowColor: "#1C1917",
     shadowOffset: { height: 5, width: 0 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 14,
     zIndex: 5,
   },
@@ -1179,6 +1242,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 19,
     fontWeight: "900",
+    letterSpacing: 0.2,
     marginLeft: 8,
   },
   malaBadge: {
@@ -1190,11 +1254,11 @@ const styles = StyleSheet.create({
     minHeight: 34,
     paddingHorizontal: 11,
   },
-  malaBadgeText: { color: "#9A3412", fontSize: 13, fontWeight: "800" },
+  malaBadgeText: { color: "#9A3412", fontSize: 13, fontWeight: "800", letterSpacing: 0.2 },
   content: { paddingBottom: 38, paddingTop: 14 },
   naamHeading: {
     alignItems: "center",
-    backgroundColor: "rgba(201, 200, 200, 0.59)",
+    backgroundColor: "rgba(201, 200, 200, 0.55)",
     borderColor: "rgba(255,255,255,0.9)",
     borderCurve: "continuous",
     borderRadius: 26,
@@ -1204,21 +1268,22 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     paddingHorizontal: 20,
     paddingVertical: 19,
-    shadowColor: "#35534A",
-    shadowOffset: { height: 8, width: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
+    shadowColor: "#1C1917",
+    shadowOffset: { height: 6, width: 0 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
   },
   naamHeadingCopy: { flex: 1 },
   naamEyebrow: {
     color: "#9A5A18",
     fontSize: 10,
     fontWeight: "900",
+    letterSpacing: 0.6,
   },
   naamTitle: {
     color: "#1C1917",
     fontSize: 34,
-    fontWeight: "900",
+    fontWeight: "800",
     lineHeight: 41,
     marginTop: 3,
     paddingTop: 10,
@@ -1236,10 +1301,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 16,
     width: 3,
-  },
-  iosCardPressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.985 }],
   },
   editNameButton: {
     alignItems: "center",
@@ -1260,18 +1321,18 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   malaStatCard: {
-    backgroundColor: "rgba(201, 200, 200, 0.59)",
+    backgroundColor: "rgba(201, 200, 200, 0.5)",
     borderColor: "rgba(255,255,255,0.94)",
     borderCurve: "continuous",
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
     flex: 1,
     overflow: "hidden",
     padding: 14,
-    shadowColor: "#2D4A41",
-    shadowOffset: { height: 7, width: 0 },
-    shadowOpacity: 0.07,
-    shadowRadius: 15,
+    shadowColor: "#1C1917",
+    shadowOffset: { height: 6, width: 0 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
   },
   malaStatLabel: {
     color: "#78716C",
@@ -1334,8 +1395,16 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
   },
-  tapFieldPressed: { opacity: 0.94, transform: [{ scale: 0.995 }] },
   tapFieldGlow: {
+    alignSelf: "center",
+    backgroundColor: "rgba(251,191,36,0.10)",
+    borderRadius: 130,
+    height: 260,
+    position: "absolute",
+    top: "16%",
+    width: 260,
+  },
+  tapFieldEdge: {
     ...StyleSheet.absoluteFillObject,
     borderColor: "rgba(255,255,255,0.14)",
     borderCurve: "continuous",
@@ -1346,7 +1415,6 @@ const styles = StyleSheet.create({
     alignItems: "baseline",
     flexDirection: "row",
     left: 20,
-     color: "#161515",
     position: "absolute",
     top: 17,
   },
@@ -1496,21 +1564,38 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.4 },
   pressed: { opacity: 0.7 },
   sectionIntro: { paddingHorizontal: 20, paddingTop: 24 },
-  sectionEyebrow: { color: "#C2410C", fontSize: 11, fontWeight: "900" },
+  sectionEyebrow: { color: "#C2410C", fontSize: 11, fontWeight: "900", letterSpacing: 0.8 },
   pageTitle: { color: "#292524", fontSize: 28, fontWeight: "900", marginTop: 5 },
   pageDescription: { color: "#78716C", fontSize: 14, lineHeight: 21, marginTop: 6 },
   metricGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, padding: 18 },
   metric: {
     backgroundColor: "rgba(255,255,255,0.56)",
     borderColor: "rgba(255,255,255,0.9)",
-    borderRadius: 8,
+    borderCurve: "continuous",
+    borderRadius: 16,
     borderWidth: 1,
     padding: 15,
+    shadowColor: "#1C1917",
+    shadowOffset: { height: 4, width: 0 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
     width: "48%",
   },
   metricValue: { color: "#292524", fontSize: 24, fontWeight: "900" },
   metricLabel: { color: "#78716C", fontSize: 12, fontWeight: "700", marginTop: 5 },
-  chartSection: { backgroundColor: "rgba(255,255,255,0.56)", borderTopColor: "rgba(255,255,255,0.9)", borderTopWidth: 1, padding: 18 },
+  chartSection: {
+    backgroundColor: "rgba(255,255,255,0.56)",
+    borderColor: "rgba(255,255,255,0.9)",
+    borderCurve: "continuous",
+    borderRadius: 20,
+    borderWidth: 1,
+    marginHorizontal: 18,
+    padding: 18,
+    shadowColor: "#1C1917",
+    shadowOffset: { height: 6, width: 0 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+  },
   sectionTitle: { color: "#292524", fontSize: 17, fontWeight: "900" },
   chart: { alignItems: "flex-end", flexDirection: "row", gap: 8, height: 180, marginTop: 18 },
   chartColumn: { alignItems: "center", flex: 1, height: "100%", justifyContent: "flex-end" },
@@ -1518,7 +1603,15 @@ const styles = StyleSheet.create({
   chartTrack: { backgroundColor: "#F2EDE6", borderRadius: 5, flex: 1, justifyContent: "flex-end", overflow: "hidden", width: 18 },
   chartBar: { backgroundColor: "#C2410C", borderRadius: 5, minHeight: 2, width: "100%" },
   chartLabel: { color: "#78716C", fontSize: 11, fontWeight: "700", marginTop: 6 },
-  reflectionBand: { height: 290, marginTop: 22, overflow: "hidden", position: "relative" },
+  reflectionBand: {
+    borderCurve: "continuous",
+    borderRadius: 24,
+    height: 290,
+    marginHorizontal: 18,
+    marginTop: 22,
+    overflow: "hidden",
+    position: "relative",
+  },
   reflectionImage: { height: "100%", width: "100%" },
   reflectionOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(28,25,23,0.48)" },
   reflectionCopy: { bottom: 22, left: 20, position: "absolute", right: 20 },
@@ -1527,19 +1620,25 @@ const styles = StyleSheet.create({
   primaryAction: {
     alignItems: "center",
     backgroundColor: "#292524",
-    borderRadius: 13,
+    borderCurve: "continuous",
+    borderRadius: 16,
     flexDirection: "row",
     gap: 9,
     marginHorizontal: 18,
     marginTop: 18,
     minHeight: 52,
     paddingHorizontal: 16,
+    shadowColor: "#1C1917",
+    shadowOffset: { height: 6, width: 0 },
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
   },
   primaryActionText: { color: "#FFFFFF", flex: 1, fontSize: 15, fontWeight: "800" },
   outlineAction: {
     alignItems: "center",
     borderColor: "#E7D7BE",
-    borderRadius: 13,
+    borderCurve: "continuous",
+    borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
     gap: 9,
@@ -1549,12 +1648,26 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   outlineActionText: { color: "#9A3412", fontSize: 14, fontWeight: "800" },
-  settingSection: { backgroundColor: "rgba(255,255,255,0.56)", marginTop: 22, padding: 18 },
+  settingSection: {
+    backgroundColor: "rgba(255,255,255,0.56)",
+    borderColor: "rgba(255,255,255,0.9)",
+    borderCurve: "continuous",
+    borderRadius: 20,
+    borderWidth: 1,
+    marginHorizontal: 18,
+    marginTop: 22,
+    padding: 18,
+    shadowColor: "#1C1917",
+    shadowOffset: { height: 6, width: 0 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+  },
   settingLabel: { color: "#292524", fontSize: 15, fontWeight: "800" },
   targetControl: { flexDirection: "row", gap: 8, marginTop: 12 },
   targetOption: {
     alignItems: "center",
     backgroundColor: "#F5F5F4",
+    borderCurve: "continuous",
     borderRadius: 12,
     flex: 1,
     flexDirection: "row",
@@ -1568,10 +1681,18 @@ const styles = StyleSheet.create({
   settingRow: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.56)",
-    borderTopColor: "rgba(255,255,255,0.9)",
-    borderTopWidth: 1,
+    borderColor: "rgba(255,255,255,0.9)",
+    borderCurve: "continuous",
+    borderRadius: 20,
+    borderWidth: 1,
     flexDirection: "row",
+    marginHorizontal: 18,
+    marginTop: 12,
     padding: 18,
+    shadowColor: "#1C1917",
+    shadowOffset: { height: 4, width: 0 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
   },
   settingIcon: { alignItems: "center", backgroundColor: "#FFF1DF", borderRadius: 12, height: 44, justifyContent: "center", width: 44 },
   settingCopy: { flex: 1, marginLeft: 12 },
@@ -1580,7 +1701,8 @@ const styles = StyleSheet.create({
   dangerAction: {
     alignItems: "center",
     backgroundColor: "#FFF1F0",
-    borderRadius: 13,
+    borderCurve: "continuous",
+    borderRadius: 16,
     flexDirection: "row",
     gap: 8,
     justifyContent: "center",
@@ -1595,10 +1717,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 8,
     paddingTop: 7,
+    position: "relative",
+  },
+  tabIndicator: {
+    alignItems: "center",
+    height: 34,
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    position: "absolute",
+    top: 7,
+  },
+  tabIndicatorPill: {
+    backgroundColor: "rgba(255,225,183,0.7)",
+    borderCurve: "continuous",
+    borderRadius: 14,
+    height: 34,
+    width: "78%",
   },
   tabButton: { alignItems: "center", flex: 1, minHeight: 52 },
-  tabIcon: { alignItems: "center", borderRadius: 12, height: 30, justifyContent: "center", width: 40 },
-  activeTabIcon: { backgroundColor: "rgba(255,225,183,0.7)", borderCurve: "continuous", borderRadius: 12 },
+  tabIcon: { alignItems: "center", height: 30, justifyContent: "center", width: 40 },
   tabLabel: { color: "#78716C", fontSize: 10, fontWeight: "700", marginTop: 2 },
   activeTabLabel: { color: "#C2410C", fontWeight: "900" },
   modalRoot: { flex: 1, justifyContent: "flex-end" },
@@ -1660,11 +1797,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#F5F5F4",
     borderColor: "#E7E5E4",
+    borderCurve: "continuous",
     borderRadius: 10,
     borderWidth: 1,
     flex: 1,
-    minHeight: 44,
     justifyContent: "center",
+    minHeight: 44,
   },
   activeIntervalButton: { backgroundColor: "#166534", borderColor: "#166534" },
   intervalButtonText: { color: "#57534E", fontSize: 13, fontWeight: "800" },
@@ -1679,6 +1817,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#F5F5F4",
     borderColor: "#E7E5E4",
+    borderCurve: "continuous",
     borderRadius: 16,
     borderWidth: 1,
     height: 54,
@@ -1698,7 +1837,8 @@ const styles = StyleSheet.create({
   sheetPrimaryButton: {
     alignItems: "center",
     backgroundColor: "#292524",
-    borderRadius: 12,
+    borderCurve: "continuous",
+    borderRadius: 14,
     justifyContent: "center",
     marginTop: 20,
     minHeight: 52,
@@ -1708,6 +1848,7 @@ const styles = StyleSheet.create({
   nameInput: {
     backgroundColor: "#FFFFFF",
     borderColor: "#D6D3D1",
+    borderCurve: "continuous",
     borderRadius: 11,
     borderWidth: 1,
     color: "#292524",
@@ -1719,19 +1860,21 @@ const styles = StyleSheet.create({
   saveNameButton: {
     alignItems: "center",
     backgroundColor: "#C2410C",
+    borderCurve: "continuous",
     borderRadius: 11,
     justifyContent: "center",
     minWidth: 68,
     paddingHorizontal: 14,
   },
   saveNameButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
-  nameListScroll: { maxHeight: 280, marginTop: 12 },
+  nameListScroll: { marginTop: 12, maxHeight: 280 },
   nameList: { gap: 7 },
   nameRow: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderColor: "#E7E5E4",
-    borderRadius: 11,
+    borderCurve: "continuous",
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
     minHeight: 52,
