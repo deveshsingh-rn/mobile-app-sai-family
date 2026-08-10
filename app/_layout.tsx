@@ -1,7 +1,8 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, usePathname } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { Provider } from 'react-redux';
 import '@/utils/disable-font-scaling';
@@ -28,6 +29,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { registerPushTokenRequest } from '@/store/notifications/actions';
 import { selectPushToken } from '@/store/notifications/selectors';
 import { store } from '@/store';
+import { refreshMorningSaiAlarm } from '@/services/morning-sai-alarm';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -36,6 +38,8 @@ export const unstable_settings = {
 function AppLayoutContent() {
   const colorScheme = useColorScheme();
   const pathname = usePathname();
+  const router = useRouter();
+  const handledNotificationIdRef = useRef<string | null>(null);
   const dispatch = useAppDispatch();
   const devoteeAccount = useAppSelector(selectDevoteeAccount);
   const hasHydratedDevoteeAccount = useAppSelector(selectHasHydratedDevoteeAccount);
@@ -92,6 +96,34 @@ function AppLayoutContent() {
     devoteeAccount,
     hasHydratedDevoteeAccount,
   ]);
+
+  useEffect(() => {
+    if (hasHydratedDevoteeAccount && devoteeAccount?.name) {
+      void refreshMorningSaiAlarm(devoteeAccount.name);
+    }
+  }, [devoteeAccount?.name, hasHydratedDevoteeAccount]);
+
+  useEffect(() => {
+    if (!devoteeAccount) return;
+
+    const openNotification = (response: Notifications.NotificationResponse) => {
+      const request = response.notification.request;
+      if (handledNotificationIdRef.current === request.identifier) return;
+      handledNotificationIdRef.current = request.identifier;
+
+      if (request.content.data?.feature === 'morning-sai') {
+        router.push('/(tabs)/experiences/ask-sai' as never);
+      }
+    };
+
+    const subscription =
+      Notifications.addNotificationResponseReceivedListener(openNotification);
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) openNotification(response);
+    });
+
+    return () => subscription.remove();
+  }, [devoteeAccount, router]);
 
   useEffect(() => {
     let screenName = "App";

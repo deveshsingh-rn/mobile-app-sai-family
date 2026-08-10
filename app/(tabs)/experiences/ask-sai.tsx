@@ -63,6 +63,8 @@ import {
   submitDevoteeAiFeedback,
 } from "@/services/devotee-ai";
 import { trackProductEvent } from "@/services/product-analytics";
+import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
+import { useAppSelector } from "@/store/hooks";
 import type {
   SaiAudioStreamChunkEvent,
   SaiAudioStreamErrorEvent,
@@ -137,6 +139,18 @@ const logVoiceProductionCheck = (
 
 const createVoiceTurnId = () =>
   `turn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const personalizeSaiAnswer = (text: string, devoteeName: string) => {
+  const answer = text.trim();
+  const name = devoteeName.trim();
+
+  if (!answer || !name) return answer;
+  if (answer.toLocaleLowerCase().startsWith(name.toLocaleLowerCase())) {
+    return answer;
+  }
+
+  return `${name}, ${answer}`;
+};
 
 const detectTranscriptLanguage = (
   text: string
@@ -498,6 +512,8 @@ type PendingVoiceStartContext = {
 
 export default function AskSaiScreen() {
   const insets = useSafeAreaInsets();
+  const devoteeAccount = useAppSelector(selectDevoteeAccount);
+  const devoteeName = devoteeAccount?.name?.trim() || "Sai Devotee";
   const mainScrollRef = useRef<ScrollView>(null);
   const questionCardYRef = useRef(0);
   const voiceSocketRef =
@@ -1554,7 +1570,9 @@ export default function AskSaiScreen() {
             });
           }
           voiceAnswerBufferRef.current += event.text;
-          setAnswer(voiceAnswerBufferRef.current);
+          setAnswer(
+            personalizeSaiAnswer(voiceAnswerBufferRef.current, devoteeName)
+          );
 
           if (completedVoiceTurnIdRef.current === event.turnId) {
             const completedAssistantMessageId =
@@ -1572,7 +1590,10 @@ export default function AskSaiScreen() {
               if (!hasAssistantMessage) {
                 return appendUniqueMessages(currentMessages, [
                   {
-                    content: voiceAnswerBufferRef.current,
+                    content: personalizeSaiAnswer(
+                      voiceAnswerBufferRef.current,
+                      devoteeName
+                    ),
                     id: completedAssistantMessageId,
                     role: "assistant",
                   },
@@ -1583,7 +1604,10 @@ export default function AskSaiScreen() {
                 message.id === completedAssistantMessageId
                   ? {
                       ...message,
-                      content: voiceAnswerBufferRef.current,
+                      content: personalizeSaiAnswer(
+                        voiceAnswerBufferRef.current,
+                        devoteeName
+                      ),
                     }
                   : message
               );
@@ -1624,7 +1648,10 @@ export default function AskSaiScreen() {
         case "turn_complete": {
           completedVoiceTurnIdRef.current = event.turnId;
           const finalQuestion = voiceFinalTranscriptRef.current || question;
-          const finalAnswer = voiceAnswerBufferRef.current.trim();
+          const finalAnswer = personalizeSaiAnswer(
+            voiceAnswerBufferRef.current,
+            devoteeName
+          );
           const assistantMessageId =
             event.messageId || `${event.turnId}-assistant`;
           completedVoiceAssistantMessageIdRef.current = assistantMessageId;
@@ -1779,6 +1806,7 @@ export default function AskSaiScreen() {
     [
       cleanupBackendVoiceSessions,
       conversationId,
+      devoteeName,
       enqueueVoiceAudioChunk,
       loadConversations,
       playBufferedVoiceAudio,
@@ -1822,16 +1850,21 @@ export default function AskSaiScreen() {
         setSafetyNote("");
         const response = await askDevoteeQuestion({
           conversationId,
+          devoteeName,
           locale: selectedLanguage.locale,
           pillar: "experiences",
           question: questionToAsk,
           voice: false,
         });
 
-        setAnswer(response.answer);
+        const personalizedAnswer = personalizeSaiAnswer(
+          response.answer,
+          devoteeName
+        );
+        setAnswer(personalizedAnswer);
         setConversationId(response.conversationId || conversationId);
         setFeedbackMessageId(response.messageId || null);
-        setLastResponse(response);
+        setLastResponse({ ...response, answer: personalizedAnswer });
         const completedAt = Date.now();
         setMessages((currentMessages) =>
           appendUniqueMessages(currentMessages, [
@@ -1842,7 +1875,7 @@ export default function AskSaiScreen() {
             },
             {
               cached: response.cached,
-              content: response.answer,
+              content: personalizedAnswer,
               id: response.messageId || `${completedAt}-assistant`,
               latencyMs: response.latencyMs,
               model: response.model,
@@ -1854,7 +1887,7 @@ export default function AskSaiScreen() {
         void loadConversations();
 
         if (options?.speak) {
-          await speakText(response.answer);
+          await speakText(personalizedAnswer);
         }
 
         trackProductEvent("Devotee Question Asked", {
@@ -1888,6 +1921,7 @@ export default function AskSaiScreen() {
     },
     [
       conversationId,
+      devoteeName,
       loadConversations,
       question,
       selectedLanguage.locale,
@@ -2196,6 +2230,7 @@ export default function AskSaiScreen() {
 
         const voiceSessionPayload = {
           conversationId,
+          devoteeName,
           locale: selectedLanguage.locale,
           pillar: "experiences" as const,
           secondaryLocale: selectedLanguage.secondaryLocale,
@@ -2475,6 +2510,7 @@ export default function AskSaiScreen() {
   }, [
     cleanupBackendVoiceSessions,
     conversationId,
+    devoteeName,
     handleVoiceServerEvent,
     isListening,
     selectedLanguage.locale,
@@ -2637,14 +2673,26 @@ export default function AskSaiScreen() {
           .find((message) => message.role === "user");
 
         setConversationId(detail.conversation.id);
-        setMessages(detail.messages);
+        const personalizedMessages = detail.messages.map((message) =>
+          message.role === "assistant"
+            ? {
+                ...message,
+                content: personalizeSaiAnswer(message.content, devoteeName),
+              }
+            : message
+        );
+        const personalizedAssistantAnswer = assistantMessage
+          ? personalizeSaiAnswer(assistantMessage.content, devoteeName)
+          : "";
+
+        setMessages(personalizedMessages);
         setQuestion(userMessage?.content || detail.conversation.title || "");
-        setAnswer(assistantMessage?.content || "");
+        setAnswer(personalizedAssistantAnswer);
         setFeedbackMessageId(assistantMessage?.id || null);
         setLastResponse(
           assistantMessage
             ? {
-                answer: assistantMessage.content,
+                answer: personalizedAssistantAnswer,
                 cached: assistantMessage.cached,
                 conversationId: detail.conversation.id,
                 latencyMs: assistantMessage.latencyMs ?? undefined,
@@ -2669,7 +2717,7 @@ export default function AskSaiScreen() {
         setIsLoadingHistory(false);
       }
     },
-    [stopSpeech]
+    [devoteeName, stopSpeech]
   );
 
   const deleteCurrentConversation = useCallback(() => {

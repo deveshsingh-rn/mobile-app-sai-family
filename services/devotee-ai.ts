@@ -26,6 +26,7 @@ const normalizeDevoteeAiLocale = (
 
 export type AskDevoteeQuestionPayload = {
   conversationId?: string;
+  devoteeName?: string;
   locale?: DevoteeAiSupportedLocale;
   question: string;
   pillar?: DevoteeAiPillar;
@@ -105,6 +106,7 @@ export type DevoteeAiVoiceState =
 
 export type CreateDevoteeAiVoiceSessionPayload = {
   conversationId?: string;
+  devoteeName?: string;
   locale?: DevoteeAiSupportedLocale;
   pillar?: DevoteeAiPillar;
   secondaryLocale?: DevoteeAiSupportedLocale;
@@ -324,6 +326,7 @@ export async function askDevoteeQuestion(
         getAiEndpoint(),
         {
           conversationId: payload.conversationId,
+          devoteeName: payload.devoteeName?.trim() || undefined,
           locale: normalizeDevoteeAiLocale(
             payload.locale
           ),
@@ -485,6 +488,7 @@ export async function createDevoteeAiVoiceSession(
         ),
         voiceProvider: payload?.voiceProvider || "elevenlabs",
         conversationId: payload?.conversationId,
+        devoteeName: payload?.devoteeName?.trim() || undefined,
       }
     );
 

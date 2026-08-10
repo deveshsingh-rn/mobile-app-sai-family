@@ -45,6 +45,7 @@ import {
   useAppSelector,
 } from "@/store/hooks";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MorningSaiAlarmCard } from "@/components/profile/MorningSaiAlarmCard";
 
 type ProfileTab = "details" | "settings";
 
@@ -408,6 +409,7 @@ export default function ProfileScreen() {
         </View>
       ) : (
         <View style={styles.section}>
+          <MorningSaiAlarmCard devoteeName={account?.name} />
           {/* <View style={styles.securityCard}> */}
             {/* <View style={styles.securityHeader}>
               <View style={styles.securityIcon}>
