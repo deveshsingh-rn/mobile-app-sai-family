@@ -11,7 +11,6 @@ import {
   CircleEllipsis,
   Clock3,
   Edit3,
-  Hand,
   House,
   Minus,
   MoreHorizontal,
@@ -19,6 +18,7 @@ import {
   Plus,
   RotateCcw,
   Share2,
+  Sparkles,
   Trash2,
   Undo2,
   Volume2,
@@ -50,7 +50,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { NaamJapSkiaBackground } from "@/components/naam-jap/NaamJapSkiaBackground";
+import { NaamJapCumulativeChart } from "@/components/naam-jap/NaamJapCumulativeChart";
 import { PressableScale } from "@/components/naam-jap/PressableScale";
+import { SaiProgressReveal } from "@/components/naam-jap/SaiProgressReveal";
+import { SwipeNaamCounter } from "@/components/naam-jap/SwipeNaamCounter";
 import {
   createDefaultNaamJapData,
   getLocalDateKey,
@@ -95,19 +98,24 @@ export default function NaamJapScreen() {
   const [floatingNaams, setFloatingNaams] = useState<FloatingNaamItem[]>([]);
   const [nameDraft, setNameDraft] = useState("");
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [goalCelebrationVisible, setGoalCelebrationVisible] = useState(false);
   const [isAppActive, setIsAppActive] = useState(
     AppState.currentState === "active"
   );
   const dataRef = useRef(data);
   const hydratedRef = useRef(false);
+  const celebratedGoalRef = useRef<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
     void loadNaamJapData().then((stored) => {
       if (mounted) {
+        const storedGoal = stored.targetMalas * 108;
         dataRef.current = stored;
         hydratedRef.current = true;
+        celebratedGoalRef.current =
+          stored.sessionCount >= storedGoal ? storedGoal : null;
         setData(stored);
         setHydrated(true);
       }
@@ -185,7 +193,7 @@ export default function NaamJapScreen() {
     const today = getLocalDateKey();
 
     return Array.from({ length: 7 }, (_, index) => {
-      const date = getDateKeyOffset(index - 6);
+      const date = getDateKeyOffset(-index);
       const count =
         date === today
           ? data.todayCount
@@ -196,20 +204,44 @@ export default function NaamJapScreen() {
         count,
         date,
         label: new Intl.DateTimeFormat("en-IN", { weekday: "short" })
-          .format(dateValue)
-          .slice(0, 1),
+          .format(dateValue),
       };
     });
   }, [data.history, data.todayCount]);
 
   const maxWeeklyCount = Math.max(1, ...weeklyCounts.map((item) => item.count));
 
+  useEffect(() => {
+    if (!hydrated) return;
+
+    if (data.sessionCount < targetNaamCount) {
+      celebratedGoalRef.current = null;
+      return;
+    }
+
+    if (
+      data.sessionCount === targetNaamCount &&
+      celebratedGoalRef.current !== targetNaamCount
+    ) {
+      celebratedGoalRef.current = targetNaamCount;
+      setGoalCelebrationVisible(true);
+    }
+  }, [data.sessionCount, hydrated, targetNaamCount]);
+
   const increment = useCallback(() => {
     setData((current) => {
+      const sessionGoal = current.targetMalas * 108;
+
+      if (current.sessionCount >= sessionGoal) {
+        return current;
+      }
+
       const nextSessionCount = current.sessionCount + 1;
 
       if (current.hapticsEnabled) {
-        const completedTarget = nextSessionCount % current.target === 0;
+        const completedTarget =
+          nextSessionCount % current.target === 0 ||
+          nextSessionCount === sessionGoal;
         void (completedTarget
           ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
           : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
@@ -225,6 +257,13 @@ export default function NaamJapScreen() {
   }, []);
 
   const countNaam = useCallback(() => {
+    if (
+      dataRef.current.sessionCount >=
+      dataRef.current.targetMalas * 108
+    ) {
+      return;
+    }
+
     const currentName =
       dataRef.current.jaapNames.find(
         (item) => item.id === dataRef.current.selectedNameId
@@ -280,7 +319,7 @@ export default function NaamJapScreen() {
     const label = nameDraft.trim();
 
     if (!label) {
-      return;
+      return true;
     }
 
     const duplicate = data.jaapNames.some(
@@ -295,12 +334,12 @@ export default function NaamJapScreen() {
         "Naam already saved",
         "Choose it from the list or enter another Naam."
       );
-      return;
+      return false;
     }
 
     if (!editingNameId && data.jaapNames.length >= 30) {
       Alert.alert("Naam list is full", "You can keep up to 30 saved Naam.");
-      return;
+      return false;
     }
 
     setData((current) => {
@@ -310,6 +349,7 @@ export default function NaamJapScreen() {
           jaapNames: current.jaapNames.map((item) =>
             item.id === editingNameId ? { ...item, label } : item
           ),
+          selectedNameId: editingNameId,
         };
       }
 
@@ -326,6 +366,13 @@ export default function NaamJapScreen() {
     });
     setEditingNameId(null);
     setNameDraft("");
+    return true;
+  };
+
+  const completeNameSelection = () => {
+    if (saveName()) {
+      closeSheet();
+    }
   };
 
   const editName = (name: NaamJapName) => {
@@ -576,14 +623,7 @@ export default function NaamJapScreen() {
               style={styles.tapFieldShell}
               transition={{ delay: 210, duration: 480, type: "timing" }}
             >
-              <PressableScale
-                accessibilityHint="Counts one repetition"
-                accessibilityLabel={`Count ${selectedName?.label || "Sai Ram"}`}
-                accessibilityRole="button"
-                onPress={countNaam}
-                scaleTo={0.985}
-                style={styles.tapField}
-              >
+              <View style={styles.tapField}>
                 <LinearGradient
                   colors={["#f5f4d1", "#c5e2de", "#d2cceb"]}
                   end={{ x: 1, y: 1 }}
@@ -605,17 +645,13 @@ export default function NaamJapScreen() {
                     }
                   />
                 ))}
-                <View style={styles.tapPrompt}>
-                  <View style={styles.handStage}>
-                    <View style={styles.handPulse} />
-                    <View style={styles.handCircle}>
-                      <Hand color="#6B716E" size={34} strokeWidth={1.8} />
-                    </View>
-                  </View>
-                  <Text style={styles.tapTitle}>Tap for every Naam</Text>
-                  <Text style={styles.tapDescription}>
-                    Keep your mind on Sai and tap gently
-                  </Text>
+                <SaiProgressReveal image={SAI_IMAGE} progress={targetProgress} />
+                <View style={styles.swipeCounterWrap}>
+                  <SwipeNaamCounter
+                    disabled={goalReached}
+                    label={selectedName?.label || "Sai Ram"}
+                    onCount={countNaam}
+                  />
                 </View>
                 {data.autoCountSeconds ? (
                   <View style={styles.autoBadge}>
@@ -627,7 +663,7 @@ export default function NaamJapScreen() {
                     </Text>
                   </View>
                 ) : null}
-              </PressableScale>
+              </View>
             </MotiView>
 
             <View style={styles.secondaryActions}>
@@ -655,6 +691,7 @@ export default function NaamJapScreen() {
             </View>
             <View style={styles.chartSection}>
               <Text style={styles.sectionTitle}>Last 7 days</Text>
+              <Text style={styles.chartHelper}>Today is shown first</Text>
               <View style={styles.chart}>
                 {weeklyCounts.map((item) => (
                   <View key={item.date} style={styles.chartColumn}>
@@ -675,6 +712,13 @@ export default function NaamJapScreen() {
                   </View>
                 ))}
               </View>
+            </View>
+            <View style={[styles.chartSection, styles.cumulativeChartSection]}>
+              <Text style={styles.sectionTitle}>Cumulative Naam</Text>
+              <Text style={styles.chartHelper}>
+                Your running seven-day practice, newest day first
+              </Text>
+              <NaamJapCumulativeChart items={weeklyCounts} />
             </View>
           </>
         ) : null}
@@ -841,11 +885,58 @@ export default function NaamJapScreen() {
         editName={editName}
         editingNameId={editingNameId}
         nameDraft={nameDraft}
-        saveName={saveName}
+        completeNameSelection={completeNameSelection}
         selectedName={selectedName}
         setData={setData}
         setNameDraft={setNameDraft}
       />
+
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setGoalCelebrationVisible(false)}
+        transparent
+        visible={goalCelebrationVisible}
+      >
+        <View style={styles.celebrationBackdrop}>
+          <MotiView
+            animate={{ opacity: 1, scale: 1, translateY: 0 }}
+            from={{ opacity: 0, scale: 0.92, translateY: 24 }}
+            style={styles.celebrationCard}
+            transition={{ damping: 16, stiffness: 150, type: "spring" }}
+          >
+            <LinearGradient
+              colors={["#FFFDF7", "#F4F8F5", "#FFF7E8"]}
+              style={StyleSheet.absoluteFill}
+            />
+            <MotiView
+              animate={{ opacity: [0.45, 1, 0.45], scale: [0.92, 1.08, 0.92] }}
+              style={styles.celebrationSparkle}
+              transition={{ duration: 1800, loop: true, type: "timing" }}
+            >
+              <Sparkles color="#C07A2A" size={28} />
+            </MotiView>
+            <Image
+              resizeMode="contain"
+              source={SAI_IMAGE}
+              style={styles.celebrationImage}
+            />
+            <Text style={styles.celebrationEyebrow}>108 NAAM COMPLETED</Text>
+            <Text style={styles.celebrationTitle}>Sai’s blessings are with you</Text>
+            <Text style={styles.celebrationMessage}>
+              My child, you have remembered Me 108 times.{"\n"}
+              May My blessings always be with you.{"\n"}
+              Keep My Naam in your heart, and walk with faith.
+            </Text>
+            <PressableScale
+              onPress={() => setGoalCelebrationVisible(false)}
+              scaleTo={0.97}
+              style={styles.celebrationButton}
+            >
+              <Text style={styles.celebrationButtonText}>Receive blessings</Text>
+            </PressableScale>
+          </MotiView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -929,12 +1020,12 @@ function NaamJapBottomSheet({
   activeSheet,
   cancelEditName,
   closeSheet,
+  completeNameSelection,
   data,
   deleteName,
   editName,
   editingNameId,
   nameDraft,
-  saveName,
   selectedName,
   setData,
   setNameDraft,
@@ -942,12 +1033,12 @@ function NaamJapBottomSheet({
   activeSheet: NaamJapSheet;
   cancelEditName: () => void;
   closeSheet: () => void;
+  completeNameSelection: () => void;
   data: NaamJapData;
   deleteName: (name: NaamJapName) => void;
   editName: (name: NaamJapName) => void;
   editingNameId: string | null;
   nameDraft: string;
-  saveName: () => void;
   selectedName?: NaamJapName;
   setData: React.Dispatch<React.SetStateAction<NaamJapData>>;
   setNameDraft: React.Dispatch<React.SetStateAction<string>>;
@@ -1186,30 +1277,13 @@ function NaamJapBottomSheet({
                   accessibilityLabel="Naam"
                   maxLength={40}
                   onChangeText={setNameDraft}
-                  onSubmitEditing={saveName}
+                  onSubmitEditing={completeNameSelection}
                   placeholder="Add a Naam"
                   placeholderTextColor="#A8A29E"
                   returnKeyType="done"
                   style={styles.nameInput}
                   value={nameDraft}
                 />
-                <PressableScale
-                  accessibilityLabel={editingNameId ? "Save Naam" : "Add Naam"}
-                  accessibilityRole="button"
-                  disabled={!nameDraft.trim()}
-                  onPress={saveName}
-                  scaleTo={0.93}
-                  style={[
-                    styles.saveNameButton,
-                    !nameDraft.trim() && styles.disabled,
-                  ]}
-                >
-                  {editingNameId ? (
-                    <Check color="#FFFFFF" size={21} strokeWidth={2.6} />
-                  ) : (
-                    <Plus color="#FFFFFF" size={22} strokeWidth={2.6} />
-                  )}
-                </PressableScale>
               </View>
               <ScrollView
                 contentContainerStyle={styles.nameList}
@@ -1226,12 +1300,13 @@ function NaamJapBottomSheet({
                     >
                       <PressableScale
                         containerStyle={styles.nameSelectContainer}
-                        onPress={() =>
+                        onPress={() => {
                           setData((current) => ({
                             ...current,
                             selectedNameId: name.id,
-                          }))
-                        }
+                          }));
+                          cancelEditName();
+                        }}
                         scaleTo={0.98}
                         style={styles.nameSelectArea}
                       >
@@ -1265,11 +1340,13 @@ function NaamJapBottomSheet({
                 })}
               </ScrollView>
               <PressableScale
-                onPress={closeSheet}
+                onPress={completeNameSelection}
                 scaleTo={0.97}
                 style={styles.sheetPrimaryButton}
               >
-                <Text style={styles.sheetPrimaryButtonText}>Done</Text>
+                <Text style={styles.sheetPrimaryButtonText}>
+                  {nameDraft.trim() ? "Save and use this Naam" : "Done"}
+                </Text>
               </PressableScale>
             </>
           ) : null}
@@ -1530,9 +1607,11 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     borderRadius: 28,
     borderWidth: 1,
-    height: 310,
-    justifyContent: "center",
+    height: 430,
+    justifyContent: "space-between",
     overflow: "hidden",
+    paddingBottom: 16,
+    paddingTop: 42,
     position: "relative",
   },
   tapFieldGlow: {
@@ -1568,51 +1647,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-  tapPrompt: { alignItems: "center", paddingHorizontal: 24 },
-  handStage: {
-    alignItems: "center",
-    height: 88,
-    justifyContent: "center",
-    width: 88,
-  },
-  handPulse: {
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderColor: "rgba(255,255,255,0.36)",
-    borderRadius: 44,
-    borderWidth: 1,
-    height: 88,
-    position: "absolute",
-    width: 88,
-  },
-  handCircle: {
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.36)",
-    borderColor: "rgba(255,255,255,0.64)",
-    borderCurve: "continuous",
-    borderRadius: 22,
-    borderWidth: 1,
-    height: 68,
-    justifyContent: "center",
-    width: 68,
-  },
-  tapTitle: {
-    color: "#161515",
-    fontSize: 18,
-    fontWeight: "900",
-    marginTop: 13,
-  },
-  tapDescription: {
-    color: "rgba(77, 75, 75, 0.7)",
-    fontSize: 12,
-    marginTop: 5,
-    textAlign: "center",
-  },
+  swipeCounterWrap: { paddingHorizontal: 14, width: "100%" },
   floatingNaam: {
     backgroundColor: "#536F63",
     borderColor: "rgba(255,255,255,0.64)",
     borderRadius: 999,
     borderWidth: 1,
-    bottom: 28,
+    bottom: 82,
     maxWidth: "86%",
     minHeight: 48,
     paddingHorizontal: 20,
@@ -1736,13 +1777,73 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 16,
   },
+  cumulativeChartSection: { marginTop: 12 },
   sectionTitle: { color: "#292524", fontSize: 17, fontWeight: "900" },
+  chartHelper: { color: "#78716C", fontSize: 11, marginTop: 4 },
   chart: { alignItems: "flex-end", flexDirection: "row", gap: 8, height: 180, marginTop: 18 },
   chartColumn: { alignItems: "center", flex: 1, height: "100%", justifyContent: "flex-end" },
   chartValue: { color: "#78716C", fontSize: 9, marginBottom: 4 },
   chartTrack: { backgroundColor: "#F2EDE6", borderRadius: 5, flex: 1, justifyContent: "flex-end", overflow: "hidden", width: 18 },
   chartBar: { backgroundColor: "#C2410C", borderRadius: 5, minHeight: 2, width: "100%" },
   chartLabel: { color: "#78716C", fontSize: 11, fontWeight: "700", marginTop: 6 },
+  celebrationBackdrop: {
+    alignItems: "center",
+    backgroundColor: "rgba(28,25,23,0.58)",
+    flex: 1,
+    justifyContent: "center",
+    padding: 20,
+  },
+  celebrationCard: {
+    alignItems: "center",
+    borderColor: "rgba(255,255,255,0.92)",
+    borderCurve: "continuous",
+    borderRadius: 28,
+    borderWidth: 1,
+    maxWidth: 420,
+    overflow: "hidden",
+    paddingBottom: 22,
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    shadowColor: "#1C1917",
+    shadowOffset: { height: 14, width: 0 },
+    shadowOpacity: 0.22,
+    shadowRadius: 28,
+    width: "100%",
+  },
+  celebrationSparkle: { position: "absolute", right: 22, top: 20, zIndex: 2 },
+  celebrationImage: { height: 260, width: 150 },
+  celebrationEyebrow: {
+    color: "#9A5A18",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.8,
+    marginTop: 4,
+  },
+  celebrationTitle: {
+    color: "#292524",
+    fontSize: 23,
+    fontWeight: "900",
+    marginTop: 7,
+    textAlign: "center",
+  },
+  celebrationMessage: {
+    color: "#57534E",
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: 10,
+    textAlign: "center",
+  },
+  celebrationButton: {
+    alignItems: "center",
+    backgroundColor: "#557568",
+    borderCurve: "continuous",
+    borderRadius: 15,
+    justifyContent: "center",
+    marginTop: 18,
+    minHeight: 50,
+    width: "100%",
+  },
+  celebrationButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
   reflectionBand: {
     borderCurve: "continuous",
     borderRadius: 24,
