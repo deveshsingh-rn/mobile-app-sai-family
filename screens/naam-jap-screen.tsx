@@ -530,7 +530,10 @@ export default function NaamJapScreen() {
       </BlurView>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          activeTab === "home" && styles.homeContent,
+        ]}
         showsVerticalScrollIndicator={false}
         style={styles.pageScroll}
       >
@@ -651,13 +654,6 @@ export default function NaamJapScreen() {
                   />
                 ))}
                 <SaiProgressReveal image={SAI_IMAGE} progress={targetProgress} />
-                <View style={styles.swipeCounterWrap}>
-                  <SwipeNaamCounter
-                    disabled={goalReached}
-                    label={selectedName?.label || "Sai Ram"}
-                    onCount={countNaam}
-                  />
-                </View>
                 {data.autoCountSeconds ? (
                   <View style={styles.autoBadge}>
                     <Clock3 color="#166534" size={14} />
@@ -836,6 +832,23 @@ export default function NaamJapScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      {activeTab === "home" ? (
+        <BlurView
+          intensity={88}
+          style={[
+            styles.fixedSwipeDock,
+            { bottom: 64 + Math.max(insets.bottom, 6) },
+          ]}
+          tint="light"
+        >
+          <SwipeNaamCounter
+            disabled={goalReached}
+            label={selectedName?.label || "Sai Ram"}
+            onCount={countNaam}
+          />
+        </BlurView>
+      ) : null}
 
       <View
         style={[
@@ -1477,6 +1490,7 @@ const styles = StyleSheet.create({
   },
   malaBadgeText: { color: "#9A3412", fontSize: 13, fontWeight: "800", letterSpacing: 0.2 },
   content: { paddingBottom: 38, paddingTop: 14 },
+  homeContent: { paddingBottom: 132 },
   naamHeading: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.72)",
@@ -1612,7 +1626,7 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     borderRadius: 28,
     borderWidth: 1,
-    height: 478,
+    height: 350,
     justifyContent: "space-between",
     overflow: "hidden",
     paddingBottom: 16,
@@ -1652,13 +1666,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-  swipeCounterWrap: { paddingHorizontal: 12, width: "100%" },
   floatingNaam: {
     backgroundColor: "#536F63",
     borderColor: "rgba(255,255,255,0.64)",
     borderRadius: 999,
     borderWidth: 1,
-    bottom: 128,
+    bottom: 26,
     maxWidth: "86%",
     minHeight: 48,
     paddingHorizontal: 20,
@@ -1963,6 +1976,21 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     flexShrink: 0,
     width: "100%",
+  },
+  fixedSwipeDock: {
+    backgroundColor: "rgba(248,250,248,0.94)",
+    borderTopColor: "rgba(215,224,218,0.92)",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    left: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    position: "absolute",
+    right: 0,
+    shadowColor: "#1C3029",
+    shadowOffset: { height: -5, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    zIndex: 12,
   },
   bottomBar: {
     alignItems: "center",

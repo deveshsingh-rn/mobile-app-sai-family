@@ -1,4 +1,4 @@
-import { ChevronRight, ChevronsRight } from "lucide-react-native";
+import { ChevronsRight } from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -14,14 +14,12 @@ type Props = {
   onCount: () => void;
 };
 
-const THUMB_SIZE = 72;
-
 export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
   const translateX = useRef(new Animated.Value(0)).current;
   const isCompletingRef = useRef(false);
   const [trackWidth, setTrackWidth] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
-  const maxTravel = Math.max(0, trackWidth - THUMB_SIZE - 16);
+  const maxTravel = Math.max(0, trackWidth - 64);
 
   const reset = useCallback(() => {
     Animated.spring(translateX, {
@@ -37,15 +35,15 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
 
     isCompletingRef.current = true;
     Animated.timing(translateX, {
-      duration: 140,
+      duration: 210,
       toValue: maxTravel,
       useNativeDriver: true,
     }).start(() => {
       onCount();
       Animated.spring(translateX, {
-        damping: 18,
-        delay: 110,
-        stiffness: 170,
+        damping: 20,
+        delay: 90,
+        stiffness: 190,
         toValue: 0,
         useNativeDriver: true,
       }).start(() => {
@@ -61,17 +59,22 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
         onMoveShouldSetPanResponder: (_, gesture) =>
           !disabled &&
           !isCompletingRef.current &&
-          gesture.dx > 4 &&
-          Math.abs(gesture.dx) > Math.abs(gesture.dy) * 0.8,
+          gesture.dx > 5 &&
+          Math.abs(gesture.dx) > Math.abs(gesture.dy),
         onPanResponderGrant: () => setIsSwiping(true),
         onPanResponderMove: (_, gesture) => {
+          if (isCompletingRef.current) return;
+
           translateX.setValue(Math.min(maxTravel, Math.max(0, gesture.dx)));
+
+          if (gesture.dx >= 14 || (gesture.dx >= 7 && gesture.vx > 0.3)) {
+            completeSwipe();
+          }
         },
         onPanResponderRelease: (_, gesture) => {
-          const passedDistance = gesture.dx >= Math.min(86, maxTravel * 0.38);
-          const quickIntentionalSwipe = gesture.dx > 34 && gesture.vx > 0.5;
+          if (isCompletingRef.current) return;
 
-          if (maxTravel > 0 && (passedDistance || quickIntentionalSwipe)) {
+          if (maxTravel > 0 && gesture.dx >= 10) {
             completeSwipe();
           } else {
             reset();
@@ -100,79 +103,81 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
         disabled && styles.disabled,
       ]}
     >
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.swipeGlow, { transform: [{ translateX }] }]}
+      />
       <View pointerEvents="none" style={styles.copy}>
         <Text
           adjustsFontSizeToFit
-          minimumFontScale={0.76}
+          minimumFontScale={0.72}
           numberOfLines={2}
           style={styles.naam}
         >
           {label}
         </Text>
         <Text style={styles.instruction}>
-          {disabled ? "Daily goal complete" : "Swipe right to count one Naam"}
+          {disabled ? "Daily goal complete" : "Small swipe right to count"}
         </Text>
       </View>
-      <ChevronsRight
-        color={disabled ? "#9BA49F" : "#789083"}
-        pointerEvents="none"
-        size={25}
-        style={styles.endIcon}
-      />
-      <Animated.View
-        pointerEvents="none"
-        style={[styles.thumb, { transform: [{ translateX }] }]}
-      >
-        <ChevronRight color="#FFFFFF" size={32} strokeWidth={2.5} />
-      </Animated.View>
+      <View pointerEvents="none" style={styles.endButton}>
+        <ChevronsRight
+          color={disabled ? "#9BA49F" : "#557568"}
+          size={25}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   track: {
-    backgroundColor: "rgba(255,255,255,0.72)",
-    borderColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderColor: "#DDE5E0",
     borderCurve: "continuous",
-    borderRadius: 28,
+    borderRadius: 20,
     borderWidth: 1,
-    height: 104,
+    height: 88,
     justifyContent: "center",
     overflow: "hidden",
     width: "100%",
   },
-  activeTrack: { backgroundColor: "rgba(255,255,255,0.9)", borderColor: "#D4E2DA" },
+  activeTrack: { backgroundColor: "#FFFFFF", borderColor: "#AFC5BA" },
   disabled: { opacity: 0.72 },
-  copy: { left: 92, position: "absolute", right: 50 },
+  copy: { left: 20, position: "absolute", right: 72, zIndex: 2 },
   naam: {
     color: "#29463D",
-    fontSize: 21,
+    fontSize: 23,
     fontWeight: "900",
-    lineHeight: 25,
-    textAlign: "center",
+    lineHeight: 24,
+    textAlign: "left",
   },
   instruction: {
-    color: "#65726C",
+    color: "#747D78",
     fontSize: 12,
     fontWeight: "700",
     marginTop: 3,
-    textAlign: "center",
+    textAlign: "left",
   },
-  endIcon: { position: "absolute", right: 14 },
-  thumb: {
+  endButton: {
     alignItems: "center",
-    backgroundColor: "#557568",
-    borderColor: "rgba(255,255,255,0.92)",
-    borderRadius: THUMB_SIZE / 2,
-    borderWidth: 2,
-    height: THUMB_SIZE,
+    backgroundColor: "#EDF3EF",
+    borderRadius: 16,
+    height: 48,
     justifyContent: "center",
-    left: 8,
     position: "absolute",
-    shadowColor: "#29463D",
-    shadowOffset: { height: 4, width: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    width: THUMB_SIZE,
+    right: 10,
+    width: 48,
+    zIndex: 2,
+  },
+  swipeGlow: {
+    backgroundColor: "rgba(85,117,104,0.16)",
+    borderColor: "rgba(85,117,104,0.22)",
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 76,
+    left: 6,
+    position: "absolute",
+    width: 58,
   },
 });
