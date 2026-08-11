@@ -28,7 +28,7 @@ export function SaiProgressReveal({ image, progress }: Props) {
       <Text style={styles.caption}>
         {safeProgress >= 1
           ? "Sai’s blessing is complete"
-          : `${Math.round(safeProgress * 100)}% of today’s blessing revealed`}
+          : `Tap image to count · ${Math.round(safeProgress * 100)}% revealed`}
       </Text>
     </View>
   );
@@ -57,4 +57,3 @@ const styles = StyleSheet.create({
   },
   caption: { color: "#58645E", fontSize: 10, fontWeight: "700", marginTop: 7 },
 });
-

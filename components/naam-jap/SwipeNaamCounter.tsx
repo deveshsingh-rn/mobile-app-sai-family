@@ -17,6 +17,7 @@ type Props = {
 export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
   const translateX = useRef(new Animated.Value(0)).current;
   const isCompletingRef = useRef(false);
+  const countedThisGestureRef = useRef(false);
   const [trackWidth, setTrackWidth] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
   const maxTravel = Math.max(0, trackWidth - 64);
@@ -31,25 +32,26 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
   }, [translateX]);
 
   const completeSwipe = useCallback(() => {
-    if (isCompletingRef.current) return;
+    if (isCompletingRef.current || countedThisGestureRef.current) return;
 
     isCompletingRef.current = true;
-    Animated.timing(translateX, {
-      duration: 210,
-      toValue: maxTravel,
-      useNativeDriver: true,
-    }).start(() => {
-      onCount();
-      Animated.spring(translateX, {
-        damping: 20,
-        delay: 90,
-        stiffness: 190,
+    countedThisGestureRef.current = true;
+    onCount();
+    translateX.stopAnimation();
+    Animated.sequence([
+      Animated.timing(translateX, {
+        duration: 45,
+        toValue: maxTravel,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateX, {
+        duration: 45,
         toValue: 0,
         useNativeDriver: true,
-      }).start(() => {
+      }),
+    ]).start(() => {
         isCompletingRef.current = false;
         setIsSwiping(false);
-      });
     });
   }, [maxTravel, onCount, translateX]);
 
@@ -61,7 +63,10 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
           !isCompletingRef.current &&
           gesture.dx > 5 &&
           Math.abs(gesture.dx) > Math.abs(gesture.dy),
-        onPanResponderGrant: () => setIsSwiping(true),
+        onPanResponderGrant: () => {
+          countedThisGestureRef.current = false;
+          setIsSwiping(true);
+        },
         onPanResponderMove: (_, gesture) => {
           if (isCompletingRef.current) return;
 
@@ -72,7 +77,7 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
           }
         },
         onPanResponderRelease: (_, gesture) => {
-          if (isCompletingRef.current) return;
+          if (countedThisGestureRef.current || isCompletingRef.current) return;
 
           if (maxTravel > 0 && gesture.dx >= 10) {
             completeSwipe();
@@ -80,7 +85,9 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
             reset();
           }
         },
-        onPanResponderTerminate: reset,
+        onPanResponderTerminate: () => {
+          if (!countedThisGestureRef.current) reset();
+        },
       }),
     [completeSwipe, disabled, maxTravel, reset, translateX]
   );
@@ -88,7 +95,7 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
   return (
     <View
       accessibilityActions={[{ label: `Count ${label}`, name: "activate" }]}
-      accessibilityHint="Swipe the Naam from left to right"
+      accessibilityHint="Swipe a little from left to right"
       accessibilityLabel={`Swipe to count ${label}`}
       accessibilityRole="adjustable"
       accessibilityState={{ disabled }}
@@ -117,7 +124,7 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
           {label}
         </Text>
         <Text style={styles.instruction}>
-          {disabled ? "Daily goal complete" : "Small swipe right to count"}
+          {disabled ? "Daily goal complete" : "Swipe right to count"}
         </Text>
       </View>
       <View pointerEvents="none" style={styles.endButton}>

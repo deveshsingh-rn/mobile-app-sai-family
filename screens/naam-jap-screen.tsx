@@ -631,7 +631,15 @@ export default function NaamJapScreen() {
               style={styles.tapFieldShell}
               transition={{ delay: 210, duration: 480, type: "timing" }}
             >
-              <View style={styles.tapField}>
+              <PressableScale
+                accessibilityHint="Tap Sai Baba’s image to count one Naam"
+                accessibilityLabel={`Tap image to count ${selectedName?.label || "Sai Ram"}`}
+                accessibilityRole="button"
+                disabled={goalReached}
+                onPress={countNaam}
+                scaleTo={0.99}
+                style={styles.tapField}
+              >
                 <LinearGradient
                   colors={["#f5f4d1", "#c5e2de", "#d2cceb"]}
                   end={{ x: 1, y: 1 }}
@@ -664,7 +672,7 @@ export default function NaamJapScreen() {
                     </Text>
                   </View>
                 ) : null}
-              </View>
+              </PressableScale>
             </MotiView>
 
             <View style={styles.secondaryActions}>
@@ -1062,9 +1070,6 @@ function NaamJapBottomSheet({
   setNameDraft: React.Dispatch<React.SetStateAction<string>>;
 }) {
   const insets = useSafeAreaInsets();
-  const holdActiveRef = useRef(false);
-  const holdTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stepTargetMalas = useCallback(
     (step: number) => {
@@ -1075,42 +1080,6 @@ function NaamJapBottomSheet({
     },
     [setData]
   );
-
-  const clearTargetHold = useCallback(() => {
-    if (holdTimeoutRef.current) {
-      clearTimeout(holdTimeoutRef.current);
-      holdTimeoutRef.current = null;
-    }
-    if (holdIntervalRef.current) {
-      clearInterval(holdIntervalRef.current);
-      holdIntervalRef.current = null;
-    }
-    holdActiveRef.current = false;
-  }, []);
-
-  const startTargetHold = useCallback(
-    (step: number) => {
-      holdTimeoutRef.current = setTimeout(() => {
-        holdActiveRef.current = true;
-        void Haptics.selectionAsync();
-        stepTargetMalas(step);
-        holdIntervalRef.current = setInterval(() => stepTargetMalas(step), 80);
-      }, 420);
-    },
-    [stepTargetMalas]
-  );
-
-  const tapTargetMalas = useCallback(
-    (step: number) => {
-      if (holdActiveRef.current) {
-        return;
-      }
-      stepTargetMalas(step);
-    },
-    [stepTargetMalas]
-  );
-
-  useEffect(() => clearTargetHold, [clearTargetHold]);
 
   return (
     <Modal
@@ -1220,9 +1189,7 @@ function NaamJapBottomSheet({
                 <PressableScale
                   accessibilityLabel="Reduce mala goal"
                   disabled={data.targetMalas <= 1}
-                  onPress={() => tapTargetMalas(-1)}
-                  onPressIn={() => startTargetHold(-1)}
-                  onPressOut={clearTargetHold}
+                  onPress={() => stepTargetMalas(-1)}
                   scaleTo={0.88}
                   style={[
                     styles.stepperButton,
@@ -1245,9 +1212,7 @@ function NaamJapBottomSheet({
                 <PressableScale
                   accessibilityLabel="Increase mala goal"
                   disabled={data.targetMalas >= 10000}
-                  onPress={() => tapTargetMalas(1)}
-                  onPressIn={() => startTargetHold(1)}
-                  onPressOut={clearTargetHold}
+                  onPress={() => stepTargetMalas(1)}
                   scaleTo={0.88}
                   style={[
                     styles.stepperButton,
