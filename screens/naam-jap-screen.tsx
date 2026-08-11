@@ -601,29 +601,7 @@ export default function NaamJapScreen() {
               />
             </MotiView>
 
-            <MotiView
-              animate={{ opacity: 1 }}
-              from={{ opacity: 0 }}
-              transition={{ delay: 180, duration: 420, type: "timing" }}
-            >
-              <View style={styles.goalRow}>
-                <Text style={styles.goalText}>
-                  {data.sessionCount.toLocaleString("en-IN")} / {targetNaamCount.toLocaleString("en-IN")} Naam
-                </Text>
-                <Text
-                  style={[styles.goalText, goalReached && styles.goalCompleteText]}
-                >
-                  {goalReached ? "Goal complete" : `${data.targetMalas} mala goal`}
-                </Text>
-              </View>
-              <View style={styles.goalTrack}>
-                <MotiView
-                  animate={{ width: `${targetProgress * 100}%` }}
-                  style={styles.goalProgress}
-                  transition={{ damping: 20, stiffness: 120, type: "spring" }}
-                />
-              </View>
-            </MotiView>
+            
 
             <MotiView
               animate={{ opacity: 1, scale: 1, translateY: 0 }}
@@ -1389,7 +1367,7 @@ function SmallAction({
       scaleTo={0.92}
       style={[styles.smallAction, disabled && styles.disabled]}
     >
-      <Icon color="#57534E" size={17} />
+      <Icon color="#9A3412" size={17} />
       <Text style={styles.smallActionText}>{label}</Text>
     </PressableScale>
   );
@@ -1458,8 +1436,8 @@ const styles = StyleSheet.create({
   homeContent: { paddingBottom: 132 },
   naamHeading: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.72)",
-    borderColor: "rgba(218,225,220,0.95)",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
     borderCurve: "continuous",
     borderRadius: 26,
     borderWidth: 1,
@@ -1475,13 +1453,13 @@ const styles = StyleSheet.create({
   },
   naamHeadingCopy: { flex: 1 },
   naamEyebrow: {
-    color: "#9A5A18",
+    color: "#9A3412",
     fontSize: 10,
     fontWeight: "900",
     letterSpacing: 0.6,
   },
   naamTitle: {
-    color: "#1C1917",
+    color: "#9A3412",
     fontSize: 34,
     fontWeight: "800",
     lineHeight: 41,
@@ -1489,7 +1467,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   naamHint: {
-    color: "#78716C",
+    color: "#A65B35",
     fontSize: 11,
     fontWeight: "600",
     marginTop: 4,
@@ -1521,8 +1499,8 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   malaStatCard: {
-    backgroundColor: "rgba(255,255,255,0.7)",
-    borderColor: "rgba(218,225,220,0.95)",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
     borderCurve: "continuous",
     borderRadius: 24,
     borderWidth: 1,
@@ -1535,7 +1513,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   malaStatLabel: {
-    color: "#78716C",
+    color: "#9A3412",
     fontSize: 12,
     fontWeight: "700",
   },
@@ -1545,10 +1523,10 @@ const styles = StyleSheet.create({
     gap: 5,
     marginTop: 7,
   },
-  malaStatValue: { color: "#1C1917", fontSize: 27, fontWeight: "900" },
-  malaStatUnit: { color: "#57534E", fontSize: 11, fontWeight: "700" },
+  malaStatValue: { color: "#9A3412", fontSize: 27, fontWeight: "900" },
+  malaStatUnit: { color: "#A65B35", fontSize: 11, fontWeight: "700" },
   malaStatCount: {
-    color: "#A8A29E",
+    color: "#B96A40",
     fontSize: 10,
     fontWeight: "600",
     marginTop: 3,
@@ -1714,8 +1692,8 @@ const styles = StyleSheet.create({
   secondaryActions: { flexDirection: "row", gap: 10, justifyContent: "center", marginTop: 14 },
   smallAction: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.58)",
-    borderColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
     borderCurve: "continuous",
     borderRadius: 15,
     borderWidth: 1,
@@ -1724,7 +1702,7 @@ const styles = StyleSheet.create({
     minHeight: 42,
     paddingHorizontal: 14,
   },
-  smallActionText: { color: "#57534E", fontSize: 13, fontWeight: "700" },
+  smallActionText: { color: "#9A3412", fontSize: 13, fontWeight: "700" },
   disabled: { opacity: 0.4 },
   pressed: { opacity: 0.7 },
   sectionIntro: { paddingHorizontal: 20, paddingTop: 24 ,marginBottom: 6},
@@ -1733,8 +1711,8 @@ const styles = StyleSheet.create({
   pageDescription: { color: "#78716C", fontSize: 14, lineHeight: 21, marginTop: 6 },
   metricGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, padding: 18 },
   metric: {
-    backgroundColor: "rgba(255,255,255,0.56)",
-    borderColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
     borderCurve: "continuous",
     borderRadius: 16,
     borderWidth: 1,
@@ -1745,11 +1723,11 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     width: "48%",
   },
-  metricValue: { color: "#292524", fontSize: 24, fontWeight: "900" },
-  metricLabel: { color: "#78716C", fontSize: 12, fontWeight: "700", marginTop: 5 },
+  metricValue: { color: "#9A3412", fontSize: 24, fontWeight: "900" },
+  metricLabel: { color: "#A65B35", fontSize: 12, fontWeight: "700", marginTop: 5 },
   chartSection: {
-    backgroundColor: "rgba(255,255,255,0.56)",
-    borderColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
     borderCurve: "continuous",
     borderRadius: 20,
     borderWidth: 1,
@@ -1761,8 +1739,8 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
   },
   cumulativeChartSection: { marginTop: 12 },
-  sectionTitle: { color: "#292524", fontSize: 17, fontWeight: "900" },
-  chartHelper: { color: "#78716C", fontSize: 11, marginTop: 4 },
+  sectionTitle: { color: "#9A3412", fontSize: 17, fontWeight: "900" },
+  chartHelper: { color: "#A65B35", fontSize: 11, marginTop: 4 },
   chart: { alignItems: "flex-end", flexDirection: "row", gap: 8, height: 180, marginTop: 18 },
   chartColumn: { alignItems: "center", flex: 1, height: "100%", justifyContent: "flex-end" },
   chartValue: { color: "#78716C", fontSize: 9, marginBottom: 4 },
@@ -1873,8 +1851,8 @@ const styles = StyleSheet.create({
   },
   outlineActionText: { color: "#9A3412", fontSize: 14, fontWeight: "800" },
   settingSection: {
-    backgroundColor: "rgba(255,255,255,0.56)",
-    borderColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
     borderCurve: "continuous",
     borderRadius: 20,
     borderWidth: 1,
@@ -1886,7 +1864,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 16,
   },
-  settingLabel: { color: "#292524", fontSize: 15, fontWeight: "800" },
+  settingLabel: { color: "#9A3412", fontSize: 15, fontWeight: "800" },
   targetControl: { flexDirection: "row", gap: 8, marginTop: 12 },
   targetOptionContainer: { flex: 1 },
   targetOption: {
@@ -1905,8 +1883,8 @@ const styles = StyleSheet.create({
   activeTargetText: { color: "#FFFFFF" },
   settingRow: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.56)",
-    borderColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
     borderCurve: "continuous",
     borderRadius: 20,
     borderWidth: 1,
@@ -1921,8 +1899,8 @@ const styles = StyleSheet.create({
   },
   settingIcon: { alignItems: "center", backgroundColor: "#FFF1DF", borderRadius: 12, height: 44, justifyContent: "center", width: 44 },
   settingCopy: { flex: 1, marginLeft: 12 },
-  settingTitle: { color: "#292524", fontSize: 15, fontWeight: "800" },
-  settingDescription: { color: "#78716C", fontSize: 12, lineHeight: 18, marginTop: 2 },
+  settingTitle: { color: "#9A3412", fontSize: 15, fontWeight: "800" },
+  settingDescription: { color: "#A65B35", fontSize: 12, lineHeight: 18, marginTop: 2 },
   dangerAction: {
     alignItems: "center",
     backgroundColor: "#FFF1F0",

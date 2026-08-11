@@ -129,7 +129,7 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
       </View>
       <View pointerEvents="none" style={styles.endButton}>
         <ChevronsRight
-          color={disabled ? "#9BA49F" : "#557568"}
+          color={disabled ? "#C8A58F" : "#9A3412"}
           size={25}
         />
       </View>
@@ -139,8 +139,8 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
 
 const styles = StyleSheet.create({
   track: {
-    backgroundColor: "rgba(255,255,255,0.96)",
-    borderColor: "#DDE5E0",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
     borderCurve: "continuous",
     borderRadius: 20,
     borderWidth: 1,
@@ -149,18 +149,18 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     width: "100%",
   },
-  activeTrack: { backgroundColor: "#FFFFFF", borderColor: "#AFC5BA" },
+  activeTrack: { backgroundColor: "#FFF8F1", borderColor: "#FDBA74" },
   disabled: { opacity: 0.72 },
   copy: { left: 20, position: "absolute", right: 72, zIndex: 2 },
   naam: {
-    color: "#29463D",
+    color: "#9A3412",
     fontSize: 23,
     fontWeight: "900",
     lineHeight: 24,
     textAlign: "left",
   },
   instruction: {
-    color: "#747D78",
+    color: "#A65B35",
     fontSize: 12,
     fontWeight: "700",
     marginTop: 3,
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   },
   endButton: {
     alignItems: "center",
-    backgroundColor: "#EDF3EF",
+    backgroundColor: "#FFE4C7",
     borderRadius: 16,
     height: 48,
     justifyContent: "center",
@@ -178,8 +178,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   swipeGlow: {
-    backgroundColor: "rgba(85,117,104,0.16)",
-    borderColor: "rgba(85,117,104,0.22)",
+    backgroundColor: "rgba(249,115,22,0.12)",
+    borderColor: "rgba(154,52,18,0.18)",
     borderRadius: 18,
     borderWidth: 1,
     height: 76,
