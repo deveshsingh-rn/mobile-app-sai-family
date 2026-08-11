@@ -564,7 +564,12 @@ export default function NaamJapScreen() {
                 <View style={styles.naamAccent} />
                 <View style={styles.naamHeadingCopy}>
                   <Text style={styles.naamEyebrow}>YOUR JAAP</Text>
-                  <Text numberOfLines={2} style={styles.naamTitle}>
+                  <Text
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.72}
+                    numberOfLines={2}
+                    style={styles.naamTitle}
+                  >
                     {selectedName?.label || "Sai Ram"}
                   </Text>
                   <Text style={styles.naamHint}>Tap to choose or create a Naam</Text>
@@ -1607,7 +1612,7 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     borderRadius: 28,
     borderWidth: 1,
-    height: 430,
+    height: 478,
     justifyContent: "space-between",
     overflow: "hidden",
     paddingBottom: 16,
@@ -1647,13 +1652,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-  swipeCounterWrap: { paddingHorizontal: 14, width: "100%" },
+  swipeCounterWrap: { paddingHorizontal: 12, width: "100%" },
   floatingNaam: {
     backgroundColor: "#536F63",
     borderColor: "rgba(255,255,255,0.64)",
     borderRadius: 999,
     borderWidth: 1,
-    bottom: 82,
+    bottom: 128,
     maxWidth: "86%",
     minHeight: 48,
     paddingHorizontal: 20,
