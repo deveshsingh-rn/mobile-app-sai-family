@@ -72,7 +72,7 @@ export function CategoryChips({
             ]}
           >
             <CategoryIcon
-              color={isActive ? "#FFFFFF" : "#A34A0A"}
+              color={isActive ? "#9A3412" : "#A34A0A"}
               size={17}
               strokeWidth={isActive ? 2.35 : 2}
             />
@@ -106,6 +106,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
+    color: "#44403C",
     gap: 7,
     height: 44,
     justifyContent: "center",
@@ -115,8 +116,8 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   activeChip: {
-    backgroundColor: "#292524",
-    borderColor: "#292524",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
     shadowColor: "#1C1917",
     shadowOffset: { height: 3, width: 0 },
     shadowOpacity: 0.16,
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   activeText: {
-    color: "#FFFFFF",
+    color: "#9A3412",
   },
   inactiveText: {
     color: "#44403C",

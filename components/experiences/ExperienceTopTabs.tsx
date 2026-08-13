@@ -123,7 +123,7 @@ function CreateProfileAction({
         </View>
       )}
       <View style={styles.createBadge}>
-        <Plus color="#FFFFFF" size={24} strokeWidth={3} />
+        <Plus color="#FFFFFF" size={12} strokeWidth={3.2} />
       </View>
     </Pressable>
   );
@@ -277,23 +277,20 @@ const styles = StyleSheet.create({
   },
   createButton: {
     alignItems: "center",
-    borderColor: "transparent",
+    borderColor: "#FFFFFF",
     borderRadius: 30,
-    borderWidth: 1.5,
+    borderWidth: 2,
     height: 60,
     justifyContent: "center",
     position: "relative",
     width: 60,
   },
   activeCreateButton: {
-    backgroundColor: "#FFF4E8",
-    borderColor: "#FED7AA",
+    borderColor: "#F97316",
   },
   createAvatar: {
     backgroundColor: "#F1E4CE",
-    borderColor: "#FFFFFF",
     borderRadius: 30,
-    borderWidth: 1.5,
     height: 60,
     width: 60,
   },
@@ -302,22 +299,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   createAvatarText: {
-    color: "#6B3F05",
-    fontSize: 13,
+    color: "#9A3412",
+    fontSize: 15,
     fontWeight: "900",
   },
   createBadge: {
     alignItems: "center",
-    backgroundColor: "#C2410C",
+    backgroundColor: "#F97316",
     borderColor: "#FFFCF7",
-    borderRadius: 10,
+    borderRadius: 9,
     borderWidth: 2,
-    bottom: 2,
-    height: 20,
+    bottom: -1,
+    height: 18,
     justifyContent: "center",
     position: "absolute",
-    right: 1,
-    width: 20,
+    right: -1,
+    shadowColor: "#9A3412",
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    width: 18,
   },
   activeIconButton: {
     backgroundColor: "#FFF4E8",
