@@ -525,6 +525,7 @@ export function ExperienceCard({
         <View style={styles.actions}>
           <Pressable
             accessibilityLabel={`${formatCount(item.likes)} likes`}
+            accessibilityState={{ selected: Boolean(item.likedByMe) }}
             hitSlop={6}
             onPress={(event) =>
               handleActionPress(
@@ -586,6 +587,7 @@ export function ExperienceCard({
 
           <Pressable
             accessibilityLabel={`${formatCount(item.reposts)} reposts`}
+            accessibilityState={{ selected: Boolean(item.repostedByMe) }}
             hitSlop={6}
             onPress={(event) =>
               handleActionPress(
@@ -623,6 +625,7 @@ export function ExperienceCard({
                 ? "Remove bookmark"
                 : "Bookmark experience"
             }
+            accessibilityState={{ selected: Boolean(item.bookmarkedByMe) }}
             hitSlop={6}
             onPress={(event) =>
               handleActionPress(
@@ -638,12 +641,12 @@ export function ExperienceCard({
             <Bookmark
               color={
                 item.bookmarkedByMe
-                  ? "#C2410C"
+                  ? "#374151"
                   : "#6B7280"
               }
               fill={
                 item.bookmarkedByMe
-                  ? "#C2410C"
+                  ? "#374151"
                   : "transparent"
               }
               size={18}

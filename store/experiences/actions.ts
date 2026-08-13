@@ -144,6 +144,7 @@ import {
   TOGGLE_BOOKMARK_REQUEST,
   TOGGLE_BOOKMARK_SUCCESS,
   TOGGLE_REPOST_REQUEST,
+  TOGGLE_REPOST_SUCCESS,
   CreateExperiencePayload,
   Experience,
   ExperienceCategory,
@@ -332,6 +333,20 @@ export const toggleRepostRequest = (
     payload: {
       experienceId,
       userId,
+    },
+  } as const);
+
+export const toggleRepostSuccess = (
+  experienceId: string,
+  reposts?: number,
+  repostedByMe?: boolean
+) =>
+  ({
+    type: TOGGLE_REPOST_SUCCESS,
+    payload: {
+      experienceId,
+      repostedByMe,
+      reposts,
     },
   } as const);
 

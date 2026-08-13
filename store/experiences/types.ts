@@ -184,6 +184,9 @@ export const TOGGLE_BOOKMARK_SUCCESS =
 export const TOGGLE_REPOST_REQUEST =
   "TOGGLE_REPOST_REQUEST";
 
+export const TOGGLE_REPOST_SUCCESS =
+  "TOGGLE_REPOST_SUCCESS";
+
 
 
   export const UPDATE_EXPERIENCE_REQUEST =
@@ -389,6 +392,15 @@ export interface ToggleRepostRequestAction {
   };
 }
 
+export interface ToggleRepostSuccessAction {
+  type: typeof TOGGLE_REPOST_SUCCESS;
+  payload: {
+    experienceId: string;
+    repostedByMe?: boolean;
+    reposts?: number;
+  };
+}
+
 export interface UpdateExperienceRequestAction {
   type: typeof UPDATE_EXPERIENCE_REQUEST;
 
@@ -465,6 +477,7 @@ export type ExperiencesActionTypes =
   | ToggleBookmarkRequestAction
   | ToggleBookmarkSuccessAction
   | ToggleRepostRequestAction
+  | ToggleRepostSuccessAction
   | ToggleLikeSuccessAction 
   | UpdateExperienceRequestAction
 | UpdateExperienceSuccessAction

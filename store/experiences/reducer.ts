@@ -26,6 +26,7 @@ import {
   ExperiencesState,
   TOGGLE_LIKE_SUCCESS,
   TOGGLE_BOOKMARK_SUCCESS,
+  TOGGLE_REPOST_SUCCESS,
   UPDATE_EXPERIENCE_SUCCESS,
   DELETE_EXPERIENCE_SUCCESS,
 } from "./types";
@@ -365,6 +366,37 @@ export const experiencesReducer = (
               }
             : state.detail,
       };
+
+    case TOGGLE_REPOST_SUCCESS: {
+      const updateRepost = (experience: ExperiencesState["feed"][number]) => {
+        if (experience.id !== action.payload.experienceId) {
+          return experience;
+        }
+
+        const repostedByMe =
+          action.payload.repostedByMe ?? !experience.repostedByMe;
+        const reposts =
+          action.payload.reposts ??
+          Math.max(
+            0,
+            (experience.reposts ?? 0) + (repostedByMe ? 1 : -1)
+          );
+
+        return {
+          ...experience,
+          repostedByMe,
+          reposts,
+        };
+      };
+
+      return {
+        ...state,
+        bookmarkedFeed: state.bookmarkedFeed.map(updateRepost),
+        feed: state.feed.map(updateRepost),
+        searchResults: state.searchResults.map(updateRepost),
+        detail: state.detail ? updateRepost(state.detail) : null,
+      };
+    }
 
     case UPDATE_EXPERIENCE_SUCCESS: {
       const updateItem = (experience: typeof action.payload) =>

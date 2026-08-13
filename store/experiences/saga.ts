@@ -38,6 +38,7 @@ import {
   searchExperiencesSuccess,
   toggleBookmarkSuccess,
   toggleLikeSuccess,
+  toggleRepostSuccess,
   updateExperienceFailure,
   updateExperienceSuccess,
 } from "./actions";
@@ -527,12 +528,25 @@ function* handleToggleRepost(
   action: any
 ): Generator<any, void, any> {
   try {
-    yield call(
+    const response = yield call(
       apiToggleRepost,
       action.payload.experienceId
     );
+
+    yield put(
+      toggleRepostSuccess(
+        action.payload.experienceId,
+        response.reposts ??
+          response.experience?.reposts ??
+          response._count?.reposts,
+        response.repostedByMe ??
+          response.reposted ??
+          response.isReposted ??
+          response.experience?.repostedByMe
+      )
+    );
   } catch {
-    // Keep optimistic UI work for the next pass.
+    // Keep the current UI when the backend rejects the request.
   }
 }
 
