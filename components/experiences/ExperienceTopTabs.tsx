@@ -123,7 +123,7 @@ function CreateProfileAction({
         </View>
       )}
       <View style={styles.createBadge}>
-        <Plus color="#FFFFFF" size={11} strokeWidth={3} />
+        <Plus color="#FFFFFF" size={24} strokeWidth={3} />
       </View>
     </Pressable>
   );
@@ -278,12 +278,12 @@ const styles = StyleSheet.create({
   createButton: {
     alignItems: "center",
     borderColor: "transparent",
-    borderRadius: 14,
+    borderRadius: 30,
     borderWidth: 1.5,
-    height: 44,
+    height: 60,
     justifyContent: "center",
     position: "relative",
-    width: 44,
+    width: 60,
   },
   activeCreateButton: {
     backgroundColor: "#FFF4E8",
@@ -292,10 +292,10 @@ const styles = StyleSheet.create({
   createAvatar: {
     backgroundColor: "#F1E4CE",
     borderColor: "#FFFFFF",
-    borderRadius: 17,
+    borderRadius: 30,
     borderWidth: 1.5,
-    height: 34,
-    width: 34,
+    height: 60,
+    width: 60,
   },
   createAvatarFallback: {
     alignItems: "center",
@@ -310,14 +310,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#C2410C",
     borderColor: "#FFFCF7",
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 2,
     bottom: 2,
-    height: 17,
+    height: 20,
     justifyContent: "center",
     position: "absolute",
     right: 1,
-    width: 17,
+    width: 20,
   },
   activeIconButton: {
     backgroundColor: "#FFF4E8",

@@ -920,7 +920,7 @@ const styles = StyleSheet.create({
 
   primaryAction: {
     alignItems: "center",
-    backgroundColor: "#23201D",
+    backgroundColor: "#FFF4E8",
     borderRadius: 14,
     height: 44,
     justifyContent: "center",
