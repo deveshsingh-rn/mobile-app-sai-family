@@ -21,7 +21,17 @@ export default function CommentItem({
 
   const profileImageUrl =
     item.author?.profileImageUrl ||
+    item.author?.profileImage?.uri ||
+    item.author?.profile?.profileImageUrl ||
     item.authorProfileImageUrl;
+
+  const createdAt = new Date(item.createdAt);
+  const timeLabel = Number.isNaN(createdAt.getTime())
+    ? ""
+    : new Intl.DateTimeFormat("en-IN", {
+        day: "numeric",
+        month: "short",
+      }).format(createdAt);
 
   return (
     <View style={styles.container}>
@@ -41,21 +51,15 @@ export default function CommentItem({
       )}
 
       <View style={styles.right}>
-        <View style={styles.bubble}>
+        <View style={styles.commentRow}>
           <Text style={styles.name}>
             {authorName}
           </Text>
-
           <Text style={styles.comment}>
             {item.content}
           </Text>
         </View>
-
-        <Text style={styles.time}>
-          {new Date(
-            item.createdAt
-          ).toLocaleDateString()}
-        </Text>
+        {!!timeLabel && <Text style={styles.time}>{timeLabel}</Text>}
       </View>
     </View>
   );
@@ -66,14 +70,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
 
     paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingVertical: 9,
   },
 
   avatar: {
-    width: 42,
-    height: 42,
-
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
 
     backgroundColor: "#f1ddba",
   },
@@ -81,10 +84,10 @@ const styles = StyleSheet.create({
   avatarFallback: {
     alignItems: "center",
     backgroundColor: "#f1ddba",
-    borderRadius: 21,
-    height: 42,
+    borderRadius: 20,
+    height: 40,
     justifyContent: "center",
-    width: 42,
+    width: 40,
   },
 
   avatarText: {
@@ -99,38 +102,27 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
 
-  bubble: {
-    borderRadius: 18,
-
-    padding: 14,
-
-    backgroundColor:
-      "rgba(255,249,241,0.96)",
-  },
+  commentRow: { flexDirection: "row", flexWrap: "wrap" },
 
   name: {
-    color: "#2f1a02",
-
+    color: "#111827",
     fontWeight: "800",
     fontSize: 14,
+    lineHeight: 20,
+    marginRight: 6,
   },
 
   comment: {
-    marginTop: 6,
-
-    color: "#51350d",
-
-    fontSize: 15,
-    lineHeight: 24,
+    color: "#374151",
+    flexShrink: 1,
+    fontSize: 14,
+    lineHeight: 20,
   },
 
   time: {
-    marginTop: 6,
-    marginLeft: 4,
-
-    color: "#aa814a",
-
-    fontSize: 12,
+    color: "#9CA3AF",
+    fontSize: 11,
     fontWeight: "600",
+    marginTop: 4,
   },
 });

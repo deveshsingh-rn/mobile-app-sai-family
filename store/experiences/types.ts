@@ -46,7 +46,11 @@ export interface ExperienceComment {
     id: string;
     name: string;
     profileImageUrl?: string | null;
+    profileImage?: { uri?: string | null } | null;
+    profile?: { profileImageUrl?: string | null } | null;
   };
+  authorName?: string | null;
+  authorProfileImageUrl?: string | null;
 }
 
 export type ExperienceUploadStatus = {

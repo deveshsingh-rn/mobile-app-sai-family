@@ -187,6 +187,7 @@ type Props = {
   onDelete?: () => void;
   onEdit?: () => void;
   onLike?: () => void;
+  onComment?: () => void;
   onRepost?: () => void;
 };
 
@@ -199,6 +200,7 @@ export function ExperienceCard({
   onDelete,
   onEdit,
   onLike,
+  onComment,
   onRepost,
 }: Props) {
   const router = useRouter();
@@ -565,7 +567,7 @@ export function ExperienceCard({
             onPress={(event) =>
               handleActionPress(
                 event,
-                handleOpenDetail
+                onComment || handleOpenDetail
               )
             }
             style={({ pressed }) => [

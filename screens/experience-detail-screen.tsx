@@ -2,11 +2,14 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useState,
 } from "react";
 
 import {
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -19,7 +22,8 @@ import {
   useLocalSearchParams,
 } from "expo-router";
 
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, MessageCircle, X } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   ExperienceCard,
@@ -49,6 +53,8 @@ import {
 } from "@/store/hooks";
 
 export default function ExperienceDetailScreen() {
+  const insets = useSafeAreaInsets();
+  const [commentsVisible, setCommentsVisible] = useState(false);
   const { id } = useLocalSearchParams<{
     id?: string;
   }>();
@@ -79,6 +85,17 @@ export default function ExperienceDetailScreen() {
 
   const userId =
     account?.id || account?.authorId;
+  const accountName = account?.name || "You";
+  const accountProfileImageUrl =
+    account?.profileImage?.uri ||
+    account?.profileImageUrl ||
+    account?.profile?.profileImageUrl ||
+    null;
+
+  const closeComments = useCallback(() => {
+    Keyboard.dismiss();
+    setCommentsVisible(false);
+  }, []);
 
   useEffect(() => {
     if (experienceId) {
@@ -174,20 +191,28 @@ export default function ExperienceDetailScreen() {
           disableNavigation
           onBookmark={handleBookmark}
           onLike={handleLike}
+          onComment={() => setCommentsVisible(true)}
           onRepost={handleRepost}
           onEdit={handleEdit}
           onDelete={handleDelete}
         />
 
-        <View style={styles.commentHeader}>
-          <Text style={styles.commentTitle}>
-            Comments
+        <Pressable
+          accessibilityLabel={`Open ${comments.length} comments`}
+          accessibilityRole="button"
+          onPress={() => setCommentsVisible(true)}
+          style={({ pressed }) => [
+            styles.openCommentsButton,
+            pressed && styles.openCommentsPressed,
+          ]}
+        >
+          <MessageCircle color="#6B7280" size={18} />
+          <Text style={styles.openCommentsText}>
+            {comments.length
+              ? `View all ${comments.length} comments`
+              : "Be the first to comment"}
           </Text>
-
-          <Text style={styles.commentCount}>
-            {comments.length}
-          </Text>
-        </View>
+        </Pressable>
       </View>
     );
   }, [
@@ -216,14 +241,7 @@ export default function ExperienceDetailScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={
-        Platform.OS === "ios"
-          ? "padding"
-          : undefined
-      }
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <View style={styles.topBar}>
         <Pressable
           accessibilityLabel="Go back"
@@ -252,24 +270,11 @@ export default function ExperienceDetailScreen() {
         contentContainerStyle={
           styles.content
         }
-        data={comments}
-        keyExtractor={(item) => item.id}
+        data={[]}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={
-          <View style={styles.noCommentsBox}>
-            <Text style={styles.noCommentsTitle}>
-              No comments yet
-            </Text>
-            <Text style={styles.noCommentsText}>
-              Be the first devotee to reply.
-            </Text>
-          </View>
-        }
         ListHeaderComponent={header}
-        renderItem={({ item }) => (
-          <CommentItem item={item} />
-        )}
+        renderItem={null}
         showsVerticalScrollIndicator={false}
       />
 
@@ -279,11 +284,80 @@ export default function ExperienceDetailScreen() {
         </Text>
       )}
 
-      <CommentInput
-        loading={addingComment}
-        onSubmit={handleComment}
-      />
-    </KeyboardAvoidingView>
+      <Modal
+        animationType="slide"
+        onRequestClose={closeComments}
+        presentationStyle="overFullScreen"
+        transparent
+        visible={commentsVisible}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.modalRoot}
+        >
+          <Pressable
+            accessibilityLabel="Close comments"
+            onPress={closeComments}
+            style={styles.modalBackdrop}
+          />
+          <View
+            style={[
+              styles.commentSheet,
+              { paddingBottom: Math.max(insets.bottom, 8) },
+            ]}
+          >
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeader}>
+              <View style={styles.sheetTitleRow}>
+                <Text style={styles.sheetTitle}>Comments</Text>
+                <Text style={styles.sheetCount}>{comments.length}</Text>
+              </View>
+              <Pressable
+                accessibilityLabel="Close comments"
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={closeComments}
+                style={styles.closeButton}
+              >
+                <X color="#374151" size={21} />
+              </Pressable>
+            </View>
+
+            <FlatList
+              contentContainerStyle={[
+                styles.commentList,
+                comments.length === 0 && styles.emptyCommentList,
+              ]}
+              data={comments}
+              keyExtractor={(item) => item.id}
+              keyboardDismissMode="interactive"
+              keyboardShouldPersistTaps="handled"
+              ListEmptyComponent={
+                <View style={styles.noCommentsBox}>
+                  <View style={styles.emptyCommentIcon}>
+                    <MessageCircle color="#F97316" size={25} />
+                  </View>
+                  <Text style={styles.noCommentsTitle}>No comments yet</Text>
+                  <Text style={styles.noCommentsText}>
+                    Start a kind conversation with this devotee.
+                  </Text>
+                </View>
+              }
+              renderItem={({ item }) => <CommentItem item={item} />}
+              showsVerticalScrollIndicator={false}
+            />
+
+            {!!error && <Text style={styles.errorText}>{error}</Text>}
+            <CommentInput
+              authorName={accountName}
+              loading={addingComment}
+              onSubmit={handleComment}
+              profileImageUrl={accountProfileImageUrl}
+            />
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </View>
   );
 }
 
@@ -327,35 +401,102 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    paddingBottom: 24,
+    paddingBottom: 40,
     paddingTop: 16,
   },
 
-  commentHeader: {
+  openCommentsButton: {
     alignItems: "center",
+    borderTopColor: "#E5E7EB",
+    borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
-    marginTop: 2,
-    paddingBottom: 10,
+    marginHorizontal: 16,
+    minHeight: 50,
     paddingHorizontal: 18,
   },
-
-  commentTitle: {
-    color: "#1F2937",
-    fontSize: 18,
-    fontWeight: "900",
-  },
-
-  commentCount: {
-    color: "#F97316",
+  openCommentsPressed: { opacity: 0.58 },
+  openCommentsText: {
+    color: "#6B7280",
     fontSize: 14,
-    fontWeight: "700",
-    marginLeft: 8,
+    fontWeight: "600",
+    marginLeft: 9,
+  },
+  modalRoot: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(17,24,39,0.44)",
+  },
+  commentSheet: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: "78%",
+    overflow: "hidden",
+    shadowColor: "#111827",
+    shadowOffset: { height: -8, width: 0 },
+    shadowOpacity: 0.16,
+    shadowRadius: 24,
+  },
+  sheetHandle: {
+    alignSelf: "center",
+    backgroundColor: "#D1D5DB",
+    borderRadius: 3,
+    height: 5,
+    marginTop: 8,
+    width: 42,
+  },
+  sheetHeader: {
+    alignItems: "center",
+    borderBottomColor: "#E5E7EB",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    minHeight: 56,
+    paddingHorizontal: 16,
+  },
+  sheetTitleRow: { alignItems: "center", flexDirection: "row" },
+  sheetTitle: { color: "#111827", fontSize: 17, fontWeight: "900" },
+  sheetCount: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "800",
+    marginLeft: 7,
+  },
+  closeButton: {
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 16,
+    height: 34,
+    justifyContent: "center",
+    width: 34,
+  },
+  commentList: {
+    paddingBottom: 14,
+    paddingTop: 8,
+  },
+  emptyCommentList: {
+    flexGrow: 1,
+    justifyContent: "center",
   },
 
   noCommentsBox: {
     alignItems: "center",
     paddingHorizontal: 28,
-    paddingVertical: 42,
+    paddingVertical: 36,
+  },
+  emptyCommentIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
+    borderRadius: 24,
+    borderWidth: 1,
+    height: 48,
+    justifyContent: "center",
+    marginBottom: 13,
+    width: 48,
   },
 
   noCommentsTitle: {

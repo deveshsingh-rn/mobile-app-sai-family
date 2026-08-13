@@ -96,8 +96,28 @@ function flattenExperience(exp: any) {
 }
 
 function normalizeComment(comment: any) {
+  const author = comment.author || comment.user || comment.devotee;
+
   return {
     ...comment,
+    author: author
+      ? {
+          ...author,
+          name: author.name || author.fullName || "Devotee",
+          profileImageUrl:
+            author.profileImageUrl ||
+            author.profileImage?.uri ||
+            author.profile?.profileImageUrl ||
+            null,
+        }
+      : undefined,
+    authorName: comment.authorName || author?.name || author?.fullName || null,
+    authorProfileImageUrl:
+      comment.authorProfileImageUrl ||
+      author?.profileImageUrl ||
+      author?.profileImage?.uri ||
+      author?.profile?.profileImageUrl ||
+      null,
   };
 }
 
