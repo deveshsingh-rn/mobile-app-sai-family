@@ -36,7 +36,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
 
     // auto-dismiss after the welcome moment
     if (onFinish) {
-      const t = setTimeout(onFinish, 10500);
+      const t = setTimeout(onFinish, 3500);
       return () => {
         clearTimeout(t);
       };
@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 26,
     paddingVertical: 24,
     width: "100%",
-    borderWidth: 1,
-    borderColor: "red",
+    // borderWidth: 1,
+    // borderColor: "red",
   },
   splashWelcomeImage: {
     height: "100%",
