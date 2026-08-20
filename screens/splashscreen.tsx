@@ -4,7 +4,9 @@ import {
   StyleSheet,
   Animated,
   Image,
+  Text,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const SAI_BABA_WELCOME_IMAGE =
   require("../assets/images/saijii.jpg");
@@ -15,12 +17,12 @@ type SaiBabaSplashScreenProps = {
 
 // ── Main Splash Screen ───────────────────────────────────────────────────────
 export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenProps) {
-  const imageOpacity = useRef(new Animated.Value(0)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
   const imageScale = useRef(new Animated.Value(0.96)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(imageOpacity, {
+      Animated.timing(contentOpacity, {
         toValue: 1,
         duration: 700,
         useNativeDriver: true,
@@ -41,24 +43,31 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
     }
 
     return undefined;
-  }, [onFinish, imageOpacity, imageScale]);
+  }, [onFinish, contentOpacity, imageScale]);
 
-  return (<SaiBabaSplashScreenContent imageOpacity={imageOpacity} imageScale={imageScale} />);
+  return (<SaiBabaSplashScreenContent contentOpacity={contentOpacity} imageScale={imageScale} />);
 }
 
 type SaiBabaSplashScreenContentProps = {
-  imageOpacity: Animated.Value;
+  contentOpacity: Animated.Value;
   imageScale: Animated.Value;
 };
 
-function SaiBabaSplashScreenContent({ imageOpacity, imageScale }: SaiBabaSplashScreenContentProps) {
+function SaiBabaSplashScreenContent({ contentOpacity, imageScale }: SaiBabaSplashScreenContentProps) {
   return (
-    <View style={styles.splashWelcomeRoot}>
+    <SafeAreaView style={styles.splashWelcomeRoot}>
+      <Animated.View style={[styles.splashWelcomeHeader, { opacity: contentOpacity }]}>
+        <View style={styles.splashWelcomeKicker}>
+          <Text style={styles.splashWelcomeKickerText}>OM SAI RAM</Text>
+        </View>
+        <Text style={styles.splashWelcomeTitle}>Sai Ki Family</Text>
+      </Animated.View>
+
       <Animated.View
         style={[
           styles.splashWelcomeImageWrapper,
           {
-            opacity: imageOpacity,
+            opacity: contentOpacity,
             transform: [{ scale: imageScale }],
           },
         ]}
@@ -71,26 +80,81 @@ function SaiBabaSplashScreenContent({ imageOpacity, imageScale }: SaiBabaSplashS
           style={styles.splashWelcomeImage}
         />
       </Animated.View>
-    </View>
+
+      <Animated.View style={[styles.splashWelcomeFooter, { opacity: contentOpacity }]}>
+        <Text style={styles.splashWelcomeSubtitle}>Welcome Home.</Text>
+        <Text style={styles.splashWelcomeTagline}>
+          The Global Family of Sai Devotees
+        </Text>
+      </Animated.View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   splashWelcomeRoot: {
-    alignItems: "center",
     backgroundColor: "#FFFFFF",
     flex: 1,
-    justifyContent: "center",
+  },
+  splashWelcomeHeader: {
+    alignItems: "center",
+    paddingHorizontal: 26,
+    paddingTop: 28,
+  },
+  splashWelcomeKicker: {
+    alignItems: "center",
+    backgroundColor: "#FFF1DF",
+    borderColor: "#FDE3C4",
+    borderRadius: 100,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  splashWelcomeKickerText: {
+    color: "#9A3412",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 2.6,
+  },
+  splashWelcomeTitle: {
+    color: "#9A3412",
+    fontFamily: "Georgia",
+    fontSize: 40,
+    fontWeight: "700",
+    lineHeight: 47,
+    marginTop: 16,
+    textAlign: "center",
   },
   splashWelcomeImageWrapper: {
     alignItems: "center",
+    flex: 1,
     justifyContent: "center",
     paddingHorizontal: 26,
+    paddingVertical: 24,
     width: "100%",
   },
   splashWelcomeImage: {
-    height: undefined,
+    height: "100%",
     width: "100%",
-    aspectRatio: 1,
+  },
+  splashWelcomeFooter: {
+    alignItems: "center",
+    paddingBottom: 36,
+    paddingHorizontal: 26,
+  },
+  splashWelcomeSubtitle: {
+    color: "#9A3412",
+    fontSize: 24,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  splashWelcomeTagline: {
+    color: "#78716C",
+    fontSize: 16,
+    fontWeight: "600",
+    lineHeight: 22,
+    marginTop: 8,
+    maxWidth: 330,
+    textAlign: "center",
   },
 });
