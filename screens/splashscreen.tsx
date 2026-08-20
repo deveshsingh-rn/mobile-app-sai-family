@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const SAI_BABA_WELCOME_IMAGE =
-  require("../assets/images/saijii.jpg");
+  require("../assets/images/babasai.png");
 
 type SaiBabaSplashScreenProps = {
   onFinish?: () => void;
@@ -36,7 +36,7 @@ export default function SaiBabaSplashScreen({ onFinish }: SaiBabaSplashScreenPro
 
     // auto-dismiss after the welcome moment
     if (onFinish) {
-      const t = setTimeout(onFinish, 3500);
+      const t = setTimeout(onFinish, 10500);
       return () => {
         clearTimeout(t);
       };
@@ -62,6 +62,12 @@ function SaiBabaSplashScreenContent({ contentOpacity, imageScale }: SaiBabaSplas
         </View>
         <Text style={styles.splashWelcomeTitle}>Sai Ki Family</Text>
       </Animated.View>
+      <Animated.View style={[styles.splashWelcomeFooter, { opacity: contentOpacity }]}>
+        <Text style={styles.splashWelcomeSubtitle}>Welcome Home.</Text>
+        <Text style={styles.splashWelcomeTagline}>
+          The Global Family of Sai Devotees
+        </Text>
+      </Animated.View>
 
       <Animated.View
         style={[
@@ -81,12 +87,7 @@ function SaiBabaSplashScreenContent({ contentOpacity, imageScale }: SaiBabaSplas
         />
       </Animated.View>
 
-      <Animated.View style={[styles.splashWelcomeFooter, { opacity: contentOpacity }]}>
-        <Text style={styles.splashWelcomeSubtitle}>Welcome Home.</Text>
-        <Text style={styles.splashWelcomeTagline}>
-          The Global Family of Sai Devotees
-        </Text>
-      </Animated.View>
+      
     </SafeAreaView>
   );
 }
@@ -132,6 +133,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 26,
     paddingVertical: 24,
     width: "100%",
+    borderWidth: 1,
+    borderColor: "red",
   },
   splashWelcomeImage: {
     height: "100%",
@@ -149,7 +152,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   splashWelcomeTagline: {
-    color: "#78716C",
+    color: "#9A3412",
     fontSize: 16,
     fontWeight: "600",
     lineHeight: 22,
