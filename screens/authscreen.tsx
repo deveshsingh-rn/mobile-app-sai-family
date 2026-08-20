@@ -765,7 +765,7 @@ export default function AuthScreen({
             <View style={styles.heroImageInner}>
               <Image
                 resizeMode="contain"
-                source={require("../assets/images/saibaba1.png")}
+                source={require("../assets/images/babasai.png")}
                 style={styles.heroImage}
               />
             </View>
