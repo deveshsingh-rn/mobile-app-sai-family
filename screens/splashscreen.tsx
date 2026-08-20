@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   },
   splashWelcomeFooter: {
     alignItems: "center",
-    paddingBottom: 36,
+    // paddingBottom: 36,
     paddingHorizontal: 26,
   },
   splashWelcomeSubtitle: {
