@@ -601,7 +601,7 @@ export default function HomeScreen() {
                 />
 
                 <View style={styles.askSaiTopRow}>
-                  <View>
+                  {/* <View>
                     <Text style={styles.askSaiEyebrow}>
                       OM SAI RAM
                     </Text>
@@ -611,19 +611,18 @@ export default function HomeScreen() {
                   </View>
 
                   <View style={styles.headerActions}>
-                    {/* Reserved for future header actions. */}
-                  </View>
+                   
+                  </View> */}
                 </View>
 
                 <View style={styles.askSaiBottomRow}>
                   <View style={styles.askSaiCopy}>
                     <Text style={styles.askSaiPrompt}>
-                      Speak your question,
-                      receive peaceful guidance.
+                    Speak or Write, Seek Guidance from Teachings in Shree Sai Satcharitra
                     </Text>
-                    <Text style={styles.askSaiMeta}>
+                    {/* <Text style={styles.askSaiMeta}>
                       Voice assistant for devotees
-                    </Text>
+                    </Text> */}
                   </View>
                   <View style={styles.askSaiMicButton}>
                     <Type
@@ -811,7 +810,7 @@ const styles = StyleSheet.create({
 
   askSaiPrompt: {
     color: "#FFF7E1",
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: "700",
     lineHeight: 19,
     maxHeight: 240,
