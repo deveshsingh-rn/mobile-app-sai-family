@@ -40,7 +40,8 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 };
 
 const CATEGORY_TAGLINES: Record<string, string> = {
-  miracles: "Share Sai\u2019s Blessings, Receive His Grace",
+  miracles: "Share How Sai Changed Your Life, Receive Sai Blessings",
+  prayers: "Share Your Prayers with Sai Family, Receive Sai Blessings",
 };
 
 export function CategoryChips({
@@ -100,7 +101,7 @@ export function CategoryChips({
       {showTagline && tagline ? (
         <View style={styles.taglineRow}>
           <Sparkles color="#C2410C" size={13} strokeWidth={2.3} />
-          <Text numberOfLines={1} style={styles.taglineText}>
+          <Text numberOfLines={2} style={styles.taglineText}>
             {tagline}
           </Text>
         </View>
@@ -176,8 +177,8 @@ const styles = StyleSheet.create({
   taglineText: {
     color: "#9A3412",
     flexShrink: 1,
-    fontSize: 12.5,
-    fontWeight: "700",
+    fontSize: 11,
+    fontWeight: "600",
     letterSpacing: 0.1,
   },
 });
