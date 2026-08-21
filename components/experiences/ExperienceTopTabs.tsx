@@ -32,20 +32,20 @@ type ExperienceNavigationAction = {
   label: string;
 };
 
+const CREATE_POST_ACTION: ExperienceNavigationAction = {
+  href: "/(tabs)/experiences/post",
+  Icon: Plus,
+  key: "post",
+  label: "Create a post",
+};
+
 const EXPERIENCE_ACTIONS: ExperienceNavigationAction[] = [
-  {
-    href: "/(tabs)/experiences/post",
-    Icon: Plus,
-    key: "post",
-    label: "Create a post",
-  },
   {
     href: "/(tabs)/experiences/search",
     Icon: Search,
     key: "search",
     label: "Search experiences",
-  }
-  ,
+  },
   {
     href: "/(tabs)/experiences/bookmarks",
     Icon: Bookmark,
@@ -165,59 +165,56 @@ export function ExperienceTopTabs({
 
   return (
     <View style={styles.wrapper}>
-      {showBackButton ? (
+      <View style={styles.leadingGroup}>
+        {showBackButton ? (
+          <Pressable
+            accessibilityLabel="Back to experiences"
+            accessibilityRole="button"
+            hitSlop={6}
+            onPress={handleBack}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressedIconButton,
+            ]}
+          >
+            <ArrowLeft color="#292524" size={24} strokeWidth={2.2} />
+          </Pressable>
+        ) : null}
+
+        <CreateProfileAction
+          active={activeTab === CREATE_POST_ACTION.key}
+          name={account?.name}
+          onPress={() => handleActionPress(CREATE_POST_ACTION)}
+          profileImageUrl={profileImageUrl}
+        />
+      </View>
+
+      <View style={styles.actions}>
         <Pressable
-          accessibilityLabel="Back to experiences"
+          accessibilityLabel="Open Sai Naam Jap counter"
           accessibilityRole="button"
-          hitSlop={6}
-          onPress={handleBack}
+          hitSlop={4}
+          onPress={() => router.push("/naam-jap" as never)}
           style={({ pressed }) => [
-            styles.backButton,
+            styles.naamJapButton,
             pressed && styles.pressedIconButton,
           ]}
         >
-          <ArrowLeft color="#292524" size={24} strokeWidth={2.2} />
+          <Sparkles color="#9A3412" size={14} strokeWidth={2.4} />
+          <Text numberOfLines={1} style={styles.naamJapText}>
+            Naam Jap
+          </Text>
         </Pressable>
-      ) : (
-        <View style={styles.backButtonPlaceholder} />
-      )}
 
-      <View style={styles.actions}>
-        {EXPERIENCE_ACTIONS.map((action) =>
-          action.key === "post" ? (
-            <React.Fragment key={action.key}>
-              <CreateProfileAction
-                active={activeTab === action.key}
-                name={account?.name}
-                onPress={() => handleActionPress(action)}
-                profileImageUrl={profileImageUrl}
-              />
-              <Pressable
-                accessibilityLabel="Open Sai Naam Jap counter"
-                accessibilityRole="button"
-                hitSlop={4}
-                onPress={() => router.push("/naam-jap" as never)}
-                style={({ pressed }) => [
-                  styles.naamJapButton,
-                  pressed && styles.pressedIconButton,
-                ]}
-              >
-                <Sparkles color="#9A3412" size={14} strokeWidth={2.4} />
-                <Text numberOfLines={1} style={styles.naamJapText}>
-                  Naam Jap
-                </Text>
-              </Pressable>
-            </React.Fragment>
-          ) : (
-            <ToolbarAction
-              active={activeTab === action.key}
-              Icon={action.Icon}
-              key={action.key}
-              label={action.label}
-              onPress={() => handleActionPress(action)}
-            />
-          )
-        )}
+        {EXPERIENCE_ACTIONS.map((action) => (
+          <ToolbarAction
+            active={activeTab === action.key}
+            Icon={action.Icon}
+            key={action.key}
+            label={action.label}
+            onPress={() => handleActionPress(action)}
+          />
+        ))}
       </View>
     </View>
   );
@@ -239,15 +236,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 4,
   },
+  leadingGroup: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+  },
   backButton: {
     alignItems: "center",
     borderRadius: 12,
     height: 44,
     justifyContent: "center",
-    width: 44,
-  },
-  backButtonPlaceholder: {
-    height: 44,
     width: 44,
   },
   iconButton: {
@@ -266,7 +264,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: "row",
     gap: 4,
-    height: 36,
+    height: 46,
     justifyContent: "center",
     paddingHorizontal: 9,
   },

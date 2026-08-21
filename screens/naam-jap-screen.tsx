@@ -508,7 +508,7 @@ export default function NaamJapScreen() {
         >
           <ArrowLeft color="#292524" size={24} />
         </PressableScale>
-        <Text style={styles.headerTitle}>Naam Jap</Text>
+        <Text style={styles.headerTitle}>Naam Jap jjj</Text>
         <View style={styles.headerActions}>
           <PressableScale
             accessibilityLabel="Naam Jap options"
