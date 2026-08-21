@@ -26,6 +26,7 @@ type CategoryChipsProps = {
   activeValue?: string;
   categories: ExperienceCategory[];
   onChange?: (value: string) => void;
+  showTagline?: boolean;
 };
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -38,55 +39,73 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   prayers: HandHeart,
 };
 
+const CATEGORY_TAGLINES: Record<string, string> = {
+  miracles: "Share Sai\u2019s Blessings, Receive His Grace",
+};
+
 export function CategoryChips({
   activeValue,
   categories,
   onChange,
+  showTagline = false,
 }: CategoryChipsProps) {
-  return (
-    <ScrollView
-      accessibilityRole="tablist"
-      alwaysBounceHorizontal={false}
-      bounces={false}
-      contentContainerStyle={styles.container}
-      horizontal
-      keyboardShouldPersistTaps="handled"
-      showsHorizontalScrollIndicator={false}
-    >
-      {categories.map((category) => {
-        const isActive = activeValue === category.value;
-        const CategoryIcon = CATEGORY_ICONS[category.value] ?? Sparkles;
+  const tagline = activeValue ? CATEGORY_TAGLINES[activeValue] : undefined;
 
-        return (
-          <Pressable
-            accessibilityLabel={`${category.label} category`}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: isActive }}
-            hitSlop={{ bottom: 4, top: 4 }}
-            key={category.value}
-            onPress={() => onChange?.(category.value)}
-            style={({ pressed }) => [
-              styles.chip,
-              isActive ? styles.activeChip : styles.inactiveChip,
-              pressed && styles.pressed,
-            ]}
-          >
-            <CategoryIcon
-              color={isActive ? "#9A3412" : "#A34A0A"}
-              size={17}
-              strokeWidth={isActive ? 2.35 : 2}
-            />
-            <Text
-              numberOfLines={1}
-              style={[styles.label, isActive ? styles.activeText : styles.inactiveText]}
+  return (
+    <View>
+      <ScrollView
+        accessibilityRole="tablist"
+        alwaysBounceHorizontal={false}
+        bounces={false}
+        contentContainerStyle={styles.container}
+        horizontal
+        keyboardShouldPersistTaps="handled"
+        showsHorizontalScrollIndicator={false}
+      >
+        {categories.map((category) => {
+          const isActive = activeValue === category.value;
+          const CategoryIcon = CATEGORY_ICONS[category.value] ?? Sparkles;
+
+          return (
+            <Pressable
+              accessibilityLabel={`${category.label} category`}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              hitSlop={{ bottom: 4, top: 4 }}
+              key={category.value}
+              onPress={() => onChange?.(category.value)}
+              style={({ pressed }) => [
+                styles.chip,
+                isActive ? styles.activeChip : styles.inactiveChip,
+                pressed && styles.pressed,
+              ]}
             >
-              {category.label}
-            </Text>
-            {isActive ? <View style={styles.activeAccent} /> : null}
-          </Pressable>
-        );
-      })}
-    </ScrollView>
+              <CategoryIcon
+                color={isActive ? "#9A3412" : "#A34A0A"}
+                size={17}
+                strokeWidth={isActive ? 2.35 : 2}
+              />
+              <Text
+                numberOfLines={1}
+                style={[styles.label, isActive ? styles.activeText : styles.inactiveText]}
+              >
+                {category.label}
+              </Text>
+              {isActive ? <View style={styles.activeAccent} /> : null}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {showTagline && tagline ? (
+        <View style={styles.taglineRow}>
+          <Sparkles color="#C2410C" size={13} strokeWidth={2.3} />
+          <Text numberOfLines={1} style={styles.taglineText}>
+            {tagline}
+          </Text>
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -146,5 +165,19 @@ const styles = StyleSheet.create({
     left: 14,
     position: "absolute",
     right: 14,
+  },
+  taglineRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingTop: 2,
+  },
+  taglineText: {
+    color: "#9A3412",
+    flexShrink: 1,
+    fontSize: 12.5,
+    fontWeight: "700",
+    letterSpacing: 0.1,
   },
 });

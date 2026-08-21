@@ -660,6 +660,7 @@ export default function HomeScreen() {
             onChange={
               handleCategoryChange
             }
+            showTagline
           />
         </View>
       </View>
