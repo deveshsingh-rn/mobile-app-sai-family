@@ -509,6 +509,7 @@ export default function NaamJapScreen() {
           <ArrowLeft color="#292524" size={24} />
         </PressableScale>
         <Text style={styles.headerTitle}>Naam Jap</Text>
+
         <View style={styles.headerActions}>
           <PressableScale
             accessibilityLabel="Naam Jap options"
@@ -529,6 +530,8 @@ export default function NaamJapScreen() {
         </View>
       </BlurView>
 
+     
+
       <ScrollView
         contentContainerStyle={[
           styles.content,
@@ -544,6 +547,14 @@ export default function NaamJapScreen() {
               from={{ opacity: 0, translateY: 12 }}
               transition={{ delay: 30, duration: 420, type: "timing" }}
             >
+               <View style={styles.headerMessage}>
+        <Text style={styles.headerMessageLead}>
+          Naam Jaap is your Spiritual Bank Balance.
+        </Text>
+        <Text style={styles.headerMessageText}>
+          Keep Building it Every Day, Encash it in times of Need. Complete One Mala & Unlock Sai Blessings.
+        </Text>
+      </View>
               <PressableScale
                 accessibilityHint="Opens your saved Naam list"
                 accessibilityRole="button"
@@ -575,7 +586,7 @@ export default function NaamJapScreen() {
                   >
                     {selectedName?.label || "Sai Ram"}
                   </Text>
-                  <Text style={styles.naamHint}>Tap to choose or create a Naam</Text>
+                  <Text style={styles.naamHint}>Tap to Choose or Create a Naam</Text>
                 </View>
                 <View style={styles.editNameButton}>
                   <Pencil color="#8A4B12" size={18} />
@@ -589,16 +600,17 @@ export default function NaamJapScreen() {
               style={styles.malaCards}
               transition={{ delay: 110, duration: 440, type: "timing" }}
             >
-              <MalaStatCard
-                count={data.todayCount}
-                label="Today’s malas"
-                malas={todayMalas}
-              />
-              <MalaStatCard
+               <MalaStatCard
                 count={data.totalCount}
-                label="Lifetime malas"
+                label="Lifetime Naam Jap"
                 malas={completedMalas}
               />
+              <MalaStatCard
+                count={data.todayCount}
+                label="Today’s Naam Jap"
+                malas={todayMalas}
+              />
+             
             </MotiView>
 
             
@@ -1060,7 +1072,7 @@ function MalaStatCard({
       <Text style={styles.malaStatLabel}>{label}</Text>
       <View style={styles.malaStatValueRow}>
         <Text style={styles.malaStatValue}>{malas.toLocaleString("en-IN")}</Text>
-        <Text style={styles.malaStatUnit}>mala</Text>
+        <Text style={styles.malaStatUnit}>Mala</Text>
       </View>
       <Text style={styles.malaStatCount}>
         {count.toLocaleString("en-IN")} Naam
@@ -1208,9 +1220,9 @@ function NaamJapBottomSheet({
 
           {activeSheet === "target" ? (
             <>
-              <Text style={styles.sheetTitle}>Set your mala goal</Text>
+              <Text style={styles.sheetTitle}>Set your Mala Goal</Text>
               <Text style={styles.sheetDescription}>
-                One mala contains 108 Naam. Choose a comfortable goal for this session.
+                One Mala contains 108 Naam. Choose a comfortable Goal for this session.
               </Text>
               <View style={styles.targetStepper}>
                 <PressableScale
@@ -1234,7 +1246,7 @@ function NaamJapBottomSheet({
                   >
                     <Text style={styles.targetValue}>{data.targetMalas}</Text>
                   </MotiView>
-                  <Text style={styles.targetValueLabel}>malas</Text>
+                  <Text style={styles.targetValueLabel}>Malas</Text>
                 </View>
                 <PressableScale
                   accessibilityLabel="Increase mala goal"
@@ -1250,7 +1262,7 @@ function NaamJapBottomSheet({
                 </PressableScale>
               </View>
               <Text style={styles.targetSummary}>
-                {(data.targetMalas * 108).toLocaleString("en-IN")} total Naam
+                {(data.targetMalas * 108).toLocaleString("en-IN")} Total Naam
               </Text>
               <PressableScale
                 onPress={closeSheet}
@@ -1469,6 +1481,28 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 0.2,
     marginLeft: 8,
+  },
+  headerMessage: {
+    backgroundColor: "#FFF4E8",
+    borderBottomColor: "#FED7AA",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+  },
+  headerMessageLead: {
+    color: "#9A3412",
+    fontSize: 15,
+    fontWeight: "900",
+    lineHeight: 21,
+    textAlign: "center",
+  },
+  headerMessageText: {
+    color: "#A65B35",
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 19,
+    marginTop: 3,
+    textAlign: "center",
   },
   pageScroll: { flex: 1 },
   malaBadge: {
@@ -2095,6 +2129,7 @@ const styles = StyleSheet.create({
     color: "#78716C",
     fontSize: 13,
     lineHeight: 19,
+    fontWeight: "800",
     marginTop: 5,
   },
   sheetSettingRow: {
