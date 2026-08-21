@@ -39,6 +39,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   Share,
   StyleSheet,
@@ -52,7 +53,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NaamJapSkiaBackground } from "@/components/naam-jap/NaamJapSkiaBackground";
 import { NaamJapCumulativeChart } from "@/components/naam-jap/NaamJapCumulativeChart";
 import { PressableScale } from "@/components/naam-jap/PressableScale";
-import { SaiProgressReveal } from "@/components/naam-jap/SaiProgressReveal";
 import { SwipeNaamCounter } from "@/components/naam-jap/SwipeNaamCounter";
 import {
   createDefaultNaamJapData,
@@ -508,7 +508,7 @@ export default function NaamJapScreen() {
         >
           <ArrowLeft color="#292524" size={24} />
         </PressableScale>
-        <Text style={styles.headerTitle}>Naam Jap jjj</Text>
+        <Text style={styles.headerTitle}>Naam Jap</Text>
         <View style={styles.headerActions}>
           <PressableScale
             accessibilityLabel="Naam Jap options"
@@ -609,14 +609,18 @@ export default function NaamJapScreen() {
               style={styles.tapFieldShell}
               transition={{ delay: 210, duration: 480, type: "timing" }}
             >
-              <PressableScale
-                accessibilityHint="Tap Sai Baba’s image to count one Naam"
-                accessibilityLabel={`Tap image to count ${selectedName?.label || "Sai Ram"}`}
+              <Pressable
+                accessibilityHint="Tap the selected Naam to count once"
+                accessibilityLabel={`Tap to count ${selectedName?.label || "Sai Ram"}`}
                 accessibilityRole="button"
+                accessibilityState={{ disabled: goalReached }}
                 disabled={goalReached}
                 onPress={countNaam}
-                scaleTo={0.99}
-                style={styles.tapField}
+                style={({ pressed }) => [
+                  styles.tapField,
+                  pressed && !goalReached && styles.tapFieldPressed,
+                  goalReached && styles.tapFieldDisabled,
+                ]}
               >
                 <LinearGradient
                   colors={["#f5f4d1", "#c5e2de", "#d2cceb"]}
@@ -639,7 +643,10 @@ export default function NaamJapScreen() {
                     }
                   />
                 ))}
-                <SaiProgressReveal image={SAI_IMAGE} progress={targetProgress} />
+                <SelectedNaamFocus
+                  label={selectedName?.label || "Sai Ram"}
+                  progress={targetProgress}
+                />
                 {data.autoCountSeconds ? (
                   <View style={styles.autoBadge}>
                     <Clock3 color="#166534" size={14} />
@@ -650,7 +657,7 @@ export default function NaamJapScreen() {
                     </Text>
                   </View>
                 ) : null}
-              </PressableScale>
+              </Pressable>
             </MotiView>
 
             <View style={styles.secondaryActions}>
@@ -957,6 +964,48 @@ function LiveCounter({ round, target }: { round: number; target: number }) {
       <Text style={styles.liveCountValue}>{round}</Text>
       <Text style={styles.liveCountTarget}> / {target}</Text>
     </MotiView>
+  );
+}
+
+function SelectedNaamFocus({
+  label,
+  progress,
+}: {
+  label: string;
+  progress: number;
+}) {
+  const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
+
+  return (
+    <View pointerEvents="none" style={styles.selectedNaamFocus}>
+      <MotiView
+        animate={{ opacity: [0.88, 1, 0.88], scale: [0.985, 1, 0.985] }}
+        from={{ opacity: 0, scale: 0.94 }}
+        key={label}
+        style={styles.selectedNaamTextWrap}
+        transition={{ duration: 2600, loop: true, type: "timing" }}
+      >
+        <Text
+          adjustsFontSizeToFit
+          minimumFontScale={0.48}
+          numberOfLines={3}
+          style={styles.selectedNaamText}
+        >
+          {label}
+        </Text>
+      </MotiView>
+
+      <Text style={styles.selectedNaamInstruction}>Tap the Naam to Count or Scroll</Text>
+      <Text style={styles.selectedNaamInstruction}>Below to the Right</Text>
+      <View style={styles.selectedNaamProgressTrack}>
+        <MotiView
+          animate={{ width: `${percentage}%` }}
+          style={styles.selectedNaamProgressFill}
+          transition={{ damping: 18, stiffness: 120, type: "spring" }}
+        />
+      </View>
+      <Text style={styles.selectedNaamProgressText}>{percentage}% of your goal</Text>
+    </View>
   );
 }
 
@@ -1569,13 +1618,19 @@ const styles = StyleSheet.create({
     borderCurve: "continuous",
     borderRadius: 28,
     borderWidth: 1,
-    height: 350,
+    height: 410,
     justifyContent: "space-between",
     overflow: "hidden",
     paddingBottom: 16,
     paddingTop: 42,
     position: "relative",
+    width: "100%",
   },
+  tapFieldPressed: {
+    opacity: 0.94,
+    transform: [{ scale: 0.992 }],
+  },
+  tapFieldDisabled: { opacity: 0.82 },
   tapFieldGlow: {
     alignSelf: "center",
     backgroundColor: "rgba(255,255,255,0.16)",
@@ -1608,6 +1663,51 @@ const styles = StyleSheet.create({
     color: "rgba(58, 55, 55, 0.9)",
     fontSize: 12,
     fontWeight: "700",
+  },
+  selectedNaamFocus: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 24,
+    paddingHorizontal: 14,
+    width: "100%",
+  },
+  selectedNaamTextWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 230,
+    width: "100%",
+  },
+  selectedNaamText: {
+    color: "#7C2D12",
+    fontSize: 82,
+    fontWeight: "900",
+    lineHeight: 90,
+    textAlign: "center",
+  },
+  selectedNaamInstruction: {
+    color: "#7C5540",
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 2,
+  },
+  selectedNaamProgressTrack: {
+    backgroundColor: "rgba(255,255,255,0.5)",
+    borderRadius: 999,
+    height: 6,
+    marginTop: 14,
+    overflow: "hidden",
+    width: 176,
+  },
+  selectedNaamProgressFill: {
+    backgroundColor: "#9A3412",
+    borderRadius: 999,
+    height: "100%",
+  },
+  selectedNaamProgressText: {
+    color: "#8B6753",
+    fontSize: 10,
+    fontWeight: "700",
+    marginTop: 7,
   },
   floatingNaam: {
     backgroundColor: "#536F63",

@@ -124,7 +124,7 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
           {label}
         </Text>
         <Text style={styles.instruction}>
-          {disabled ? "Daily goal complete" : "Swipe right to count"}
+          {disabled ? "Daily goal complete" : "Swipe Right to Count"}
         </Text>
       </View>
       <View pointerEvents="none" style={styles.endButton}>
