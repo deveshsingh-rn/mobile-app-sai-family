@@ -187,9 +187,7 @@ export function ExperienceTopTabs({
           onPress={() => handleActionPress(CREATE_POST_ACTION)}
           profileImageUrl={profileImageUrl}
         />
-      </View>
 
-      <View style={styles.actions}>
         <Pressable
           accessibilityLabel="Open Sai Naam Jap counter"
           accessibilityRole="button"
@@ -205,7 +203,9 @@ export function ExperienceTopTabs({
             Naam Jap
           </Text>
         </Pressable>
+      </View>
 
+      <View style={styles.actions}>
         {EXPERIENCE_ACTIONS.map((action) => (
           <ToolbarAction
             active={activeTab === action.key}
@@ -265,6 +265,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 4,
     height: 46,
+    // marginRight: 28,
     justifyContent: "center",
     paddingHorizontal: 9,
   },
