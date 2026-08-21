@@ -88,7 +88,7 @@ export function CategoryChips({
             >
               <CategoryIcon
                 color={isActive ? "#9A3412" : "#A34A0A"}
-                size={17}
+                size={15}
                 strokeWidth={isActive ? 2.35 : 2}
               />
               <Text
@@ -105,7 +105,7 @@ export function CategoryChips({
 
       {showTagline && tagline ? (
         <View style={styles.taglineRow}>
-          <Sparkles color="#C2410C" size={13} strokeWidth={2.3} />
+          {/* <Sparkles color="#C2410C" size={13} strokeWidth={2.3} /> */}
           <Text numberOfLines={2} style={styles.taglineText}>
             {tagline}
           </Text>
@@ -128,16 +128,16 @@ const styles = StyleSheet.create({
   },
   chip: {
     alignItems: "center",
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
     color: "#44403C",
-    gap: 7,
-    height: 44,
+    gap: 6,
+    height: 38,
     justifyContent: "center",
-    minWidth: 64,
+    minWidth: 58,
     overflow: "hidden",
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     position: "relative",
   },
   activeChip: {
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     borderColor: "#E7DED2",
   },
   label: {
-    fontSize: 15,
+    fontSize: 13.5,
     fontWeight: "700",
     letterSpacing: 0,
   },
@@ -168,9 +168,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#F59E0B",
     bottom: 0,
     height: 3,
-    left: 14,
+    left: 12,
     position: "absolute",
-    right: 14,
+    right: 12,
   },
   taglineRow: {
     alignItems: "center",
@@ -182,8 +182,8 @@ const styles = StyleSheet.create({
   taglineText: {
     color: "#9A3412",
     flexShrink: 1,
-    fontSize: 11,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "700",
     letterSpacing: 0.1,
   },
 });
