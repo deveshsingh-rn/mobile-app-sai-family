@@ -42,6 +42,11 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 const CATEGORY_TAGLINES: Record<string, string> = {
   miracles: "Share How Sai Changed Your Life, Receive Sai Blessings",
   prayers: "Share Your Prayers with Sai Family, Receive Sai Blessings",
+  dreams: "Share Your Dreams, Seek Sai’s Guidance",
+  first: "Share Your First Experience with Sai, Receive Sai Blessings",
+  blessings: "Share Sai’s Blessings, Spread His Grace",
+  darshan: "Share Sai Darshan Pictures and Videos, Discover Mandirs Worldwide",
+ 
 };
 
 export function CategoryChips({
@@ -130,7 +135,7 @@ const styles = StyleSheet.create({
     gap: 7,
     height: 44,
     justifyContent: "center",
-    minWidth: 74,
+    minWidth: 64,
     overflow: "hidden",
     paddingHorizontal: 14,
     position: "relative",

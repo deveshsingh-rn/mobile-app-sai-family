@@ -96,11 +96,12 @@ export interface ExperiencesState {
 
 export const DEFAULT_EXPERIENCE_CATEGORIES: ExperienceCategory[] = [
   { category: "miracles", label: "Miracles" },
+  { category: "blessings", label: "Blessings" },
   { category: "prayers", label: "Prayers" },
   { category: "dreams", label: "Dreams" },
   { category: "first", label: "First Experience" },
   { category: "darshan", label: "Darshan" },
-  { category: "blessings", label: "Blessings" },
+
 ];
 
 export const FETCH_EXPERIENCES_REQUEST =

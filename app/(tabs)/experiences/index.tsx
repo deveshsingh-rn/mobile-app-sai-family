@@ -71,6 +71,14 @@ const CATEGORIES = [
     value: "miracles",
   },
   {
+    label: "Blessings",
+    value: "blessings",
+  },
+  {
+    label: "Darshan",
+    value: "darshan",
+  },
+  {
     label: "Prayers",
     value: "prayers",
   },
@@ -78,14 +86,8 @@ const CATEGORIES = [
     label: "Dreams",
     value: "dreams",
   },
-  {
-    label: "Darshan",
-    value: "darshan",
-  },
-  {
-    label: "Blessings",
-    value: "blessings",
-  },
+  
+  
 ];
 
 export default function HomeScreen() {

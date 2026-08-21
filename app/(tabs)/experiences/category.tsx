@@ -6,10 +6,11 @@ import { CategoryChips, ExperienceTopTabs } from '@/components/experiences';
 const CATEGORIES = [
   { label: 'All', value: 'all' },
   { label: 'Miracles', value: 'miracles' },
+  { label: 'Blessings', value: 'blessings' },
   { label: 'Prayers', value: 'prayers' },
   { label: 'Dreams', value: 'dreams' },
   { label: 'Darshan', value: 'darshan' },
-  { label: 'Blessings', value: 'blessings' },
+  
 ];
 
 export default function ExperienceCategoryScreen() {
