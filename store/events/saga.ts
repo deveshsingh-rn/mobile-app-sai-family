@@ -231,6 +231,89 @@ function normalizeEvent(event: any): SaiEvent {
   };
 }
 
+function normalizeUniqueEvents(value: unknown): SaiEvent[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const seenIds = new Set<string>();
+
+  return value.reduce<SaiEvent[]>((events, item) => {
+    const event = normalizeEvent(item);
+    const id = typeof event.id === "string" ? event.id.trim() : "";
+
+    if (!id || seenIds.has(id)) {
+      return events;
+    }
+
+    seenIds.add(id);
+    events.push({ ...event, id });
+    return events;
+  }, []);
+}
+
+function normalizeHomeSections(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, section]: [string, any]) => [
+      key,
+      {
+        ...section,
+        events: normalizeUniqueEvents(section?.events),
+      },
+    ])
+  );
+}
+
+function normalizeEventGroups(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, events]) => [
+      key,
+      normalizeUniqueEvents(events),
+    ])
+  );
+}
+
+function normalizeOrganisers(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((item) => {
+    const profile =
+      item?.organiser || item?.organizer || item?.owner || item || {};
+    const name =
+      typeof profile?.name === "string" && profile.name.trim()
+        ? profile.name.trim()
+        : "Sai Organizer";
+
+    return {
+      ...item,
+      eventsOrganized:
+        item?.eventsOrganized ??
+        item?.eventsCount ??
+        item?._count?.events ??
+        profile?.eventsOrganized ??
+        0,
+      id:
+        profile?.id ||
+        item?.organizerId ||
+        item?.organiserId ||
+        item?.ownerId,
+      name,
+      rating: item?.rating ?? profile?.rating,
+      specialty: item?.specialty || profile?.specialty,
+    };
+  });
+}
+
 function getEventFromResponse(response: any) {
   return normalizeEvent(
     response?.event ||
@@ -300,10 +383,8 @@ function getEventListFromResponse(
   }
 
   return {
-    events: source.map((item) =>
-      normalizeEvent(
-        item?.event || item
-      )
+    events: normalizeUniqueEvents(
+      source.map((item) => item?.event || item)
     ),
     pagination:
       normalizePagination(
@@ -314,34 +395,22 @@ function getEventListFromResponse(
 }
 
 function getHomeFromResponse(response: any) {
+  const source = response?.data || response || {};
+
   return {
     eventTypeGuide:
-      response?.eventTypeGuide ||
-      response?.data?.eventTypeGuide ||
+      source?.eventTypeGuide ||
       [],
-    sections:
-      response?.sections ||
-      response?.data?.sections ||
-      {},
+    sections: normalizeHomeSections(source?.sections),
     stats:
-      response?.stats ||
-      response?.data?.stats ||
+      source?.stats ||
       null,
-    topOrganisers:
-      response?.topOrganisers ||
-      response?.data?.topOrganisers ||
-      [],
+    topOrganisers: normalizeOrganisers(source?.topOrganisers),
     trendingSections:
-      response?.trendingSections ||
-      response?.data?.trendingSections ||
-      {},
-    trendingThisWeek:
-      response?.trendingThisWeek ||
-      response?.data?.trendingThisWeek ||
-      [],
+      normalizeEventGroups(source?.trendingSections),
+    trendingThisWeek: normalizeUniqueEvents(source?.trendingThisWeek),
     weeklySchedule:
-      response?.weeklySchedule ||
-      response?.data?.weeklySchedule ||
+      source?.weeklySchedule ||
       [],
   };
 }

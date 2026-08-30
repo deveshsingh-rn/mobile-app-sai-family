@@ -992,7 +992,7 @@ function TrendingThisWeek({
       ) : null}
       {trending.map((event, index) => (
         <Pressable
-          key={event.id}
+          key={`${event.id}-${index}`}
           onPress={() => router.push(`/events/${event.id}` as any)}
           style={styles.trendingRow}
         >
@@ -1167,24 +1167,34 @@ function TopOrganisers({
         horizontal
         showsHorizontalScrollIndicator={false}
       >
-        {organisers.map((organiser) => (
-          <View key={organiser.id || organiser.name} style={styles.organiserCard}>
-            <View style={styles.organiserAvatar}>
-              <Text style={styles.organiserAvatarText}>
-                {organiser.name.slice(0, 2).toUpperCase()}
+        {organisers.map((organiser, index) => {
+          const organiserName =
+            typeof organiser.name === "string" && organiser.name.trim()
+              ? organiser.name.trim()
+              : "Sai Organizer";
+
+          return (
+            <View
+              key={`${organiser.id || organiserName}-${index}`}
+              style={styles.organiserCard}
+            >
+              <View style={styles.organiserAvatar}>
+                <Text style={styles.organiserAvatarText}>
+                  {organiserName.slice(0, 2).toUpperCase()}
+                </Text>
+              </View>
+              <Text numberOfLines={1} style={styles.organiserName}>
+                {organiserName}
+              </Text>
+              <Text numberOfLines={2} style={styles.organiserSpecialty}>
+                {organiser.specialty || "Community organizer"}
+              </Text>
+              <Text style={styles.organiserEvents}>
+                {organiser.eventsOrganized || 0} events
               </Text>
             </View>
-            <Text numberOfLines={1} style={styles.organiserName}>
-              {organiser.name}
-            </Text>
-            <Text numberOfLines={2} style={styles.organiserSpecialty}>
-              {organiser.specialty || "Community organizer"}
-            </Text>
-            <Text style={styles.organiserEvents}>
-              {organiser.eventsOrganized || 0} events
-            </Text>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
     </View>
   );

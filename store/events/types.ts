@@ -256,7 +256,7 @@ export type EventTypeGuideItem = {
 export type EventOrganiserSummary = {
   eventsOrganized?: number;
   id?: string;
-  name: string;
+  name?: string | null;
   rating?: number;
   specialty?: string;
 };
