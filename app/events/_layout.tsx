@@ -4,6 +4,10 @@ export default function EventsLayout() {
   return (
     <Stack
       screenOptions={{
+        animation: "slide_from_right",
+        animationDuration: 260,
+        contentStyle: { backgroundColor: "#FAFAF9" },
+        gestureEnabled: true,
         headerShown: false,
       }}
     >
@@ -11,8 +15,14 @@ export default function EventsLayout() {
       <Stack.Screen name="attendees" />
       <Stack.Screen name="bookmarks" />
       <Stack.Screen name="calendar" />
-      <Stack.Screen name="create" />
-      <Stack.Screen name="edit" />
+      <Stack.Screen
+        name="create"
+        options={{ animation: "slide_from_bottom", gestureEnabled: true }}
+      />
+      <Stack.Screen
+        name="edit"
+        options={{ animation: "slide_from_bottom", gestureEnabled: true }}
+      />
       <Stack.Screen name="my-events" />
       <Stack.Screen name="rsvps" />
     </Stack>

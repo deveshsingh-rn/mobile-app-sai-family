@@ -103,6 +103,8 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { EventDetailSkeleton } from "@/components/events/EventSkeletons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const formatLongDate = (value?: string) => {
   const date = value ? new Date(value) : null;
@@ -153,6 +155,7 @@ const formatTime = (value?: string) => {
 
 export default function EventDetailRoute() {
   const {id} = useLocalSearchParams<{id?: string}>();
+  const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
   const detail = useAppSelector(selectEventDetail);
   const comments = useAppSelector(selectEventComments);
@@ -439,11 +442,7 @@ export default function EventDetailRoute() {
   }, [dispatch, eventId, reportPending]);
 
   if (loading && !detail) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator color="#1F2937" size="large" />
-      </View>
-    );
+    return <EventDetailSkeleton />;
   }
 
   if (!detail) {
@@ -468,7 +467,10 @@ export default function EventDetailRoute() {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: 132 + insets.bottom },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <ImageBackground
@@ -485,12 +487,16 @@ export default function EventDetailRoute() {
             onPress={() =>
               router.canGoBack() ? router.back() : router.replace("/(tabs)")
             }
-            style={[styles.heroButton, styles.heroBack]}
+            style={[
+              styles.heroButton,
+              styles.heroBack,
+              { top: insets.top + 8 },
+            ]}
           >
             <ArrowLeft color="#FFFFFF" size={19} />
           </Pressable>
 
-          <View style={styles.heroActions}>
+          <View style={[styles.heroActions, { top: insets.top + 8 }]}>
             {canEdit && (
               <Pressable
                 onPress={() => router.push(`/events/edit?id=${detail.id}` as any)}
@@ -615,7 +621,12 @@ export default function EventDetailRoute() {
         />
       </ScrollView>
 
-      <View style={styles.fixedCta}>
+      <View
+        style={[
+          styles.fixedCta,
+          { paddingBottom: Math.max(insets.bottom, 12) },
+        ]}
+      >
         <View style={styles.fixedTopRow}>
           <View style={styles.fixedCopy}>
             <Text style={styles.fixedMeta}>Free Event</Text>

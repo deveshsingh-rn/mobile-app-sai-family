@@ -17,7 +17,6 @@ import {
 
 import {router} from "expo-router";
 import {
-  ArrowLeft,
   Bookmark,
   CalendarDays,
   MapPin,
@@ -44,6 +43,8 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { EventScreenHeader } from "@/components/events/EventScreenHeader";
+import { EventListSkeleton } from "@/components/events/EventSkeletons";
 
 const formatDate = (value?: string) => {
   if (!value) {
@@ -163,26 +164,14 @@ export default function EventBookmarksRoute() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={styles.headerIcon}
-        >
-          <ArrowLeft color="#1F2937" size={21} />
-        </Pressable>
-        <View style={styles.headerCopy}>
-          <Text style={styles.headerTitle}>Saved Events</Text>
-          <Text style={styles.headerSubtitle}>
-            Your bookmarked spiritual gatherings
-          </Text>
-        </View>
-        <Pressable
-          onPress={() => router.push("/(tabs)/events" as any)}
-          style={styles.headerIcon}
-        >
-          <Search color="#1F2937" size={20} />
-        </Pressable>
-      </View>
+      <EventScreenHeader
+        onBack={() => router.back()}
+        onRightPress={() => router.push("/(tabs)/events" as any)}
+        rightAccessibilityLabel="Discover events"
+        rightIcon={<Search color="#292524" size={20} />}
+        subtitle="Your bookmarked spiritual gatherings"
+        title="Saved Events"
+      />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -212,9 +201,7 @@ export default function EventBookmarksRoute() {
         {!!error && <Text style={styles.errorText}>{error}</Text>}
 
         {loading && !refreshing && !bookmarks.length ? (
-          <View style={styles.loadingBox}>
-            <ActivityIndicator color="#F97316" />
-          </View>
+          <EventListSkeleton />
         ) : null}
 
         <View style={styles.cardsSection}>

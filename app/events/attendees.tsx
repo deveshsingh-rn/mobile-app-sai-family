@@ -20,7 +20,6 @@ import {
   useLocalSearchParams,
 } from "expo-router";
 import {
-  ArrowLeft,
   CheckCircle2,
   Clock3,
   Users,
@@ -43,6 +42,8 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { EventScreenHeader } from "@/components/events/EventScreenHeader";
+import { EventListSkeleton } from "@/components/events/EventSkeletons";
 
 export default function EventAttendeesRoute() {
   const {id} = useLocalSearchParams<{id?: string}>();
@@ -151,20 +152,11 @@ export default function EventAttendeesRoute() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.headerIcon}>
-          <ArrowLeft color="#1F2937" size={21} />
-        </Pressable>
-        <View style={styles.headerCopy}>
-          <Text style={styles.headerTitle}>Attendee Management</Text>
-          <Text numberOfLines={1} style={styles.headerSubtitle}>
-            {eventTitle}
-          </Text>
-        </View>
-        <View style={styles.headerIcon}>
-          <Users color="#1F2937" size={20} />
-        </View>
-      </View>
+      <EventScreenHeader
+        onBack={() => router.back()}
+        subtitle={eventTitle}
+        title="Attendee Management"
+      />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -186,9 +178,7 @@ export default function EventAttendeesRoute() {
         {!!error && <Text style={styles.errorText}>{error}</Text>}
 
         {attendeesLoading && !refreshing && !attendees.length ? (
-          <View style={styles.loadingBox}>
-            <ActivityIndicator color="#F97316" />
-          </View>
+          <EventListSkeleton />
         ) : null}
 
         <View style={styles.list}>

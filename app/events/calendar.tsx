@@ -18,7 +18,6 @@ import {
 
 import {router} from "expo-router";
 import {
-  ArrowLeft,
   Bell,
   CalendarCheck,
   CalendarDays,
@@ -71,6 +70,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { EventScreenHeader } from "@/components/events/EventScreenHeader";
 
 const palette = {
   bg: "#FAFAF9",
@@ -748,21 +748,14 @@ export default function EventCalendarRoute() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={styles.headerButton}
-        >
-          <ArrowLeft color={palette.ink} size={20} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Events Calendar</Text>
-        <Pressable
-          onPress={() => router.push("/events/create" as any)}
-          style={styles.headerButton}
-        >
-          <Plus color={palette.ink} size={20} />
-        </Pressable>
-      </View>
+      <EventScreenHeader
+        onBack={() => router.back()}
+        onRightPress={() => router.push("/events/create" as any)}
+        rightAccessibilityLabel="Create event"
+        rightIcon={<Plus color={palette.ink} size={21} />}
+        subtitle="Plan your spiritual gatherings"
+        title="Events Calendar"
+      />
 
       <ScrollView
         contentContainerStyle={styles.content}

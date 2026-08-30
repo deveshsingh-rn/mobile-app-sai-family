@@ -6,7 +6,6 @@ import React, {
 } from "react";
 
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -18,7 +17,6 @@ import { FlashList } from "@shopify/flash-list";
 import { router } from "expo-router";
 
 import {
-  ArrowLeft,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -53,6 +51,8 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { EventScreenHeader } from "@/components/events/EventScreenHeader";
+import { EventListSkeleton } from "@/components/events/EventSkeletons";
 
 type EventListMode =
   | "calendar"
@@ -252,7 +252,7 @@ function CompactEventCard({
 
         <View style={styles.metaRow}>
           <Clock3
-            color="#8b641f"
+            color="#78716C"
             size={15}
           />
           <Text style={styles.metaText}>
@@ -262,7 +262,7 @@ function CompactEventCard({
 
         <View style={styles.metaRow}>
           <MapPin
-            color="#8b641f"
+            color="#78716C"
             size={15}
           />
           <Text
@@ -393,7 +393,7 @@ export default function EventListScreen({
       return {
         data: myEvents,
         empty: "You have not created any events yet.",
-        title: "My Events lo",
+        title: "My Events",
       };
     }
 
@@ -530,7 +530,7 @@ export default function EventListScreen({
             style={styles.monthIconButton}
           >
             <ChevronLeft
-              color="#5b3b0b"
+              color="#292524"
               size={20}
             />
           </Pressable>
@@ -544,7 +544,7 @@ export default function EventListScreen({
             style={styles.monthIconButton}
           >
             <ChevronRight
-              color="#5b3b0b"
+              color="#292524"
               size={20}
             />
           </Pressable>
@@ -567,7 +567,7 @@ export default function EventListScreen({
             onPress={handleToday}
             style={styles.todayButton}
           >
-            <RotateCw color="#7a5311" size={14} />
+            <RotateCw color="#9A3412" size={14} />
             <Text style={styles.todayText}>Today</Text>
           </Pressable>
         </View>
@@ -671,7 +671,7 @@ export default function EventListScreen({
 
         <View style={styles.selectedDateBar}>
           <CalendarDays
-            color="#7a5311"
+            color="#9A3412"
             size={17}
           />
           <Text style={styles.selectedDateText}>
@@ -707,20 +707,13 @@ export default function EventListScreen({
 
   const renderEmpty = () => {
     if (loading) {
-      return (
-        <View style={styles.stateBox}>
-          <ActivityIndicator
-            color="#b97813"
-            size="large"
-          />
-        </View>
-      );
+      return <EventListSkeleton />;
     }
 
     return (
       <View style={styles.stateBox}>
         <CalendarDays
-          color="#b97813"
+          color="#F97316"
           size={34}
         />
         <Text style={styles.stateTitle}>
@@ -732,36 +725,30 @@ export default function EventListScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
-        <Pressable
-          onPress={() => router.back()}
-          style={styles.iconButton}
-        >
-          <ArrowLeft
-            color="#5b3b0b"
-            size={22}
-          />
-        </Pressable>
-
-        <Text style={styles.topTitle}>
-          {config.title}
-        </Text>
-
-        <Pressable
-          onPress={() =>
-            mode === "calendar"
-              ? router.push("/events/create" as any)
-              : handleRefresh()
-          }
-          style={styles.iconButton}
-        >
-          {mode === "calendar" ? (
-            <Plus color="#5b3b0b" size={21} />
+      <EventScreenHeader
+        onBack={() => router.back()}
+        onRightPress={() =>
+          mode === "calendar"
+            ? router.push("/events/create" as any)
+            : handleRefresh()
+        }
+        rightAccessibilityLabel={mode === "calendar" ? "Create event" : "Refresh events"}
+        rightIcon={
+          mode === "calendar" ? (
+            <Plus color="#292524" size={21} />
           ) : (
-            <RotateCw color="#5b3b0b" size={19} />
-          )}
-        </Pressable>
-      </View>
+            <RotateCw color="#292524" size={19} />
+          )
+        }
+        subtitle={
+          mode === "calendar"
+            ? "Browse gatherings by date"
+            : mode === "my-events"
+              ? "Gatherings organized by you"
+              : "Your upcoming spiritual commitments"
+        }
+        title={config.title}
+      />
 
       {renderCalendarHeader()}
 
@@ -800,7 +787,7 @@ export default function EventListScreen({
           <RefreshControl
             onRefresh={handleRefresh}
             refreshing={refreshing}
-            tintColor="#b97813"
+            tintColor="#F97316"
           />
         }
         renderItem={({ item }) => (
@@ -817,7 +804,7 @@ export default function EventListScreen({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fffaf0",
+    backgroundColor: "#FAFAF9",
     flex: 1,
   },
   topBar: {
@@ -846,13 +833,17 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   calendarPanel: {
-    backgroundColor: "#fffdf8",
-    borderColor:
-      "rgba(221,187,130,0.54)",
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F1E4D5",
+    borderCurve: "continuous",
+    borderRadius: 20,
     borderWidth: 1,
     margin: 16,
-    padding: 12,
+    padding: 14,
+    shadowColor: "#5B2C0B",
+    shadowOffset: { height: 6, width: 0 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
   },
   monthHeader: {
     alignItems: "center",
@@ -862,15 +853,14 @@ const styles = StyleSheet.create({
   },
   monthIconButton: {
     alignItems: "center",
-    backgroundColor:
-      "rgba(185,120,19,0.12)",
-    borderRadius: 8,
+    backgroundColor: "#FFF4E8",
+    borderRadius: 12,
     height: 38,
     justifyContent: "center",
     width: 38,
   },
   monthTitle: {
-    color: "#2f1b03",
+    color: "#292524",
     fontSize: 17,
     fontWeight: "900",
   },
@@ -880,28 +870,27 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   summaryItem: {
-    backgroundColor: "rgba(185,120,19,0.08)",
-    borderRadius: 8,
+    backgroundColor: "#FFF7ED",
+    borderRadius: 12,
     flex: 1,
     padding: 10,
   },
   summaryNumber: {
-    color: "#2f1b03",
+    color: "#292524",
     fontSize: 18,
     fontWeight: "900",
   },
   summaryLabel: {
-    color: "#8b641f",
+    color: "#78716C",
     fontSize: 11,
     fontWeight: "800",
     marginTop: 2,
   },
   todayButton: {
     alignItems: "center",
-    backgroundColor: "#fffaf0",
-    borderColor:
-      "rgba(221,187,130,0.54)",
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderColor: "#FED7AA",
+    borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
     gap: 6,
@@ -909,7 +898,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   todayText: {
-    color: "#7a5311",
+    color: "#9A3412",
     fontSize: 12,
     fontWeight: "900",
   },
@@ -918,7 +907,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   weekText: {
-    color: "#8b641f",
+    color: "#78716C",
     flex: 1,
     fontSize: 11,
     fontWeight: "900",
@@ -938,34 +927,32 @@ const styles = StyleSheet.create({
     width: `${100 / 7}%`,
   },
   dayCellSelected: {
-    backgroundColor: "#b97813",
+    backgroundColor: "#F97316",
   },
   dayCellToday: {
-    backgroundColor:
-      "rgba(185,120,19,0.12)",
+    backgroundColor: "#FFF4E8",
   },
   dayCellWithData: {
-    borderColor:
-      "rgba(185,120,19,0.22)",
+    borderColor: "#FED7AA",
     borderWidth: 1,
   },
   dayText: {
-    color: "#3f2502",
+    color: "#292524",
     fontSize: 14,
     fontWeight: "900",
   },
   dayTextSelected: {
-    color: "#fffaf0",
+    color: "#FFFFFF",
   },
   eventDot: {
-    backgroundColor: "#b97813",
+    backgroundColor: "#F97316",
     borderRadius: 3,
     height: 6,
     marginTop: 4,
     width: 6,
   },
   eventDotSelected: {
-    backgroundColor: "#fffaf0",
+    backgroundColor: "#FFFFFF",
   },
   dayCountWrap: {
     alignItems: "center",
@@ -974,16 +961,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   dayCountText: {
-    color: "#7a5311",
+    color: "#9A3412",
     fontSize: 9,
     fontWeight: "900",
     marginLeft: 3,
   },
   selectedDateBar: {
     alignItems: "center",
-    backgroundColor:
-      "rgba(185,120,19,0.1)",
-    borderRadius: 8,
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 12,
     flexDirection: "row",
     gap: 8,
     marginTop: 12,
@@ -991,7 +978,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   selectedDateText: {
-    color: "#5b3b0b",
+    color: "#292524",
     flex: 1,
     fontSize: 13,
     fontWeight: "800",
@@ -1005,8 +992,8 @@ const styles = StyleSheet.create({
   },
   createInlineButton: {
     alignItems: "center",
-    backgroundColor: "#b97813",
-    borderRadius: 8,
+    backgroundColor: "#F97316",
+    borderRadius: 13,
     flexDirection: "row",
     gap: 8,
     justifyContent: "center",
@@ -1023,31 +1010,34 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   card: {
-    backgroundColor: "#fffdf8",
-    borderColor:
-      "rgba(221,187,130,0.54)",
-    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F1E4D5",
+    borderCurve: "continuous",
+    borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
     gap: 12,
     marginBottom: 12,
     marginHorizontal: 16,
-    padding: 12,
+    padding: 13,
+    shadowColor: "#5B2C0B",
+    shadowOffset: { height: 5, width: 0 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
   },
   pressed: {
     opacity: 0.88,
   },
   dateBox: {
     alignItems: "center",
-    backgroundColor:
-      "rgba(185,120,19,0.12)",
-    borderRadius: 8,
+    backgroundColor: "#FFF4E8",
+    borderRadius: 13,
     justifyContent: "center",
     paddingHorizontal: 8,
     width: 78,
   },
   dateText: {
-    color: "#7a5311",
+    color: "#9A3412",
     fontSize: 12,
     fontWeight: "900",
     textAlign: "center",
@@ -1062,7 +1052,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   cardTitle: {
-    color: "#2f1b03",
+    color: "#292524",
     fontSize: 16,
     fontWeight: "900",
     lineHeight: 21,
@@ -1074,22 +1064,21 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   metaText: {
-    color: "#60420f",
+    color: "#57534E",
     flex: 1,
     fontSize: 13,
     fontWeight: "700",
   },
   countText: {
-    color: "#8b641f",
+    color: "#78716C",
     fontSize: 12,
     fontWeight: "800",
     marginTop: 9,
   },
   typePill: {
-    backgroundColor:
-      "rgba(185,120,19,0.12)",
+    backgroundColor: "#FFF4E8",
     borderRadius: 999,
-    color: "#7a5311",
+    color: "#9A3412",
     fontSize: 10,
     fontWeight: "900",
     overflow: "hidden",
@@ -1098,7 +1087,7 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   statusText: {
-    color: "#8b641f",
+    color: "#78716C",
     fontSize: 11,
     fontWeight: "800",
     textTransform: "capitalize",
@@ -1106,20 +1095,19 @@ const styles = StyleSheet.create({
   loadMoreButton: {
     alignItems: "center",
     alignSelf: "center",
-    backgroundColor:
-      "rgba(185,120,19,0.12)",
-    borderRadius: 8,
+    backgroundColor: "#FFF4E8",
+    borderRadius: 12,
     marginTop: 4,
     paddingHorizontal: 18,
     paddingVertical: 11,
   },
   loadMoreText: {
-    color: "#5b3b0b",
+    color: "#9A3412",
     fontSize: 13,
     fontWeight: "900",
   },
   endText: {
-    color: "#8b641f",
+    color: "#78716C",
     fontSize: 12,
     fontWeight: "800",
     paddingVertical: 18,
@@ -1131,7 +1119,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
   },
   stateTitle: {
-    color: "#4e3309",
+    color: "#57534E",
     fontSize: 16,
     fontWeight: "800",
     marginTop: 12,

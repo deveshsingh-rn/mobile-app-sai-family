@@ -6,7 +6,6 @@ import React, {
 } from "react";
 
 import {
-  ActivityIndicator,
   Linking,
   Pressable,
   RefreshControl,
@@ -18,7 +17,6 @@ import {
 
 import {router} from "expo-router";
 import {
-  ArrowLeft,
   Bell,
   Bookmark,
   CalendarCheck,
@@ -61,6 +59,8 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { EventScreenHeader } from "@/components/events/EventScreenHeader";
+import { EventListSkeleton } from "@/components/events/EventSkeletons";
 
 type MyEventsTab = "attending" | "posted";
 type EventFilter = "all" | "upcoming" | "past" | "nearby";
@@ -345,18 +345,14 @@ export default function MyEventsRoute() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.headerIcon}>
-          <ArrowLeft color="#1F2937" size={21} />
-        </Pressable>
-        <Text style={styles.headerTitle}>My Events</Text>
-        <Pressable
-          onPress={() => router.push("/events/create" as any)}
-          style={styles.headerIcon}
-        >
-          <Plus color="#1F2937" size={20} />
-        </Pressable>
-      </View>
+      <EventScreenHeader
+        onBack={() => router.back()}
+        onRightPress={() => router.push("/events/create" as any)}
+        rightAccessibilityLabel="Create event"
+        rightIcon={<Plus color="#292524" size={21} />}
+        subtitle="Your gatherings and commitments"
+        title="My Events"
+      />
 
       <ScrollView
         refreshControl={
@@ -422,9 +418,7 @@ export default function MyEventsRoute() {
         )}
 
         {loading && !refreshing ? (
-          <View style={styles.loadingBox}>
-            <ActivityIndicator color="#F97316" />
-          </View>
+          <EventListSkeleton count={2} />
         ) : null}
 
         <View style={styles.cardsSection}>

@@ -35,7 +35,6 @@ import {
   useLocalSearchParams,
 } from "expo-router";
 import {
-  ArrowLeft,
   BookOpen,
   CalendarDays,
   ChevronDown,
@@ -98,6 +97,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { EventScreenHeader } from "@/components/events/EventScreenHeader";
 import { requestLocationPermissionWithSettingsFallback } from "@/services/location-permissions";
 
 type EventFormMode = "create" | "edit";
@@ -655,7 +655,11 @@ export default function EventFormScreen({
 
   useEffect(() => {
     if (submitted && wasSaving.current && !saving && !error) {
-      router.canGoBack() ? router.back() : router.replace("/(tabs)/events");
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/(tabs)/events");
+      }
     }
 
     wasSaving.current = saving;
@@ -943,20 +947,19 @@ export default function EventFormScreen({
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
     >
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <Pressable onPress={() => router.back()} style={styles.headerIcon}>
-            <ArrowLeft color="#1F2937" size={21} />
-          </Pressable>
-          <Text style={styles.headerTitle}>
-            {mode === "create" ? "Create Sacred Gathering" : "Edit Sacred Gathering"}
-          </Text>
-          <View style={styles.headerIcon} />
-        </View>
-      </View>
+      <EventScreenHeader
+        onBack={() => router.back()}
+        subtitle={
+          mode === "create"
+            ? "Guide devotees with clear event details"
+            : "Keep your gathering information current"
+        }
+        title={mode === "create" ? "Create Sacred Gathering" : "Edit Sacred Gathering"}
+      />
 
       <ScrollView
         contentContainerStyle={styles.content}
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
