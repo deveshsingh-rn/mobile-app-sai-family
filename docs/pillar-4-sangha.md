@@ -189,48 +189,362 @@ Required:
   - Returns current user membership status and capability flags.
   - Suggested fields: `membershipStatus`, `role`, `canPost`, `canComment`, `canCreateEvent`, `canInvite`, `canModerate`, `pendingRequestId`.
 
-### 8. Sangha Messaging
+### 8. Sangha Communication And Direct Messaging
 
 Screens:
 
 - `app/sangha-chat.tsx`
 - `screens/sangha-chat-screen.tsx`
+- Future inbox screen: `app/sangha-conversations.tsx`
 
-Features:
+Communication is the heart of Sangha v1. A devotee should be able to discover another devotee, request connection, accept the request, then talk safely with privacy, moderation, and clear read state.
 
-- Start a direct chat from a group member card.
-- Load conversation history with pagination.
-- Send text messages.
-- Track delivered/read state.
-- Block/report abusive messages.
-- Optionally support group-level channels later.
+#### Communication Product Rules
 
-Required APIs:
+- Direct one-to-one chat is allowed only after both devotees are connected.
+- A group-context conversation is allowed only when both devotees are active members of the same group.
+- A blocked relationship disables discovery visibility, connection actions, conversation creation, and new messages both ways.
+- Frontend must not unlock chat from local state alone. It must use backend `connection.canMessage` or successful conversation creation.
+- Backend must never expose mobile/email in chat payloads. Messages include compact public profile fields only.
+- Message content is plain text in v1. Images, audio notes, attachments, typing indicators, and realtime sockets are v2 unless explicitly prioritized.
+- REST polling must remain supported even if WebSocket/SSE is added later.
 
-- `POST /api/sangha/conversations`
-  - Body: `{ "type": "direct", "participantUserId": "...", "groupId": "..." }`
-  - Returns existing or newly created conversation.
+#### Recommended User Flow
 
-- `GET /api/sangha/conversations/:id/messages?limit=30&before=<cursor>`
-  - Cursor-based pagination is preferred for memory safety.
-  - Return newest page plus `nextCursor`.
+1. User opens Sangha Discovery and views a devotee profile.
+2. Frontend reads `connection.status` and `connection.canMessage` from `GET /api/sangha/devotees/:id`.
+3. If status is `none`, show Connect.
+4. Sender taps Connect: `POST /api/sangha/devotees/:id/connect` returns `pending_sent`.
+5. Receiver sees pending request from discovery/profile/notifications and accepts with `POST /api/sangha/connections/:id/accept`.
+6. Both users now receive `connectionStatus: connected` and profile detail should return `canMessage: true`.
+7. User taps Message. Frontend calls `POST /api/sangha/conversations`.
+8. Frontend opens chat screen with returned `conversation.id`.
+9. Chat screen loads messages using `GET /api/sangha/conversations/:id/messages?limit=30`.
+10. New messages are sent through `POST /api/sangha/conversations/:id/messages`.
+11. When chat opens or gains focus, frontend calls `PATCH /api/sangha/conversations/:id/read`.
+12. If abuse occurs, user reports a received message using `POST /api/sangha/messages/:id/report` or blocks the devotee from profile.
 
-- `POST /api/sangha/conversations/:id/messages`
-  - Body: `{ "content": "..." }`
-  - Requires max length validation, rate limiting, and block-list enforcement.
+#### Backend Conversation APIs
 
-- `PATCH /api/sangha/conversations/:id/read`
-  - Marks conversation read for current user.
+##### `POST /api/sangha/conversations`
 
-- `POST /api/sangha/messages/:id/report`
-  - Body: `{ "reason": "spam|abuse|privacy|other", "note": "..." }`
+Creates or reuses a direct conversation. This endpoint is idempotent for the same two participants and optional group context.
 
-Performance rules:
+Auth:
 
-- Paginate messages with cursors, not offset.
-- Do not send full member profiles inside every message; include compact author summary or hydrate separately.
-- Enforce payload size limits and rate limits.
-- Real-time delivery can use WebSocket/SSE later, but REST polling must remain safe for older clients.
+```http
+Authorization: Bearer <accessToken>
+```
+
+Local development may also use:
+
+```http
+x-user-id: <current-user-id>
+```
+
+Body:
+
+```json
+{
+  "type": "direct",
+  "participantUserId": "target-user-id",
+  "groupId": null
+}
+```
+
+Validation:
+
+- `type`: only `direct` currently.
+- `participantUserId`: required.
+- `groupId`: optional. When provided, both devotees must be active group members.
+- Without `groupId`, an accepted Sangha connection is required.
+- Cannot start conversation with self.
+- Cannot start conversation if either user blocked the other.
+
+Success response: `201 Created`
+
+```json
+{
+  "conversation": {
+    "id": "conversation-id",
+    "type": "direct",
+    "groupId": null,
+    "group": null,
+    "participantUserId": "target-user-id",
+    "participant": {
+      "id": "target-user-id",
+      "memberId": "SF-2026-000002",
+      "name": "Ananya Sharma",
+      "handle": "ananya_sharma",
+      "profileImageUrl": "https://..."
+    },
+    "lastMessageAt": null,
+    "readAt": null,
+    "createdAt": "2026-08-31T10:00:00.000Z",
+    "updatedAt": "2026-08-31T10:00:00.000Z"
+  }
+}
+```
+
+Common errors:
+
+| Code | Meaning |
+| --- | --- |
+| `INVALID_CONVERSATION_PARTICIPANT` | User tried to message self. |
+| `DEVOTEE_NOT_FOUND` | Target user missing or inactive. |
+| `CONNECTION_REQUIRED` | Direct message attempted before accepted connection. |
+| `GROUP_MEMBER_REQUIRED` | Group-context DM attempted when both users are not active members. |
+| `MESSAGE_BLOCKED` | One user blocked the other. |
+
+##### `GET /api/sangha/conversations/:id/messages?limit=30&before=<cursor>`
+
+Loads chat history newest-first with cursor pagination.
+
+Query:
+
+| Name | Required | Notes |
+| --- | --- | --- |
+| `limit` | No | 1 to 50, default 30. |
+| `before` | No | Cursor returned as `nextCursor`; use for older messages. |
+
+Success response:
+
+```json
+{
+  "messages": [
+    {
+      "id": "message-id",
+      "conversationId": "conversation-id",
+      "content": "Jai Sai Ram, happy to connect.",
+      "status": "delivered",
+      "deliveredAt": "2026-08-31T10:00:05.000Z",
+      "readAt": null,
+      "createdAt": "2026-08-31T10:00:05.000Z",
+      "updatedAt": "2026-08-31T10:00:05.000Z",
+      "isMine": true,
+      "author": {
+        "id": "current-user-id",
+        "memberId": "SF-2026-000001",
+        "name": "Devesh Kumar Singh",
+        "handle": "devesh_kumar_singh",
+        "profileImageUrl": "https://..."
+      }
+    }
+  ],
+  "nextCursor": "base64url-cursor-or-null"
+}
+```
+
+Frontend handling:
+
+- Backend returns newest-first. In an inverted chat list, append older pages after the current list.
+- Deduplicate by `message.id` when merging pages and optimistic messages.
+- Use `nextCursor === null` to stop loading older messages.
+- Do not use offset for chat history.
+
+##### `POST /api/sangha/conversations/:id/messages`
+
+Sends a text message.
+
+Body:
+
+```json
+{
+  "content": "Jai Sai Ram. Are you joining the Thursday seva?"
+}
+```
+
+Validation:
+
+- `content`: required, trimmed, min 1, max 1000 chars.
+- Current user must be a conversation participant.
+- Messaging fails if either participant blocked the other after conversation creation.
+- Rate limit: 30 messages per minute per user.
+
+Success response: `201 Created`
+
+```json
+{
+  "message": {
+    "id": "message-id",
+    "conversationId": "conversation-id",
+    "content": "Jai Sai Ram. Are you joining the Thursday seva?",
+    "status": "delivered",
+    "deliveredAt": "2026-08-31T10:02:00.000Z",
+    "readAt": null,
+    "createdAt": "2026-08-31T10:02:00.000Z",
+    "updatedAt": "2026-08-31T10:02:00.000Z",
+    "isMine": true,
+    "author": {
+      "id": "current-user-id",
+      "memberId": "SF-2026-000001",
+      "name": "Devesh Kumar Singh",
+      "handle": "devesh_kumar_singh",
+      "profileImageUrl": "https://..."
+    }
+  }
+}
+```
+
+Frontend handling:
+
+- Create an optimistic message with a local `clientTempId`, `status: sending`, and current timestamp.
+- Replace optimistic message when backend response arrives.
+- If request fails, keep message visible with `status: failed` and allow retry.
+- After sending, poll the messages endpoint or refresh the active conversation state.
+
+##### `PATCH /api/sangha/conversations/:id/read`
+
+Marks the conversation read for current user and updates incoming messages to `read`.
+
+Success response:
+
+```json
+{
+  "success": true,
+  "conversationId": "conversation-id",
+  "readAt": "2026-08-31T10:03:00.000Z"
+}
+```
+
+Frontend handling:
+
+- Call when chat screen opens, regains focus, or after new incoming messages are rendered.
+- Throttle repeated read calls to avoid unnecessary requests.
+- Update local unread badge immediately after success.
+
+##### `POST /api/sangha/messages/:id/report`
+
+Reports a received message. Users cannot report their own message.
+
+Body:
+
+```json
+{
+  "reason": "abuse",
+  "note": "This message is inappropriate."
+}
+```
+
+Allowed reason:
+
+- `spam`
+- `abuse`
+- `privacy`
+- `other`
+
+Success response: `201 Created`
+
+```json
+{
+  "report": {
+    "id": "report-id",
+    "messageId": "message-id",
+    "reason": "abuse",
+    "note": "This message is inappropriate.",
+    "status": "pending",
+    "createdAt": "2026-08-31T10:04:00.000Z"
+  }
+}
+```
+
+#### Required Frontend Chat States
+
+| State | UI Behavior |
+| --- | --- |
+| `not_connected` | Show Connect button; hide message composer. |
+| `pending_sent` | Show request sent state; allow cancel. |
+| `pending_received` | Show Accept and Decline. |
+| `connected` | Show Message button and allow conversation creation. |
+| `blocked` | Hide message composer and show blocked state. |
+| `conversation_loading` | Open chat shell with loader. |
+| `message_sending` | Show optimistic outgoing bubble. |
+| `message_failed` | Show retry/delete local actions. |
+| `message_delivered` | Show single delivered indicator. |
+| `message_read` | Show read indicator only for outgoing messages. |
+
+#### Communication Notifications
+
+Backend currently creates Sangha notifications for connection requests, accepted connections, group invitations, and new messages. Frontend should consume them from:
+
+```http
+GET /api/users/me/sangha/notifications?limit=20&offset=0&unreadOnly=false
+POST /api/users/me/sangha/notifications/read
+```
+
+Recommended notification data keys:
+
+```json
+{
+  "kind": "sangha_message",
+  "conversationId": "conversation-id",
+  "messageId": "message-id",
+  "senderUserId": "sender-user-id"
+}
+```
+
+Frontend behavior:
+
+- Message notification tap opens `app/sangha-chat.tsx` with `conversationId`.
+- Connection request tap opens target profile or pending request surface.
+- Group invitation tap opens group detail or invitations list.
+- After opening the target screen, mark notification read.
+
+#### Missing Backend API For Inbox
+
+The backend has conversation create and message history APIs, but frontend still needs a dedicated conversation list endpoint for a production inbox:
+
+```http
+GET /api/users/me/sangha/conversations?limit=20&offset=0
+```
+
+Suggested response:
+
+```json
+{
+  "conversations": [
+    {
+      "id": "conversation-id",
+      "type": "direct",
+      "groupId": null,
+      "participant": {},
+      "lastMessage": {
+        "id": "message-id",
+        "content": "Jai Sai Ram",
+        "createdAt": "2026-08-31T10:02:00.000Z",
+        "isMine": false
+      },
+      "lastMessageAt": "2026-08-31T10:02:00.000Z",
+      "unreadCount": 1,
+      "readAt": null
+    }
+  ],
+  "pagination": {
+    "limit": 20,
+    "offset": 0,
+    "hasMore": false,
+    "nextOffset": null
+  }
+}
+```
+
+Until this endpoint exists, frontend can open chat from profile/member cards and use notifications for message entry. A full WhatsApp-style inbox should wait for this API.
+
+#### Communication QA Checklist
+
+- [ ] User A sends connection request to User B.
+- [ ] User A cannot create direct conversation before User B accepts.
+- [ ] User B accepts and both profiles return `connection.canMessage=true`.
+- [ ] User A creates conversation and sends first message.
+- [ ] User B opens chat from notification and sees the message.
+- [ ] User B replies; User A sees reply after polling/refresh.
+- [ ] Read endpoint updates incoming message status to `read`.
+- [ ] Older message pagination loads without duplicates or reversed order bugs.
+- [ ] Reporting own message fails; reporting another user's message succeeds.
+- [ ] Blocking a user prevents new messages and hides connect/message actions.
+- [ ] Group-context conversation succeeds only when both users are active group members.
+- [ ] Message content above 1000 chars fails with validation error.
+- [ ] Rapid send is rate-limited after backend threshold.
 
 ### 9. Live Satsang / Bhajan Streaming
 
@@ -249,13 +563,19 @@ Features:
 
 ## Authentication
 
-All protected endpoints require:
+All protected endpoints require the signed-in user token in production:
+
+```http
+Authorization: Bearer <accessToken>
+```
+
+Local development and Postman smoke tests may also use:
 
 ```http
 x-user-id: <currentAccountAuthorId>
 ```
 
-Public discovery can be unauthenticated only if backend wants guest browsing, but current mobile app should send `x-user-id` whenever available because recommendations, privacy, and membership flags are current-user specific.
+Current mobile app should send auth whenever available because recommendations, privacy, connection state, chat permissions, and membership flags are current-user specific.
 
 ## Privacy Rules
 
@@ -768,11 +1088,11 @@ Response:
 }
 ```
 
-#### `POST /api/sangha/invitations/:id/accept`
+#### `POST /api/users/me/sangha/invitations/:id/accept`
 
 Accept invitation and join group.
 
-#### `POST /api/sangha/invitations/:id/decline`
+#### `POST /api/users/me/sangha/invitations/:id/decline`
 
 Decline invitation.
 
@@ -1190,11 +1510,11 @@ Body:
 
 Allowed reactions:
 
-- `heart`
-- `folded_hands`
 - `om`
+- `heart`
+- `namaste`
 - `clap`
-- `lamp`
+- `blessing`
 
 #### `GET /api/sangha/live-streams/:id/recording`
 
