@@ -80,6 +80,7 @@ export type SanghaDevoteeSummary = {
 
 export type SanghaDevoteeProfile = SanghaDevoteeSummary & {
   canConnect?: boolean;
+  canMessage?: boolean;
   experiences?: any[];
   events?: any[];
   joinedAt?: string;

@@ -530,6 +530,189 @@ Suggested response:
 
 Until this endpoint exists, frontend can open chat from profile/member cards and use notifications for message entry. A full WhatsApp-style inbox should wait for this API.
 
+#### Production Realtime Chat Contract
+
+REST chat is wired for v1 reliability. To make Sangha chat feel like a
+production messaging app, backend and frontend should add realtime delivery on
+top of the existing REST APIs. REST remains the fallback and source of truth.
+
+Recommended transport:
+
+```text
+WebSocket over TLS
+wss://<baseUrl>/api/sangha/chat/ws?token=<shortLivedChatToken>
+```
+
+Do not pass the long-lived app access token in the query string. Frontend should
+first request a short-lived chat token:
+
+```http
+POST /api/sangha/chat/session
+Authorization: Bearer <accessToken>
+```
+
+Suggested response:
+
+```json
+{
+  "sessionId": "chat-session-id",
+  "webSocketUrl": "wss://saifamily.sustaininsight.com/api/sangha/chat/ws?token=...",
+  "expiresAt": "2026-08-31T12:30:00.000Z",
+  "heartbeatIntervalMs": 25000
+}
+```
+
+Frontend socket events sent to backend:
+
+```ts
+type SanghaClientChatEvent =
+  | {
+      type: "subscribe";
+      conversationIds: string[];
+    }
+  | {
+      type: "message_send";
+      clientMessageId: string;
+      conversationId: string;
+      content: string;
+    }
+  | {
+      type: "message_delivered";
+      conversationId: string;
+      messageIds: string[];
+    }
+  | {
+      type: "message_read";
+      conversationId: string;
+      messageIds?: string[];
+      readAt: string;
+    }
+  | {
+      type: "typing_start" | "typing_stop";
+      conversationId: string;
+    }
+  | {
+      type: "ping";
+      sentAt: string;
+    };
+```
+
+Backend socket events sent to frontend:
+
+```ts
+type SanghaServerChatEvent =
+  | {
+      type: "connected";
+      sessionId: string;
+      serverTime: string;
+    }
+  | {
+      type: "message_created";
+      clientMessageId?: string;
+      conversationId: string;
+      message: SanghaMessage;
+    }
+  | {
+      type: "message_status";
+      conversationId: string;
+      messageIds: string[];
+      status: "sent" | "delivered" | "read";
+      readAt?: string;
+      deliveredAt?: string;
+    }
+  | {
+      type: "typing";
+      conversationId: string;
+      userId: string;
+      isTyping: boolean;
+    }
+  | {
+      type: "conversation_updated";
+      conversation: SanghaConversation;
+    }
+  | {
+      type: "error";
+      code:
+        | "UNAUTHENTICATED"
+        | "CONNECTION_REQUIRED"
+        | "MESSAGE_BLOCKED"
+        | "RATE_LIMITED"
+        | "VALIDATION_ERROR";
+      message: string;
+      clientMessageId?: string;
+      conversationId?: string;
+    }
+  | {
+      type: "pong";
+      serverTime: string;
+    };
+```
+
+Backend rules:
+
+- Persist every `message_send` before broadcasting `message_created`.
+- Use `clientMessageId` for idempotency so reconnect/resend cannot duplicate messages.
+- Broadcast to all active sessions of every participant.
+- If receiver is offline, create push notification and keep message unread.
+- Enforce accepted connection, block state, participant membership, and rate limits on every send.
+- Keep message text max 1000 chars, plain text only for v1.
+- Store `sentAt`, `deliveredAt`, and `readAt`; do not trust client timestamps for final server state.
+- Close inactive sockets after missed heartbeats.
+- Revoke chat session tokens on logout or account block.
+
+Frontend rules:
+
+- Open WebSocket after login and subscribe to active/inbox conversations.
+- Keep REST `GET /api/sangha/conversations/:id/messages` as initial load and reconnect fallback.
+- Send optimistic messages immediately with `status: "sending"` and a stable `clientMessageId`.
+- Replace the local optimistic bubble when `message_created.clientMessageId` returns.
+- If socket is disconnected, queue local sends and retry when online; show `failed` only after backend rejects or retry budget expires.
+- Send `message_read` when chat screen is focused and visible.
+- Show typing indicator only after `typing_start`, auto-clear after 5 seconds if `typing_stop` is missed.
+- On reconnect, reload latest messages by REST to close any missed-event gap.
+- Do not expose message composer if backend says `canMessage=false`.
+
+#### Production Chat UI Scope
+
+To feel complete for devotees, chat should include:
+
+- Chat inbox list with unread count and last message.
+- Direct chat from connected devotee profile.
+- Direct chat from group member card when group-context permissions allow it.
+- Clear pending/connected/blocked states before chat opens.
+- Optimistic send, failed retry, delivered/read labels.
+- Long-press report for received messages.
+- Push notification tap to conversation.
+- Smooth keyboard handling and large touch targets for older users.
+
+#### Chat Implementation Phases
+
+Phase A: REST-complete v1
+
+- Profile connect/request/accept/decline/block flow.
+- Message button only after `canMessage=true` or `connected`.
+- Create/reuse conversation with `POST /api/sangha/conversations`.
+- Load, send, read, and report messages through REST.
+- Push notification deep-links to chat.
+
+Phase B: Inbox
+
+- Add `GET /api/users/me/sangha/conversations`.
+- Create `app/sangha-conversations.tsx`.
+- Show unread counts, last message, and search.
+
+Phase C: Realtime WebSocket
+
+- Add short-lived `POST /api/sangha/chat/session`.
+- Add `wss /api/sangha/chat/ws`.
+- Support realtime send, receive, typing, delivered, read, reconnect, and offline queue.
+
+Phase D: Rich Messaging
+
+- Media upload bridge for images/audio.
+- Reply-to-message and delete-for-me.
+- Admin moderation dashboard for reported messages.
+
 #### Communication QA Checklist
 
 - [ ] User A sends connection request to User B.

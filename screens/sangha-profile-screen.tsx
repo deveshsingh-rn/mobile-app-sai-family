@@ -225,6 +225,9 @@ const SanghaProfileScreen = () => {
   const hasOutgoingConnection =
     profile?.connectionStatus === 'pending' ||
     profile?.connectionStatus === 'pending_sent';
+  const canMessage =
+    Boolean(profile?.canMessage) ||
+    profile?.connectionStatus === 'connected';
 
   useEffect(() => {
     if (id) {
@@ -238,7 +241,19 @@ const SanghaProfileScreen = () => {
     }
 
     if (profile?.connectionStatus === 'connected') {
-      dispatch(disconnectSanghaDevoteeRequest(profileId));
+      Alert.alert(
+        'Disconnect devotee?',
+        'You will need to connect again before starting a new chat.',
+        [
+          { style: 'cancel', text: 'Keep connected' },
+          {
+            onPress: () =>
+              dispatch(disconnectSanghaDevoteeRequest(profileId)),
+            style: 'destructive',
+            text: 'Disconnect',
+          },
+        ]
+      );
       return;
     }
 
@@ -317,6 +332,20 @@ const SanghaProfileScreen = () => {
         },
       ]
     );
+  };
+
+  const handleMessagePress = () => {
+    if (!profileId || !canMessage) {
+      return;
+    }
+
+    router.push({
+      pathname: '/sangha-chat',
+      params: {
+        memberId: profileId,
+        memberName: profile?.name || 'Sai Family Devotee',
+      },
+    } as any);
   };
 
   if (loading && !profile) {
@@ -704,6 +733,81 @@ const SanghaProfileScreen = () => {
                   marginLeft: 8,
                 }}>
                 Accept
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : canMessage ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: 12,
+              marginHorizontal: 28,
+              marginTop: 28,
+            }}>
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={handleMessagePress}
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#D96A3D',
+                borderRadius: 19,
+                elevation: 4,
+                flex: 1,
+                flexDirection: 'row',
+                height: 60,
+                justifyContent: 'center',
+                shadowColor: '#D96A3D',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.18,
+                shadowRadius: 12,
+              }}>
+              <Ionicons
+                color="#FFFFFF"
+                name="chatbubble-ellipses"
+                size={22}
+              />
+              <Text
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 18,
+                  fontWeight: '900',
+                  marginLeft: 9,
+                }}>
+                Message
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.86}
+              disabled={actionPending}
+              onPress={handleConnectionPress}
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#FFFFFF',
+                borderColor: '#E7E1DA',
+                borderRadius: 19,
+                borderWidth: 1,
+                flexDirection: 'row',
+                height: 60,
+                justifyContent: 'center',
+                paddingHorizontal: 18,
+              }}>
+              {actionPending ? (
+                <ActivityIndicator color="#D96A3D" />
+              ) : (
+                <Ionicons
+                  color="#57534E"
+                  name="checkmark-circle"
+                  size={21}
+                />
+              )}
+              <Text
+                style={{
+                  color: '#292524',
+                  fontSize: 15,
+                  fontWeight: '900',
+                  marginLeft: 8,
+                }}>
+                Disconnect
               </Text>
             </TouchableOpacity>
           </View>

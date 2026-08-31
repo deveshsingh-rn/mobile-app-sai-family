@@ -111,8 +111,32 @@ function AppLayoutContent() {
       if (handledNotificationIdRef.current === request.identifier) return;
       handledNotificationIdRef.current = request.identifier;
 
-      if (request.content.data?.feature === 'morning-sai') {
+      const data = request.content.data || {};
+
+      if (data.feature === 'morning-sai') {
         router.push('/(tabs)/experiences/ask-sai' as never);
+        return;
+      }
+
+      if (
+        data.feature === 'sangha' ||
+        data.kind === 'sangha_message' ||
+        data.type === 'sangha_message'
+      ) {
+        if (typeof data.conversationId === 'string') {
+          router.push({
+            pathname: '/sangha-chat',
+            params: { conversationId: data.conversationId },
+          } as never);
+          return;
+        }
+
+        if (typeof data.senderUserId === 'string') {
+          router.push({
+            pathname: '/sangha-profile',
+            params: { id: data.senderUserId },
+          } as never);
+        }
       }
     };
 

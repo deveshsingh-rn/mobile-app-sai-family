@@ -138,6 +138,26 @@ function mergeMessages(
   return mergeById(current, incoming);
 }
 
+function replaceMessageById(
+  current: SanghaState["conversationMessagesById"][string] = [],
+  messageId: string | undefined,
+  nextMessage: SanghaState["conversationMessagesById"][string][number]
+) {
+  if (!messageId) {
+    return [nextMessage, ...current];
+  }
+
+  const found = current.some((message) => message.id === messageId);
+
+  if (!found) {
+    return [nextMessage, ...current];
+  }
+
+  return current.map((message) =>
+    message.id === messageId ? nextMessage : message
+  );
+}
+
 function updateEvent(
   events: SanghaState["groupEvents"],
   eventId: string,
@@ -1452,15 +1472,36 @@ export function sanghaReducer(
         ),
       };
 
-    case SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_SUCCESS:
+    case SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_REQUEST:
       return {
         ...state,
         conversationMessagesById: {
           ...state.conversationMessagesById,
           [action.payload.conversationId]: [
-            action.payload.message,
+            {
+              content: action.payload.content,
+              conversationId: action.payload.conversationId,
+              createdAt: new Date().toISOString(),
+              id: action.payload.clientMessageId,
+              isMine: true,
+              status: "sending",
+            },
             ...(state.conversationMessagesById[action.payload.conversationId] || []),
           ],
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_SUCCESS:
+      return {
+        ...state,
+        conversationMessagesById: {
+          ...state.conversationMessagesById,
+          [action.payload.conversationId]: replaceMessageById(
+            state.conversationMessagesById[action.payload.conversationId],
+            action.payload.clientMessageId,
+            action.payload.message
+          ),
         },
       };
 
@@ -1507,6 +1548,25 @@ export function sanghaReducer(
 
     case SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_FAILURE:
     case SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_FAILURE:
+      return {
+        ...state,
+        conversationMessagesById: {
+          ...state.conversationMessagesById,
+          [action.payload.conversationId]: (
+            state.conversationMessagesById[action.payload.conversationId] || []
+          ).map((message) =>
+            message.id === action.payload.clientMessageId
+              ? { ...message, status: "failed" }
+              : message
+          ),
+        },
+        conversationMessagesLoadingIds: removePending(
+          state.conversationMessagesLoadingIds,
+          action.payload.conversationId
+        ),
+        error: action.payload.error,
+      };
+
     case SANGHA_ACTIONS.MARK_CONVERSATION_READ_FAILURE:
       return {
         ...state,

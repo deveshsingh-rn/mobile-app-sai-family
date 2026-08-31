@@ -1721,6 +1721,7 @@ function* handleSendConversationMessage(
 
     yield put(
       sendSanghaConversationMessageSuccess({
+        clientMessageId: action.payload.clientMessageId,
         conversationId: action.payload.conversationId,
         message: normalizeMessage(response),
       })
@@ -1728,6 +1729,7 @@ function* handleSendConversationMessage(
   } catch (error) {
     yield put(
       sendSanghaConversationMessageFailure({
+        clientMessageId: action.payload.clientMessageId,
         conversationId: action.payload.conversationId,
         error: getErrorMessage(error, "Failed to send message."),
       })

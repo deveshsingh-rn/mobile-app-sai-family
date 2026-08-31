@@ -41,14 +41,16 @@ function avatarForName(name?: string | null) {
 }
 
 export default function SanghaChatScreen() {
-  const { groupId, memberId, memberName } = useLocalSearchParams<{
+  const { conversationId: routeConversationId, groupId, memberId, memberName } =
+    useLocalSearchParams<{
+    conversationId?: string;
     groupId?: string;
     memberId?: string;
     memberName?: string;
   }>();
   const dispatch = useAppDispatch();
   const conversation = useAppSelector(selectSanghaActiveConversation);
-  const conversationId = conversation?.id;
+  const conversationId = conversation?.id || routeConversationId;
   const messages = useAppSelector((state) =>
     selectSanghaConversationMessages(state, conversationId)
   );
@@ -63,10 +65,13 @@ export default function SanghaChatScreen() {
   );
   const error = useAppSelector(selectSanghaError);
   const [draft, setDraft] = useState("");
-  const displayName = memberName || "Sai Family";
+  const displayName =
+    memberName ||
+    conversation?.participant?.name ||
+    "Sai Family";
 
   useEffect(() => {
-    if (!memberId) {
+    if (!memberId || routeConversationId) {
       return;
     }
 
@@ -77,7 +82,7 @@ export default function SanghaChatScreen() {
         participantUserId: memberId,
       })
     );
-  }, [dispatch, displayName, groupId, memberId]);
+  }, [dispatch, displayName, groupId, memberId, routeConversationId]);
 
   useEffect(() => {
     if (!conversationId) {
@@ -153,6 +158,27 @@ export default function SanghaChatScreen() {
       );
     },
     [dispatch]
+  );
+
+  const retryMessage = useCallback(
+    (message: SanghaConversationMessage) => {
+      if (
+        !conversationId ||
+        !message.isMine ||
+        message.status !== "failed" ||
+        !message.content.trim()
+      ) {
+        return;
+      }
+
+      dispatch(
+        sendSanghaConversationMessageRequest({
+          content: message.content.trim(),
+          conversationId,
+        })
+      );
+    },
+    [conversationId, dispatch]
   );
 
   return (
@@ -277,6 +303,7 @@ export default function SanghaChatScreen() {
             <TouchableOpacity
               activeOpacity={message.isMine ? 1 : 0.82}
               delayLongPress={450}
+              onPress={() => retryMessage(message)}
               onLongPress={() => reportMessage(message)}
               style={{
                 alignSelf: message.isMine ? "flex-end" : "flex-start",
@@ -315,6 +342,19 @@ export default function SanghaChatScreen() {
                     minute: "2-digit",
                   })}
                   {message.isMine && message.status ? `  ${message.status}` : ""}
+                </Text>
+              ) : null}
+              {message.isMine && message.status === "failed" ? (
+                <Text
+                  style={{
+                    color: "#FEE2E2",
+                    fontSize: 11,
+                    fontWeight: "800",
+                    marginTop: 4,
+                    textAlign: "right",
+                  }}
+                >
+                  Tap to retry
                 </Text>
               ) : null}
             </TouchableOpacity>

@@ -1352,12 +1352,17 @@ export const sendSanghaConversationMessageRequest = (
   payload: { content: string; conversationId: string }
 ) =>
   ({
-    payload,
+    payload: {
+      ...payload,
+      clientMessageId:
+        `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    },
     type: SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_REQUEST,
   } as const);
 
 export const sendSanghaConversationMessageSuccess = (
   payload: {
+    clientMessageId?: string;
     conversationId: string;
     message: SanghaConversationMessage;
   }
@@ -1368,7 +1373,7 @@ export const sendSanghaConversationMessageSuccess = (
   } as const);
 
 export const sendSanghaConversationMessageFailure = (
-  payload: { conversationId: string; error: string }
+  payload: { clientMessageId?: string; conversationId: string; error: string }
 ) =>
   ({
     payload,
