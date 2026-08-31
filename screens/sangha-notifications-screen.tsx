@@ -196,7 +196,7 @@ export default function SanghaNotificationsScreen() {
             Notifications
           </Text>
           <Text style={{ color: "#6B7280", fontSize: 13, fontWeight: "700" }}>
-            Sangha invites, posts, events, and live updates
+            Sangha invites, posts, events, and community updates
           </Text>
         </View>
         <TouchableOpacity activeOpacity={0.85} onPress={markAllRead}>

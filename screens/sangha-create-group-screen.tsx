@@ -135,8 +135,9 @@ export default function SanghaCreateGroupScreen({
 
     setSubmitted(true);
     const payload = {
-      bannerUrl:
-        "https://saifamily21219878.blob.core.windows.net/sai-media/sangha/banner-placeholder.png",
+      ...(mode === "edit" && group?.bannerUrl
+        ? { bannerUrl: group.bannerUrl }
+        : {}),
       city: city.trim() || undefined,
       country: country.trim() || undefined,
       description: description.trim(),

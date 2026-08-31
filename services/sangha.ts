@@ -436,6 +436,19 @@ export async function apiCreateSanghaGroupPost(
   return data;
 }
 
+export async function apiUpdateSanghaGroupPost(
+  groupId: string,
+  postId: string,
+  payload: { content: string }
+) {
+  const { data } = await apiClient.patch(
+    `/api/sangha/groups/${groupId}/posts/${postId}`,
+    payload
+  );
+
+  return data;
+}
+
 export async function apiLikeSanghaGroupPost(
   groupId: string,
   postId: string
@@ -581,6 +594,21 @@ export async function apiSendSanghaConversationMessage(
 ) {
   const { data } = await apiClient.post(
     `/api/sangha/conversations/${conversationId}/messages`,
+    payload
+  );
+
+  return data;
+}
+
+export async function apiReportSanghaMessage(
+  messageId: string,
+  payload: {
+    note?: string;
+    reason: "abuse" | "other" | "privacy" | "spam";
+  }
+) {
+  const { data } = await apiClient.post(
+    `/api/sangha/messages/${messageId}/report`,
     payload
   );
 

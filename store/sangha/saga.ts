@@ -1,6 +1,7 @@
 import { call, put, takeLatest } from "redux-saga/effects";
 
 import {
+  apiAcceptSanghaConnection,
   apiAcceptSanghaInvitation,
   apiAddSanghaRecentSearch,
   apiApproveSanghaGroupJoinRequest,
@@ -9,6 +10,7 @@ import {
   apiCreateSanghaGroup,
   apiArchiveSanghaGroup,
   apiDeclineSanghaInvitation,
+  apiDeclineSanghaConnection,
   apiDeclineSanghaGroupJoinRequest,
   apiDisconnectSanghaDevotee,
   apiFetchSanghaDevotees,
@@ -23,6 +25,7 @@ import {
   apiRemoveSanghaGroupMember,
   apiUpdateSanghaGroupMember,
   apiCreateSanghaGroupPost,
+  apiUpdateSanghaGroupPost,
   apiCreateSanghaGroupPostComment,
   apiCreateSanghaGroupEvent,
   apiCancelSanghaGroupEventRsvp,
@@ -50,9 +53,12 @@ import {
   apiStartSanghaConversation,
   apiFetchSanghaConversationMessages,
   apiSendSanghaConversationMessage,
+  apiReportSanghaMessage,
   apiMarkSanghaConversationRead,
 } from "@/services/sangha";
 import {
+  acceptSanghaConnectionFailure,
+  acceptSanghaConnectionSuccess,
   acceptSanghaInvitationFailure,
   acceptSanghaInvitationSuccess,
   addSanghaRecentSearchFailure,
@@ -69,12 +75,16 @@ import {
   archiveSanghaGroupSuccess,
   declineSanghaInvitationFailure,
   declineSanghaInvitationSuccess,
+  declineSanghaConnectionFailure,
+  declineSanghaConnectionSuccess,
   declineSanghaGroupJoinRequestFailure,
   declineSanghaGroupJoinRequestSuccess,
   createSanghaGroupPostCommentFailure,
   createSanghaGroupPostCommentSuccess,
   createSanghaGroupPostFailure,
   createSanghaGroupPostSuccess,
+  updateSanghaGroupPostFailure,
+  updateSanghaGroupPostSuccess,
   cancelSanghaGroupEventRsvpFailure,
   cancelSanghaGroupEventRsvpSuccess,
   createSanghaGroupEventFailure,
@@ -151,6 +161,8 @@ import {
   fetchSanghaConversationMessagesSuccess,
   sendSanghaConversationMessageFailure,
   sendSanghaConversationMessageSuccess,
+  reportSanghaMessageFailure,
+  reportSanghaMessageSuccess,
   markSanghaConversationReadFailure,
   markSanghaConversationReadSuccess,
 } from "./actions";
@@ -598,6 +610,42 @@ function* handleRequestConnection(
           "Failed to request connection."
         ),
         id: action.payload.id,
+      })
+    );
+  }
+}
+
+function* handleAcceptConnection(action: any): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiAcceptSanghaConnection,
+      action.payload.connectionId
+    );
+
+    yield put(acceptSanghaConnectionSuccess({...action.payload, response}));
+  } catch (error) {
+    yield put(
+      acceptSanghaConnectionFailure({
+        ...action.payload,
+        error: getErrorMessage(error, "Failed to accept connection."),
+      })
+    );
+  }
+}
+
+function* handleDeclineConnection(action: any): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiDeclineSanghaConnection,
+      action.payload.connectionId
+    );
+
+    yield put(declineSanghaConnectionSuccess({...action.payload, response}));
+  } catch (error) {
+    yield put(
+      declineSanghaConnectionFailure({
+        ...action.payload,
+        error: getErrorMessage(error, "Failed to decline connection."),
       })
     );
   }
@@ -1218,6 +1266,32 @@ function* handleCreateGroupPost(
   }
 }
 
+function* handleUpdateGroupPost(action: any): Generator<any, void, any> {
+  try {
+    const { content, groupId, postId } = action.payload;
+    const response = yield call(
+      apiUpdateSanghaGroupPost,
+      groupId,
+      postId,
+      { content }
+    );
+
+    yield put(
+      updateSanghaGroupPostSuccess({
+        post: normalizePost(response),
+        postId,
+      })
+    );
+  } catch (error) {
+    yield put(
+      updateSanghaGroupPostFailure({
+        error: getErrorMessage(error, "Failed to update post."),
+        postId: action.payload.postId,
+      })
+    );
+  }
+}
+
 function* handleLikeGroupPost(
   action: any
 ): Generator<any, void, any> {
@@ -1661,6 +1735,22 @@ function* handleSendConversationMessage(
   }
 }
 
+function* handleReportMessage(action: any): Generator<any, void, any> {
+  try {
+    const { messageId, ...payload } = action.payload;
+    const response = yield call(apiReportSanghaMessage, messageId, payload);
+
+    yield put(reportSanghaMessageSuccess({ messageId, response }));
+  } catch (error) {
+    yield put(
+      reportSanghaMessageFailure({
+        error: getErrorMessage(error, "Failed to report message."),
+        messageId: action.payload.messageId,
+      })
+    );
+  }
+}
+
 function* handleMarkConversationRead(
   action: any
 ): Generator<any, void, any> {
@@ -1802,6 +1892,10 @@ export function* sanghaSaga() {
     handleCreateGroupPost
   );
   yield takeLatest(
+    SANGHA_ACTIONS.UPDATE_GROUP_POST_REQUEST,
+    handleUpdateGroupPost
+  );
+  yield takeLatest(
     SANGHA_ACTIONS.LIKE_GROUP_POST_REQUEST,
     handleLikeGroupPost
   );
@@ -1858,6 +1952,14 @@ export function* sanghaSaga() {
     handleRequestConnection
   );
   yield takeLatest(
+    SANGHA_ACTIONS.ACCEPT_CONNECTION_REQUEST,
+    handleAcceptConnection
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.DECLINE_CONNECTION_REQUEST,
+    handleDeclineConnection
+  );
+  yield takeLatest(
     SANGHA_ACTIONS.DISCONNECT_DEVOTEE_REQUEST,
     handleDisconnectDevotee
   );
@@ -1880,6 +1982,10 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_REQUEST,
     handleSendConversationMessage
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.REPORT_MESSAGE_REQUEST,
+    handleReportMessage
   );
   yield takeLatest(
     SANGHA_ACTIONS.MARK_CONVERSATION_READ_REQUEST,

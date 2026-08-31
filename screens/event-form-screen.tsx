@@ -193,7 +193,10 @@ type PickerTarget = {
 
 type SelectionKind = "city" | "country" | "state" | "timezone";
 
-const toPayload = (form: EventFormState): CreateEventPayload => ({
+const toPayload = (
+  form: EventFormState,
+  groupId?: string
+): CreateEventPayload => ({
   address: form.address.trim(),
   bannerUrl: form.bannerUrl.trim() || undefined,
   city: form.city.trim() || undefined,
@@ -209,6 +212,7 @@ const toPayload = (form: EventFormState): CreateEventPayload => ({
   guidelines: form.guidelines
     .map((item) => item.trim())
     .filter(Boolean),
+  groupId: groupId || undefined,
   latitude: Number(form.latitude),
   longitude: Number(form.longitude),
   recurrence: form.recurrenceEnabled
@@ -360,7 +364,10 @@ export default function EventFormScreen({
 }: {
   mode: EventFormMode;
 }) {
-  const {id} = useLocalSearchParams<{id?: string}>();
+  const {groupId, id} = useLocalSearchParams<{
+    groupId?: string;
+    id?: string;
+  }>();
   const dispatch = useAppDispatch();
   const detail = useAppSelector(selectEventDetail);
   const saving = useAppSelector(selectIsCreatingEvent);
@@ -393,6 +400,10 @@ export default function EventFormScreen({
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const eventId = Array.isArray(id) ? id[0] : id;
+  const sanghaGroupId = Array.isArray(groupId) ? groupId[0] : groupId;
+  const isGroupEvent = mode === "create" && Boolean(sanghaGroupId);
+  const submitError = error;
+  const submitSaving = saving;
   const draftId = currentDraft?.id || null;
 
   const formProgress = useMemo(() => {
@@ -637,6 +648,7 @@ export default function EventFormScreen({
   useEffect(() => {
     if (
       mode !== "create" ||
+      isGroupEvent ||
       !isFormCompleteForAutosave(form) ||
       draftSaving ||
       publishingDraft ||
@@ -670,6 +682,7 @@ export default function EventFormScreen({
     draftId,
     draftSaving,
     form,
+    isGroupEvent,
     mode,
     publishingDraft,
     reviewVisible,
@@ -708,7 +721,7 @@ export default function EventFormScreen({
   }, [dispatch, draftPublishQueued, draftSaving, error]);
 
   useEffect(() => {
-    if (submitted && wasSaving.current && !saving && !error) {
+    if (submitted && wasSaving.current && !submitSaving && !submitError) {
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -716,8 +729,8 @@ export default function EventFormScreen({
       }
     }
 
-    wasSaving.current = saving;
-  }, [error, saving, submitted]);
+    wasSaving.current = submitSaving;
+  }, [submitError, submitSaving, submitted]);
 
   const handlePickBanner = useCallback(async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -912,7 +925,7 @@ export default function EventFormScreen({
       return;
     }
 
-    const payload = toPayload(form);
+    const payload = toPayload(form, sanghaGroupId);
     const validation = validateCreateEventPayload(payload);
 
     if (!validation.isValid) {
@@ -922,10 +935,10 @@ export default function EventFormScreen({
 
     dispatch(updateEventDraftRequest(draftId, toDraftPayload(form)));
     setDraftPublishQueued(draftId);
-  }, [dispatch, draftId, form]);
+  }, [dispatch, draftId, form, sanghaGroupId]);
 
   const handleSubmit = useCallback(() => {
-    const payload = toPayload(form);
+    const payload = toPayload(form, sanghaGroupId);
 
     if (mode === "create") {
       const validation = validateCreateEventPayload(payload);
@@ -959,10 +972,10 @@ export default function EventFormScreen({
 
     setSubmitted(true);
     dispatch(updateEventRequest({...payload, id: eventId}));
-  }, [detail, dispatch, eventId, form, mode]);
+  }, [detail, dispatch, eventId, form, mode, sanghaGroupId]);
 
   const confirmCreateEvent = useCallback(() => {
-    const payload = toPayload(form);
+    const payload = toPayload(form, sanghaGroupId);
     const validation = validateCreateEventPayload(payload);
 
     if (!validation.isValid) {
@@ -974,7 +987,7 @@ export default function EventFormScreen({
     setReviewVisible(false);
     setSubmitted(true);
     dispatch(createEventRequest(payload));
-  }, [dispatch, form]);
+  }, [dispatch, form, sanghaGroupId]);
 
   const selectionOptions =
     selectionKind === "country"
@@ -1063,7 +1076,7 @@ export default function EventFormScreen({
           </View>
         </View>
 
-        {!!error && <Text style={styles.errorText}>{error}</Text>}
+        {!!submitError && <Text style={styles.errorText}>{submitError}</Text>}
 
         <FormSection
           optional
@@ -1431,7 +1444,7 @@ export default function EventFormScreen({
               </Text>
             </View>
           </View>
-          {mode === "create" ? (
+          {mode === "create" && !isGroupEvent ? (
             <Pressable
               disabled={draftSaving || publishingDraft || uploadingMedia}
               onPress={handleSaveDraft}
@@ -1452,7 +1465,7 @@ export default function EventFormScreen({
             </Pressable>
           ) : null}
 
-          {mode === "create" && draftId ? (
+          {mode === "create" && !isGroupEvent && draftId ? (
             <PrimaryActionButton
               disabled={draftSaving || publishingDraft || uploadingMedia}
               label={
@@ -1466,9 +1479,9 @@ export default function EventFormScreen({
           ) : null}
 
           <PrimaryActionButton
-            disabled={saving || uploadingMedia || publishingDraft}
+            disabled={submitSaving || uploadingMedia || publishingDraft}
             label={mode === "create" ? "Review Event" : "Save Changes"}
-            loading={saving}
+            loading={submitSaving}
             onPress={handleSubmit}
           />
           <Pressable
@@ -1493,7 +1506,7 @@ export default function EventFormScreen({
         form={form}
         onClose={() => setReviewVisible(false)}
         onConfirm={confirmCreateEvent}
-        saving={saving}
+        saving={submitSaving}
         visible={reviewVisible}
       />
 

@@ -21,13 +21,48 @@ export type SanghaPurpose =
   | "satsang"
   | string;
 
+export type CreateSanghaGroupEventPayload = {
+  address: string;
+  bannerUrl?: string | null;
+  city?: string;
+  country?: string;
+  description?: string;
+  endAt: string;
+  faq?: { answer: string; question: string }[];
+  groupId: string;
+  guidelines?: string[];
+  isOnline: boolean;
+  latitude?: number;
+  longitude?: number;
+  recurrence?: {
+    count?: number;
+    frequency: string;
+    interval?: number;
+  };
+  startAt: string;
+  state?: string;
+  tags?: string[];
+  timezone: string;
+  title: string;
+  type?: string;
+  venueName?: string;
+  visibility?: "group_members";
+};
+
 export type SanghaDevoteeSummary = {
   approximateLocationLabel?: string | null;
   avatarUrl?: string | null;
   bio?: string | null;
   city?: string | null;
   connectionId?: string | null;
-  connectionStatus?: "none" | "pending" | "connected" | string;
+  connectionStatus?:
+    | "none"
+    | "pending"
+    | "pending_sent"
+    | "pending_received"
+    | "connected"
+    | "blocked"
+    | string;
   distanceKm?: number | null;
   distanceLabel?: string | null;
   id?: string;
@@ -162,10 +197,13 @@ export type SanghaGroupPost = {
   authorName?: string | null;
   authorRole?: string | null;
   canDelete?: boolean;
+  canEdit?: boolean;
+  canLike?: boolean;
   canPin?: boolean;
   commentCount?: number;
   content?: string | null;
   createdAt?: string;
+  groupId?: string;
   id: string;
   imageUrl?: string | null;
   isPinned?: boolean;
@@ -173,6 +211,7 @@ export type SanghaGroupPost = {
   likeCount?: number;
   mediaUrls?: string[];
   type?: string;
+  updatedAt?: string;
 };
 
 export type SanghaGroupFeedItem = SanghaGroupPost & {
@@ -242,6 +281,9 @@ export type SanghaGroupPostComment = {
 
 export type SanghaGroupMember = {
   avatarUrl?: string | null;
+  canMessage?: boolean;
+  canPromote?: boolean;
+  canRemove?: boolean;
   id: string;
   joinedAt?: string;
   name?: string;
@@ -268,12 +310,12 @@ export type SanghaGroupEvent = {
 export type SanghaHubHomeResult = {
   invitations?: SanghaInvitation[];
   myGroups?: SanghaGroupSummary[];
-  purposeTiles?: Array<{
+  purposeTiles?: {
     count?: number;
     icon?: string;
     label: string;
     purpose: string;
-  }>;
+  }[];
   recommendedGroups?: SanghaGroupSummary[];
   stats?: Record<string, number>;
 };
@@ -455,6 +497,9 @@ export enum SANGHA_ACTIONS {
   CREATE_GROUP_POST_REQUEST = "sangha/CREATE_GROUP_POST_REQUEST",
   CREATE_GROUP_POST_SUCCESS = "sangha/CREATE_GROUP_POST_SUCCESS",
   CREATE_GROUP_POST_FAILURE = "sangha/CREATE_GROUP_POST_FAILURE",
+  UPDATE_GROUP_POST_REQUEST = "sangha/UPDATE_GROUP_POST_REQUEST",
+  UPDATE_GROUP_POST_SUCCESS = "sangha/UPDATE_GROUP_POST_SUCCESS",
+  UPDATE_GROUP_POST_FAILURE = "sangha/UPDATE_GROUP_POST_FAILURE",
   LIKE_GROUP_POST_REQUEST = "sangha/LIKE_GROUP_POST_REQUEST",
   LIKE_GROUP_POST_SUCCESS = "sangha/LIKE_GROUP_POST_SUCCESS",
   LIKE_GROUP_POST_FAILURE = "sangha/LIKE_GROUP_POST_FAILURE",
@@ -512,6 +557,12 @@ export enum SANGHA_ACTIONS {
   REQUEST_CONNECTION_REQUEST = "sangha/REQUEST_CONNECTION_REQUEST",
   REQUEST_CONNECTION_SUCCESS = "sangha/REQUEST_CONNECTION_SUCCESS",
   REQUEST_CONNECTION_FAILURE = "sangha/REQUEST_CONNECTION_FAILURE",
+  ACCEPT_CONNECTION_REQUEST = "sangha/ACCEPT_CONNECTION_REQUEST",
+  ACCEPT_CONNECTION_SUCCESS = "sangha/ACCEPT_CONNECTION_SUCCESS",
+  ACCEPT_CONNECTION_FAILURE = "sangha/ACCEPT_CONNECTION_FAILURE",
+  DECLINE_CONNECTION_REQUEST = "sangha/DECLINE_CONNECTION_REQUEST",
+  DECLINE_CONNECTION_SUCCESS = "sangha/DECLINE_CONNECTION_SUCCESS",
+  DECLINE_CONNECTION_FAILURE = "sangha/DECLINE_CONNECTION_FAILURE",
   DISCONNECT_DEVOTEE_REQUEST = "sangha/DISCONNECT_DEVOTEE_REQUEST",
   DISCONNECT_DEVOTEE_SUCCESS = "sangha/DISCONNECT_DEVOTEE_SUCCESS",
   DISCONNECT_DEVOTEE_FAILURE = "sangha/DISCONNECT_DEVOTEE_FAILURE",
@@ -530,6 +581,9 @@ export enum SANGHA_ACTIONS {
   SEND_CONVERSATION_MESSAGE_REQUEST = "sangha/SEND_CONVERSATION_MESSAGE_REQUEST",
   SEND_CONVERSATION_MESSAGE_SUCCESS = "sangha/SEND_CONVERSATION_MESSAGE_SUCCESS",
   SEND_CONVERSATION_MESSAGE_FAILURE = "sangha/SEND_CONVERSATION_MESSAGE_FAILURE",
+  REPORT_MESSAGE_REQUEST = "sangha/REPORT_MESSAGE_REQUEST",
+  REPORT_MESSAGE_SUCCESS = "sangha/REPORT_MESSAGE_SUCCESS",
+  REPORT_MESSAGE_FAILURE = "sangha/REPORT_MESSAGE_FAILURE",
   MARK_CONVERSATION_READ_REQUEST = "sangha/MARK_CONVERSATION_READ_REQUEST",
   MARK_CONVERSATION_READ_SUCCESS = "sangha/MARK_CONVERSATION_READ_SUCCESS",
   MARK_CONVERSATION_READ_FAILURE = "sangha/MARK_CONVERSATION_READ_FAILURE",
@@ -761,14 +815,7 @@ export type SanghaAction =
       type: SANGHA_ACTIONS.CREATE_GROUP_POST_COMMENT_FAILURE;
     }
   | {
-      payload: {
-        groupId: string;
-        title: string;
-        description?: string;
-        startAt: string;
-        endAt?: string;
-        venueName?: string;
-      };
+      payload: CreateSanghaGroupEventPayload;
       type: SANGHA_ACTIONS.CREATE_GROUP_EVENT_REQUEST;
     }
   | {
@@ -905,6 +952,52 @@ export type SanghaAction =
   | {
       payload: { error: string; id: string };
       type: SANGHA_ACTIONS.REQUEST_CONNECTION_FAILURE;
+    }
+  | {
+      payload: { connectionId: string; devoteeId: string };
+      type:
+        | SANGHA_ACTIONS.ACCEPT_CONNECTION_REQUEST
+        | SANGHA_ACTIONS.DECLINE_CONNECTION_REQUEST;
+    }
+  | {
+      payload: { connectionId: string; devoteeId: string; response?: any };
+      type:
+        | SANGHA_ACTIONS.ACCEPT_CONNECTION_SUCCESS
+        | SANGHA_ACTIONS.DECLINE_CONNECTION_SUCCESS;
+    }
+  | {
+      payload: { connectionId: string; devoteeId: string; error: string };
+      type:
+        | SANGHA_ACTIONS.ACCEPT_CONNECTION_FAILURE
+        | SANGHA_ACTIONS.DECLINE_CONNECTION_FAILURE;
+    }
+  | {
+      payload: {
+        messageId: string;
+        note?: string;
+        reason: "abuse" | "other" | "privacy" | "spam";
+      };
+      type: SANGHA_ACTIONS.REPORT_MESSAGE_REQUEST;
+    }
+  | {
+      payload: { messageId: string; response?: unknown };
+      type: SANGHA_ACTIONS.REPORT_MESSAGE_SUCCESS;
+    }
+  | {
+      payload: { error: string; messageId: string };
+      type: SANGHA_ACTIONS.REPORT_MESSAGE_FAILURE;
+    }
+  | {
+      payload: { content: string; groupId: string; postId: string };
+      type: SANGHA_ACTIONS.UPDATE_GROUP_POST_REQUEST;
+    }
+  | {
+      payload: { post: SanghaGroupPost; postId: string };
+      type: SANGHA_ACTIONS.UPDATE_GROUP_POST_SUCCESS;
+    }
+  | {
+      payload: { error: string; postId: string };
+      type: SANGHA_ACTIONS.UPDATE_GROUP_POST_FAILURE;
     }
   | {
       payload: { id: string };

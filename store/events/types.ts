@@ -456,6 +456,7 @@ export type CreateEventPayload = {
   endAt: string;
   faq?: EventFaq[];
   guidelines?: string[];
+  groupId?: string;
   latitude: number;
   longitude: number;
   recurrence?: EventRecurrence;

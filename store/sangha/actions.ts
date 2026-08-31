@@ -24,6 +24,7 @@ import {
   SanghaHomeResult,
   SanghaConversation,
   SanghaConversationMessage,
+  CreateSanghaGroupEventPayload,
   CreateSanghaGroupPayload,
   UpdateSanghaGroupPayload,
 } from "./types";
@@ -579,14 +580,7 @@ export const fetchSanghaGroupEventsFailure = (
   } as const);
 
 export const createSanghaGroupEventRequest = (
-  payload: {
-    description?: string;
-    endAt?: string;
-    groupId: string;
-    startAt: string;
-    title: string;
-    venueName?: string;
-  }
+  payload: CreateSanghaGroupEventPayload
 ) =>
   ({
     payload,
@@ -784,6 +778,34 @@ export const createSanghaGroupPostFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.CREATE_GROUP_POST_FAILURE,
+  } as const);
+
+export const updateSanghaGroupPostRequest = (payload: {
+  content: string;
+  groupId: string;
+  postId: string;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UPDATE_GROUP_POST_REQUEST,
+  } as const);
+
+export const updateSanghaGroupPostSuccess = (payload: {
+  post: SanghaGroupPost;
+  postId: string;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UPDATE_GROUP_POST_SUCCESS,
+  } as const);
+
+export const updateSanghaGroupPostFailure = (payload: {
+  error: string;
+  postId: string;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UPDATE_GROUP_POST_FAILURE,
   } as const);
 
 export const likeSanghaGroupPostRequest = (
@@ -1133,6 +1155,64 @@ export const requestSanghaConnectionFailure = (
     type: SANGHA_ACTIONS.REQUEST_CONNECTION_FAILURE,
   } as const);
 
+export const acceptSanghaConnectionRequest = (payload: {
+  connectionId: string;
+  devoteeId: string;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.ACCEPT_CONNECTION_REQUEST,
+  } as const);
+
+export const acceptSanghaConnectionSuccess = (payload: {
+  connectionId: string;
+  devoteeId: string;
+  response?: any;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.ACCEPT_CONNECTION_SUCCESS,
+  } as const);
+
+export const acceptSanghaConnectionFailure = (payload: {
+  connectionId: string;
+  devoteeId: string;
+  error: string;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.ACCEPT_CONNECTION_FAILURE,
+  } as const);
+
+export const declineSanghaConnectionRequest = (payload: {
+  connectionId: string;
+  devoteeId: string;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.DECLINE_CONNECTION_REQUEST,
+  } as const);
+
+export const declineSanghaConnectionSuccess = (payload: {
+  connectionId: string;
+  devoteeId: string;
+  response?: any;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.DECLINE_CONNECTION_SUCCESS,
+  } as const);
+
+export const declineSanghaConnectionFailure = (payload: {
+  connectionId: string;
+  devoteeId: string;
+  error: string;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.DECLINE_CONNECTION_FAILURE,
+  } as const);
+
 export const disconnectSanghaDevoteeRequest = (
   id: string
 ) =>
@@ -1293,6 +1373,34 @@ export const sendSanghaConversationMessageFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_FAILURE,
+  } as const);
+
+export const reportSanghaMessageRequest = (payload: {
+  messageId: string;
+  note?: string;
+  reason: "abuse" | "other" | "privacy" | "spam";
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.REPORT_MESSAGE_REQUEST,
+  } as const);
+
+export const reportSanghaMessageSuccess = (payload: {
+  messageId: string;
+  response?: unknown;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.REPORT_MESSAGE_SUCCESS,
+  } as const);
+
+export const reportSanghaMessageFailure = (payload: {
+  error: string;
+  messageId: string;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.REPORT_MESSAGE_FAILURE,
   } as const);
 
 export const markSanghaConversationReadRequest = (

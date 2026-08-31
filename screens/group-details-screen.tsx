@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   TextInput,
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
@@ -39,6 +42,7 @@ import {
   unlikeSanghaGroupPostRequest,
   unpinSanghaGroupPostRequest,
   updateSanghaGroupMemberRequest,
+  updateSanghaGroupPostRequest,
 } from "@/store/sangha/actions";
 import {
   selectIsSanghaActionPending,
@@ -164,6 +168,7 @@ export default function GroupDetailsScreen() {
     membership?.canCreateEvent ?? isActiveMember;
   const canManageGroup =
     membership?.canModerate ?? group?.canManage ?? false;
+  const canInvite = membership?.canInvite ?? canManageGroup;
 
   useEffect(() => {
     if (!groupId) {
@@ -220,6 +225,7 @@ export default function GroupDetailsScreen() {
       return (
         <MembersSection
           canManageGroup={canManageGroup}
+          canInvite={canInvite}
           groupId={groupId}
           loading={membersLoading}
           members={members}
@@ -261,8 +267,12 @@ export default function GroupDetailsScreen() {
       return;
     }
 
-    if (group?.membershipStatus === "active") {
+    if (isActiveMember) {
       dispatch(leaveSanghaGroupRequest(groupId));
+      return;
+    }
+
+    if (membershipStatus === "pending") {
       return;
     }
 
@@ -481,7 +491,7 @@ export default function GroupDetailsScreen() {
 
               <TouchableOpacity
                 activeOpacity={0.85}
-                disabled={groupActionPending}
+                disabled={groupActionPending || membershipStatus === "pending"}
                 onPress={handleJoinToggle}
                 style={{
                   width: 88,
@@ -501,9 +511,9 @@ export default function GroupDetailsScreen() {
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800" }}>
-                    {group?.membershipStatus === "active"
+                    {isActiveMember
                       ? "Leave"
-                      : group?.membershipStatus === "pending"
+                      : membershipStatus === "pending"
                         ? "Pending"
                         : "Join"}
                   </Text>
@@ -632,10 +642,18 @@ function FeedSection({
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Image
-            source={{ uri: "https://randomuser.me/api/portraits/women/12.jpg" }}
-            style={{ width: 42, height: 42, borderRadius: 21 }}
-          />
+          <View
+            style={{
+              alignItems: "center",
+              backgroundColor: "#FFF7ED",
+              borderRadius: 21,
+              height: 42,
+              justifyContent: "center",
+              width: 42,
+            }}
+          >
+            <Ionicons name="person" size={19} color="#F97316" />
+          </View>
           <TextInput
             editable={canPost}
             onChangeText={setContent}
@@ -965,7 +983,6 @@ function CommunityPostCard({
         image={postAuthorAvatar(post)}
         name={post.authorName || "Sai Family"}
         meta={formatDate(post.createdAt)}
-        menu
       />
 
       <Text style={postTextStyle}>
@@ -1073,11 +1090,13 @@ function CommunityPostCard({
 }
 
 function MembersSection({
+  canInvite,
   canManageGroup,
   groupId,
   loading,
   members,
 }: {
+  canInvite: boolean;
   canManageGroup: boolean;
   groupId: string;
   loading: boolean;
@@ -1100,7 +1119,7 @@ function MembersSection({
   const sendInvite = () => {
     const userId = inviteUserId.trim();
 
-    if (!userId) {
+    if (!userId || !canInvite) {
       return;
     }
 
@@ -1146,15 +1165,17 @@ function MembersSection({
         </View>
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-          <ActionPill
-            icon="person-add"
-            label="Invite"
-            onPress={() => setShowInvite((current) => !current)}
-          />
+          {canInvite ? (
+            <ActionPill
+              icon="person-add"
+              label="Invite"
+              onPress={() => setShowInvite((current) => !current)}
+            />
+          ) : null}
           <ActionPill icon="shield-checkmark" label="Admins" onPress={() => setQuery("admin")} />
           <ActionPill icon="funnel" label="Active" onPress={() => setQuery("active")} />
         </View>
-        {showInvite && canManageGroup ? (
+        {showInvite && canInvite ? (
           <View
             style={{
               backgroundColor: "#FFF7ED",
@@ -1196,7 +1217,8 @@ function MembersSection({
               }}
               value={inviteMessage}
             />
-            <TouchableOpacity
+            {member.canMessage !== false ? (
+              <TouchableOpacity
               activeOpacity={0.85}
               onPress={sendInvite}
               style={{
@@ -1268,10 +1290,12 @@ function MembersSection({
               }}
             >
               <Feather name="message-circle" size={18} color="#6B7280" />
-            </TouchableOpacity>
-            {canManageGroup ? (
+              </TouchableOpacity>
+            ) : null}
+            {canManageGroup && (member.canPromote !== false || member.canRemove !== false) ? (
               <View style={{ gap: 8, marginLeft: 8 }}>
-                <TouchableOpacity
+                {member.canPromote !== false ? (
+                  <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={() =>
                     dispatch(
@@ -1294,8 +1318,10 @@ function MembersSection({
                   <Text style={{ color: "#9A3412", fontSize: 11, fontWeight: "900" }}>
                     {member.role === "moderator" ? "Member" : "Mod"}
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
+                  </TouchableOpacity>
+                ) : null}
+                {member.canRemove !== false ? (
+                  <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={() =>
                     Alert.alert(
@@ -1327,7 +1353,8 @@ function MembersSection({
                   }}
                 >
                   <Text style={{ color: "#9F1239", fontSize: 11, fontWeight: "900" }}>Remove</Text>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                ) : null}
               </View>
             ) : null}
           </View>
@@ -1538,12 +1565,10 @@ function PostAuthor({
   image,
   name,
   meta,
-  menu,
 }: {
   image: string;
   name: string;
   meta: string;
-  menu?: boolean;
 }) {
   return (
     <View style={{ marginTop: 16, flexDirection: "row", alignItems: "center" }}>
@@ -1552,21 +1577,6 @@ function PostAuthor({
         <Text style={{ fontSize: 16, color: "#111827", fontWeight: "900" }}>{name}</Text>
         <Text style={{ marginTop: 2, fontSize: 14, color: "#6B7280" }}>{meta}</Text>
       </View>
-      {menu ? (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 19,
-            backgroundColor: "#F3F4F6",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Ionicons name="ellipsis-vertical" size={18} color="#6B7280" />
-        </TouchableOpacity>
-      ) : null}
     </View>
   );
 }
@@ -1583,11 +1593,13 @@ function PostActions({
   post: SanghaGroupPost;
 }) {
   const dispatch = useAppDispatch();
+  const [editContent, setEditContent] = useState(post.content || "");
+  const [editVisible, setEditVisible] = useState(false);
   const pending = useAppSelector((state) =>
     selectIsSanghaActionPending(state, post.id)
   );
   const toggleLike = () => {
-    if (pending) return;
+    if (pending || post.canLike === false) return;
 
     dispatch(
       post.likedByMe
@@ -1616,17 +1628,71 @@ function PostActions({
           })
     );
   };
+  const saveEdit = () => {
+    const content = editContent.trim();
+
+    if (!content || pending) return;
+
+    dispatch(
+      updateSanghaGroupPostRequest({
+        content,
+        groupId,
+        postId: post.id,
+      })
+    );
+    setEditVisible(false);
+  };
+  const confirmDelete = () => {
+    if (pending) return;
+
+    Alert.alert(
+      "Delete post?",
+      "This post and its discussion will be removed from the group.",
+      [
+        { style: "cancel", text: "Cancel" },
+        {
+          onPress: () =>
+            dispatch(
+              deleteSanghaGroupPostRequest({
+                groupId,
+                postId: post.id,
+              })
+            ),
+          style: "destructive",
+          text: "Delete",
+        },
+      ]
+    );
+  };
 
   return (
     <>
       <View style={{ height: 1, backgroundColor: "#E5E7EB", marginVertical: 18 }} />
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <TouchableOpacity activeOpacity={0.85} onPress={toggleLike} style={{ flexDirection: "row", alignItems: "center" }}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          disabled={post.canLike === false}
+          onPress={toggleLike}
+          style={{ flexDirection: "row", alignItems: "center", opacity: post.canLike === false ? 0.45 : 1 }}
+        >
           <Feather name="heart" size={17} color={post.likedByMe ? "#F97316" : "#6B7280"} />
         </TouchableOpacity>
         <Text style={{ marginLeft: 7, marginRight: 18, color: "#6B7280", fontSize: 14 }}>{likes}</Text>
         <Feather name="message-circle" size={17} color="#6B7280" />
         <Text style={{ marginLeft: 7, color: "#6B7280", fontSize: 14 }}>{comments}</Text>
+        {post.canEdit ? (
+          <TouchableOpacity
+            accessibilityLabel="Edit post"
+            activeOpacity={0.85}
+            onPress={() => {
+              setEditContent(post.content || "");
+              setEditVisible(true);
+            }}
+            style={{ marginLeft: 18 }}
+          >
+            <Feather name="edit-2" size={17} color="#6B7280" />
+          </TouchableOpacity>
+        ) : null}
         {post.canPin || post.isPinned ? (
           <TouchableOpacity activeOpacity={0.85} onPress={togglePin} style={{ marginLeft: 18 }}>
             <Ionicons name={post.isPinned ? "pin" : "pin-outline"} size={17} color="#6B7280" />
@@ -1635,20 +1701,90 @@ function PostActions({
         {post.canDelete ? (
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() =>
-              dispatch(
-                deleteSanghaGroupPostRequest({
-                  groupId,
-                  postId: post.id,
-                })
-              )
-            }
+            onPress={confirmDelete}
             style={{ marginLeft: 18 }}
           >
             <Feather name="trash-2" size={17} color="#9A3412" />
           </TouchableOpacity>
         ) : null}
       </View>
+      <Modal
+        animationType="slide"
+        onRequestClose={() => setEditVisible(false)}
+        transparent
+        visible={editVisible}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{
+            backgroundColor: "rgba(17, 24, 39, 0.42)",
+            flex: 1,
+            justifyContent: "flex-end",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              padding: 20,
+              paddingBottom: 34,
+            }}
+          >
+            <View style={{ alignItems: "center", flexDirection: "row" }}>
+              <Text style={{ color: "#111827", flex: 1, fontSize: 19, fontWeight: "900" }}>
+                Edit post
+              </Text>
+              <TouchableOpacity
+                accessibilityLabel="Close edit post"
+                onPress={() => setEditVisible(false)}
+                style={{ alignItems: "center", height: 40, justifyContent: "center", width: 40 }}
+              >
+                <Ionicons name="close" size={23} color="#57534E" />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              autoFocus
+              maxLength={2000}
+              multiline
+              onChangeText={setEditContent}
+              placeholder="Share an update with your Sangha"
+              placeholderTextColor="#A8A29E"
+              style={{
+                backgroundColor: "#F8F6F2",
+                borderColor: "#E7E1DA",
+                borderRadius: 18,
+                borderWidth: 1,
+                color: "#111827",
+                fontSize: 16,
+                lineHeight: 24,
+                marginTop: 14,
+                minHeight: 130,
+                padding: 16,
+                textAlignVertical: "top",
+              }}
+              value={editContent}
+            />
+            <TouchableOpacity
+              activeOpacity={0.86}
+              disabled={!editContent.trim() || pending}
+              onPress={saveEdit}
+              style={{
+                alignItems: "center",
+                backgroundColor: editContent.trim() ? "#F97316" : "#D6D3D1",
+                borderRadius: 17,
+                height: 52,
+                justifyContent: "center",
+                marginTop: 14,
+              }}
+            >
+              <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "900" }}>
+                Save changes
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </>
   );
 }

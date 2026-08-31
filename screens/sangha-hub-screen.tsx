@@ -11,7 +11,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   Image,
 } from 'react-native';
@@ -320,9 +319,7 @@ const SanghaHubScreen = () => {
           </View>
 
           {/* Search */}
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => router.push('/sangha-hub-search')}
+          <View
             style={{
               marginTop: 12,
               height: 58,
@@ -342,24 +339,31 @@ const SanghaHubScreen = () => {
               shadowRadius: 8,
               elevation: 2,
             }}>
-            <Ionicons
-              name="search"
-              size={24}
-              color="#9CA3AF"
-            />
-
-            <TextInput
-              editable={false}
-              placeholder="Discover groups, chapters, bhajans..."
-              placeholderTextColor="#9CA3AF"
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => router.push('/sangha-hub-search')}
               style={{
+                alignItems: 'center',
                 flex: 1,
-                marginLeft: 12,
-                fontSize: 18,
-                color: '#111827',
-                fontWeight: '500',
-              }}
-            />
+                flexDirection: 'row',
+              }}>
+              <Ionicons
+                name="search"
+                size={24}
+                color="#9CA3AF"
+              />
+              <Text
+                numberOfLines={1}
+                style={{
+                  color: '#9CA3AF',
+                  flex: 1,
+                  fontSize: 17,
+                  fontWeight: '500',
+                  marginLeft: 12,
+                }}>
+                Discover groups, chapters, bhajans...
+              </Text>
+            </TouchableOpacity>
 
             {/* Filter */}
             <TouchableOpacity
@@ -379,7 +383,7 @@ const SanghaHubScreen = () => {
                 color="#F97316"
               />
             </TouchableOpacity>
-          </TouchableOpacity>
+          </View>
 
           {error ? (
             <TouchableOpacity

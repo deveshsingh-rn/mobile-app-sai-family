@@ -24,7 +24,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
+  acceptSanghaConnectionRequest,
   blockSanghaDevoteeRequest,
+  declineSanghaConnectionRequest,
   disconnectSanghaDevoteeRequest,
   fetchSanghaProfileRequest,
   requestSanghaConnectionRequest,
@@ -104,7 +106,10 @@ function getConnectLabel(
     case 'connected':
       return 'Connected';
     case 'pending':
+    case 'pending_sent':
       return 'Requested';
+    case 'pending_received':
+      return 'Request received';
     case 'blocked':
       return 'Blocked';
     default:
@@ -119,7 +124,10 @@ function getConnectIcon(
     case 'connected':
       return 'checkmark-circle';
     case 'pending':
+    case 'pending_sent':
       return 'time';
+    case 'pending_received':
+      return 'person-add';
     case 'blocked':
       return 'ban';
     default:
@@ -203,15 +211,20 @@ const SanghaProfileScreen = () => {
               title: 'Sangha Purpose',
             }
           : null,
-      ].filter(Boolean) as Array<{
+      ].filter(Boolean) as {
         active?: boolean;
         subtitle: string;
         title: string;
-      }>,
+      }[],
     [profile]
   );
   const experiences = profile?.experiences || [];
   const events = profile?.events || [];
+  const hasIncomingConnection =
+    profile?.connectionStatus === 'pending_received';
+  const hasOutgoingConnection =
+    profile?.connectionStatus === 'pending' ||
+    profile?.connectionStatus === 'pending_sent';
 
   useEffect(() => {
     if (id) {
@@ -230,13 +243,52 @@ const SanghaProfileScreen = () => {
     }
 
     if (
-      profile?.connectionStatus === 'pending' ||
+      hasOutgoingConnection ||
+      hasIncomingConnection ||
       profile?.connectionStatus === 'blocked'
     ) {
       return;
     }
 
     dispatch(requestSanghaConnectionRequest(profileId));
+  };
+
+  const handleAcceptConnection = () => {
+    if (!profileId || !profile?.connectionId || actionPending) {
+      return;
+    }
+
+    dispatch(
+      acceptSanghaConnectionRequest({
+        connectionId: profile.connectionId,
+        devoteeId: profileId,
+      })
+    );
+  };
+
+  const handleDeclineConnection = () => {
+    if (!profileId || !profile?.connectionId || actionPending) {
+      return;
+    }
+
+    Alert.alert(
+      'Decline connection?',
+      'This request will be removed. The devotee can send another request later.',
+      [
+        { style: 'cancel', text: 'Keep request' },
+        {
+          onPress: () =>
+            dispatch(
+              declineSanghaConnectionRequest({
+                connectionId: profile.connectionId as string,
+                devoteeId: profileId,
+              })
+            ),
+          style: 'destructive',
+          text: 'Decline',
+        },
+      ]
+    );
   };
 
   const handleBlock = () => {
@@ -591,64 +643,124 @@ const SanghaProfileScreen = () => {
           </View>
         </View>
 
-        {/* Connect Button */}
-        <TouchableOpacity
-          activeOpacity={0.88}
-          disabled={
-            actionPending ||
-            profile?.connectionStatus === 'pending' ||
-            profile?.connectionStatus === 'blocked'
-          }
-          onPress={handleConnectionPress}
-          style={{
-            marginTop: 28,
-            marginHorizontal: 50,
-            height: 64,
-            borderRadius: 32,
-            backgroundColor:
-              profile?.connectionStatus === 'connected'
-                ? '#111111'
-                : profile?.connectionStatus === 'pending' ||
-                    profile?.connectionStatus === 'blocked'
-                  ? '#8B7355'
-                  : '#D96A3D',
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexDirection: 'row',
-            shadowColor: '#D96A3D',
-            shadowOffset: {
-              width: 0,
-              height: 10,
-            },
-            shadowOpacity: 0.24,
-            shadowRadius: 14,
-            elevation: 6,
-          }}>
-          {actionPending ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Ionicons
-              name={getConnectIcon(profile)}
-              size={22}
-              color="#FFFFFF"
-            />
-          )}
-
-          <Text
+        {/* Connection actions */}
+        {hasIncomingConnection ? (
+          <View
             style={{
-              marginLeft: 10,
-              fontSize: 22,
-              color: '#FFFFFF',
-              fontWeight: '700',
+              flexDirection: 'row',
+              gap: 12,
+              marginHorizontal: 28,
+              marginTop: 28,
             }}>
-            {actionPending
-              ? 'Please wait'
-              : getConnectLabel(profile)}
-          </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.86}
+              disabled={actionPending || !profile?.connectionId}
+              onPress={handleDeclineConnection}
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#FFFFFF',
+                borderColor: '#E7E1DA',
+                borderRadius: 18,
+                borderWidth: 1,
+                flex: 1,
+                flexDirection: 'row',
+                height: 58,
+                justifyContent: 'center',
+              }}>
+              <Ionicons color="#57534E" name="close" size={21} />
+              <Text
+                style={{
+                  color: '#292524',
+                  fontSize: 17,
+                  fontWeight: '800',
+                  marginLeft: 8,
+                }}>
+                Decline
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.86}
+              disabled={actionPending || !profile?.connectionId}
+              onPress={handleAcceptConnection}
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#D96A3D',
+                borderRadius: 18,
+                flex: 1,
+                flexDirection: 'row',
+                height: 58,
+                justifyContent: 'center',
+              }}>
+              {actionPending ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Ionicons color="#FFFFFF" name="checkmark" size={21} />
+              )}
+              <Text
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 17,
+                  fontWeight: '800',
+                  marginLeft: 8,
+                }}>
+                Accept
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            activeOpacity={0.88}
+            disabled={
+              actionPending ||
+              hasOutgoingConnection ||
+              profile?.connectionStatus === 'blocked'
+            }
+            onPress={handleConnectionPress}
+            style={{
+              alignItems: 'center',
+              backgroundColor:
+                profile?.connectionStatus === 'connected'
+                  ? '#111111'
+                  : hasOutgoingConnection ||
+                      profile?.connectionStatus === 'blocked'
+                    ? '#8B7355'
+                    : '#D96A3D',
+              borderRadius: 19,
+              elevation: 4,
+              flexDirection: 'row',
+              height: 60,
+              justifyContent: 'center',
+              marginHorizontal: 36,
+              marginTop: 28,
+              shadowColor: '#D96A3D',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.18,
+              shadowRadius: 12,
+            }}>
+            {actionPending ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Ionicons
+                name={getConnectIcon(profile)}
+                size={22}
+                color="#FFFFFF"
+              />
+            )}
+            <Text
+              style={{
+                color: '#FFFFFF',
+                fontSize: 19,
+                fontWeight: '800',
+                marginLeft: 10,
+              }}>
+              {actionPending ? 'Please wait' : getConnectLabel(profile)}
+            </Text>
+          </TouchableOpacity>
+        )}
 
-        {/* Mutual Friends */}
-        <View
+        {/* Mutual connections */}
+        {profile?.mutualConnectionCount ? (
+          <View
           style={{
             marginTop: 40,
             marginHorizontal: 22,
@@ -669,38 +781,17 @@ const SanghaProfileScreen = () => {
             shadowRadius: 8,
             elevation: 1,
           }}>
-          {/* Avatars */}
           <View
             style={{
-              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#FFF7ED',
+              borderRadius: 20,
+              height: 40,
+              justifyContent: 'center',
               marginRight: 18,
+              width: 40,
             }}>
-            <Image
-              source={{
-                uri: 'https://randomuser.me/api/portraits/men/11.jpg',
-              }}
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 17,
-                borderWidth: 2,
-                borderColor: '#FFFFFF',
-              }}
-            />
-
-            <Image
-              source={{
-                uri: 'https://randomuser.me/api/portraits/women/12.jpg',
-              }}
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 17,
-                borderWidth: 2,
-                borderColor: '#FFFFFF',
-                marginLeft: -10,
-              }}
-            />
+            <Ionicons color="#D96A3D" name="people" size={20} />
           </View>
 
           {/* Text */}
@@ -718,11 +809,12 @@ const SanghaProfileScreen = () => {
                 color: '#111111',
                 fontWeight: '800',
               }}>
-              {profile?.mutualConnectionCount || 0}
+              {profile.mutualConnectionCount}
             </Text>
             {' '}mutual Sangha connections
           </Text>
-        </View>
+          </View>
+        ) : null}
 
         {/* Tabs */}
         <View

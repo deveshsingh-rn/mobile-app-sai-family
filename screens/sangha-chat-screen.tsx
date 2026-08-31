@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  FlatList,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -17,6 +19,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import {
   fetchSanghaConversationMessagesRequest,
   markSanghaConversationReadRequest,
+  reportSanghaMessageRequest,
   sendSanghaConversationMessageRequest,
   startSanghaConversationRequest,
 } from "@/store/sangha/actions";
@@ -24,10 +27,12 @@ import {
   selectIsSanghaActionPending,
   selectSanghaActiveConversation,
   selectSanghaConversationMessages,
+  selectSanghaConversationMessageCursor,
   selectSanghaConversationMessagesLoading,
   selectSanghaError,
 } from "@/store/sangha/selectors";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { SanghaConversationMessage } from "@/store/sangha/types";
 
 function avatarForName(name?: string | null) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -49,6 +54,9 @@ export default function SanghaChatScreen() {
   );
   const messagesLoading = useAppSelector((state) =>
     selectSanghaConversationMessagesLoading(state, conversationId)
+  );
+  const nextCursor = useAppSelector((state) =>
+    selectSanghaConversationMessageCursor(state, conversationId)
   );
   const starting = useAppSelector((state) =>
     selectIsSanghaActionPending(state, memberId)
@@ -100,6 +108,52 @@ export default function SanghaChatScreen() {
     );
     setDraft("");
   };
+
+  const loadOlderMessages = useCallback(() => {
+    if (!conversationId || !nextCursor || messagesLoading) {
+      return;
+    }
+
+    dispatch(
+      fetchSanghaConversationMessagesRequest({
+        before: nextCursor,
+        conversationId,
+        limit: 30,
+      })
+    );
+  }, [conversationId, dispatch, messagesLoading, nextCursor]);
+
+  const reportMessage = useCallback(
+    (message: SanghaConversationMessage) => {
+      if (message.isMine) {
+        return;
+      }
+
+      const submitReport = (
+        reason: "abuse" | "other" | "privacy" | "spam"
+      ) => {
+        dispatch(
+          reportSanghaMessageRequest({
+            messageId: message.id,
+            note: "Reported from Sangha direct chat",
+            reason,
+          })
+        );
+      };
+
+      Alert.alert(
+        "Report this message?",
+        "Choose the reason. The other devotee will not be notified.",
+        [
+          { text: "Spam", onPress: () => submitReport("spam") },
+          { text: "Abusive content", onPress: () => submitReport("abuse") },
+          { text: "Privacy concern", onPress: () => submitReport("privacy") },
+          { style: "cancel", text: "Cancel" },
+        ]
+      );
+    },
+    [dispatch]
+  );
 
   return (
     <SafeAreaView style={{ backgroundColor: "#F8F6F2", flex: 1 }}>
@@ -164,52 +218,21 @@ export default function SanghaChatScreen() {
           </View>
         </View>
 
-        <View style={{ flex: 1, justifyContent: "flex-end", padding: 18 }}>
-          <View
-            style={{
-              alignSelf: "flex-start",
-              backgroundColor: "#FFFFFF",
-              borderColor: "#EEE7DD",
-              borderRadius: 20,
-              borderWidth: 1,
-              maxWidth: "82%",
-              paddingHorizontal: 15,
-              paddingVertical: 12,
-            }}
-          >
-            <Text
-              style={{
-                color: "#374151",
-                fontSize: 14,
-                fontWeight: "700",
-                lineHeight: 21,
-              }}
-            >
-              {starting
-                ? "Opening conversation..."
-                : error && !conversationId
-                  ? error
-                  : "Namaste. Start a respectful conversation with this devotee."}
-            </Text>
-          </View>
-
-          {messagesLoading ? (
-            <ActivityIndicator
-              color="#F97316"
-              style={{ marginTop: 16 }}
-            />
-          ) : null}
-
-          {messages.map((message, index) => (
+        <FlatList
+          contentContainerStyle={{ flexGrow: 1, padding: 18 }}
+          data={messages}
+          inverted
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+          keyExtractor={(message) => message.id}
+          ListEmptyComponent={
             <View
-              key={message.id || `${message.content}-${index}`}
               style={{
-                alignSelf: message.isMine ? "flex-end" : "flex-start",
-                backgroundColor: message.isMine ? "#F97316" : "#FFFFFF",
+                alignSelf: "flex-start",
+                backgroundColor: "#FFFFFF",
                 borderColor: "#EEE7DD",
-                borderWidth: message.isMine ? 0 : 1,
                 borderRadius: 20,
-                marginTop: 12,
+                borderWidth: 1,
                 maxWidth: "82%",
                 paddingHorizontal: 15,
                 paddingVertical: 12,
@@ -217,17 +240,87 @@ export default function SanghaChatScreen() {
             >
               <Text
                 style={{
-                  color: message.isMine ? "#FFFFFF" : "#374151",
+                  color: "#374151",
                   fontSize: 14,
                   fontWeight: "700",
                   lineHeight: 21,
                 }}
               >
-                {message.content}
+                {starting
+                  ? "Opening conversation..."
+                  : error && !conversationId
+                    ? error
+                    : "Namaste. Start a respectful conversation with this devotee."}
               </Text>
             </View>
-          ))}
-        </View>
+          }
+          ListFooterComponent={
+            messagesLoading ? (
+              <ActivityIndicator color="#F97316" style={{ marginVertical: 16 }} />
+            ) : nextCursor ? (
+              <Text
+                style={{
+                  color: "#78716C",
+                  fontSize: 12,
+                  fontWeight: "700",
+                  marginVertical: 12,
+                  textAlign: "center",
+                }}
+              >
+                Scroll up to load older messages
+              </Text>
+            ) : null
+          }
+          onEndReached={loadOlderMessages}
+          onEndReachedThreshold={0.25}
+          renderItem={({ item: message }) => (
+            <TouchableOpacity
+              activeOpacity={message.isMine ? 1 : 0.82}
+              delayLongPress={450}
+              onLongPress={() => reportMessage(message)}
+              style={{
+                alignSelf: message.isMine ? "flex-end" : "flex-start",
+                backgroundColor: message.isMine ? "#F97316" : "#FFFFFF",
+                borderColor: "#EEE7DD",
+                borderRadius: 20,
+                borderWidth: message.isMine ? 0 : 1,
+                marginBottom: 10,
+                maxWidth: "82%",
+                paddingHorizontal: 15,
+                paddingVertical: 11,
+              }}
+            >
+              <Text
+                style={{
+                  color: message.isMine ? "#FFFFFF" : "#374151",
+                  fontSize: 15,
+                  fontWeight: "600",
+                  lineHeight: 22,
+                }}
+              >
+                {message.content}
+              </Text>
+              {message.createdAt ? (
+                <Text
+                  style={{
+                    color: message.isMine ? "#FFEDD5" : "#A8A29E",
+                    fontSize: 10,
+                    fontWeight: "700",
+                    marginTop: 5,
+                    textAlign: "right",
+                  }}
+                >
+                  {new Date(message.createdAt).toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                  {message.isMine && message.status ? `  ${message.status}` : ""}
+                </Text>
+              ) : null}
+            </TouchableOpacity>
+          )}
+          showsVerticalScrollIndicator={false}
+        />
 
         <View
           style={{
@@ -241,6 +334,8 @@ export default function SanghaChatScreen() {
           }}
         >
           <TextInput
+            maxLength={1000}
+            multiline
             onChangeText={setDraft}
             onSubmitEditing={sendMessage}
             placeholder="Write a message"

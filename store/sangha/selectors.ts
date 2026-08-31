@@ -1,5 +1,7 @@
 import { RootState } from "../types";
 
+const EMPTY_LIST: never[] = [];
+
 export const selectSanghaState = (state: RootState) =>
   state.sangha;
 
@@ -42,15 +44,15 @@ export const selectSanghaGroupsHomeLoading = (
 
 export const selectSanghaHubInvitations = (
   state: RootState
-) => selectSanghaGroupsHome(state)?.invitations || [];
+) => selectSanghaGroupsHome(state)?.invitations || EMPTY_LIST;
 
 export const selectSanghaHubMyGroups = (
   state: RootState
-) => selectSanghaGroupsHome(state)?.myGroups || [];
+) => selectSanghaGroupsHome(state)?.myGroups || EMPTY_LIST;
 
 export const selectSanghaHubPurposeTiles = (
   state: RootState
-) => selectSanghaGroupsHome(state)?.purposeTiles || [];
+) => selectSanghaGroupsHome(state)?.purposeTiles || EMPTY_LIST;
 
 export const selectSanghaSearchGroups = (
   state: RootState
@@ -153,8 +155,8 @@ export const selectSanghaGroupPostComments = (
   postId?: string
 ) =>
   postId
-    ? selectSanghaState(state).groupPostCommentsById[postId] || []
-    : [];
+    ? selectSanghaState(state).groupPostCommentsById[postId] || EMPTY_LIST
+    : EMPTY_LIST;
 
 export const selectSanghaGroupPostCommentsLoading = (
   state: RootState,
@@ -205,8 +207,8 @@ export const selectSanghaConversationMessages = (
   conversationId?: string
 ) =>
   conversationId
-    ? selectSanghaState(state).conversationMessagesById[conversationId] || []
-    : [];
+    ? selectSanghaState(state).conversationMessagesById[conversationId] || EMPTY_LIST
+    : EMPTY_LIST;
 
 export const selectSanghaConversationMessagesLoading = (
   state: RootState,
@@ -244,11 +246,11 @@ export const selectIsSanghaActionPending = (
     : false;
 
 export const selectSanghaNearYou = (state: RootState) =>
-  selectSanghaHome(state)?.nearYou || [];
+  selectSanghaHome(state)?.nearYou || EMPTY_LIST;
 
 export const selectSanghaSuggestedForYou = (
   state: RootState
-) => selectSanghaHome(state)?.suggestedForYou || [];
+) => selectSanghaHome(state)?.suggestedForYou || EMPTY_LIST;
 
 export const selectSanghaError = (state: RootState) =>
   selectSanghaState(state).error;

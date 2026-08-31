@@ -135,7 +135,7 @@ function mergeMessages(
   current: SanghaState["conversationMessagesById"][string] = [],
   incoming: SanghaState["conversationMessagesById"][string] = []
 ) {
-  return mergeById([...incoming], current);
+  return mergeById(current, incoming);
 }
 
 function updateEvent(
@@ -793,6 +793,45 @@ export function sanghaReducer(
         groupPosts: [action.payload.post, ...state.groupPosts],
       };
 
+    case SANGHA_ACTIONS.UPDATE_GROUP_POST_REQUEST:
+      return {
+        ...state,
+        actionPendingIds: {
+          ...state.actionPendingIds,
+          [action.payload.postId]: true,
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.UPDATE_GROUP_POST_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.postId
+        ),
+        groupFeed: updatePost(
+          state.groupFeed,
+          action.payload.postId,
+          action.payload.post
+        ),
+        groupPosts: updatePost(
+          state.groupPosts,
+          action.payload.postId,
+          action.payload.post
+        ),
+      };
+
+    case SANGHA_ACTIONS.UPDATE_GROUP_POST_FAILURE:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.postId
+        ),
+        error: action.payload.error,
+      };
+
     case SANGHA_ACTIONS.CREATE_GROUP_POST_FAILURE:
       return {
         ...state,
@@ -1201,6 +1240,58 @@ export function sanghaReducer(
         error: null,
       };
 
+    case SANGHA_ACTIONS.ACCEPT_CONNECTION_REQUEST:
+    case SANGHA_ACTIONS.DECLINE_CONNECTION_REQUEST:
+      return {
+        ...state,
+        actionPendingIds: {
+          ...state.actionPendingIds,
+          [action.payload.devoteeId]: true,
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.ACCEPT_CONNECTION_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.devoteeId
+        ),
+        profile: updateProfileConnection(
+          state,
+          action.payload.devoteeId,
+          "connected",
+          false
+        ),
+      };
+
+    case SANGHA_ACTIONS.DECLINE_CONNECTION_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.devoteeId
+        ),
+        profile: updateProfileConnection(
+          state,
+          action.payload.devoteeId,
+          "none",
+          true
+        ),
+      };
+
+    case SANGHA_ACTIONS.ACCEPT_CONNECTION_FAILURE:
+    case SANGHA_ACTIONS.DECLINE_CONNECTION_FAILURE:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.devoteeId
+        ),
+        error: action.payload.error,
+      };
+
     case SANGHA_ACTIONS.REQUEST_CONNECTION_SUCCESS:
       return {
         ...state,
@@ -1367,10 +1458,39 @@ export function sanghaReducer(
         conversationMessagesById: {
           ...state.conversationMessagesById,
           [action.payload.conversationId]: [
-            ...(state.conversationMessagesById[action.payload.conversationId] || []),
             action.payload.message,
+            ...(state.conversationMessagesById[action.payload.conversationId] || []),
           ],
         },
+      };
+
+    case SANGHA_ACTIONS.REPORT_MESSAGE_REQUEST:
+      return {
+        ...state,
+        actionPendingIds: {
+          ...state.actionPendingIds,
+          [action.payload.messageId]: true,
+        },
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.REPORT_MESSAGE_SUCCESS:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.messageId
+        ),
+      };
+
+    case SANGHA_ACTIONS.REPORT_MESSAGE_FAILURE:
+      return {
+        ...state,
+        actionPendingIds: removePending(
+          state.actionPendingIds,
+          action.payload.messageId
+        ),
+        error: action.payload.error,
       };
 
     case SANGHA_ACTIONS.MARK_CONVERSATION_READ_SUCCESS:
