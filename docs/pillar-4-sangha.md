@@ -1,4 +1,43 @@
-# Pillar 4 Sangha Backend API Requirements
+# Pillar 4 Sangha: Product, API, Integration And Release Guide
+
+This is the single source of truth for Pillar 4. Frontend, backend, QA, and
+product decisions must be recorded here instead of creating another Sangha
+status or todo document.
+
+Document status: Active
+
+Last consolidated: 2026-08-31
+
+Target v1 release: 2026-09-01
+
+Source API collection: `postman-api-collection.json`, starting at
+`GET /api/sangha/home - Discovery Home`
+
+## How To Use This Document
+
+- Backend owns request/response contracts, validation, authorization, privacy,
+  pagination, query performance, moderation, and operational guarantees.
+- Frontend owns typed services, Redux Saga workflows, capability-aware UI,
+  loading/error/empty states, bounded pagination, and lifecycle cleanup.
+- QA owns the signed-in device checklist and records failures against the
+  affected capability in the integration matrix.
+- A contract change is complete only after the API collection, this document,
+  frontend types, and backend implementation agree.
+- Do not mark a feature production-ready from static checks alone. Protected
+  mutations must pass on the exact release candidate build.
+
+## Release Scope And Status
+
+Pillar 4 v1 includes devotee discovery, privacy settings, profiles, connection
+lifecycle, groups, invitations, group administration, unified feed, direct
+chat, group events, RSVP, and Sangha notifications.
+
+Current code status: implemented for the v1 scope and ready for signed-in
+device smoke testing. It is not approved for production submission until the
+release checklist near the end of this document passes.
+
+Live streaming is explicitly deferred to v2. No v1 button or route should
+expose a partial streaming experience.
 
 Frontend entry point: `app/(tabs)/sangha.tsx`
 Related routes:
@@ -23,7 +62,9 @@ Related screens:
 
 Sangha is the community pillar. It helps devotees discover nearby or recommended devotees, connect with them, join groups, manage invitations, participate in group feeds, members, events, and about sections, while preserving privacy and moderation controls.
 
-The current UI is polished but static. Backend should provide live data with pagination, current-user flags, privacy-safe distance, and group/member permission state.
+The v1 UI is connected to live APIs. Backend must continue providing paginated
+data, current-user flags, privacy-safe distance, and authoritative group/member
+capability state.
 
 ## Core Product Surfaces
 
@@ -1472,66 +1513,35 @@ Not required for first release, but design should allow:
 - cannot invite existing members
 - duplicate pending invitation should return existing invitation
 
-## Suggested Implementation Phases
+## Shared Implementation Status
 
-### Phase 0: Contract Audit
+The endpoint definitions above remain authoritative. This table records whether
+each product capability is connected to a user-facing frontend flow.
 
-- Confirm current account ID header.
-- Confirm privacy model.
-- Confirm whether Sangha profile extends existing account/profile tables or new tables.
-- Confirm group events reuse Pillar 2 event tables.
+| Capability | Backend/API | Frontend | Release |
+| --- | --- | --- | --- |
+| Redux/service foundation | Available | Integrated | v1 |
+| Discovery home and privacy filters | Available | Integrated | v1 |
+| Devotee lists and profile | Available | Integrated | v1 |
+| Connect, accept, decline, disconnect, block | Available | Integrated | v1 |
+| Hub home, search, recent searches, group lists | Available | Integrated | v1 |
+| Invitations list, send, accept, decline | Available | Integrated | v1 |
+| Group create, edit, archive | Available | Integrated | v1 |
+| Group detail and membership capabilities | Available | Integrated | v1 |
+| Join, leave, and private-group approval | Available | Integrated | v1 |
+| Members, role changes, removal | Available | Integrated | v1 |
+| Unified feed and legacy posts fallback | Available | Integrated | v1 |
+| Create, edit, delete, like, comment, pin posts | Available | Integrated | v1 |
+| Direct conversations, messages, read state, report | Available | Integrated | v1 |
+| Group Events bridge using `POST /api/events` and `groupId` | Available | Integrated | v1 |
+| Group event list and RSVP lifecycle | Available | Integrated | v1 |
+| Sangha notifications and read state | Available | Integrated | v1 |
+| Bounded pagination for feed, requests, members, events, chat | Available | Integrated | v1 |
+| Live stream lifecycle, chat, reactions, recording | Contract defined | Not exposed | v2 |
 
-### Phase 1: Foundation
+### Frontend Architecture
 
-- Models: Sangha profile, connection, group, member, invitation.
-- Discovery home.
-- Devotee lists/profile.
-- Connection request lifecycle.
-
-### Phase 2: Sangha Hub
-
-- Group home.
-- Group search.
-- Recent searches.
-- Group lists by purpose/my/pending.
-- Invitations accept/decline.
-
-### Phase 3: Group Detail
-
-- Group detail.
-- Join/leave/request membership.
-- Members tab.
-- About tab.
-- Group events tab.
-
-### Phase 4: Feed And Engagement
-
-- Group posts.
-- Media upload context.
-- Likes/comments.
-- Pin/unpin.
-- Member request approvals.
-
-### Phase 4.5: Live Streaming
-
-- Live stream metadata and scheduling.
-- Provider token generation for host/viewers.
-- Live chat and reactions.
-- Attendance tracking.
-- Recording status and playback.
-- Stream notifications.
-
-### Phase 5: Admin And Moderation
-
-- Admin group management.
-- Reports.
-- Member moderation.
-- Audit logs.
-- Announcements.
-
-## Frontend Integration Notes
-
-Frontend should follow the same module pattern used by Directory:
+The Sangha frontend follows the feature module used by the other pillars:
 
 - `services/sangha.ts`
 - `store/sangha/types.ts`
@@ -1540,24 +1550,158 @@ Frontend should follow the same module pattern used by Directory:
 - `store/sangha/saga.ts`
 - `store/sangha/selectors.ts`
 - `store/sangha/validation.ts`
-- connect reducer and saga globally
+- Sangha reducer and saga registered in the global store
 
-Do not replace UI first. Wire API screen-by-screen:
+Screen integration order and ownership:
 
-1. `app/(tabs)/sangha.tsx`
-2. `app/sangha-list.tsx`
-3. `app/sangha-profile.tsx`
-4. `app/sangha-hub.tsx`
-5. `app/sangha-hub-search.tsx`
-6. `app/sangha-hub-list.tsx`
-7. `app/group-details.tsx`
+1. `app/(tabs)/sangha.tsx`: discovery and filters.
+2. `app/sangha-list.tsx`: paginated devotee discovery.
+3. `app/sangha-profile.tsx`: profile and connection lifecycle.
+4. `app/sangha-hub.tsx`: group home, invitations, and notifications.
+5. `app/sangha-hub-search.tsx`: search and recent searches.
+6. `app/sangha-hub-list.tsx`: paginated group collections.
+7. `app/group-details.tsx`: membership, feed, members, events, chat, and admin.
+
+### Completed Release-Audit Fixes
+
+- Incoming requests expose Accept and Decline and support `pending_sent` and
+  `pending_received` states.
+- Sangha Event creation sends `groupId` through the full Event-pillar payload
+  and suppresses incompatible global draft autosave controls.
+- Direct chat uses an inverted virtualized list with newest-first cursor
+  pagination; older pages and newly sent messages merge in the correct order.
+- Received chat messages can be reported by long press.
+- Owned group posts can be edited; deletion requires confirmation.
+- Feed, join requests, members, events, and chat use bounded load-more flows.
+- Join, leave, message, invite, member-admin, post, and Event controls respect
+  backend capability flags.
+- Stable empty selector references avoid unnecessary rerenders.
+- Misleading live-update copy, nested touch targets, and stock placeholder
+  profile/banner media were removed.
+
+## Verification And Release Checklist
+
+### Automated Verification
+
+- [x] `npx tsc --noEmit`
+- [x] `npm run lint` with zero errors
+- [x] `npx expo-doctor`: 18/18 checks passed
+- [x] `npx expo config --type public`
+- [x] `git diff --check`
+- [x] Production `GET /api/health`: `200 OK`
+- [x] Unauthenticated Sangha probes return `401 UNAUTHENTICATED`
+
+Static verification does not prove authenticated behavior. Run the following
+on the exact signed-in iOS release candidate with two normal devotees and one
+group admin.
+
+### Discovery And Profile
+
+- [ ] Near You and Suggested For You load from production.
+- [ ] Distance, tradition, and purpose filters change backend results.
+- [ ] Near Me opt-in persists after closing and reopening the screen.
+- [ ] Devotee pagination and profile navigation work.
+- [ ] Send, accept, decline, cancel/disconnect, and block all update the UI.
+- [ ] Public profiles expose only privacy-safe location information.
+
+### Hub And Groups
+
+- [ ] Purpose tiles, invitations, My Groups, and notification count load.
+- [ ] Search, recent-search save/clear, filters, and pagination work.
+- [ ] Invitation accept/decline updates without an app restart.
+- [ ] Create one public and one private group.
+- [ ] Edit a group and archive a disposable test group.
+- [ ] Join public, request private, cancel/leave, and rejoin all work.
+
+### Administration
+
+- [ ] Admin can approve and decline pending join requests.
+- [ ] Admin can invite a real devotee ID.
+- [ ] Admin can promote, demote, and remove only permitted members.
+- [ ] Normal members cannot see or invoke admin actions.
+
+### Feed And Chat
+
+- [ ] Create text and notice posts.
+- [ ] Create a photo/Experience post from the group quick action.
+- [ ] Edit an owned post.
+- [ ] Like/unlike, comment, pin/unpin, and delete work.
+- [ ] Pagination does not duplicate feed items or comments.
+- [ ] Send direct messages in both directions and verify read state.
+- [ ] Loading older messages preserves chronological order.
+- [ ] Long-press another user's message and submit a report.
+
+### Events And Notifications
+
+- [ ] Create an Event from Sangha; Event detail and group projection both exist.
+- [ ] RSVP and cancel RSVP from the group Events tab.
+- [ ] Event pagination does not duplicate records.
+- [ ] Mark one notification and all notifications read.
+- [ ] Pagination and unread badges update immediately.
+
+### Go/No-Go Rules
+
+Release v1 only after every signed-in v1 check passes. Stop the release if:
+
+- a mutation logs out the user or loses the access token;
+- a normal member can invoke an admin action;
+- a group Event is created without its `groupId` projection;
+- chat pagination duplicates or loses messages;
+- a crash, blank route, repeated request loop, or native-module error occurs.
+
+Known non-blocking technical debt:
+
+- Full live streaming is v2.
+- Expo/Metro transitive advisories require a separately tested Expo SDK upgrade;
+  do not run `npm audit fix --force` on the release branch.
+- Non-Sangha lint warnings should be addressed separately from this release.
+
+## Delivery Roadmap
+
+### v1: Complete, Pending Device Sign-Off
+
+- Discovery, profiles, privacy, and connections.
+- Hub, groups, invitations, membership, and moderation.
+- Unified feed, engagement, chat, Events bridge, and notifications.
+
+### v2: Live Streaming
+
+- Stream list, detail, schedule/create, start, join, heartbeat, and end.
+- Provider host/viewer token lifecycle.
+- Live chat, reactions, moderation, reporting, and recording playback.
+- Background/foreground recovery and heartbeat cleanup.
+- Load, memory, reconnect, abuse, and provider-failure testing.
+
+## Backend And Frontend Coordination
+
+For every new endpoint or contract change:
+
+1. Backend updates the Postman collection and the matching contract section here.
+2. Backend adds one success, validation, unauthenticated, and forbidden example.
+3. Frontend updates service/types/action/reducer/saga/selector as required.
+4. Frontend records the capability status in the shared matrix above.
+5. QA adds or updates a device check and records the release result here.
+6. Both sides verify pagination, idempotency, permissions, and error codes.
+
+Use these status values consistently: `Proposed`, `Backend Ready`,
+`Frontend Integrated`, `QA Passed`, `Released`, or `Deferred`.
+
+## Confirmed Product Decisions
+
+- Private groups support invitation and join-request approval flows.
+- Invitation permission is determined by backend `canInvite`; frontend does not
+  infer permission from a displayed role name.
+- Direct messages are part of v1 and use Sangha conversation APIs.
+- New group Events use Pillar 2 `POST /api/events` with `groupId`; the legacy
+  Sangha group-event create endpoint remains only for compatibility.
+- Public profile fields and precise-location visibility are decided by backend
+  privacy policy and returned capability/privacy fields.
 
 ## Open Product Questions
 
-- Should private groups require admin approval or invitation only?
-- Can regular members invite others, or only admins/moderators?
-- Are direct messages in scope, or should "message" deep-link to a future pillar?
-- Should group events always create Pillar 2 events?
-- What fields are public on devotee profiles by default?
-- Should near-me discovery require fresh location permission each session?
-- Should official mandir/community groups have verification badges?
+- Should Near Me discovery require a fresh location check per session or reuse
+  the most recent consented location with an expiry?
+- What verification workflow and badge rules apply to official mandir and
+  community groups?
+- Which streaming provider, recording retention, and moderation SLA should be
+  selected before v2 live streaming begins?
