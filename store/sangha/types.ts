@@ -250,12 +250,18 @@ export type SanghaGroupJoinRequest = {
 };
 
 export type SanghaConversation = {
+  createdAt?: string;
   groupId?: string | null;
   id: string;
+  lastMessage?: SanghaConversationMessage | null;
+  lastMessageAt?: string | null;
   participant?: SanghaDevoteeSummary;
   participantUserId?: string;
+  participants?: SanghaDevoteeSummary[];
+  readAt?: string | null;
   type?: "direct" | string;
   unreadCount?: number;
+  updatedAt?: string;
 };
 
 export type SanghaConversationMessage = {
@@ -265,10 +271,20 @@ export type SanghaConversationMessage = {
   content: string;
   conversationId?: string;
   createdAt?: string;
+  deliveredAt?: string | null;
   id: string;
   isMine?: boolean;
   readAt?: string | null;
+  sender?: any;
+  sentAt?: string;
   status?: "sending" | "sent" | "delivered" | "read" | string;
+};
+
+export type SanghaChatSession = {
+  expiresAt?: string;
+  heartbeatIntervalMs?: number;
+  sessionId?: string;
+  webSocketUrl: string;
 };
 
 export type SanghaGroupPostComment = {
@@ -420,6 +436,9 @@ export type SanghaState = {
   notificationsLoading: boolean;
   notificationsPagination: SanghaPagination | null;
   activeConversation: SanghaConversation | null;
+  conversations: SanghaConversation[];
+  conversationsLoading: boolean;
+  conversationsPagination: SanghaPagination | null;
   conversationMessagesById: Record<string, SanghaConversationMessage[]>;
   conversationMessagesLoadingIds: Record<string, boolean>;
   conversationMessageCursors: Record<string, string | null>;
@@ -573,9 +592,15 @@ export enum SANGHA_ACTIONS {
   UPDATE_DISCOVERY_REQUEST = "sangha/UPDATE_DISCOVERY_REQUEST",
   UPDATE_DISCOVERY_SUCCESS = "sangha/UPDATE_DISCOVERY_SUCCESS",
   UPDATE_DISCOVERY_FAILURE = "sangha/UPDATE_DISCOVERY_FAILURE",
+  FETCH_CONVERSATIONS_REQUEST = "sangha/FETCH_CONVERSATIONS_REQUEST",
+  FETCH_CONVERSATIONS_SUCCESS = "sangha/FETCH_CONVERSATIONS_SUCCESS",
+  FETCH_CONVERSATIONS_FAILURE = "sangha/FETCH_CONVERSATIONS_FAILURE",
   START_CONVERSATION_REQUEST = "sangha/START_CONVERSATION_REQUEST",
   START_CONVERSATION_SUCCESS = "sangha/START_CONVERSATION_SUCCESS",
   START_CONVERSATION_FAILURE = "sangha/START_CONVERSATION_FAILURE",
+  QUEUE_CONVERSATION_MESSAGE = "sangha/QUEUE_CONVERSATION_MESSAGE",
+  RECEIVE_CONVERSATION_MESSAGE = "sangha/RECEIVE_CONVERSATION_MESSAGE",
+  UPDATE_CONVERSATION_MESSAGE_STATUS = "sangha/UPDATE_CONVERSATION_MESSAGE_STATUS",
   FETCH_CONVERSATION_MESSAGES_REQUEST = "sangha/FETCH_CONVERSATION_MESSAGES_REQUEST",
   FETCH_CONVERSATION_MESSAGES_SUCCESS = "sangha/FETCH_CONVERSATION_MESSAGES_SUCCESS",
   FETCH_CONVERSATION_MESSAGES_FAILURE = "sangha/FETCH_CONVERSATION_MESSAGES_FAILURE",
@@ -1068,6 +1093,12 @@ export type SanghaAction =
         | SANGHA_ACTIONS.START_CONVERSATION_REQUEST
         | SANGHA_ACTIONS.START_CONVERSATION_SUCCESS
         | SANGHA_ACTIONS.START_CONVERSATION_FAILURE
+        | SANGHA_ACTIONS.FETCH_CONVERSATIONS_REQUEST
+        | SANGHA_ACTIONS.FETCH_CONVERSATIONS_SUCCESS
+        | SANGHA_ACTIONS.FETCH_CONVERSATIONS_FAILURE
+        | SANGHA_ACTIONS.QUEUE_CONVERSATION_MESSAGE
+        | SANGHA_ACTIONS.RECEIVE_CONVERSATION_MESSAGE
+        | SANGHA_ACTIONS.UPDATE_CONVERSATION_MESSAGE_STATUS
         | SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_REQUEST
         | SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_SUCCESS
         | SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_FAILURE

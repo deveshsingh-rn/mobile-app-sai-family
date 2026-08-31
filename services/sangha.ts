@@ -552,6 +552,28 @@ export async function apiFetchSanghaNotifications(
   return data;
 }
 
+export async function apiFetchSanghaConversations(
+  params: Record<string, any> = {}
+) {
+  const { data } = await apiClient.get(
+    "/api/users/me/sangha/conversations",
+    { params }
+  );
+
+  return data;
+}
+
+export async function apiCreateSanghaChatSession(payload: {
+  conversationId?: string;
+}) {
+  const { data } = await apiClient.post(
+    "/api/sangha/chat/session",
+    payload
+  );
+
+  return data;
+}
+
 export async function apiMarkSanghaNotificationsRead(payload: {
   notificationIds: string[];
 }) {

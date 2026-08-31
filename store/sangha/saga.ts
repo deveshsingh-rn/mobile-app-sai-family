@@ -24,6 +24,7 @@ import {
   apiInviteSanghaGroupMember,
   apiRemoveSanghaGroupMember,
   apiUpdateSanghaGroupMember,
+  apiFetchSanghaConversations,
   apiCreateSanghaGroupPost,
   apiUpdateSanghaGroupPost,
   apiCreateSanghaGroupPostComment,
@@ -115,6 +116,8 @@ import {
   fetchSanghaGroupPostsSuccess,
   fetchSanghaGroupPostCommentsFailure,
   fetchSanghaGroupPostCommentsSuccess,
+  fetchSanghaConversationsFailure,
+  fetchSanghaConversationsSuccess,
   fetchSanghaHomeFailure,
   fetchSanghaHomeSuccess,
   fetchSanghaInvitationsFailure,
@@ -529,11 +532,43 @@ function normalizeMessages(response: any, append = false) {
 }
 
 function normalizeMessage(response: any) {
-  return (
+  const message =
     response?.message ||
     response?.data?.message ||
-    response
-  );
+    response;
+
+  return {
+    ...message,
+    authorAvatarUrl:
+      message?.authorAvatarUrl ||
+      message?.sender?.profileImageUrl ||
+      message?.sender?.avatarUrl,
+    authorName:
+      message?.authorName ||
+      message?.sender?.name,
+    authorUserId:
+      message?.authorUserId ||
+      message?.sender?.id ||
+      message?.sender?.userId,
+    createdAt:
+      message?.createdAt ||
+      message?.sentAt,
+  };
+}
+
+function normalizeConversations(response: any) {
+  return {
+    conversations:
+      response?.conversations ||
+      response?.results ||
+      response?.data?.conversations ||
+      response?.data?.results ||
+      [],
+    pagination:
+      response?.pagination ||
+      response?.data?.pagination ||
+      null,
+  };
 }
 
 function* handleFetchSanghaDevotees(
@@ -1682,6 +1717,27 @@ function* handleStartConversation(
   }
 }
 
+function* handleFetchConversations(
+  action: any
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchSanghaConversations,
+      action.payload
+    );
+
+    yield put(
+      fetchSanghaConversationsSuccess(normalizeConversations(response))
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaConversationsFailure(
+        getErrorMessage(error, "Failed to fetch Sangha chats.")
+      )
+    );
+  }
+}
+
 function* handleFetchConversationMessages(
   action: any
 ): Generator<any, void, any> {
@@ -1972,6 +2028,10 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.UPDATE_DISCOVERY_REQUEST,
     handleUpdateSanghaDiscovery
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_CONVERSATIONS_REQUEST,
+    handleFetchConversations
   );
   yield takeLatest(
     SANGHA_ACTIONS.START_CONVERSATION_REQUEST,

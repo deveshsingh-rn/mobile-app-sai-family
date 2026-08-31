@@ -222,6 +222,18 @@ export const selectSanghaActiveConversation = (
   state: RootState
 ) => selectSanghaState(state).activeConversation;
 
+export const selectSanghaConversations = (
+  state: RootState
+) => selectSanghaState(state).conversations;
+
+export const selectSanghaConversationsLoading = (
+  state: RootState
+) => selectSanghaState(state).conversationsLoading;
+
+export const selectSanghaConversationsPagination = (
+  state: RootState
+) => selectSanghaState(state).conversationsPagination;
+
 export const selectSanghaConversationMessages = (
   state: RootState,
   conversationId?: string

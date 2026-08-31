@@ -1287,6 +1287,33 @@ export const updateSanghaDiscoveryFailure = (
     type: SANGHA_ACTIONS.UPDATE_DISCOVERY_FAILURE,
   } as const);
 
+export const fetchSanghaConversationsRequest = (
+  payload: { limit?: number; offset?: number } = {}
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_CONVERSATIONS_REQUEST,
+  } as const);
+
+export const fetchSanghaConversationsSuccess = (
+  payload: {
+    conversations: SanghaConversation[];
+    pagination?: SanghaPagination | null;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_CONVERSATIONS_SUCCESS,
+  } as const);
+
+export const fetchSanghaConversationsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_CONVERSATIONS_FAILURE,
+  } as const);
+
 export const startSanghaConversationRequest = (
   payload: {
     groupId?: string;
@@ -1313,6 +1340,44 @@ export const startSanghaConversationFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.START_CONVERSATION_FAILURE,
+  } as const);
+
+export const queueSanghaConversationMessage = (
+  payload: {
+    clientMessageId: string;
+    content: string;
+    conversationId: string;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.QUEUE_CONVERSATION_MESSAGE,
+  } as const);
+
+export const receiveSanghaConversationMessage = (
+  payload: {
+    clientMessageId?: string;
+    conversationId: string;
+    message: SanghaConversationMessage;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.RECEIVE_CONVERSATION_MESSAGE,
+  } as const);
+
+export const updateSanghaConversationMessageStatus = (
+  payload: {
+    conversationId: string;
+    deliveredAt?: string;
+    messageIds: string[];
+    readAt?: string;
+    status: string;
+  }
+) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.UPDATE_CONVERSATION_MESSAGE_STATUS,
   } as const);
 
 export const fetchSanghaConversationMessagesRequest = (

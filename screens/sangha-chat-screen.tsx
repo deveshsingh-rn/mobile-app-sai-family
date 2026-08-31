@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,9 +19,12 @@ import { router, useLocalSearchParams } from "expo-router";
 import {
   fetchSanghaConversationMessagesRequest,
   markSanghaConversationReadRequest,
+  queueSanghaConversationMessage,
+  receiveSanghaConversationMessage,
   reportSanghaMessageRequest,
   sendSanghaConversationMessageRequest,
   startSanghaConversationRequest,
+  updateSanghaConversationMessageStatus,
 } from "@/store/sangha/actions";
 import {
   selectIsSanghaActionPending,
@@ -33,6 +36,7 @@ import {
 } from "@/store/sangha/selectors";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { SanghaConversationMessage } from "@/store/sangha/types";
+import { apiCreateSanghaChatSession } from "@/services/sangha";
 
 function avatarForName(name?: string | null) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -65,6 +69,13 @@ export default function SanghaChatScreen() {
   );
   const error = useAppSelector(selectSanghaError);
   const [draft, setDraft] = useState("");
+  const [socketStatus, setSocketStatus] = useState<
+    "connecting" | "connected" | "offline"
+  >("offline");
+  const [remoteTyping, setRemoteTyping] = useState(false);
+  const socketRef = useRef<WebSocket | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const displayName =
     memberName ||
     conversation?.participant?.name ||
@@ -98,6 +109,162 @@ export default function SanghaChatScreen() {
     dispatch(markSanghaConversationReadRequest(conversationId));
   }, [conversationId, dispatch]);
 
+  useEffect(() => {
+    if (!conversationId) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const closeSocket = () => {
+      if (heartbeatRef.current) {
+        clearInterval(heartbeatRef.current);
+        heartbeatRef.current = null;
+      }
+
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+
+      socketRef.current?.close();
+      socketRef.current = null;
+      setRemoteTyping(false);
+    };
+
+    const connectSocket = async () => {
+      setSocketStatus("connecting");
+
+      try {
+        const session = await apiCreateSanghaChatSession({
+          conversationId,
+        });
+
+        if (cancelled || !session?.webSocketUrl) {
+          return;
+        }
+
+        const socket = new WebSocket(session.webSocketUrl);
+        socketRef.current = socket;
+
+        socket.onopen = () => {
+          setSocketStatus("connected");
+          socket.send(
+            JSON.stringify({
+              conversationIds: [conversationId],
+              type: "subscribe",
+            })
+          );
+
+          heartbeatRef.current = setInterval(() => {
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.send(
+                JSON.stringify({
+                  sentAt: new Date().toISOString(),
+                  type: "ping",
+                })
+              );
+            }
+          }, session.heartbeatIntervalMs || 25000);
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(String(event.data));
+
+            if (payload.type === "connected") {
+              setSocketStatus("connected");
+              return;
+            }
+
+            if (
+              payload.type === "message_created" &&
+              payload.message
+            ) {
+              dispatch(
+                receiveSanghaConversationMessage({
+                  clientMessageId: payload.clientMessageId,
+                  conversationId:
+                    payload.conversationId || conversationId,
+                  message: {
+                    ...payload.message,
+                    authorAvatarUrl:
+                      payload.message.authorAvatarUrl ||
+                      payload.message.sender?.profileImageUrl ||
+                      payload.message.sender?.avatarUrl,
+                    authorName:
+                      payload.message.authorName ||
+                      payload.message.sender?.name,
+                    authorUserId:
+                      payload.message.authorUserId ||
+                      payload.message.sender?.id ||
+                      payload.message.sender?.userId,
+                    createdAt:
+                      payload.message.createdAt ||
+                      payload.message.sentAt,
+                  },
+                })
+              );
+              dispatch(markSanghaConversationReadRequest(conversationId));
+              return;
+            }
+
+            if (payload.type === "message_status") {
+              dispatch(
+                updateSanghaConversationMessageStatus({
+                  conversationId:
+                    payload.conversationId || conversationId,
+                  deliveredAt: payload.deliveredAt,
+                  messageIds: payload.messageIds || [],
+                  readAt: payload.readAt,
+                  status: payload.status,
+                })
+              );
+              return;
+            }
+
+            if (payload.type === "typing") {
+              setRemoteTyping(Boolean(payload.isTyping));
+
+              if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+              }
+
+              typingTimeoutRef.current = setTimeout(() => {
+                setRemoteTyping(false);
+              }, 5000);
+              return;
+            }
+
+            if (payload.type === "error") {
+              setSocketStatus("offline");
+            }
+          } catch (parseError) {
+            console.warn("[SanghaChat] Invalid socket event", parseError);
+          }
+        };
+
+        socket.onerror = () => {
+          setSocketStatus("offline");
+        };
+
+        socket.onclose = () => {
+          setSocketStatus("offline");
+        };
+      } catch (sessionError) {
+        console.warn("[SanghaChat] WebSocket unavailable", sessionError);
+        setSocketStatus("offline");
+      }
+    };
+
+    void connectSocket();
+
+    return () => {
+      cancelled = true;
+      closeSocket();
+    };
+  }, [conversationId, dispatch]);
+
   const sendMessage = () => {
     const trimmed = draft.trim();
 
@@ -105,13 +272,49 @@ export default function SanghaChatScreen() {
       return;
     }
 
-    dispatch(
-      sendSanghaConversationMessageRequest({
-        content: trimmed,
-        conversationId,
-      })
-    );
+    const clientMessageId =
+      `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      dispatch(
+        queueSanghaConversationMessage({
+          clientMessageId,
+          content: trimmed,
+          conversationId,
+        })
+      );
+      socketRef.current.send(
+        JSON.stringify({
+          clientMessageId,
+          content: trimmed,
+          conversationId,
+          type: "message_send",
+        })
+      );
+    } else {
+      dispatch(
+        sendSanghaConversationMessageRequest({
+          content: trimmed,
+          conversationId,
+        })
+      );
+    }
+
     setDraft("");
+  };
+
+  const handleDraftChange = (value: string) => {
+    setDraft(value);
+
+    if (socketRef.current?.readyState === WebSocket.OPEN && conversationId) {
+      socketRef.current.send(
+        JSON.stringify({
+          conversationId,
+          isTyping: Boolean(value.trim()),
+          type: "typing",
+        })
+      );
+    }
   };
 
   const loadOlderMessages = useCallback(() => {
@@ -239,9 +442,26 @@ export default function SanghaChatScreen() {
                 marginTop: 2,
               }}
             >
-              {groupId ? "Sangha member chat" : "Community chat"}
+              {remoteTyping
+                ? "typing..."
+                : socketStatus === "connected"
+                  ? "Live chat"
+                  : socketStatus === "connecting"
+                    ? "Connecting..."
+                    : groupId
+                      ? "Sangha member chat"
+                      : "Community chat"}
             </Text>
           </View>
+          <View
+            style={{
+              backgroundColor:
+                socketStatus === "connected" ? "#DCFCE7" : "#F3F4F6",
+              borderRadius: 999,
+              height: 10,
+              width: 10,
+            }}
+          />
         </View>
 
         <FlatList
@@ -376,7 +596,7 @@ export default function SanghaChatScreen() {
           <TextInput
             maxLength={1000}
             multiline
-            onChangeText={setDraft}
+            onChangeText={handleDraftChange}
             onSubmitEditing={sendMessage}
             placeholder="Write a message"
             placeholderTextColor="#9CA3AF"

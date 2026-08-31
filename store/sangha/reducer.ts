@@ -57,6 +57,9 @@ export const initialSanghaState: SanghaState = {
   notificationsLoading: false,
   notificationsPagination: null,
   activeConversation: null,
+  conversations: [],
+  conversationsLoading: false,
+  conversationsPagination: null,
   conversationMessagesById: {},
   conversationMessagesLoadingIds: {},
   conversationMessageCursors: {},
@@ -143,6 +146,12 @@ function replaceMessageById(
   messageId: string | undefined,
   nextMessage: SanghaState["conversationMessagesById"][string][number]
 ) {
+  if (current.some((message) => message.id === nextMessage.id)) {
+    return current.map((message) =>
+      message.id === nextMessage.id ? { ...message, ...nextMessage } : message
+    );
+  }
+
   if (!messageId) {
     return [nextMessage, ...current];
   }
@@ -155,6 +164,36 @@ function replaceMessageById(
 
   return current.map((message) =>
     message.id === messageId ? nextMessage : message
+  );
+}
+
+function upsertConversation(
+  current: SanghaState["conversations"],
+  conversation: SanghaState["conversations"][number]
+) {
+  const existing = current.filter((item) => item.id !== conversation.id);
+  return [conversation, ...existing];
+}
+
+function updateConversationPreview(
+  current: SanghaState["conversations"],
+  conversationId: string,
+  message: SanghaState["conversationMessagesById"][string][number]
+) {
+  return current.map((conversation) =>
+    conversation.id === conversationId
+      ? {
+          ...conversation,
+          lastMessage: message,
+          lastMessageAt:
+            message.createdAt ||
+            message.sentAt ||
+            conversation.lastMessageAt,
+          unreadCount: message.isMine
+            ? conversation.unreadCount
+            : (conversation.unreadCount || 0) + 1,
+        }
+      : conversation
   );
 }
 
@@ -1420,6 +1459,10 @@ export function sanghaReducer(
       return {
         ...state,
         activeConversation: action.payload,
+        conversations: upsertConversation(
+          state.conversations,
+          action.payload
+        ),
         actionPendingIds: action.payload.participantUserId
           ? removePending(
               state.actionPendingIds,
@@ -1437,6 +1480,28 @@ export function sanghaReducer(
           action.payload.participantUserId
         ),
         error: action.payload.error,
+      };
+
+    case SANGHA_ACTIONS.FETCH_CONVERSATIONS_REQUEST:
+      return {
+        ...state,
+        conversationsLoading: true,
+        error: null,
+      };
+
+    case SANGHA_ACTIONS.FETCH_CONVERSATIONS_SUCCESS:
+      return {
+        ...state,
+        conversations: action.payload.conversations,
+        conversationsLoading: false,
+        conversationsPagination: action.payload.pagination || null,
+      };
+
+    case SANGHA_ACTIONS.FETCH_CONVERSATIONS_FAILURE:
+      return {
+        ...state,
+        conversationsLoading: false,
+        error: action.payload,
       };
 
     case SANGHA_ACTIONS.FETCH_CONVERSATION_MESSAGES_REQUEST:
@@ -1472,6 +1537,7 @@ export function sanghaReducer(
         ),
       };
 
+    case SANGHA_ACTIONS.QUEUE_CONVERSATION_MESSAGE:
     case SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_REQUEST:
       return {
         ...state,
@@ -1493,14 +1559,41 @@ export function sanghaReducer(
       };
 
     case SANGHA_ACTIONS.SEND_CONVERSATION_MESSAGE_SUCCESS:
+    case SANGHA_ACTIONS.RECEIVE_CONVERSATION_MESSAGE:
       return {
         ...state,
+        conversations: updateConversationPreview(
+          state.conversations,
+          action.payload.conversationId,
+          action.payload.message
+        ),
         conversationMessagesById: {
           ...state.conversationMessagesById,
           [action.payload.conversationId]: replaceMessageById(
             state.conversationMessagesById[action.payload.conversationId],
             action.payload.clientMessageId,
             action.payload.message
+          ),
+        },
+      };
+
+    case SANGHA_ACTIONS.UPDATE_CONVERSATION_MESSAGE_STATUS:
+      return {
+        ...state,
+        conversationMessagesById: {
+          ...state.conversationMessagesById,
+          [action.payload.conversationId]: (
+            state.conversationMessagesById[action.payload.conversationId] || []
+          ).map((message) =>
+            action.payload.messageIds.includes(message.id)
+              ? {
+                  ...message,
+                  deliveredAt:
+                    action.payload.deliveredAt || message.deliveredAt,
+                  readAt: action.payload.readAt || message.readAt,
+                  status: action.payload.status,
+                }
+              : message
           ),
         },
       };
