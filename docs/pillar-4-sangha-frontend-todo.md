@@ -28,7 +28,7 @@ Status: Completed
 
 ## Phase 2: Discovery Home
 
-Status: Started
+Status: Completed
 
 - [x] Wire `app/(tabs)/sangha.tsx` to `GET /api/sangha/home`.
 - [x] Wire Near Me toggle to `PATCH /api/users/me/sangha-discovery`.
@@ -43,12 +43,12 @@ Status: Started
 - [x] Wire `screens/sangha-list-screen.tsx` to `GET /api/sangha/devotees`.
 - [x] Wire `screens/sangha-profile-screen.tsx` to `GET /api/sangha/devotees/:id`.
 - [x] Wire connect, disconnect, and block actions.
-- [ ] Wire accept and decline actions from connection invitation surfaces.
-- [ ] Preserve privacy-safe location display.
+- [x] Wire accept and decline actions from incoming connection profiles.
+- [x] Preserve privacy-safe location display.
 
 ## Phase 4: Sangha Hub And Groups
 
-Status: Started
+Status: Completed
 
 - [x] Wire `screens/sangha-hub-screen.tsx` to `GET /api/sangha/groups/home`.
 - [x] Wire hub search to `GET /api/sangha/groups/search`.
@@ -58,7 +58,7 @@ Status: Started
 
 ## Phase 5: Group Details
 
-Status: Started
+Status: Completed for v1 scope
 
 - [x] Wire `screens/group-details-screen.tsx` to `GET /api/sangha/groups/:id`.
 - [x] Wire members to `GET /api/sangha/groups/:id/members`.
@@ -72,8 +72,8 @@ Status: Started
 - [x] Replace local chat shell with conversation/message APIs.
 - [x] Replace static member request count with `GET /api/sangha/groups/:id/join-requests`.
 - [x] Gate post/comment/event controls from backend capability flags.
-- [ ] Wire join request approve/decline buttons.
-- [ ] Add infinite scroll for unified group feed, join requests, and chat messages.
+- [x] Wire join request approve/decline buttons.
+- [x] Add bounded load-more pagination for unified group feed, join requests, members, events, and chat messages.
 
 ## Phase 6: Group Events
 
@@ -93,7 +93,7 @@ Status: Completed
 
 ## Phase 8: Live Streaming
 
-Status: Not started
+Status: Deferred to v2 and not exposed in the v1 UI
 
 - [ ] Wire live stream list and detail.
 - [ ] Wire create, start, join, heartbeat, end, report, and recording.
@@ -102,7 +102,7 @@ Status: Not started
 
 ## Phase 10: Full Sangha API Closure
 
-Status: Not started
+Status: Completed for v1 scope
 
 Audit file: `docs/pillar-4-sangha-api-integration-audit.md`
 
@@ -111,10 +111,10 @@ Audit file: `docs/pillar-4-sangha-api-integration-audit.md`
 - [x] Invite member and wire `POST /api/sangha/groups/:id/invitations`.
 - [x] Join request review UI and wire approve/decline.
 - [x] Admin member role/remove actions.
-- [ ] Edit group post.
-- [ ] Report direct chat message.
-- [ ] Confirm Event create form sends `groupId` from Sangha route params.
-- [ ] Complete live stream screens and APIs.
+- [x] Edit group post.
+- [x] Report direct chat message.
+- [x] Confirm Event create form sends `groupId` from Sangha route params to the preferred full `POST /api/events` contract.
+- [ ] Complete live stream screens and APIs in v2.
 
 ## Phase 9: Manual Smoke Test
 
@@ -126,3 +126,5 @@ Status: Not started
 - [ ] Devotee profile and connect lifecycle works.
 - [ ] Groups, invitations, posts, members, and events work.
 - [ ] Live stream heartbeat stops on screen exit.
+
+Release test matrix: `docs/pillar-4-sangha-production-readiness.md`

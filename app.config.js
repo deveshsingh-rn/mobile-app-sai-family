@@ -39,6 +39,10 @@ module.exports = ({ config }) => {
       ...baseConfig.android,
       package: bundleIdentifier,
     },
+    plugins: [
+      ...(baseConfig.plugins || []),
+      "expo-asset",
+    ],
     extra: {
       ...baseConfig.extra,
       appVariant: APP_VARIANT,

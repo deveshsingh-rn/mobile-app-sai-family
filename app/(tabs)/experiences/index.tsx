@@ -620,7 +620,7 @@ export default function HomeScreen() {
                 <View style={styles.askSaiBottomRow}>
                   <View style={styles.askSaiCopy}>
                     <Text style={styles.askSaiPrompt}>
-                    Speak or Write, Seek Guidance from Sai Baba's Teachings in Shree Sai Satcharitra
+                    Speak or Write, Seek Guidance from Sai Baba&apos;s Teachings in Shree Sai Satcharitra
                     </Text>
                     {/* <Text style={styles.askSaiMeta}>
                       Voice assistant for devotees

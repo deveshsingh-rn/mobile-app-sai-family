@@ -110,6 +110,10 @@ export const selectSanghaGroupPostsLoading = (
   state: RootState
 ) => selectSanghaState(state).groupPostsLoading;
 
+export const selectSanghaGroupPostsPagination = (
+  state: RootState
+) => selectSanghaState(state).groupPostsPagination;
+
 export const selectSanghaGroupFeed = (
   state: RootState
 ) => selectSanghaState(state).groupFeed;
@@ -117,6 +121,10 @@ export const selectSanghaGroupFeed = (
 export const selectSanghaGroupFeedLoading = (
   state: RootState
 ) => selectSanghaState(state).groupFeedLoading;
+
+export const selectSanghaGroupFeedPagination = (
+  state: RootState
+) => selectSanghaState(state).groupFeedPagination;
 
 export const selectSanghaGroupMembership = (
   state: RootState
@@ -134,6 +142,10 @@ export const selectSanghaGroupJoinRequestsLoading = (
   state: RootState
 ) => selectSanghaState(state).groupJoinRequestsLoading;
 
+export const selectSanghaGroupJoinRequestsPagination = (
+  state: RootState
+) => selectSanghaState(state).groupJoinRequestsPagination;
+
 export const selectSanghaGroupMembers = (
   state: RootState
 ) => selectSanghaState(state).groupMembers;
@@ -142,6 +154,10 @@ export const selectSanghaGroupMembersLoading = (
   state: RootState
 ) => selectSanghaState(state).groupMembersLoading;
 
+export const selectSanghaGroupMembersPagination = (
+  state: RootState
+) => selectSanghaState(state).groupMembersPagination;
+
 export const selectSanghaGroupEvents = (
   state: RootState
 ) => selectSanghaState(state).groupEvents;
@@ -149,6 +165,10 @@ export const selectSanghaGroupEvents = (
 export const selectSanghaGroupEventsLoading = (
   state: RootState
 ) => selectSanghaState(state).groupEventsLoading;
+
+export const selectSanghaGroupEventsPagination = (
+  state: RootState
+) => selectSanghaState(state).groupEventsPagination;
 
 export const selectSanghaGroupPostComments = (
   state: RootState,

@@ -22,11 +22,8 @@ Integrated and visible today:
 
 Missing or partial:
 
-- Update post.
-- Report chat message.
-- Live streaming create/detail/start/join/heartbeat/chat/reactions/recording/report/end.
-- Connection accept/decline is serviced but not fully exposed in a clear UI surface.
-- Event pillar `POST /api/events` accepts `groupId`, but the Event create form still needs final confirmation that it sends `groupId` from Sangha route params.
+- Live streaming create/detail/start/join/heartbeat/chat/reactions/recording/report/end is deferred to v2 and is not exposed in v1.
+- Signed-in production mutation testing remains required; see `docs/pillar-4-sangha-production-readiness.md`.
 
 ## Endpoint Coverage
 
@@ -37,8 +34,8 @@ Missing or partial:
 | `GET /api/sangha/devotees` | Integrated | `screens/sangha-list-screen.tsx` |
 | `GET /api/sangha/devotees/:id` | Integrated | `screens/sangha-profile-screen.tsx` |
 | `POST /api/sangha/devotees/:id/connect` | Integrated | Devotee profile |
-| `POST /api/sangha/connections/:id/accept` | Service exists, UI partial/missing | Needs invitation/requests UI |
-| `POST /api/sangha/connections/:id/decline` | Service exists, UI partial/missing | Needs invitation/requests UI |
+| `POST /api/sangha/connections/:id/accept` | Integrated | Incoming request actions on devotee profile |
+| `POST /api/sangha/connections/:id/decline` | Integrated | Incoming request actions on devotee profile |
 | `DELETE /api/sangha/devotees/:id/connect` | Integrated | Devotee profile |
 | `POST /api/sangha/devotees/:id/block` | Integrated | Devotee profile |
 | `GET /api/sangha/groups/home` | Integrated | `screens/sangha-hub-screen.tsx` |
@@ -56,12 +53,12 @@ Missing or partial:
 | `GET /api/sangha/groups/:id/feed` | Integrated | Group detail Feed tab |
 | `GET /api/sangha/groups/:id/membership` | Integrated | Group detail capabilities |
 | `GET /api/sangha/groups/:id/join-requests` | Integrated | Group Feed member requests |
-| `POST /api/events` with `groupId` | Partial | Event create route opens; confirm payload pass-through |
+| `POST /api/events` with `groupId` | Integrated | Full Event create form launched from group context |
 | `POST /api/sangha/conversations` | Integrated | `screens/sangha-chat-screen.tsx` |
 | `GET /api/sangha/conversations/:id/messages` | Integrated | Chat screen |
 | `POST /api/sangha/conversations/:id/messages` | Integrated | Chat screen |
 | `PATCH /api/sangha/conversations/:id/read` | Integrated | Chat screen |
-| `POST /api/sangha/messages/:id/report` | Missing | Needs message actions/report modal |
+| `POST /api/sangha/messages/:id/report` | Integrated | Long-press a received direct-chat message |
 | `PATCH /api/sangha/groups/:id` | Integrated | `screens/sangha-create-group-screen.tsx` edit mode |
 | `POST /api/sangha/groups/:id/join` | Integrated | Group detail join button |
 | `DELETE /api/sangha/groups/:id/membership` | Integrated | Group detail leave button |
@@ -73,7 +70,7 @@ Missing or partial:
 | `DELETE /api/sangha/groups/:id` | Integrated | Edit Sangha archive action |
 | `GET /api/sangha/groups/:id/posts` | Integrated fallback | Group detail old posts fallback |
 | `POST /api/sangha/groups/:id/posts` | Integrated | Group feed composer |
-| `PATCH /api/sangha/groups/:id/posts/:postId` | Missing | Needs edit post action |
+| `PATCH /api/sangha/groups/:id/posts/:postId` | Integrated | Edit action on posts with `canEdit` |
 | `POST /api/sangha/groups/:id/posts/:postId/like` | Integrated | Group feed |
 | `DELETE /api/sangha/groups/:id/posts/:postId/like` | Integrated | Group feed |
 | `GET /api/sangha/groups/:id/posts/:postId/comments` | Integrated | Group feed comments |
@@ -122,12 +119,13 @@ Missing or partial:
 
 ### Phase C: Feed Completion
 
-- Wire update post.
-- Wire report message.
-- Add pagination/load-more for unified group feed and chat messages.
+- Wire update post. Done.
+- Wire report message. Done.
+- Add pagination/load-more for unified group feed, join requests, members, events, and chat messages. Done.
 
 ### Phase D: Live Streaming
 
+- Deferred to v2; do not expose it in the v1 production UI.
 - Create live stream list/detail screens.
 - Wire schedule, detail, start, join, heartbeat, chat, reactions, recording, report, and end.
 - Add heartbeat cleanup on screen blur/unmount to avoid memory/network leaks.

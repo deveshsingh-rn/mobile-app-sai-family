@@ -51,14 +51,20 @@ import {
   selectSanghaGroupDetailLoading,
   selectSanghaGroupEvents,
   selectSanghaGroupEventsLoading,
+  selectSanghaGroupEventsPagination,
   selectSanghaGroupFeed,
   selectSanghaGroupFeedLoading,
+  selectSanghaGroupFeedPagination,
   selectSanghaGroupJoinRequests,
+  selectSanghaGroupJoinRequestsLoading,
+  selectSanghaGroupJoinRequestsPagination,
   selectSanghaGroupMembers,
   selectSanghaGroupMembersLoading,
+  selectSanghaGroupMembersPagination,
   selectSanghaGroupMembership,
   selectSanghaGroupPosts,
   selectSanghaGroupPostsLoading,
+  selectSanghaGroupPostsPagination,
   selectSanghaGroupPostComments,
   selectSanghaGroupPostCommentsLoading,
 } from "@/store/sangha/selectors";
@@ -68,6 +74,7 @@ import {
   SanghaGroupJoinRequest,
   SanghaGroupMember,
   SanghaGroupPost,
+  SanghaPagination,
 } from "@/store/sangha/types";
 import {
   useAppDispatch,
@@ -137,16 +144,22 @@ export default function GroupDetailsScreen() {
   const feedLoading = useAppSelector(
     selectSanghaGroupFeedLoading
   );
+  const feedPagination = useAppSelector(selectSanghaGroupFeedPagination);
+  const postsPagination = useAppSelector(selectSanghaGroupPostsPagination);
   const membership = useAppSelector(selectSanghaGroupMembership);
   const joinRequests = useAppSelector(selectSanghaGroupJoinRequests);
+  const joinRequestsLoading = useAppSelector(selectSanghaGroupJoinRequestsLoading);
+  const joinRequestsPagination = useAppSelector(selectSanghaGroupJoinRequestsPagination);
   const members = useAppSelector(selectSanghaGroupMembers);
   const membersLoading = useAppSelector(
     selectSanghaGroupMembersLoading
   );
+  const membersPagination = useAppSelector(selectSanghaGroupMembersPagination);
   const events = useAppSelector(selectSanghaGroupEvents);
   const eventsLoading = useAppSelector(
     selectSanghaGroupEventsLoading
   );
+  const eventsPagination = useAppSelector(selectSanghaGroupEventsPagination);
   const error = useAppSelector(selectSanghaError);
   const [activeTab, setActiveTab] = useState<GroupTab>("Feed");
   const groupId = id || group?.id || "";
@@ -229,6 +242,7 @@ export default function GroupDetailsScreen() {
           groupId={groupId}
           loading={membersLoading}
           members={members}
+          pagination={membersPagination}
         />
       );
     }
@@ -240,6 +254,7 @@ export default function GroupDetailsScreen() {
           canCreateEvent={canCreateEvent}
           groupId={groupId}
           loading={eventsLoading}
+          pagination={eventsPagination}
         />
       );
     }
@@ -255,9 +270,13 @@ export default function GroupDetailsScreen() {
         canManageGroup={canManageGroup}
         canPost={canPost}
         joinRequests={joinRequests}
+        joinRequestsLoading={joinRequestsLoading}
+        joinRequestsPagination={joinRequestsPagination}
         joinRequestCount={joinRequests.length || group?.joinRequestCount || 0}
         loading={feedLoading || postsLoading}
         posts={feed.length ? feed : posts}
+        pagination={feed.length ? feedPagination : postsPagination}
+        usingUnifiedFeed={feed.length > 0}
       />
     );
   };
@@ -589,24 +608,78 @@ function EmptyCard({ text }: { text: string }) {
   );
 }
 
+function getNextOffset(pagination: SanghaPagination) {
+  return pagination.nextOffset ?? pagination.offset + pagination.limit;
+}
+
+function PaginationButton({
+  loading,
+  onPress,
+  pagination,
+}: {
+  loading: boolean;
+  onPress: () => void;
+  pagination: SanghaPagination | null;
+}) {
+  if (!pagination?.hasMore) {
+    return null;
+  }
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      disabled={loading}
+      onPress={onPress}
+      style={{
+        alignItems: "center",
+        alignSelf: "center",
+        backgroundColor: "#FFF7ED",
+        borderColor: "#FED7AA",
+        borderRadius: 18,
+        borderWidth: 1,
+        minWidth: 150,
+        paddingHorizontal: 18,
+        paddingVertical: 12,
+        marginTop: 14,
+      }}
+    >
+      {loading ? (
+        <ActivityIndicator color="#F97316" size="small" />
+      ) : (
+        <Text style={{ color: "#9A3412", fontSize: 14, fontWeight: "900" }}>
+          Load more
+        </Text>
+      )}
+    </TouchableOpacity>
+  );
+}
+
 function FeedSection({
   canComment,
   canManageGroup,
   canPost,
   groupId,
   joinRequests,
+  joinRequestsLoading,
+  joinRequestsPagination,
   joinRequestCount,
   loading,
   posts,
+  pagination,
+  usingUnifiedFeed,
 }: {
   canComment: boolean;
   canManageGroup: boolean;
   canPost: boolean;
   groupId: string;
   joinRequests: SanghaGroupJoinRequest[];
+  joinRequestsLoading: boolean;
+  joinRequestsPagination: SanghaPagination | null;
   joinRequestCount: number;
   loading: boolean;
   posts: SanghaGroupPost[];
+  pagination: SanghaPagination | null;
+  usingUnifiedFeed: boolean;
 }) {
   const dispatch = useAppDispatch();
   const [content, setContent] = useState("");
@@ -745,6 +818,8 @@ function FeedSection({
         <MemberRequestCard
           groupId={groupId}
           joinRequests={joinRequests}
+          loading={joinRequestsLoading}
+          pagination={joinRequestsPagination}
           pendingCount={joinRequestCount}
         />
       ) : null}
@@ -763,6 +838,31 @@ function FeedSection({
           post={post}
         />
       ))}
+      <PaginationButton
+        loading={loading}
+        onPress={() => {
+          if (!pagination?.hasMore) return;
+          const offset = getNextOffset(pagination);
+
+          dispatch(
+            usingUnifiedFeed
+              ? fetchSanghaGroupFeedRequest({
+                  groupId,
+                  limit: pagination.limit,
+                  offset,
+                  pinnedFirst: true,
+                  types: "post,experience,event",
+                })
+              : fetchSanghaGroupPostsRequest({
+                  groupId,
+                  limit: pagination.limit,
+                  offset,
+                  pinnedFirst: true,
+                })
+          );
+        }}
+        pagination={pagination}
+      />
     </>
   );
 }
@@ -770,13 +870,19 @@ function FeedSection({
 function MemberRequestCard({
   groupId,
   joinRequests,
+  loading,
+  pagination,
   pendingCount,
 }: {
   groupId: string;
   joinRequests: SanghaGroupJoinRequest[];
+  loading: boolean;
+  pagination: SanghaPagination | null;
   pendingCount: number;
 }) {
   const dispatch = useAppDispatch();
+  const [expanded, setExpanded] = useState(false);
+  const visibleRequests = expanded ? joinRequests : joinRequests.slice(0, 3);
 
   return (
     <View>
@@ -813,7 +919,7 @@ function MemberRequestCard({
         </View>
       </View>
 
-      {joinRequests.slice(0, 3).map((request) => {
+      {visibleRequests.map((request) => {
         const requesterName =
           request.requester?.name || request.requesterId || "Sai Family";
 
@@ -884,6 +990,33 @@ function MemberRequestCard({
           </View>
         );
       })}
+      {joinRequests.length > 3 && !expanded ? (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => setExpanded(true)}
+          style={{ alignItems: "center", marginTop: 12, paddingVertical: 10 }}
+        >
+          <Text style={{ color: "#F97316", fontSize: 13, fontWeight: "900" }}>
+            Review all loaded requests
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+      {expanded ? (
+        <PaginationButton
+          loading={loading}
+          onPress={() => {
+            if (!pagination?.hasMore) return;
+            dispatch(
+              fetchSanghaGroupJoinRequestsRequest({
+                groupId,
+                limit: pagination.limit,
+                offset: getNextOffset(pagination),
+              })
+            );
+          }}
+          pagination={pagination}
+        />
+      ) : null}
     </View>
   );
 }
@@ -1095,12 +1228,14 @@ function MembersSection({
   groupId,
   loading,
   members,
+  pagination,
 }: {
   canInvite: boolean;
   canManageGroup: boolean;
   groupId: string;
   loading: boolean;
   members: SanghaGroupMember[];
+  pagination: SanghaPagination | null;
 }) {
   const dispatch = useAppDispatch();
   const [query, setQuery] = useState("");
@@ -1217,8 +1352,7 @@ function MembersSection({
               }}
               value={inviteMessage}
             />
-            {member.canMessage !== false ? (
-              <TouchableOpacity
+            <TouchableOpacity
               activeOpacity={0.85}
               onPress={sendInvite}
               style={{
@@ -1268,28 +1402,29 @@ function MembersSection({
                 {member.status || "Active member"}
               </Text>
             </View>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() =>
-                router.push({
-                  pathname: "/sangha-chat",
-                  params: {
-                    groupId,
-                    memberId: member.userId || member.id,
-                    memberName: member.name || "Sai Family",
-                  },
-                })
-              }
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 21,
-                backgroundColor: "#F3F4F6",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Feather name="message-circle" size={18} color="#6B7280" />
+            {member.canMessage !== false ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() =>
+                  router.push({
+                    pathname: "/sangha-chat",
+                    params: {
+                      groupId,
+                      memberId: member.userId || member.id,
+                      memberName: member.name || "Sai Family",
+                    },
+                  })
+                }
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "#F3F4F6",
+                  borderRadius: 21,
+                  height: 42,
+                  justifyContent: "center",
+                  width: 42,
+                }}
+              >
+                <Feather name="message-circle" size={18} color="#6B7280" />
               </TouchableOpacity>
             ) : null}
             {canManageGroup && (member.canPromote !== false || member.canRemove !== false) ? (
@@ -1359,6 +1494,24 @@ function MembersSection({
             ) : null}
           </View>
         ))}
+        {!trimmedQuery ? (
+          <PaginationButton
+            loading={loading}
+            onPress={() => {
+              if (!pagination?.hasMore) return;
+              dispatch(
+                fetchSanghaGroupMembersRequest({
+                  groupId,
+                  limit: pagination.limit,
+                  offset: getNextOffset(pagination),
+                  role: "all",
+                  status: "active",
+                })
+              );
+            }}
+            pagination={pagination}
+          />
+        ) : null}
       </View>
     </>
   );
@@ -1369,12 +1522,16 @@ function EventsSection({
   events,
   groupId,
   loading,
+  pagination,
 }: {
   canCreateEvent: boolean;
   events: SanghaGroupEvent[];
   groupId: string;
   loading: boolean;
+  pagination: SanghaPagination | null;
 }) {
+  const dispatch = useAppDispatch();
+
   return (
     <>
       <View
@@ -1429,6 +1586,21 @@ function EventsSection({
           groupId={groupId}
         />
       ))}
+      <PaginationButton
+        loading={loading}
+        onPress={() => {
+          if (!pagination?.hasMore) return;
+          dispatch(
+            fetchSanghaGroupEventsRequest({
+              groupId,
+              limit: pagination.limit,
+              offset: getNextOffset(pagination),
+              status: "upcoming",
+            })
+          );
+        }}
+        pagination={pagination}
+      />
     </>
   );
 }
