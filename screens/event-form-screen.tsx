@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -17,6 +18,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TextInputProps,
   View,
 } from "react-native";
 
@@ -34,10 +36,15 @@ import {
   router,
   useLocalSearchParams,
 } from "expo-router";
+import { MotiView } from "moti";
 import {
+  ArrowRight,
   BookOpen,
   CalendarDays,
+  Check,
+  CheckCircle2,
   ChevronDown,
+  ChevronRight,
   Clock3,
   Eye,
   Heart,
@@ -46,6 +53,7 @@ import {
   Music,
   Plus,
   Repeat2,
+  Save,
   Search,
   Sparkles,
   Stethoscope,
@@ -53,6 +61,7 @@ import {
   Utensils,
   X,
 } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import {
   createEventDraftRequest,
@@ -385,6 +394,51 @@ export default function EventFormScreen({
 
   const eventId = Array.isArray(id) ? id[0] : id;
   const draftId = currentDraft?.id || null;
+
+  const formProgress = useMemo(() => {
+    const startAt = new Date(form.startAt).getTime();
+    const endAt = new Date(form.endAt).getTime();
+    const latitude = Number(form.latitude);
+    const longitude = Number(form.longitude);
+    const items = [
+      {
+        complete: form.title.trim().length >= 3,
+        label: "Event name",
+      },
+      {
+        complete:
+          Number.isFinite(startAt) &&
+          Number.isFinite(endAt) &&
+          endAt >= startAt,
+        label: "Date and time",
+      },
+      {
+        complete:
+          form.address.trim().length >= 5 &&
+          form.latitude.trim().length > 0 &&
+          Number.isFinite(latitude) &&
+          latitude >= -90 &&
+          latitude <= 90 &&
+          form.longitude.trim().length > 0 &&
+          Number.isFinite(longitude) &&
+          longitude >= -180 &&
+          longitude <= 180,
+        label: "Venue",
+      },
+      {
+        complete: form.description.trim().length >= 10,
+        label: "Description",
+      },
+    ];
+    const completed = items.filter((item) => item.complete).length;
+
+    return {
+      completed,
+      items,
+      percent: Math.round((completed / items.length) * 100),
+      total: items.length,
+    };
+  }, [form.address, form.description, form.endAt, form.latitude, form.longitude, form.startAt, form.title]);
 
   const setField = useCallback((key: keyof EventFormState, value: string) => {
     setForm((current) => ({
@@ -963,14 +1017,64 @@ export default function EventFormScreen({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.formGuide}>
+          <View style={styles.formGuideTop}>
+            <View style={styles.formGuideIcon}>
+              <CheckCircle2 color="#C2410C" size={20} strokeWidth={2.4} />
+            </View>
+            <View style={styles.formGuideCopy}>
+              <Text style={styles.formGuideEyebrow}>EVENT SETUP</Text>
+              <Text style={styles.formGuideTitle}>
+                {formProgress.completed === formProgress.total
+                  ? "Ready for review"
+                  : `${formProgress.completed} of ${formProgress.total} essentials ready`}
+              </Text>
+            </View>
+            <Text style={styles.formGuidePercent}>{formProgress.percent}%</Text>
+          </View>
+          <View style={styles.formGuideTrack}>
+            <MotiView
+              animate={{width: `${formProgress.percent}%`}}
+              style={styles.formGuideFill}
+              transition={{duration: 280, type: "timing"}}
+            />
+          </View>
+          <View style={styles.formGuideItems}>
+            {formProgress.items.map((item) => (
+              <View key={item.label} style={styles.formGuideItem}>
+                <View
+                  style={[
+                    styles.formGuideCheck,
+                    item.complete && styles.formGuideCheckComplete,
+                  ]}
+                >
+                  {item.complete ? <Check color="#FFFFFF" size={10} strokeWidth={3} /> : null}
+                </View>
+                <Text
+                  style={[
+                    styles.formGuideItemText,
+                    item.complete && styles.formGuideItemTextComplete,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
         {!!error && <Text style={styles.errorText}>{error}</Text>}
 
         <FormSection
+          optional
           prominent
-          subtitle="Choose an image that captures the spirit of your gathering"
-          title="Set the Sacred Atmosphere"
+          subtitle="A clear landscape photo helps devotees recognise your event"
+          title="Event cover photo"
         >
-          <Pressable onPress={handlePickBanner} style={styles.bannerBox}>
+          <Pressable
+            onPress={handlePickBanner}
+            style={({pressed}) => [styles.bannerBox, pressed && styles.controlPressed]}
+          >
             {bannerUri ? (
               <Image source={{uri: bannerUri}} style={styles.bannerPreview} />
             ) : (
@@ -980,11 +1084,22 @@ export default function EventFormScreen({
                 </View>
                 <Text style={styles.bannerTitle}>Add Event Banner</Text>
                 <Text style={styles.bannerHint}>JPG, PNG up to 10MB</Text>
-                <View style={styles.chooseButton}>
+                <LinearGradient
+                  colors={["#EA580C", "#C2410C"]}
+                  end={{x: 1, y: 1}}
+                  start={{x: 0, y: 0}}
+                  style={styles.chooseButton}
+                >
                   <Text style={styles.chooseText}>Choose Image</Text>
-                </View>
+                </LinearGradient>
               </View>
             )}
+            {bannerUri && !uploadingMedia ? (
+              <View style={styles.bannerEditPill}>
+                <ImagePlus color="#9A3412" size={14} />
+                <Text style={styles.bannerEditText}>Change photo</Text>
+              </View>
+            ) : null}
             {uploadingMedia ? (
               <View style={styles.uploadOverlay}>
                 <ActivityIndicator color="#FFFFFF" />
@@ -999,12 +1114,15 @@ export default function EventFormScreen({
         </FormSection>
 
         <FormSection
+          completed={form.title.trim().length >= 3}
+          step="1"
           subtitle="This is the first thing devotees will see"
-          title="What is the name of your gathering?"
+          title="Name your gathering"
         >
           <View style={styles.inputWrap}>
-            <TextInput
+            <PolishedInput
               onChangeText={(value) => setField("title", value)}
+              maxLength={80}
               placeholder="e.g., Thursday Evening Bhajan Sandhya"
               placeholderTextColor="#9CA3AF"
               style={styles.input}
@@ -1015,12 +1133,16 @@ export default function EventFormScreen({
           <Pressable
             disabled={titleSuggestionsLoading}
             onPress={handleFetchTitleSuggestions}
-            style={[styles.helperAction, titleSuggestionsLoading && styles.disabled]}
+            style={({pressed}) => [
+              styles.helperAction,
+              pressed && styles.controlPressed,
+              titleSuggestionsLoading && styles.disabled,
+            ]}
           >
             {titleSuggestionsLoading ? (
-              <ActivityIndicator color="#6B7280" size="small" />
+              <ActivityIndicator color="#C2410C" size="small" />
             ) : (
-              <Sparkles color="#6B7280" size={15} />
+              <Sparkles color="#C2410C" size={15} />
             )}
             <Text style={styles.helperActionText}>
               {titleSuggestionsLoading ? "Finding titles..." : "Suggest event titles"}
@@ -1042,8 +1164,10 @@ export default function EventFormScreen({
         </FormSection>
 
         <FormSection
+          completed={Boolean(form.type)}
+          step="2"
           subtitle="Help devotees understand the nature of your event"
-          title="What kind of gathering is this?"
+          title="Choose an event type"
         >
           <View style={styles.typeGrid}>
             {typeOptions.map((item) => {
@@ -1054,14 +1178,23 @@ export default function EventFormScreen({
                 <Pressable
                   key={item.label}
                   onPress={() => setField("type", item.value)}
-                  style={[styles.typeCard, active && styles.typeCardActive]}
+                  style={({pressed}) => [
+                    styles.typeCard,
+                    active && styles.typeCardActive,
+                    pressed && styles.controlPressed,
+                  ]}
                 >
                   <View style={[styles.typeIcon, active && styles.typeIconActive]}>
-                    <Icon color={active ? "#FFFFFF" : "#6B7280"} size={22} />
+                    <Icon color={active ? "#C2410C" : "#6B7280"} size={20} />
                   </View>
                   <Text style={[styles.typeLabel, active && styles.typeLabelActive]}>
                     {item.label}
                   </Text>
+                  {active ? (
+                    <View style={styles.typeSelectionCheck}>
+                      <Check color="#FFFFFF" size={10} strokeWidth={3} />
+                    </View>
+                  ) : null}
                 </Pressable>
               );
             })}
@@ -1069,8 +1202,10 @@ export default function EventFormScreen({
         </FormSection>
 
         <FormSection
+          completed={formProgress.items[1].complete}
+          step="3"
           subtitle="Choose the date and time for your sacred event"
-          title="When will devotees gather?"
+          title="Set the schedule"
         >
           <DateField
             icon={<CalendarDays color="#9CA3AF" size={18} />}
@@ -1108,10 +1243,12 @@ export default function EventFormScreen({
         </FormSection>
 
         <FormSection
+          completed={formProgress.items[2].complete}
+          step="4"
           subtitle="Where will the gathering take place?"
-          title="Venue / Sacred Space"
+          title="Add the venue"
         >
-          <TextInput
+          <PolishedInput
             onChangeText={(value) => setField("venueName", value)}
             placeholder="Venue name, e.g., Sai Mandir Hall"
             placeholderTextColor="#9CA3AF"
@@ -1121,15 +1258,19 @@ export default function EventFormScreen({
           <Pressable
             disabled={placesLoading}
             onPress={handleSearchPlaces}
-            style={[styles.helperAction, placesLoading && styles.disabled]}
+            style={({pressed}) => [
+              styles.helperAction,
+              pressed && styles.controlPressed,
+              placesLoading && styles.disabled,
+            ]}
           >
             {placesLoading ? (
-              <ActivityIndicator color="#6B7280" size="small" />
+              <ActivityIndicator color="#C2410C" size="small" />
             ) : (
-              <Search color="#6B7280" size={15} />
+              <Search color="#C2410C" size={15} />
             )}
             <Text style={styles.helperActionText}>
-              {placesLoading ? "Searching venues..." : "Search backend venues"}
+              {placesLoading ? "Searching venues..." : "Find a venue"}
             </Text>
           </Pressable>
           {!!places.length && (
@@ -1148,7 +1289,7 @@ export default function EventFormScreen({
               ))}
             </View>
           )}
-          <TextInput
+          <PolishedInput
             multiline
             onChangeText={(value) => setField("address", value)}
             placeholder="Full address or directions"
@@ -1159,14 +1300,18 @@ export default function EventFormScreen({
           <Pressable
             disabled={loadingLocation}
             onPress={handleUseCurrentLocation}
-            style={[styles.currentLocationButton, loadingLocation && styles.disabled]}
+            style={({pressed}) => [
+              styles.currentLocationButton,
+              pressed && styles.controlPressed,
+              loadingLocation && styles.disabled,
+            ]}
           >
             {loadingLocation ? (
-              <ActivityIndicator color="#6B7280" />
+              <ActivityIndicator color="#C2410C" />
             ) : (
-              <LocateFixed color="#6B7280" size={17} />
+              <LocateFixed color="#C2410C" size={17} />
             )}
-            <Text style={styles.currentLocationText}>Use Current Location</Text>
+            <Text style={styles.currentLocationText}>Use my current location</Text>
           </Pressable>
           <View style={styles.twoColumns}>
             <SelectButton label="Country" onPress={() => setSelectionKind("country")} value={form.country} />
@@ -1177,32 +1322,44 @@ export default function EventFormScreen({
             <SelectButton label="Timezone" onPress={() => setSelectionKind("timezone")} value={form.timezone} />
           </View>
           <View style={styles.twoColumns}>
-            <TextInput
-              keyboardType="numeric"
-              onChangeText={(value) => setField("latitude", value)}
-              placeholder="Latitude"
-              placeholderTextColor="#9CA3AF"
-              style={styles.input}
-              value={form.latitude}
-            />
-            <TextInput
-              keyboardType="numeric"
-              onChangeText={(value) => setField("longitude", value)}
-              placeholder="Longitude"
-              placeholderTextColor="#9CA3AF"
-              style={styles.input}
-              value={form.longitude}
-            />
+            <View style={styles.coordinateField}>
+              <Text style={styles.fieldLabel}>Latitude</Text>
+              <PolishedInput
+                keyboardType="numbers-and-punctuation"
+                onChangeText={(value) => setField("latitude", value)}
+                placeholder="18.5204"
+                placeholderTextColor="#9CA3AF"
+                style={styles.input}
+                value={form.latitude}
+              />
+            </View>
+            <View style={styles.coordinateField}>
+              <Text style={styles.fieldLabel}>Longitude</Text>
+              <PolishedInput
+                keyboardType="numbers-and-punctuation"
+                onChangeText={(value) => setField("longitude", value)}
+                placeholder="73.8567"
+                placeholderTextColor="#9CA3AF"
+                style={styles.input}
+                value={form.longitude}
+              />
+            </View>
           </View>
+          <Text style={styles.coordinateHint}>
+            Coordinates are filled automatically when you use your current location or choose a venue.
+          </Text>
         </FormSection>
 
         <FormSection
+          completed={form.description.trim().length >= 10}
+          step="5"
           subtitle="Share what devotees can expect from this gathering"
-          title="Describe the Experience"
+          title="Describe the experience"
         >
           <View style={styles.descriptionWrap}>
-            <TextInput
+            <PolishedInput
               multiline
+              maxLength={500}
               onChangeText={(value) => setField("description", value)}
               placeholder="Describe the experience devotees will have..."
               placeholderTextColor="#9CA3AF"
@@ -1259,16 +1416,36 @@ export default function EventFormScreen({
         ) : null}
 
         <View style={styles.actionSection}>
+          <View style={styles.actionIntro}>
+            <View style={styles.actionIntroIcon}>
+              <Eye color="#C2410C" size={18} />
+            </View>
+            <View style={styles.actionIntroCopy}>
+              <Text style={styles.actionIntroTitle}>
+                {mode === "create" ? "Review before publishing" : "Ready to save changes?"}
+              </Text>
+              <Text style={styles.actionIntroText}>
+                {mode === "create"
+                  ? "Check how devotees will see your event before it goes live."
+                  : "Your updates will appear on the event page after saving."}
+              </Text>
+            </View>
+          </View>
           {mode === "create" ? (
             <Pressable
               disabled={draftSaving || publishingDraft || uploadingMedia}
               onPress={handleSaveDraft}
-              style={[
+              style={({pressed}) => [
                 styles.draftButton,
+                pressed && styles.controlPressed,
                 (draftSaving || publishingDraft || uploadingMedia) && styles.disabled,
               ]}
             >
-              {draftSaving ? <ActivityIndicator color="#1F2937" /> : null}
+              {draftSaving ? (
+                <ActivityIndicator color="#9A3412" />
+              ) : (
+                <Save color="#9A3412" size={17} strokeWidth={2.3} />
+              )}
               <Text style={styles.draftText}>
                 {draftId ? "Update Draft" : "Save Draft"}
               </Text>
@@ -1276,36 +1453,28 @@ export default function EventFormScreen({
           ) : null}
 
           {mode === "create" && draftId ? (
-            <Pressable
+            <PrimaryActionButton
               disabled={draftSaving || publishingDraft || uploadingMedia}
-              onPress={handlePublishDraft}
-              style={[
-                styles.submitButton,
-                (draftSaving || publishingDraft || uploadingMedia) && styles.disabled,
-              ]}
-            >
-              {publishingDraft || draftPublishQueued ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : null}
-              <Text style={styles.submitText}>
-                {publishingDraft || draftPublishQueued
+              label={
+                publishingDraft || draftPublishQueued
                   ? "Publishing Draft..."
-                  : "Publish Saved Draft"}
-              </Text>
-            </Pressable>
+                  : "Publish Saved Draft"
+              }
+              loading={Boolean(publishingDraft || draftPublishQueued)}
+              onPress={handlePublishDraft}
+            />
           ) : null}
 
-          <Pressable
+          <PrimaryActionButton
             disabled={saving || uploadingMedia || publishingDraft}
+            label={mode === "create" ? "Review Event" : "Save Changes"}
+            loading={saving}
             onPress={handleSubmit}
-            style={[styles.submitButton, (saving || uploadingMedia || publishingDraft) && styles.disabled]}
+          />
+          <Pressable
+            onPress={() => router.back()}
+            style={({pressed}) => [styles.discardButton, pressed && styles.controlPressed]}
           >
-            {saving ? <ActivityIndicator color="#FFFFFF" /> : null}
-            <Text style={styles.submitText}>
-              {mode === "create" ? "Review Event" : "Save Changes"}
-            </Text>
-          </Pressable>
-          <Pressable onPress={() => router.back()} style={styles.discardButton}>
             <Text style={styles.discardText}>Discard Changes</Text>
           </Pressable>
         </View>
@@ -1365,21 +1534,102 @@ export default function EventFormScreen({
   );
 }
 
+function PolishedInput({onBlur, onFocus, style, ...props}: TextInputProps) {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <TextInput
+      {...props}
+      cursorColor="#EA580C"
+      onBlur={(event) => {
+        setFocused(false);
+        onBlur?.(event);
+      }}
+      onFocus={(event) => {
+        setFocused(true);
+        onFocus?.(event);
+      }}
+      selectionColor="#FDBA74"
+      style={[style, focused && styles.inputFocused]}
+    />
+  );
+}
+
+function PrimaryActionButton({
+  disabled,
+  label,
+  loading,
+  onPress,
+}: {
+  disabled?: boolean;
+  label: string;
+  loading?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      style={({pressed}) => [
+        styles.submitButton,
+        pressed && styles.primaryButtonPressed,
+        disabled && styles.disabled,
+      ]}
+    >
+      <LinearGradient
+        colors={["#F97316", "#C2410C"]}
+        end={{x: 1, y: 1}}
+        start={{x: 0, y: 0}}
+        style={styles.primaryGradient}
+      >
+        {loading ? <ActivityIndicator color="#FFFFFF" /> : null}
+        <Text style={styles.submitText}>{label}</Text>
+        {!loading ? <ArrowRight color="#FFFFFF" size={18} strokeWidth={2.5} /> : null}
+      </LinearGradient>
+    </Pressable>
+  );
+}
+
 function FormSection({
   children,
+  completed,
+  optional,
   prominent,
+  step,
   subtitle,
   title,
 }: {
   children: React.ReactNode;
+  completed?: boolean;
+  optional?: boolean;
   prominent?: boolean;
+  step?: string;
   subtitle?: string;
   title: string;
 }) {
   return (
     <View style={styles.formSection}>
-      <Text style={prominent ? styles.sectionTitleProminent : styles.sectionTitle}>{title}</Text>
-      {!!subtitle && <Text style={styles.sectionSubtitle}>{subtitle}</Text>}
+      <View style={styles.sectionHeadingRow}>
+        {step ? (
+          <View style={[styles.sectionStep, completed && styles.sectionStepComplete]}>
+            {completed ? (
+              <Check color="#FFFFFF" size={12} strokeWidth={3} />
+            ) : (
+              <Text style={styles.sectionStepText}>{step}</Text>
+            )}
+          </View>
+        ) : null}
+        <View style={styles.sectionHeadingCopy}>
+          <View style={styles.sectionTitleRow}>
+            <Text style={prominent ? styles.sectionTitleProminent : styles.sectionTitle}>
+              {title}
+            </Text>
+            {optional ? <Text style={styles.optionalBadge}>OPTIONAL</Text> : null}
+          </View>
+          {!!subtitle && <Text style={styles.sectionSubtitle}>{subtitle}</Text>}
+        </View>
+      </View>
       <View style={styles.sectionBody}>{children}</View>
     </View>
   );
@@ -1397,11 +1647,15 @@ function DateField({
   value: string;
 }) {
   return (
-    <Pressable onPress={onPress} style={styles.dateField}>
+    <Pressable
+      onPress={onPress}
+      style={({pressed}) => [styles.dateField, pressed && styles.controlPressed]}
+    >
       <Text style={styles.fieldLabel}>{label}</Text>
       <View style={styles.dateValueRow}>
         {icon}
         <Text numberOfLines={1} style={styles.dateValue}>{value}</Text>
+        <ChevronRight color="#A8A29E" size={16} />
       </View>
     </Pressable>
   );
@@ -1417,7 +1671,10 @@ function SelectButton({
   value: string;
 }) {
   return (
-    <Pressable onPress={onPress} style={styles.selectButton}>
+    <Pressable
+      onPress={onPress}
+      style={({pressed}) => [styles.selectButton, pressed && styles.controlPressed]}
+    >
       <View style={styles.selectCopy}>
         <Text style={styles.selectLabel}>{label}</Text>
         <Text numberOfLines={1} style={styles.selectValue}>{value}</Text>
@@ -1539,14 +1796,12 @@ function ReviewEventModal({
             <ReviewRow label="FAQ" value={form.faq.length ? `${form.faq.length} item(s)` : "None"} />
           </ScrollView>
 
-          <Pressable
+          <PrimaryActionButton
             disabled={saving}
+            label="Create Event"
+            loading={saving}
             onPress={onConfirm}
-            style={[styles.submitButton, saving && styles.disabled]}
-          >
-            {saving ? <ActivityIndicator color="#FFFFFF" /> : null}
-            <Text style={styles.submitText}>Create Event</Text>
-          </Pressable>
+          />
         </View>
       </View>
     </Modal>
@@ -1578,7 +1833,7 @@ function TagsSection({
   const suggestedTags = ["devotional", "music", "spiritual", "family", "seva"];
 
   return (
-    <FormSection subtitle="Help devotees discover your event" title="Event Tags">
+    <FormSection optional subtitle="Help devotees discover your event" title="Event tags">
       <View style={styles.tagsRow}>
         {tags.length ? tags.map((tag) => (
           <View key={tag} style={styles.activeTag}>
@@ -1631,8 +1886,9 @@ function GuidelinesSection({
 }) {
   return (
     <FormSection
+      optional
       subtitle="These are saved as the event guidelines"
-      title="Guidelines for Devotees"
+      title="Guidelines for devotees"
     >
       {guidelines.map((item, index) => (
         <View key={`${item}-${index}`} style={styles.removableRow}>
@@ -1678,8 +1934,9 @@ function FaqSection({
 }) {
   return (
     <FormSection
+      optional
       subtitle="Questions and answers are saved with the event detail"
-      title="FAQ"
+      title="Frequently asked questions"
     >
       {faq.map((item, index) => (
         <View key={`${item.question}-${index}`} style={styles.faqCard}>
@@ -1745,10 +2002,44 @@ function PreviewSection({form}: {form: EventFormState}) {
 
 const styles = StyleSheet.create({
   actionSection: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7E5E4",
+    borderRadius: 18,
+    borderWidth: 1,
     gap: 12,
-    paddingBottom: 40,
-    paddingHorizontal: 16,
-    paddingTop: 10,
+    marginBottom: 40,
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 16,
+  },
+  actionIntro: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 2,
+  },
+  actionIntroCopy: {
+    flex: 1,
+  },
+  actionIntroIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF4E8",
+    borderRadius: 20,
+    height: 40,
+    justifyContent: "center",
+    width: 40,
+  },
+  actionIntroText: {
+    color: "#78716C",
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 19,
+    marginTop: 3,
+  },
+  actionIntroTitle: {
+    color: "#1C1917",
+    fontSize: 16,
+    fontWeight: "900",
   },
   activeTag: {
     alignItems: "center",
@@ -1862,7 +2153,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFF7ED",
     borderColor: "#F1E8DA",
-    borderRadius: 24,
+    borderRadius: 14,
     borderStyle: "dashed",
     borderWidth: 2,
     height: 192,
@@ -1871,6 +2162,25 @@ const styles = StyleSheet.create({
   },
   bannerEmpty: {
     alignItems: "center",
+  },
+  bannerEditPill: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.94)",
+    borderColor: "rgba(255,255,255,0.72)",
+    borderRadius: 16,
+    borderWidth: 1,
+    bottom: 12,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    position: "absolute",
+    right: 12,
+  },
+  bannerEditText: {
+    color: "#9A3412",
+    fontSize: 12,
+    fontWeight: "900",
   },
   bannerHint: {
     color: "#6B7280",
@@ -2004,11 +2314,10 @@ const styles = StyleSheet.create({
     width: 22,
   },
   chooseButton: {
-    backgroundColor: "#F97316",
-    borderRadius: 18,
+    borderRadius: 12,
     marginTop: 14,
     paddingHorizontal: 22,
-    paddingVertical: 10,
+    paddingVertical: 11,
   },
   chooseText: {
     color: "#FFFFFF",
@@ -2040,11 +2349,25 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   container: {
-    backgroundColor: "#FAFAF9",
+    backgroundColor: "#F7F7F5",
     flex: 1,
   },
+  controlPressed: {
+    opacity: 0.78,
+    transform: [{scale: 0.99}],
+  },
   content: {
-    paddingBottom: 96,
+    paddingBottom: 40,
+  },
+  coordinateField: {
+    flex: 1,
+  },
+  coordinateHint: {
+    color: "#78716C",
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 18,
+    marginTop: -2,
   },
   counter: {
     color: "#9CA3AF",
@@ -2056,10 +2379,10 @@ const styles = StyleSheet.create({
   },
   currentLocationButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
-    borderRadius: 16,
-    borderWidth: 2,
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 12,
+    borderWidth: 1,
     flexDirection: "row",
     gap: 8,
     justifyContent: "center",
@@ -2067,7 +2390,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   currentLocationText: {
-    color: "#1F2937",
+    color: "#9A3412",
     fontSize: 14,
     fontWeight: "800",
   },
@@ -2102,8 +2425,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FAFAF9",
     borderColor: "#F6EFD9",
-    borderRadius: 16,
-    borderWidth: 2,
+    borderRadius: 12,
+    borderWidth: 1,
     flexDirection: "row",
     gap: 10,
     minHeight: 50,
@@ -2141,17 +2464,17 @@ const styles = StyleSheet.create({
   },
   draftButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
-    borderRadius: 16,
-    borderWidth: 2,
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FDBA74",
+    borderRadius: 14,
+    borderWidth: 1,
     flexDirection: "row",
     gap: 8,
     minHeight: 48,
     justifyContent: "center",
   },
   draftText: {
-    color: "#1F2937",
+    color: "#9A3412",
     fontSize: 14,
     fontWeight: "900",
   },
@@ -2201,14 +2524,108 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   fieldLabel: {
-    color: "#4B5563",
-    fontSize: 12,
+    color: "#57534E",
+    fontSize: 13,
     fontWeight: "800",
     marginBottom: 8,
   },
   formSection: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E7E5E4",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginHorizontal: 12,
+    marginTop: 10,
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 20,
+  },
+  formGuide: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#FED7AA",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 4,
+    marginHorizontal: 16,
+    marginTop: 16,
+    padding: 15,
+  },
+  formGuideCheck: {
+    alignItems: "center",
+    borderColor: "#D6D3D1",
+    borderRadius: 8,
+    borderWidth: 1.5,
+    height: 16,
+    justifyContent: "center",
+    width: 16,
+  },
+  formGuideCheckComplete: {
+    backgroundColor: "#EA580C",
+    borderColor: "#EA580C",
+  },
+  formGuideCopy: {
+    flex: 1,
+  },
+  formGuideEyebrow: {
+    color: "#9A3412",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  formGuideFill: {
+    backgroundColor: "#EA580C",
+    borderRadius: 4,
+    height: "100%",
+  },
+  formGuideIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF4E8",
+    borderRadius: 18,
+    height: 36,
+    justifyContent: "center",
+    width: 36,
+  },
+  formGuideItem: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 6,
+    width: "48%",
+  },
+  formGuideItems: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 13,
+  },
+  formGuideItemText: {
+    color: "#78716C",
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  formGuideItemTextComplete: {
+    color: "#44403C",
+  },
+  formGuidePercent: {
+    color: "#9A3412",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  formGuideTitle: {
+    color: "#1C1917",
+    fontSize: 15,
+    fontWeight: "900",
+    marginTop: 2,
+  },
+  formGuideTop: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+  },
+  formGuideTrack: {
+    backgroundColor: "#F5E7DA",
+    borderRadius: 4,
+    height: 6,
+    marginTop: 13,
+    overflow: "hidden",
   },
   galleryAdd: {
     borderColor: "#F1E8DA",
@@ -2280,9 +2697,9 @@ const styles = StyleSheet.create({
   },
   helperAction: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
-    borderRadius: 14,
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 10,
     borderWidth: 1,
     flexDirection: "row",
     gap: 8,
@@ -2291,7 +2708,7 @@ const styles = StyleSheet.create({
     minHeight: 42,
   },
   helperActionText: {
-    color: "#4B5563",
+    color: "#9A3412",
     fontSize: 13,
     fontWeight: "900",
   },
@@ -2308,16 +2725,24 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "#FAFAF9",
-    borderColor: "#F6EFD9",
-    borderRadius: 16,
-    borderWidth: 2,
-    color: "#1F2937",
+    borderColor: "#E7E5E4",
+    borderRadius: 12,
+    borderWidth: 1,
+    color: "#1C1917",
     flex: 1,
-    fontSize: 14,
-    fontWeight: "700",
-    minHeight: 50,
+    fontSize: 16,
+    fontWeight: "600",
+    minHeight: 54,
     paddingHorizontal: 14,
     paddingRight: 44,
+  },
+  inputFocused: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#EA580C",
+    shadowColor: "#F97316",
+    shadowOffset: {height: 0, width: 0},
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
   },
   inputWrap: {
     position: "relative",
@@ -2456,8 +2881,23 @@ const styles = StyleSheet.create({
     width: 40,
   },
   previewSection: {
-    backgroundColor: "#FAFAF9",
-    padding: 16,
+    backgroundColor: "#F7F7F5",
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+  },
+  primaryButtonPressed: {
+    opacity: 0.86,
+    transform: [{scale: 0.985}],
+  },
+  primaryGradient: {
+    alignItems: "center",
+    borderRadius: 14,
+    flexDirection: "row",
+    gap: 9,
+    justifyContent: "center",
+    minHeight: 56,
+    paddingHorizontal: 18,
+    width: "100%",
   },
   previewDescription: {
     color: "#6B7280",
@@ -2556,24 +2996,68 @@ const styles = StyleSheet.create({
     width: 36,
   },
   sectionBody: {
-    marginTop: 12,
+    marginTop: 16,
+  },
+  sectionHeadingCopy: {
+    flex: 1,
+  },
+  sectionHeadingRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 11,
   },
   sectionSubtitle: {
-    color: "#6B7280",
-    fontSize: 12,
+    color: "#78716C",
+    fontSize: 13,
     fontWeight: "600",
-    lineHeight: 18,
+    lineHeight: 19,
     marginTop: 5,
   },
-  sectionTitle: {
-    color: "#1F2937",
-    fontSize: 14,
-    fontWeight: "800",
+  sectionStep: {
+    alignItems: "center",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: "center",
+    width: 32,
   },
-  sectionTitleProminent: {
-    color: "#1F2937",
+  sectionStepComplete: {
+    backgroundColor: "#EA580C",
+    borderColor: "#EA580C",
+  },
+  sectionStepText: {
+    color: "#9A3412",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  sectionTitle: {
+    color: "#1C1917",
+    flexShrink: 1,
     fontSize: 18,
     fontWeight: "900",
+  },
+  sectionTitleProminent: {
+    color: "#1C1917",
+    flexShrink: 1,
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  sectionTitleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  optionalBadge: {
+    backgroundColor: "#F5F5F4",
+    borderRadius: 6,
+    color: "#78716C",
+    fontSize: 9,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 7,
+    paddingVertical: 4,
   },
   recurrenceBox: {
     backgroundColor: "#FAFAF9",
@@ -2681,8 +3165,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FAFAF9",
     borderColor: "#F6EFD9",
-    borderRadius: 16,
-    borderWidth: 2,
+    borderRadius: 12,
+    borderWidth: 1,
     flex: 1,
     flexDirection: "row",
     minHeight: 54,
@@ -2764,13 +3248,11 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   submitButton: {
-    alignItems: "center",
-    backgroundColor: "#F97316",
-    borderRadius: 16,
-    flexDirection: "row",
-    gap: 8,
-    minHeight: 54,
-    justifyContent: "center",
+    borderRadius: 14,
+    shadowColor: "#9A3412",
+    shadowOffset: {height: 5, width: 0},
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   submitText: {
     color: "#FFFFFF",
@@ -2860,16 +3342,19 @@ const styles = StyleSheet.create({
   typeCard: {
     alignItems: "center",
     backgroundColor: "#FAFAF9",
-    borderColor: "#F6EFD9",
-    borderRadius: 18,
-    borderWidth: 2,
+    borderColor: "#E7E5E4",
+    borderRadius: 12,
+    borderWidth: 1,
     flex: 1,
+    flexDirection: "row",
+    gap: 10,
+    minHeight: 60,
     minWidth: "47%",
-    padding: 14,
+    padding: 10,
   },
   typeCardActive: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#EA580C",
   },
   typeGrid: {
     flexDirection: "row",
@@ -2879,22 +3364,30 @@ const styles = StyleSheet.create({
   typeIcon: {
     alignItems: "center",
     backgroundColor: "#F6EFD9",
-    borderRadius: 24,
-    height: 48,
+    borderRadius: 18,
+    height: 36,
     justifyContent: "center",
-    width: 48,
+    width: 36,
   },
   typeIconActive: {
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "#FFEDD5",
   },
   typeLabel: {
     color: "#1F2937",
-    fontSize: 14,
+    flex: 1,
+    fontSize: 13,
     fontWeight: "900",
-    marginTop: 9,
   },
   typeLabelActive: {
-    color: "#FFFFFF",
+    color: "#9A3412",
+  },
+  typeSelectionCheck: {
+    alignItems: "center",
+    backgroundColor: "#EA580C",
+    borderRadius: 9,
+    height: 18,
+    justifyContent: "center",
+    width: 18,
   },
   uploadOverlay: {
     ...StyleSheet.absoluteFillObject,

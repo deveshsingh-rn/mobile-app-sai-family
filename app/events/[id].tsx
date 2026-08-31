@@ -31,6 +31,7 @@ import {
   CalendarCheck,
   CalendarPlus,
   CheckCircle2,
+  ChevronRight,
   Clock3,
   Flag,
   Image as ImageIcon,
@@ -151,6 +152,46 @@ const formatTime = (value?: string) => {
     hour: "numeric",
     minute: "2-digit",
   });
+};
+
+const getInitials = (name?: string | null) => {
+  const parts = (name || "Event organizer")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+};
+
+const getEventTimingLabel = (startAt?: string, endAt?: string) => {
+  const now = Date.now();
+  const start = startAt ? new Date(startAt).getTime() : Number.NaN;
+  const end = endAt ? new Date(endAt).getTime() : start;
+
+  if (!Number.isFinite(start)) {
+    return "Schedule pending";
+  }
+
+  if (Number.isFinite(end) && end < now) {
+    return "Completed";
+  }
+
+  if (start <= now && (!Number.isFinite(end) || end >= now)) {
+    return "Happening now";
+  }
+
+  const today = new Date();
+  const eventDate = new Date(start);
+  const isToday =
+    today.getFullYear() === eventDate.getFullYear() &&
+    today.getMonth() === eventDate.getMonth() &&
+    today.getDate() === eventDate.getDate();
+
+  return isToday ? "Today" : "Upcoming";
 };
 
 export default function EventDetailRoute() {
@@ -463,6 +504,8 @@ export default function EventDetailRoute() {
     detail.type,
     ...(detail.tags || []),
   ].filter(Boolean) as string[];
+  const timingLabel = getEventTimingLabel(detail.startAt, detail.endAt);
+  const eventCompleted = timingLabel === "Completed";
 
   return (
     <View style={styles.container}>
@@ -528,6 +571,22 @@ export default function EventDetailRoute() {
         </ImageBackground>
 
         <Section style={styles.eventHeader}>
+          <View style={styles.eventBadgeRow}>
+            {!!detail.type && (
+              <View style={styles.eventTypeBadge}>
+                <Text style={styles.eventTypeText}>{detail.type}</Text>
+              </View>
+            )}
+            <View style={[styles.eventTimingBadge, eventCompleted && styles.eventTimingBadgePast]}>
+              <View style={[styles.eventTimingDot, eventCompleted && styles.eventTimingDotPast]} />
+              <Text style={[styles.eventTimingText, eventCompleted && styles.eventTimingTextPast]}>
+                {timingLabel}
+              </Text>
+            </View>
+            {typeof detail.distanceKm === "number" ? (
+              <Text style={styles.distanceText}>{detail.distanceKm.toFixed(1)} km away</Text>
+            ) : null}
+          </View>
           <View style={styles.titleRow}>
             <Text style={styles.title}>{detail.title}</Text>
             <Pressable
@@ -557,6 +616,15 @@ export default function EventDetailRoute() {
             primary={location}
             secondary={cityLine || detail.address || "Address pending"}
           />
+          <View style={styles.eventStatsRow}>
+            <EventStat label="Attending" value={String(detail.rsvps || 0)} />
+            {typeof detail.rating === "number" ? (
+              <EventStat label="Rating" value={detail.rating.toFixed(1)} />
+            ) : null}
+            {typeof detail.views === "number" ? (
+              <EventStat label="Views" value={String(detail.views)} />
+            ) : null}
+          </View>
         </Section>
 
         <OrganizerSection event={detail} />
@@ -629,8 +697,10 @@ export default function EventDetailRoute() {
       >
         <View style={styles.fixedTopRow}>
           <View style={styles.fixedCopy}>
-            <Text style={styles.fixedMeta}>Free Event</Text>
-            <Text style={styles.fixedTitle}>{detail.rsvpedByMe ? "You're attending" : "Join Us"}</Text>
+            <Text style={styles.fixedMeta}>{detail.rsvps || 0} devotees attending</Text>
+            <Text style={styles.fixedTitle}>
+              {detail.rsvpedByMe ? "Your place is confirmed" : "Reserve your place"}
+            </Text>
           </View>
           <Pressable
             disabled={rsvpPending}
@@ -638,15 +708,15 @@ export default function EventDetailRoute() {
             style={[styles.attendButton, detail.rsvpedByMe && styles.attendButtonActive]}
           >
             {rsvpPending ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={detail.rsvpedByMe ? "#9A3412" : "#FFFFFF"} />
             ) : (
-              <CalendarCheck color="#FFFFFF" size={18} />
+              <CalendarCheck color={detail.rsvpedByMe ? "#9A3412" : "#FFFFFF"} size={18} />
             )}
-            <Text style={styles.attendText}>
+            <Text style={[styles.attendText, detail.rsvpedByMe && styles.attendTextActive]}>
               {rsvpPending
                 ? "Updating"
                 : detail.rsvpedByMe
-                  ? "Going"
+                  ? "Cancel RSVP"
                   : "I'm Attending"}
             </Text>
           </Pressable>
@@ -707,33 +777,78 @@ function QuickInfo({
   );
 }
 
+function EventStat({label, value}: {label: string; value: string}) {
+  return (
+    <View style={styles.eventStat}>
+      <Text style={styles.eventStatValue}>{value}</Text>
+      <Text style={styles.eventStatLabel}>{label}</Text>
+    </View>
+  );
+}
+
 function OrganizerSection({event}: {event: SaiEvent}) {
+  const [imageFailed, setImageFailed] = useState(false);
   const organizer = event.organizer;
   const organizerName =
     organizer?.name || event.ownerName || "Event organizer";
+  const organizerId = organizer?.id || event.ownerId;
+  const organizerImage =
+    organizer?.profileImageUrl || event.ownerProfileImageUrl;
+  const organizerHandle = organizer?.handle
+    ? `@${organizer.handle.replace(/^@/, "")}`
+    : null;
 
   return (
     <Section>
-      <SectionTitle title="Organized By" />
-      <View style={styles.organizerRow}>
-        <View style={styles.organizerAvatar}>
-          <Users color="#F97316" size={22} />
-        </View>
+      <SectionTitle title="Hosted by" />
+      <Pressable
+        disabled={!organizerId}
+        onPress={() => {
+          if (organizerId) {
+            router.push({
+              pathname: "/sangha-profile",
+              params: {id: organizerId},
+            });
+          }
+        }}
+        style={({pressed}) => [
+          styles.organizerRow,
+          pressed && styles.organizerRowPressed,
+        ]}
+      >
+        {organizerImage && !imageFailed ? (
+          <Image
+            accessibilityLabel={`${organizerName} profile photo`}
+            onError={() => setImageFailed(true)}
+            source={{uri: organizerImage}}
+            style={styles.organizerAvatar}
+          />
+        ) : (
+          <View style={[styles.organizerAvatar, styles.organizerAvatarFallback]}>
+            <Text style={styles.organizerInitials}>{getInitials(organizerName)}</Text>
+          </View>
+        )}
         <View style={styles.organizerBody}>
           <Text style={styles.organizerName}>{organizerName}</Text>
-          {!!organizer?.eventsOrganized && (
-            <View style={styles.inlineMeta}>
-              <Text style={styles.inlineText}>
-                {organizer.eventsOrganized} events organized
+          {organizerHandle ? (
+            <Text style={styles.organizerHandle}>{organizerHandle}</Text>
+          ) : null}
+          <View style={styles.organizerMetaRow}>
+            {!!organizer?.eventsOrganized && (
+              <Text style={styles.organizerMetaText}>
+                {organizer.eventsOrganized} hosted
               </Text>
-            </View>
-          )}
-          <View style={styles.activeRow}>
-            <View style={styles.activeDot} />
-            <Text style={styles.inlineMuted}>Active organizer</Text>
+            )}
+            {typeof organizer?.rating === "number" ? (
+              <View style={styles.organizerRating}>
+                <Star color="#B45309" fill="#F59E0B" size={12} />
+                <Text style={styles.organizerMetaText}>{organizer.rating.toFixed(1)}</Text>
+              </View>
+            ) : null}
           </View>
         </View>
-      </View>
+        {organizerId ? <ChevronRight color="#A8A29E" size={19} /> : null}
+      </Pressable>
       {!!organizer?.bio && <Text style={styles.paragraph}>{organizer.bio}</Text>}
     </Section>
   );
@@ -1496,7 +1611,102 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   eventHeader: {
+    borderBottomWidth: 0,
+    borderColor: "#E7E5E4",
+    borderRadius: 18,
+    borderWidth: 1,
+    marginHorizontal: 12,
+    marginTop: -24,
     paddingTop: 20,
+    shadowColor: "#431407",
+    shadowOffset: {height: 5, width: 0},
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    zIndex: 2,
+  },
+  eventBadgeRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+  eventStat: {
+    flex: 1,
+    minWidth: 72,
+  },
+  eventStatLabel: {
+    color: "#78716C",
+    fontSize: 11,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  eventStatsRow: {
+    backgroundColor: "#FAFAF9",
+    borderColor: "#E7E5E4",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  eventStatValue: {
+    color: "#1C1917",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  eventTimingBadge: {
+    alignItems: "center",
+    backgroundColor: "#F0FDF4",
+    borderColor: "#BBF7D0",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+  },
+  eventTimingBadgePast: {
+    backgroundColor: "#F5F5F4",
+    borderColor: "#D6D3D1",
+  },
+  eventTimingDot: {
+    backgroundColor: "#16A34A",
+    borderRadius: 3,
+    height: 6,
+    width: 6,
+  },
+  eventTimingDotPast: {
+    backgroundColor: "#78716C",
+  },
+  eventTimingText: {
+    color: "#166534",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  eventTimingTextPast: {
+    color: "#57534E",
+  },
+  eventTypeBadge: {
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  eventTypeText: {
+    color: "#9A3412",
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "capitalize",
+  },
+  distanceText: {
+    color: "#78716C",
+    fontSize: 11,
+    fontWeight: "800",
   },
   facilityRow: {
     gap: 8,
@@ -1532,8 +1742,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fixedCta: {
-    backgroundColor: "#FAFAF9",
-    borderTopColor: "#F6EFD9",
+    backgroundColor: "#FFFFFF",
+    borderTopColor: "#E7E5E4",
     borderTopWidth: 1,
     bottom: 0,
     left: 0,
@@ -1542,6 +1752,10 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     position: "absolute",
     right: 0,
+    shadowColor: "#1C1917",
+    shadowOffset: {height: -4, width: 0},
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
   fixedMeta: {
     color: "#6B7280",
@@ -1722,11 +1936,16 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   organizerAvatar: {
-    borderColor: "#F6EFD9",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
     borderRadius: 28,
     borderWidth: 2,
     height: 56,
     width: 56,
+  },
+  organizerAvatarFallback: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   organizerBody: {
     flex: 1,
@@ -1736,10 +1955,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
   },
-  organizerRow: {
+  organizerHandle: {
+    color: "#78716C",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  organizerInitials: {
+    color: "#9A3412",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  organizerMetaRow: {
     alignItems: "center",
     flexDirection: "row",
+    gap: 10,
+    marginTop: 6,
+  },
+  organizerMetaText: {
+    color: "#57534E",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  organizerRating: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+  },
+  organizerRow: {
+    alignItems: "center",
+    backgroundColor: "#FAFAF9",
+    borderColor: "#E7E5E4",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
     gap: 12,
+    padding: 12,
+  },
+  organizerRowPressed: {
+    opacity: 0.76,
+    transform: [{scale: 0.99}],
   },
   paragraph: {
     color: "#4B5563",
@@ -2136,7 +2391,9 @@ const styles = StyleSheet.create({
   attendButton: {
     alignItems: "center",
     backgroundColor: "#F97316",
-    borderRadius: 24,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#F97316",
     flexDirection: "row",
     gap: 8,
     height: 48,
@@ -2144,11 +2401,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
   },
   attendButtonActive: {
-    backgroundColor: "#262626",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FDBA74",
   },
   attendText: {
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "900",
+  },
+  attendTextActive: {
+    color: "#9A3412",
   },
 });
