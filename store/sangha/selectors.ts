@@ -27,6 +27,15 @@ export const selectSanghaDevoteesPagination = (
   state: RootState
 ) => selectSanghaState(state).devoteesPagination;
 
+export const selectIsSanghaGroupUserInvited = (
+  state: RootState,
+  groupId: string,
+  userId: string
+) =>
+  Boolean(
+    selectSanghaState(state).invitedGroupUserIds[`${groupId}:${userId}`]
+  );
+
 export const selectSanghaProfile = (state: RootState) =>
   selectSanghaState(state).profile;
 

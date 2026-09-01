@@ -2163,7 +2163,7 @@ group admin.
 ### Administration
 
 - [ ] Admin can approve and decline pending join requests.
-- [ ] Admin can invite a real devotee ID.
+- [ ] Admin can search a visible devotee and invite from the profile result (no raw ID entry).
 - [ ] Admin can promote, demote, and remove only permitted members.
 - [ ] Normal members cannot see or invoke admin actions.
 
@@ -2204,6 +2204,45 @@ Known non-blocking technical debt:
 - Non-Sangha lint warnings should be addressed separately from this release.
 
 ## Delivery Roadmap
+
+### Community Creation And Invitation Release Matrix
+
+This is the single frontend/backend delivery contract for community creation,
+discovery, invitation, and sharing. Do not track these items in a separate file.
+
+| Capability | Release | Status | Contract / Notes |
+| --- | --- | --- | --- |
+| Create/edit name, purpose, privacy, description, guidelines | v1 | Frontend Integrated | `POST /api/sangha/groups`, `PATCH /api/sangha/groups/:id` |
+| Country -> state -> city selection | v1 | Frontend Integrated | Mobile sends canonical location names accepted by the existing group contract. |
+| Public/private/invite-only explanation | v1 | Frontend Integrated | UI explains join behavior before creation. Backend remains permission authority. |
+| Discover nearby and suggested devotees | v1 | Frontend Integrated | `GET /api/sangha/devotees`; privacy and blocked-user filtering stay server-side. |
+| Invite from a devotee profile card | v1 | Frontend Integrated | `POST /api/sangha/groups/:id/invitations`; manual raw user-ID entry is removed. |
+| Accept/decline invitation | v1 | Frontend Integrated | Requests center and notification deep links use the invitation ID. |
+| Share installed-app deep link | v1 | Frontend Integrated | `saifamily://group-details?id=:groupId` opens the Expo Router group route. |
+| Server-side devotee name/member-ID search | v1 blocker | Backend Required | Extend `GET /api/sangha/devotees?q=:query&limit=&offset=`. Search must match normalized display name and exact/prefix member ID while preserving profile visibility and block filters. |
+| Installless universal share link | Post-deploy hardening | Backend + DevOps Required | Provide `https://saifamily.sustaininsight.com/sangha/groups/:id` metadata/redirect, Apple AASA, Android `assetlinks.json`, associated domains, and intent filters. |
+| Invitation expiry, revoke, resend, and audit history | v2 | Deferred | Add idempotent invite lifecycle and admin audit UI. |
+| Contact import, QR invite, and WhatsApp campaign attribution | v2 | Deferred | Consent-first contact matching; never upload raw address books without explicit consent. |
+| Community verification and official badges | v2 | Deferred | Admin verification workflow, evidence, expiry, and appeal trail required. |
+| Advanced moderation and member analytics | v2 | Deferred | Retention, safety, activity, and moderation SLA dashboards. |
+
+#### Required Devotee Search Response
+
+The future `q` parameter must reuse the existing privacy-safe devotee summary;
+it must not expose email, phone number, precise coordinates, or private profiles.
+Search should debounce at 300-400 ms, reject queries shorter than two characters,
+cap pages at 20, and use indexed normalized name/member-ID fields. The invitation
+endpoint must remain idempotent and return the existing pending invitation when
+the same group/user pair is invited twice.
+
+#### Sharing Behavior
+
+The app-scheme URL is sufficient for installed development and first production
+builds. Universal links are required before public campaign sharing so people
+without the app reach an App Store/Play Store fallback instead of a dead link.
+Group previews must expose only public group name, safe banner, purpose, city,
+member count, and privacy; private content and member identities must never be
+rendered in social preview metadata.
 
 ### v1: Complete, Pending Device Sign-Off
 

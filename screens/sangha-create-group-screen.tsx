@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { City, Country, State } from "country-state-city";
 
 import {
   archiveSanghaGroupRequest,
@@ -29,6 +30,7 @@ import {
 } from "@/store/sangha/selectors";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { SanghaScreenHeader } from "@/components/sangha/SanghaScreenHeader";
+import { SanghaLocationSelect } from "@/components/sangha/SanghaLocationSelect";
 import { SanghaColors, SanghaRadius, SanghaShadow } from "@/constants/sangha-theme";
 
 const purposes = [
@@ -37,13 +39,14 @@ const purposes = [
   { label: "Satsang", value: "satsang" },
   { label: "City Chapter", value: "city_chapter" },
   { label: "Study", value: "study" },
+  { label: "Online Global", value: "online_global" },
   { label: "General", value: "general" },
 ];
 
 const privacyOptions = [
-  { label: "Public", value: "public" },
-  { label: "Private", value: "private" },
-  { label: "Invite Only", value: "invite_only" },
+  { label: "Public", value: "public", helper: "Anyone can discover and join." },
+  { label: "Private", value: "private", helper: "People request access; admins approve." },
+  { label: "Invite Only", value: "invite_only", helper: "Only invited devotees can join." },
 ];
 
 export default function SanghaCreateGroupScreen({
@@ -75,6 +78,32 @@ export default function SanghaCreateGroupScreen({
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
   const [country, setCountry] = useState("India");
+  const [countryCode, setCountryCode] = useState("IN");
+  const [stateCode, setStateCode] = useState("");
+  const countryOptions = useMemo(
+    () =>
+      Country.getAllCountries()
+        .map((item) => ({ label: item.name, value: item.isoCode }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    []
+  );
+  const stateOptions = useMemo(
+    () =>
+      State.getStatesOfCountry(countryCode)
+        .map((item) => ({ label: item.name, value: item.isoCode }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [countryCode]
+  );
+  const cityOptions = useMemo(
+    () =>
+      City.getCitiesOfState(countryCode, stateCode)
+        .map((item, index) => ({
+          label: item.name,
+          value: `${item.name}-${item.latitude || index}-${item.longitude || index}`,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [countryCode, stateCode]
+  );
   const canSubmit = useMemo(
     () =>
       name.trim().length >= 3 &&
@@ -103,6 +132,15 @@ export default function SanghaCreateGroupScreen({
     setCity(group.city || "");
     setStateName(group.state || "");
     setCountry(group.country || "India");
+    const matchedCountry = Country.getAllCountries().find(
+      (item) => item.name.toLowerCase() === (group.country || "India").toLowerCase()
+    );
+    const nextCountryCode = matchedCountry?.isoCode || "IN";
+    const matchedState = State.getStatesOfCountry(nextCountryCode).find(
+      (item) => item.name.toLowerCase() === (group.state || "").toLowerCase()
+    );
+    setCountryCode(nextCountryCode);
+    setStateCode(matchedState?.isoCode || "");
     setHydrated(true);
   }, [group, hydrated, mode]);
 
@@ -239,6 +277,18 @@ export default function SanghaCreateGroupScreen({
               />
             ))}
           </View>
+          <Text
+            style={{
+              color: SanghaColors.inkTertiary,
+              fontSize: 13,
+              fontWeight: "700",
+              lineHeight: 19,
+              marginBottom: 18,
+              marginTop: 9,
+            }}
+          >
+            {privacyOptions.find((item) => item.value === privacy)?.helper}
+          </Text>
 
           <MultilineField
             label="Purpose Text"
@@ -252,23 +302,60 @@ export default function SanghaCreateGroupScreen({
             placeholder="Be kind, respectful, and service-minded."
             value={guidelines}
           />
-          <Field
-            label="City"
-            onChangeText={setCity}
-            placeholder="Pune"
-            value={city}
+          <Text
+            style={{
+              color: SanghaColors.ink,
+              fontSize: 17,
+              fontWeight: "900",
+              marginBottom: 4,
+              marginTop: 2,
+            }}
+          >
+            Community location
+          </Text>
+          <Text
+            style={{
+              color: SanghaColors.inkTertiary,
+              fontSize: 13,
+              fontWeight: "700",
+              lineHeight: 19,
+              marginBottom: 14,
+            }}
+          >
+            This helps nearby devotees discover the right community. Exact address is not shared.
+          </Text>
+          <SanghaLocationSelect
+            label="Country"
+            onSelect={(option) => {
+              setCountry(option.label);
+              setCountryCode(option.value);
+              setStateName("");
+              setStateCode("");
+              setCity("");
+            }}
+            options={countryOptions}
+            placeholder="Select country"
+            value={country}
           />
-          <Field
+          <SanghaLocationSelect
+            disabled={!countryCode || stateOptions.length === 0}
             label="State"
-            onChangeText={setStateName}
-            placeholder="Maharashtra"
+            onSelect={(option) => {
+              setStateName(option.label);
+              setStateCode(option.value);
+              setCity("");
+            }}
+            options={stateOptions}
+            placeholder={stateOptions.length ? "Select state" : "No states available"}
             value={stateName}
           />
-          <Field
-            label="Country"
-            onChangeText={setCountry}
-            placeholder="India"
-            value={country}
+          <SanghaLocationSelect
+            disabled={!stateCode || cityOptions.length === 0}
+            label="City"
+            onSelect={(option) => setCity(option.label)}
+            options={cityOptions}
+            placeholder={cityOptions.length ? "Select city" : "Select state first"}
+            value={city}
           />
 
           {error ? (

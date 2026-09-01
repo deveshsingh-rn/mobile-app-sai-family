@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Share,
   TextInput,
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
@@ -27,6 +28,7 @@ import {
   deleteSanghaGroupPostRequest,
   fetchSanghaGroupDetailRequest,
   fetchSanghaGroupEventsRequest,
+  fetchSanghaDevoteesRequest,
   fetchSanghaGroupJoinRequestsRequest,
   fetchSanghaGroupMembershipRequest,
   fetchSanghaGroupMembersRequest,
@@ -46,6 +48,8 @@ import {
 } from "@/store/sangha/actions";
 import {
   selectIsSanghaActionPending,
+  selectSanghaDevotees,
+  selectSanghaDevoteesLoading,
   selectSanghaError,
   selectSanghaGroupDetail,
   selectSanghaGroupDetailLoading,
@@ -75,6 +79,7 @@ import {
   SanghaGroupMember,
   SanghaGroupPost,
   SanghaPagination,
+  SanghaDevoteeSummary,
 } from "@/store/sangha/types";
 import {
   useAppDispatch,
@@ -300,6 +305,23 @@ export default function GroupDetailsScreen() {
     dispatch(joinSanghaGroupRequest(groupId));
   };
 
+  const shareGroup = async () => {
+    if (!groupId) return;
+
+    const deepLink = `saifamily://group-details?id=${encodeURIComponent(groupId)}`;
+    try {
+      await Share.share({
+        message: `Join ${group?.name || "our Sai Family Sangha"}\n\n${
+          group?.description || "Connect, serve, and grow with Sai devotees."
+        }\n\nOpen in Sai Family: ${deepLink}`,
+        title: group?.name || "Sai Family Sangha",
+        url: deepLink,
+      });
+    } catch {
+      Alert.alert("Unable to share", "Please try sharing this Sangha again.");
+    }
+  };
+
   if (groupLoading && !group) {
     return (
       <SafeAreaView style={{ alignItems: "center", backgroundColor: SanghaColors.background, flex: 1, justifyContent: "center", padding: 22 }}>
@@ -403,6 +425,26 @@ export default function GroupDetailsScreen() {
               <Ionicons name="settings-outline" size={21} color="#2B1308" />
             </TouchableOpacity>
           ) : null}
+
+          <TouchableOpacity
+            accessibilityLabel="Share Sangha"
+            accessibilityRole="button"
+            activeOpacity={0.85}
+            onPress={shareGroup}
+            style={{
+              alignItems: "center",
+              backgroundColor: "rgba(255,255,255,0.9)",
+              borderRadius: 22,
+              height: 44,
+              justifyContent: "center",
+              position: "absolute",
+              right: canManageGroup ? 70 : 18,
+              top: 18,
+              width: 44,
+            }}
+          >
+            <Ionicons name="share-social-outline" size={21} color="#2B1308" />
+          </TouchableOpacity>
 
           <View style={{ position: "absolute", left: 22, right: 22, bottom: 26 }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -1241,8 +1283,16 @@ function MembersSection({
   pagination: SanghaPagination | null;
 }) {
   const dispatch = useAppDispatch();
+  const devotees = useAppSelector(selectSanghaDevotees);
+  const devoteesLoading = useAppSelector(selectSanghaDevoteesLoading);
+  const pendingInviteIds = useAppSelector(
+    (state) => state.sangha.actionPendingIds
+  );
+  const invitedGroupUserIds = useAppSelector(
+    (state) => state.sangha.invitedGroupUserIds
+  );
   const [query, setQuery] = useState("");
-  const [inviteUserId, setInviteUserId] = useState("");
+  const [inviteQuery, setInviteQuery] = useState("");
   const [inviteMessage, setInviteMessage] = useState("Join our Sai Family Sangha.");
   const [showInvite, setShowInvite] = useState(false);
   const trimmedQuery = query.trim().toLowerCase();
@@ -1253,11 +1303,40 @@ function MembersSection({
           .some((value) => value?.toLowerCase().includes(trimmedQuery))
       )
     : members;
+  const memberUserIds = new Set(
+    members.map((member) => member.userId || member.id)
+  );
+  const normalizedInviteQuery = inviteQuery.trim().toLowerCase();
+  const inviteCandidates = devotees
+    .filter((devotee) => !memberUserIds.has(devotee.userId))
+    .filter((devotee) => {
+      if (!normalizedInviteQuery) return true;
+      return [
+        devotee.name,
+        devotee.memberId,
+        devotee.city,
+        devotee.state,
+        devotee.approximateLocationLabel,
+      ]
+        .filter(Boolean)
+        .some((value) => value?.toLowerCase().includes(normalizedInviteQuery));
+    })
+    .slice(0, 20);
 
-  const sendInvite = () => {
-    const userId = inviteUserId.trim();
+  useEffect(() => {
+    if (!showInvite || !canInvite) return;
+    dispatch(
+      fetchSanghaDevoteesRequest({
+        distance: "online",
+        limit: 50,
+        offset: 0,
+        type: "suggested",
+      })
+    );
+  }, [canInvite, dispatch, showInvite]);
 
-    if (!userId || !canInvite) {
+  const sendInvite = (devotee: SanghaDevoteeSummary) => {
+    if (!devotee.userId || !canInvite) {
       return;
     }
 
@@ -1265,10 +1344,9 @@ function MembersSection({
       inviteSanghaGroupMemberRequest({
         groupId,
         message: inviteMessage.trim() || undefined,
-        userId,
+        userId: devotee.userId,
       })
     );
-    setInviteUserId("");
   };
 
   return (
@@ -1316,28 +1394,35 @@ function MembersSection({
         {showInvite && canInvite ? (
           <View
             style={{
-              backgroundColor: "#FFF7ED",
-              borderColor: "#FED7AA",
+              backgroundColor: SanghaColors.saffronSoft,
+              borderColor: SanghaColors.saffronBorder,
               borderRadius: 18,
               borderWidth: 1,
               marginTop: 14,
               padding: 12,
             }}
           >
+            <Text style={{ color: SanghaColors.ink, fontSize: 16, fontWeight: "900" }}>
+              Invite a devotee
+            </Text>
+            <Text style={{ color: SanghaColors.inkTertiary, fontSize: 13, fontWeight: "700", lineHeight: 19, marginTop: 4 }}>
+              Search by name, member ID, city, or state. Private profiles stay hidden.
+            </Text>
             <TextInput
-              onChangeText={setInviteUserId}
-              placeholder="Devotee user id"
+              onChangeText={setInviteQuery}
+              placeholder="Search devotees"
               placeholderTextColor="#9CA3AF"
               style={{
                 backgroundColor: "#FFFFFF",
                 borderRadius: 14,
                 color: "#111827",
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: "700",
-                height: 42,
+                height: 48,
+                marginTop: 12,
                 paddingHorizontal: 12,
               }}
-              value={inviteUserId}
+              value={inviteQuery}
             />
             <TextInput
               onChangeText={setInviteMessage}
@@ -1355,20 +1440,73 @@ function MembersSection({
               }}
               value={inviteMessage}
             />
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={sendInvite}
-              style={{
-                alignItems: "center",
-                backgroundColor: "#F97316",
-                borderRadius: 14,
-                height: 40,
-                justifyContent: "center",
-                marginTop: 10,
-              }}
-            >
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Send Invite</Text>
-            </TouchableOpacity>
+            {devoteesLoading ? (
+              <ActivityIndicator color={SanghaColors.saffron} style={{ marginVertical: 22 }} />
+            ) : null}
+            {!devoteesLoading && inviteCandidates.length === 0 ? (
+              <Text style={{ color: SanghaColors.inkTertiary, fontSize: 13, fontWeight: "700", paddingVertical: 18, textAlign: "center" }}>
+                No discoverable devotees match this search.
+              </Text>
+            ) : null}
+            {inviteCandidates.map((devotee) => {
+              const pending = Boolean(pendingInviteIds[devotee.userId]);
+              const invited = Boolean(
+                invitedGroupUserIds[`${groupId}:${devotee.userId}`]
+              );
+              return (
+                <View
+                  key={devotee.userId}
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: SanghaColors.surface,
+                    borderColor: SanghaColors.border,
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    flexDirection: "row",
+                    marginTop: 10,
+                    padding: 10,
+                  }}
+                >
+                  <Image
+                    source={{ uri: devotee.profileImageUrl || devotee.avatarUrl || imageForName(devotee.name) }}
+                    style={{ borderRadius: 22, height: 44, width: 44 }}
+                  />
+                  <View style={{ flex: 1, marginHorizontal: 10 }}>
+                    <Text numberOfLines={1} style={{ color: SanghaColors.ink, fontSize: 15, fontWeight: "900" }}>
+                      {devotee.name}
+                    </Text>
+                    <Text numberOfLines={1} style={{ color: SanghaColors.inkTertiary, fontSize: 12, fontWeight: "700", marginTop: 3 }}>
+                      {[devotee.memberId, devotee.approximateLocationLabel || devotee.city]
+                        .filter(Boolean)
+                        .join(" · ") || "Sai Family devotee"}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    accessibilityLabel={`Invite ${devotee.name}`}
+                    activeOpacity={0.85}
+                    disabled={pending || invited}
+                    onPress={() => sendInvite(devotee)}
+                    style={{
+                      alignItems: "center",
+                      backgroundColor: invited ? SanghaColors.successSoft : SanghaColors.saffron,
+                      borderRadius: 14,
+                      height: 40,
+                      justifyContent: "center",
+                      minWidth: 76,
+                      paddingHorizontal: 12,
+                    }}
+                  >
+                    {pending ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={{ color: invited ? SanghaColors.success : "#FFFFFF", fontSize: 13, fontWeight: "900" }}>
+                        {invited ? "Sent" : "Invite"}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
           </View>
         ) : null}
       </View>

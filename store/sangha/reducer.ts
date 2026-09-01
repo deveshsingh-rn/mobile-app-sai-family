@@ -6,6 +6,7 @@ import {
 
 export const initialSanghaState: SanghaState = {
   actionPendingIds: {},
+  invitedGroupUserIds: {},
   devotees: [],
   devoteesLoading: false,
   devoteesPagination: null,
@@ -693,6 +694,10 @@ export function sanghaReducer(
           action.payload.userId
         ),
         error: null,
+        invitedGroupUserIds: {
+          ...state.invitedGroupUserIds,
+          [`${action.payload.groupId}:${action.payload.userId}`]: true,
+        },
       };
 
     case SANGHA_ACTIONS.INVITE_GROUP_MEMBER_FAILURE:

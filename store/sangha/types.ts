@@ -406,6 +406,7 @@ export type SanghaNotification = {
 
 export type SanghaState = {
   actionPendingIds: Record<string, boolean>;
+  invitedGroupUserIds: Record<string, boolean>;
   devotees: SanghaDevoteeSummary[];
   devoteesLoading: boolean;
   devoteesPagination: SanghaPagination | null;
