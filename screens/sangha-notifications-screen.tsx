@@ -23,6 +23,7 @@ import {
 } from "@/store/sangha/selectors";
 import { SanghaNotification } from "@/store/sangha/types";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { getSanghaNotificationDestination } from "@/utils/sangha-notification-routing";
 
 function formatDate(value?: string) {
   if (!value) return "";
@@ -42,6 +43,9 @@ function NotificationCard({
   item: SanghaNotification;
 }) {
   const dispatch = useAppDispatch();
+  const destination = getSanghaNotificationDestination(
+    item as unknown as Record<string, unknown>
+  );
 
   return (
     <TouchableOpacity
@@ -53,6 +57,10 @@ function NotificationCard({
               notificationIds: [item.id],
             })
           );
+        }
+
+        if (destination) {
+          router.push(destination as never);
         }
       }}
       style={{
@@ -112,6 +120,31 @@ function NotificationCard({
           >
             {formatDate(item.createdAt)}
           </Text>
+          {destination ? (
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                marginTop: 10,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#9A3412",
+                  fontSize: 13,
+                  fontWeight: "900",
+                }}
+              >
+                Open and respond
+              </Text>
+              <Ionicons
+                color="#9A3412"
+                name="chevron-forward"
+                size={15}
+                style={{ marginLeft: 3 }}
+              />
+            </View>
+          ) : null}
         </View>
       </View>
     </TouchableOpacity>

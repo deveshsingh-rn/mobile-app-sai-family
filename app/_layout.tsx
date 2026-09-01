@@ -28,8 +28,10 @@ import {
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { registerPushTokenRequest } from '@/store/notifications/actions';
 import { selectPushToken } from '@/store/notifications/selectors';
+import { markSanghaNotificationsReadRequest } from '@/store/sangha/actions';
 import { store } from '@/store';
 import { refreshMorningSaiAlarm } from '@/services/morning-sai-alarm';
+import { getSanghaNotificationDestination } from '@/utils/sangha-notification-routing';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -120,22 +122,24 @@ function AppLayoutContent() {
 
       if (
         data.feature === 'sangha' ||
+        typeof data.type === 'string' ||
+        typeof data.kind === 'string' ||
         data.kind === 'sangha_message' ||
         data.type === 'sangha_message'
       ) {
-        if (typeof data.conversationId === 'string') {
-          router.push({
-            pathname: '/sangha-chat',
-            params: { conversationId: data.conversationId },
-          } as never);
-          return;
-        }
+        const destination = getSanghaNotificationDestination(data);
 
-        if (typeof data.senderUserId === 'string') {
-          router.push({
-            pathname: '/sangha-profile',
-            params: { id: data.senderUserId },
-          } as never);
+        if (destination) {
+          if (typeof data.notificationId === 'string') {
+            dispatch(
+              markSanghaNotificationsReadRequest({
+                notificationIds: [data.notificationId],
+              })
+            );
+          }
+
+          router.push(destination as never);
+          return;
         }
       }
     };
@@ -147,7 +151,7 @@ function AppLayoutContent() {
     });
 
     return () => subscription.remove();
-  }, [devoteeAccount, router]);
+  }, [devoteeAccount, dispatch, router]);
 
   useEffect(() => {
     let screenName = "App";

@@ -372,9 +372,11 @@ export type SanghaLiveStream = {
 };
 
 export type SanghaNotification = {
+  actor?: SanghaDevoteeSummary | null;
   body?: string | null;
   createdAt?: string;
   data?: Record<string, any> | null;
+  group?: SanghaGroupSummary | null;
   groupId?: string | null;
   id: string;
   isRead?: boolean;

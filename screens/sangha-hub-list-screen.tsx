@@ -82,8 +82,10 @@ function groupMeta(item: SanghaGroupSummary) {
 }
 
 function InvitationCard({
+  focused,
   item,
 }: {
+  focused?: boolean;
   item: SanghaInvitation;
 }) {
   const dispatch = useAppDispatch();
@@ -96,9 +98,9 @@ function InvitationCard({
     <View
       style={{
         backgroundColor: '#FFFFFF',
-        borderColor: '#F6EFD9',
+        borderColor: focused ? '#F97316' : '#F6EFD9',
         borderRadius: 28,
-        borderWidth: 1,
+        borderWidth: focused ? 2 : 1,
         marginBottom: 16,
         padding: 18,
       }}>
@@ -154,6 +156,26 @@ function InvitationCard({
           </Text>
         </View>
       </View>
+      {focused ? (
+        <View
+          style={{
+            alignSelf: 'flex-start',
+            backgroundColor: '#FFF4E8',
+            borderRadius: 10,
+            marginTop: 14,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+          }}>
+          <Text
+            style={{
+              color: '#9A3412',
+              fontSize: 12,
+              fontWeight: '900',
+            }}>
+            Opened from notification
+          </Text>
+        </View>
+      ) : null}
       <View
         style={{
           flexDirection: 'row',
@@ -304,8 +326,9 @@ function GroupCard({
 
 export default function SanghaHubListScreen() {
   const dispatch = useAppDispatch();
-  const {type, purpose} =
+  const {invitationId, type, purpose} =
     useLocalSearchParams<{
+      invitationId?: string;
       purpose?: string;
       type?: string;
     }>();
@@ -332,6 +355,9 @@ export default function SanghaHubListScreen() {
   const purposeName = Array.isArray(purpose)
     ? purpose[0]
     : purpose;
+  const focusedInvitationId = Array.isArray(invitationId)
+    ? invitationId[0]
+    : invitationId;
   const isPending = listType === 'pending';
   const title = isPending
     ? 'Pending Invitations'
@@ -369,6 +395,17 @@ export default function SanghaHubListScreen() {
   const itemCount = isPending
     ? invitations.length
     : groups.length;
+  const displayedInvitations = useMemo(() => {
+    if (!focusedInvitationId) {
+      return invitations;
+    }
+
+    return [...invitations].sort((left, right) => {
+      if (left.id === focusedInvitationId) return -1;
+      if (right.id === focusedInvitationId) return 1;
+      return 0;
+    });
+  }, [focusedInvitationId, invitations]);
 
   useEffect(() => {
     if (isPending) {
@@ -578,8 +615,9 @@ export default function SanghaHubListScreen() {
         ) : null}
 
         {isPending
-          ? invitations.map((item) => (
+          ? displayedInvitations.map((item) => (
               <InvitationCard
+                focused={item.id === focusedInvitationId}
                 key={item.id}
                 item={item}
               />

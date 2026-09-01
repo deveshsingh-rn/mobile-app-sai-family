@@ -472,27 +472,25 @@ GET /api/users/me/sangha/notifications?limit=20&offset=0&unreadOnly=false
 POST /api/users/me/sangha/notifications/read
 ```
 
-Recommended notification data keys:
+Production notification routing contract:
 
-```json
-{
-  "kind": "sangha_message",
-  "conversationId": "conversation-id",
-  "messageId": "message-id",
-  "senderUserId": "sender-user-id"
-}
-```
+| Backend type/kind | Required payload | Mobile destination | User action |
+| --- | --- | --- | --- |
+| `connection_request` | `actorUserId`, `connectionId` | `/sangha-profile?id=<actorUserId>` | Accept or decline request. |
+| `connection_accepted` | `actorUserId`, `connectionId` | `/sangha-profile?id=<actorUserId>` | Open profile and start chat. |
+| `group_invitation` | `invitationId`, `groupId` | `/sangha-hub-list?type=pending&invitationId=<id>` | Accept or decline invitation. |
+| `group_invitation_accepted` | `groupId`, `invitationId` | `/group-details?id=<groupId>` | Open the group. |
+| `sangha_message` | `conversationId`, `messageId`, `senderUserId` | `/sangha-chat?conversationId=<id>` | Read and reply. |
 
-Frontend behavior:
+The mobile resolver supports both Expo push payloads (flat IDs) and notification
+list records (`data`, `actor`, and `group` relations). Tapping an in-app
+notification marks it read and then opens the actionable destination. A group
+invitation opened from a notification is moved to the top of the pending list
+and visually highlighted.
 
-- Message notification tap opens `app/sangha-chat.tsx` with `conversationId`.
-- Connection request tap opens target profile or pending request surface.
-- Group invitation tap opens group detail or invitations list.
-- After opening the target screen, mark notification read.
+#### Conversation Inbox
 
-#### Missing Backend API For Inbox
-
-The backend has conversation create and message history APIs, but frontend still needs a dedicated conversation list endpoint for a production inbox:
+The backend and frontend use this dedicated conversation list endpoint:
 
 ```http
 GET /api/users/me/sangha/conversations?limit=20&offset=0
