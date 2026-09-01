@@ -5760,6 +5760,51 @@
           "response": []
         },
         {
+          "name": "GET /api/users/me/sangha/connections - Connection Requests",
+          "description": "Lists authoritative received/sent Sangha connections. Use direction=received for actionable incoming requests and direction=sent for cancellable outgoing requests.",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-user-id",
+                "value": "{{authorId}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/sangha/connections?direction=received&status=pending&limit=20&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "sangha",
+                "connections"
+              ],
+              "query": [
+                {
+                  "key": "direction",
+                  "value": "received"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "POST /api/sangha/devotees/:id/connect - Request Connection",
           "event": [
             {

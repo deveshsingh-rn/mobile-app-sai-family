@@ -46,6 +46,20 @@ export async function apiFetchSanghaDevoteeProfile(
   return data;
 }
 
+export async function apiFetchSanghaConnections(params: {
+  direction: "received" | "sent";
+  limit?: number;
+  offset?: number;
+  status?: "connected" | "declined" | "pending";
+}) {
+  const { data } = await apiClient.get(
+    "/api/users/me/sangha/connections",
+    { params }
+  );
+
+  return data;
+}
+
 export async function apiRequestSanghaConnection(
   devoteeId: string
 ) {

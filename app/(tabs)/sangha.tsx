@@ -20,6 +20,7 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
+  fetchSanghaConnectionsRequest,
   fetchSanghaHomeRequest,
   updateSanghaDiscoveryRequest,
 } from '@/store/sangha/actions';
@@ -29,6 +30,7 @@ import {
   selectSanghaHome,
   selectSanghaHomeLoading,
   selectSanghaNearYou,
+  selectSanghaReceivedConnections,
   selectSanghaSuggestedForYou,
 } from '@/store/sangha/selectors';
 import { SanghaDevoteeSummary } from '@/store/sangha/types';
@@ -116,6 +118,9 @@ export default function SanghaScreen() {
     selectSanghaDiscoverySaving
   );
   const error = useAppSelector(selectSanghaError);
+  const receivedConnections = useAppSelector(
+    selectSanghaReceivedConnections
+  );
   const [enabled, setEnabled] = useState(false);
   const [filterVisible, setFilterVisible] =
     useState(false);
@@ -146,6 +151,17 @@ export default function SanghaScreen() {
   useEffect(() => {
     dispatch(fetchSanghaHomeRequest(homeParams));
   }, [dispatch, homeParams]);
+
+  useEffect(() => {
+    dispatch(
+      fetchSanghaConnectionsRequest({
+        direction: 'received',
+        limit: 20,
+        offset: 0,
+        status: 'pending',
+      })
+    );
+  }, [dispatch]);
 
   useEffect(() => {
     if (typeof home?.nearMeEnabled === 'boolean') {
@@ -214,31 +230,67 @@ export default function SanghaScreen() {
             Discovery
           </Text>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => setFilterVisible(true)}
-            style={{
-              alignItems: 'center',
-              backgroundColor: '#FFFFFF',
-              borderRadius: 27,
-              elevation: 2,
-              height: 54,
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOffset: {
-                width: 0,
-                height: 4,
-              },
-              shadowOpacity: 0.03,
-              shadowRadius: 10,
-              width: 54,
-            }}>
-            <Ionicons
-              name="options-outline"
-              size={24}
-              color="#111827"
-            />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity
+              accessibilityLabel="Open Sangha requests"
+              activeOpacity={0.85}
+              onPress={() => router.push('/sangha-requests')}
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#FFFFFF',
+                borderRadius: 25,
+                elevation: 2,
+                height: 50,
+                justifyContent: 'center',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.03,
+                shadowRadius: 10,
+                width: 50,
+              }}>
+              <Ionicons name="person-add-outline" size={23} color="#111827" />
+              {receivedConnections.length > 0 ? (
+                <View
+                  style={{
+                    alignItems: 'center',
+                    backgroundColor: '#D96A3D',
+                    borderColor: '#FFFFFF',
+                    borderRadius: 10,
+                    borderWidth: 2,
+                    height: 20,
+                    justifyContent: 'center',
+                    position: 'absolute',
+                    right: -2,
+                    top: -2,
+                    minWidth: 20,
+                    paddingHorizontal: 4,
+                  }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '900' }}>
+                    {receivedConnections.length > 9 ? '9+' : receivedConnections.length}
+                  </Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityLabel="Open Sangha filters"
+              activeOpacity={0.85}
+              onPress={() => setFilterVisible(true)}
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#FFFFFF',
+                borderRadius: 25,
+                elevation: 2,
+                height: 50,
+                justifyContent: 'center',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.03,
+                shadowRadius: 10,
+                width: 50,
+              }}>
+              <Ionicons name="options-outline" size={23} color="#111827" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View

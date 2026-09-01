@@ -34,6 +34,30 @@ export const selectSanghaProfileLoading = (
   state: RootState
 ) => selectSanghaState(state).profileLoading;
 
+export const selectSanghaReceivedConnections = (
+  state: RootState
+) => selectSanghaState(state).receivedConnections;
+
+export const selectSanghaReceivedConnectionsLoading = (
+  state: RootState
+) => selectSanghaState(state).receivedConnectionsLoading;
+
+export const selectSanghaReceivedConnectionsPagination = (
+  state: RootState
+) => selectSanghaState(state).receivedConnectionsPagination;
+
+export const selectSanghaSentConnections = (
+  state: RootState
+) => selectSanghaState(state).sentConnections;
+
+export const selectSanghaSentConnectionsLoading = (
+  state: RootState
+) => selectSanghaState(state).sentConnectionsLoading;
+
+export const selectSanghaSentConnectionsPagination = (
+  state: RootState
+) => selectSanghaState(state).sentConnectionsPagination;
+
 export const selectSanghaGroupsHome = (
   state: RootState
 ) => selectSanghaState(state).groupsHome;

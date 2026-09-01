@@ -92,6 +92,24 @@ export type SanghaDevoteeProfile = SanghaDevoteeSummary & {
   };
 };
 
+export type SanghaConnectionRequestItem = {
+  canAccept?: boolean;
+  canCancel?: boolean;
+  canDecline?: boolean;
+  connectionId: string;
+  createdAt?: string;
+  devotee: SanghaDevoteeSummary;
+  direction: "received" | "sent";
+  id: string;
+  respondedAt?: string | null;
+  status:
+    | "connected"
+    | "declined"
+    | "pending_received"
+    | "pending_sent"
+    | string;
+};
+
 export type SanghaDiscoverySettingsPayload = {
   bio?: string;
   interests?: string[];
@@ -426,11 +444,17 @@ export type SanghaState = {
   homeLoading: boolean;
   profile: SanghaDevoteeProfile | null;
   profileLoading: boolean;
+  receivedConnections: SanghaConnectionRequestItem[];
+  receivedConnectionsLoading: boolean;
+  receivedConnectionsPagination: SanghaPagination | null;
   recentSearches: SanghaRecentSearch[];
   recentSearchesLoading: boolean;
   searchGroups: SanghaGroupSummary[];
   searchGroupsLoading: boolean;
   searchGroupsPagination: SanghaPagination | null;
+  sentConnections: SanghaConnectionRequestItem[];
+  sentConnectionsLoading: boolean;
+  sentConnectionsPagination: SanghaPagination | null;
   userInvitations: SanghaInvitation[];
   userInvitationsLoading: boolean;
   userInvitationsPagination: SanghaPagination | null;
@@ -456,6 +480,9 @@ export enum SANGHA_ACTIONS {
   FETCH_PROFILE_REQUEST = "sangha/FETCH_PROFILE_REQUEST",
   FETCH_PROFILE_SUCCESS = "sangha/FETCH_PROFILE_SUCCESS",
   FETCH_PROFILE_FAILURE = "sangha/FETCH_PROFILE_FAILURE",
+  FETCH_CONNECTIONS_REQUEST = "sangha/FETCH_CONNECTIONS_REQUEST",
+  FETCH_CONNECTIONS_SUCCESS = "sangha/FETCH_CONNECTIONS_SUCCESS",
+  FETCH_CONNECTIONS_FAILURE = "sangha/FETCH_CONNECTIONS_FAILURE",
   FETCH_GROUPS_HOME_REQUEST = "sangha/FETCH_GROUPS_HOME_REQUEST",
   FETCH_GROUPS_HOME_SUCCESS = "sangha/FETCH_GROUPS_HOME_SUCCESS",
   FETCH_GROUPS_HOME_FAILURE = "sangha/FETCH_GROUPS_HOME_FAILURE",
@@ -655,6 +682,31 @@ export type SanghaAction =
   | {
       payload: string;
       type: SANGHA_ACTIONS.FETCH_PROFILE_FAILURE;
+    }
+  | {
+      payload: {
+        direction: "received" | "sent";
+        limit?: number;
+        offset?: number;
+        status?: "connected" | "declined" | "pending";
+      };
+      type: SANGHA_ACTIONS.FETCH_CONNECTIONS_REQUEST;
+    }
+  | {
+      payload: {
+        append?: boolean;
+        connections: SanghaConnectionRequestItem[];
+        direction: "received" | "sent";
+        pagination: SanghaPagination | null;
+      };
+      type: SANGHA_ACTIONS.FETCH_CONNECTIONS_SUCCESS;
+    }
+  | {
+      payload: {
+        direction: "received" | "sent";
+        error: string;
+      };
+      type: SANGHA_ACTIONS.FETCH_CONNECTIONS_FAILURE;
     }
   | {
       payload: {

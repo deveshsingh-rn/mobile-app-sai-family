@@ -193,9 +193,10 @@ Required:
 
 Screens:
 
+- `app/sangha-requests.tsx`
 - `app/sangha-chat.tsx`
 - `screens/sangha-chat-screen.tsx`
-- Future inbox screen: `app/sangha-conversations.tsx`
+- `app/sangha-conversations.tsx`
 
 Communication is the heart of Sangha v1. A devotee should be able to discover another devotee, request connection, accept the request, then talk safely with privacy, moderation, and clear read state.
 
@@ -215,7 +216,7 @@ Communication is the heart of Sangha v1. A devotee should be able to discover an
 2. Frontend reads `connection.status` and `connection.canMessage` from `GET /api/sangha/devotees/:id`.
 3. If status is `none`, show Connect.
 4. Sender taps Connect: `POST /api/sangha/devotees/:id/connect` returns `pending_sent`.
-5. Receiver sees pending request from discovery/profile/notifications and accepts with `POST /api/sangha/connections/:id/accept`.
+5. Receiver opens Requests Center, loaded from `GET /api/users/me/sangha/connections?direction=received&status=pending`, and accepts with `POST /api/sangha/connections/:id/accept`.
 6. Both users now receive `connectionStatus: connected` and profile detail should return `canMessage: true`.
 7. User taps Message. Frontend calls `POST /api/sangha/conversations`.
 8. Frontend opens chat screen with returned `conversation.id`.
@@ -1131,6 +1132,21 @@ Response:
 
 ### Connections
 
+#### `GET /api/users/me/sangha/connections`
+
+Authoritative paginated Requests Center source. Notifications are alerts and
+must not be used as the connection-request database.
+
+Query:
+
+- `direction=received|sent|all`
+- `status=pending|connected|declined`
+- `limit=1..50`
+- `offset>=0`
+
+Each row returns `connectionId`, relative `status`, privacy-safe `devotee`, and
+backend capability flags `canAccept`, `canDecline`, and `canCancel`.
+
 #### `POST /api/sangha/devotees/:id/connect`
 
 Creates a connection request.
@@ -2043,6 +2059,7 @@ each product capability is connected to a user-facing frontend flow.
 | Discovery home and privacy filters | Available | Integrated | v1 |
 | Devotee lists and profile | Available | Integrated | v1 |
 | Connect, accept, decline, disconnect, block | Available | Integrated | v1 |
+| Unified received/sent/group Requests Center | Available | Integrated | v1 |
 | Hub home, search, recent searches, group lists | Available | Integrated | v1 |
 | Invitations list, send, accept, decline | Available | Integrated | v1 |
 | Group create, edit, archive | Available | Integrated | v1 |
@@ -2122,6 +2139,17 @@ group admin.
 - [ ] Devotee pagination and profile navigation work.
 - [ ] Send, accept, decline, cancel/disconnect, and block all update the UI.
 - [ ] Public profiles expose only privacy-safe location information.
+
+### Requests Center
+
+- [ ] User A sends a connection request; it appears under User A's Sent tab.
+- [ ] The same request appears under User B's Received tab without relying on notification history.
+- [ ] Tapping the push or in-app notification opens and highlights the correct request.
+- [ ] User B accepts; the request disappears and both profiles become connected.
+- [ ] Repeat with decline; the request disappears and both profiles return to `none`.
+- [ ] User A cancels a sent request; it disappears from both users after refresh.
+- [ ] A group invitation opens under Group Invites and accepts/declines successfully.
+- [ ] Pagination and pull-to-refresh do not duplicate request cards.
 
 ### Hub And Groups
 

@@ -45,11 +45,17 @@ export const initialSanghaState: SanghaState = {
   homeLoading: false,
   profile: null,
   profileLoading: false,
+  receivedConnections: [],
+  receivedConnectionsLoading: false,
+  receivedConnectionsPagination: null,
   recentSearches: [],
   recentSearchesLoading: false,
   searchGroups: [],
   searchGroupsLoading: false,
   searchGroupsPagination: null,
+  sentConnections: [],
+  sentConnectionsLoading: false,
+  sentConnectionsPagination: null,
   userInvitations: [],
   userInvitationsLoading: false,
   userInvitationsPagination: null,
@@ -302,6 +308,51 @@ export function sanghaReducer(
         ...state,
         error: action.payload,
         profileLoading: false,
+      };
+
+    case SANGHA_ACTIONS.FETCH_CONNECTIONS_REQUEST:
+      return {
+        ...state,
+        error: null,
+        ...(action.payload.direction === "received"
+          ? { receivedConnectionsLoading: true }
+          : { sentConnectionsLoading: true }),
+      };
+
+    case SANGHA_ACTIONS.FETCH_CONNECTIONS_SUCCESS:
+      return {
+        ...state,
+        error: null,
+        ...(action.payload.direction === "received"
+          ? {
+              receivedConnections: action.payload.append
+                ? mergeById(
+                    state.receivedConnections,
+                    action.payload.connections
+                  )
+                : action.payload.connections,
+              receivedConnectionsLoading: false,
+              receivedConnectionsPagination: action.payload.pagination,
+            }
+          : {
+              sentConnections: action.payload.append
+                ? mergeById(
+                    state.sentConnections,
+                    action.payload.connections
+                  )
+                : action.payload.connections,
+              sentConnectionsLoading: false,
+              sentConnectionsPagination: action.payload.pagination,
+            }),
+      };
+
+    case SANGHA_ACTIONS.FETCH_CONNECTIONS_FAILURE:
+      return {
+        ...state,
+        error: action.payload.error,
+        ...(action.payload.direction === "received"
+          ? { receivedConnectionsLoading: false }
+          : { sentConnectionsLoading: false }),
       };
 
     case SANGHA_ACTIONS.FETCH_GROUPS_HOME_REQUEST:
@@ -1323,6 +1374,9 @@ export function sanghaReducer(
           "connected",
           false
         ),
+        receivedConnections: state.receivedConnections.filter(
+          (item) => item.connectionId !== action.payload.connectionId
+        ),
       };
 
     case SANGHA_ACTIONS.DECLINE_CONNECTION_SUCCESS:
@@ -1337,6 +1391,9 @@ export function sanghaReducer(
           action.payload.devoteeId,
           "none",
           true
+        ),
+        receivedConnections: state.receivedConnections.filter(
+          (item) => item.connectionId !== action.payload.connectionId
         ),
       };
 
@@ -1378,6 +1435,11 @@ export function sanghaReducer(
           action.payload.id,
           "none",
           true
+        ),
+        sentConnections: state.sentConnections.filter(
+          (item) =>
+            item.devotee.userId !== action.payload.id &&
+            item.devotee.id !== action.payload.id
         ),
       };
 

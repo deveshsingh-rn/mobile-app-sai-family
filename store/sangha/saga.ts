@@ -25,6 +25,7 @@ import {
   apiRemoveSanghaGroupMember,
   apiUpdateSanghaGroupMember,
   apiFetchSanghaConversations,
+  apiFetchSanghaConnections,
   apiCreateSanghaGroupPost,
   apiUpdateSanghaGroupPost,
   apiCreateSanghaGroupPostComment,
@@ -96,6 +97,8 @@ import {
   disconnectSanghaDevoteeSuccess,
   fetchSanghaDevoteesFailure,
   fetchSanghaDevoteesSuccess,
+  fetchSanghaConnectionsFailure,
+  fetchSanghaConnectionsSuccess,
   fetchSanghaGroupsFailure,
   fetchSanghaGroupsHomeFailure,
   fetchSanghaGroupsHomeSuccess,
@@ -218,6 +221,25 @@ function normalizeDevoteeList(response: any, append = false) {
       response?.data?.devotees ||
       response?.data?.results ||
       [],
+    pagination:
+      response?.pagination ||
+      response?.data?.pagination ||
+      null,
+  };
+}
+
+function normalizeConnections(
+  response: any,
+  direction: "received" | "sent",
+  append = false
+) {
+  return {
+    append,
+    connections:
+      response?.connections ||
+      response?.data?.connections ||
+      [],
+    direction,
     pagination:
       response?.pagination ||
       response?.data?.pagination ||
@@ -643,6 +665,41 @@ function* handleFetchSanghaProfile(
           "Failed to fetch devotee profile."
         )
       )
+    );
+  }
+}
+
+function* handleFetchConnections(
+  action: any
+): Generator<any, void, any> {
+  const direction = action.payload.direction as
+    | "received"
+    | "sent";
+
+  try {
+    const response = yield call(
+      apiFetchSanghaConnections,
+      action.payload
+    );
+
+    yield put(
+      fetchSanghaConnectionsSuccess(
+        normalizeConnections(
+          response,
+          direction,
+          Boolean(action.payload.offset)
+        )
+      )
+    );
+  } catch (error) {
+    yield put(
+      fetchSanghaConnectionsFailure({
+        direction,
+        error: getErrorMessage(
+          error,
+          "Failed to fetch connection requests."
+        ),
+      })
     );
   }
 }
@@ -1869,6 +1926,10 @@ export function* sanghaSaga() {
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_PROFILE_REQUEST,
     handleFetchSanghaProfile
+  );
+  yield takeLatest(
+    SANGHA_ACTIONS.FETCH_CONNECTIONS_REQUEST,
+    handleFetchConnections
   );
   yield takeLatest(
     SANGHA_ACTIONS.FETCH_GROUPS_HOME_REQUEST,

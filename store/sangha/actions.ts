@@ -24,6 +24,7 @@ import {
   SanghaHomeResult,
   SanghaConversation,
   SanghaConversationMessage,
+  SanghaConnectionRequestItem,
   CreateSanghaGroupEventPayload,
   CreateSanghaGroupPayload,
   UpdateSanghaGroupPayload,
@@ -99,6 +100,37 @@ export const fetchSanghaProfileFailure = (
   ({
     payload,
     type: SANGHA_ACTIONS.FETCH_PROFILE_FAILURE,
+  } as const);
+
+export const fetchSanghaConnectionsRequest = (payload: {
+  direction: "received" | "sent";
+  limit?: number;
+  offset?: number;
+  status?: "connected" | "declined" | "pending";
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_CONNECTIONS_REQUEST,
+  } as const);
+
+export const fetchSanghaConnectionsSuccess = (payload: {
+  append?: boolean;
+  connections: SanghaConnectionRequestItem[];
+  direction: "received" | "sent";
+  pagination: SanghaPagination | null;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_CONNECTIONS_SUCCESS,
+  } as const);
+
+export const fetchSanghaConnectionsFailure = (payload: {
+  direction: "received" | "sent";
+  error: string;
+}) =>
+  ({
+    payload,
+    type: SANGHA_ACTIONS.FETCH_CONNECTIONS_FAILURE,
   } as const);
 
 export const fetchSanghaGroupsHomeRequest = (

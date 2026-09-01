@@ -10,8 +10,10 @@ export type SanghaNotificationDestination =
       params: { connectionId?: string; id: string };
     }
   | {
-      pathname: "/sangha-hub-list";
-      params: { invitationId: string; type: "pending" };
+      pathname: "/sangha-requests";
+      params:
+        | { connectionId: string; tab: "received" }
+        | { invitationId: string; tab: "invitations" };
     }
   | {
       pathname: "/group-details";
@@ -78,16 +80,19 @@ export function getSanghaNotificationDestination(
 
   if (type === "group_invitation" && invitationId) {
     return {
-      pathname: "/sangha-hub-list",
-      params: { invitationId, type: "pending" },
+      pathname: "/sangha-requests",
+      params: { invitationId, tab: "invitations" },
     };
   }
 
-  if (
-    (type === "connection_request" ||
-      type === "connection_accepted") &&
-    actorUserId
-  ) {
+  if (type === "connection_request" && connectionId) {
+    return {
+      pathname: "/sangha-requests",
+      params: { connectionId, tab: "received" },
+    };
+  }
+
+  if (type === "connection_accepted" && actorUserId) {
     return {
       pathname: "/sangha-profile",
       params: { connectionId, id: actorUserId },
