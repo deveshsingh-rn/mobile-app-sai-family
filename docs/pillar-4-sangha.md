@@ -2219,8 +2219,10 @@ discovery, invitation, and sharing. Do not track these items in a separate file.
 | Invite from a devotee profile card | v1 | Frontend Integrated | `POST /api/sangha/groups/:id/invitations`; manual raw user-ID entry is removed. |
 | Accept/decline invitation | v1 | Frontend Integrated | Requests center and notification deep links use the invitation ID. |
 | Share installed-app deep link | v1 | Frontend Integrated | `saifamily://group-details?id=:groupId` opens the Expo Router group route. |
+| Public Sangha social preview card | v1 | Backend Ready | `GET /join/sangha/:idOrSlug` returns cacheable Open Graph/App Links HTML and exposes public groups only. |
+| Paste shared link into Sangha search | v1 | Frontend Integrated | Both HTTPS share links and `saifamily://` links resolve to exact ID/slug search results. |
 | Server-side devotee name/member-ID search | v1 blocker | Backend Required | Extend `GET /api/sangha/devotees?q=:query&limit=&offset=`. Search must match normalized display name and exact/prefix member ID while preserving profile visibility and block filters. |
-| Installless universal share link | Post-deploy hardening | Backend + DevOps Required | Provide `https://saifamily.sustaininsight.com/sangha/groups/:id` metadata/redirect, Apple AASA, Android `assetlinks.json`, associated domains, and intent filters. |
+| Installless universal app opening | Post-deploy hardening | DevOps Required | Add Apple AASA, Android `assetlinks.json`, associated domains, and intent filters. Until then the public card's Open button uses the installed-app scheme. |
 | Invitation expiry, revoke, resend, and audit history | v2 | Deferred | Add idempotent invite lifecycle and admin audit UI. |
 | Contact import, QR invite, and WhatsApp campaign attribution | v2 | Deferred | Consent-first contact matching; never upload raw address books without explicit consent. |
 | Community verification and official badges | v2 | Deferred | Admin verification workflow, evidence, expiry, and appeal trail required. |
@@ -2243,6 +2245,11 @@ without the app reach an App Store/Play Store fallback instead of a dead link.
 Group previews must expose only public group name, safe banner, purpose, city,
 member count, and privacy; private content and member identities must never be
 rendered in social preview metadata.
+
+Production ingress must forward `/join/sangha/*` to the Node backend in addition
+to `/api/*`. Verify the response contains `og:title`, `og:description`, and (when
+a banner exists) `og:image`. Private and invite-only groups intentionally never
+receive an unauthenticated social preview; they use direct invitations/app links.
 
 ### v1: Complete, Pending Device Sign-Off
 

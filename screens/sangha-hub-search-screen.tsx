@@ -35,6 +35,7 @@ import {
   useAppSelector,
 } from '@/store/hooks';
 import { SanghaColors, SanghaRadius, SanghaShadow, SanghaType } from '@/constants/sangha-theme';
+import { extractSanghaGroupIdentifier } from '@/utils/sangha-links';
 
 function groupMeta(group: SanghaGroupSummary) {
   return [
@@ -73,11 +74,13 @@ export default function SanghaHubSearchScreen() {
 
   useEffect(() => {
     const handle = setTimeout(() => {
+      const trimmedQuery = query.trim();
+      const linkedGroupId = extractSanghaGroupIdentifier(trimmedQuery);
       dispatch(
         searchSanghaGroupsRequest({
           limit: 20,
           offset: 0,
-          q: query.trim(),
+          q: linkedGroupId || trimmedQuery,
         })
       );
     }, 350);
@@ -160,7 +163,8 @@ export default function SanghaHubSearchScreen() {
           <TextInput
             autoFocus
             onChangeText={setQuery}
-            placeholder="Search sangha groups..."
+            autoCapitalize="none"
+            placeholder="Search name, city, or paste group link"
             placeholderTextColor={SanghaColors.inkTertiary}
             style={{
               color: SanghaColors.ink,

@@ -179,6 +179,7 @@ export type SanghaGroupSummary = {
   privacy?: "public" | "private" | string;
   purpose?: string;
   state?: string | null;
+  slug?: string | null;
 };
 
 export type CreateSanghaGroupPayload = {

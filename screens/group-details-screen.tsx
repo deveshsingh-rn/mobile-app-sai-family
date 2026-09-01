@@ -87,6 +87,10 @@ import {
 } from "@/store/hooks";
 import { SanghaStateView } from "@/components/sangha/SanghaStateView";
 import { SanghaColors, SanghaRadius, SanghaShadow } from "@/constants/sangha-theme";
+import {
+  createSanghaAppLink,
+  createSanghaPublicShareLink,
+} from "@/utils/sangha-links";
 
 const tabs = ["Feed", "Members", "Events", "About"] as const;
 type GroupTab = (typeof tabs)[number];
@@ -308,14 +312,16 @@ export default function GroupDetailsScreen() {
   const shareGroup = async () => {
     if (!groupId) return;
 
-    const deepLink = `saifamily://group-details?id=${encodeURIComponent(groupId)}`;
+    const shareLink = group?.privacy === "public"
+      ? createSanghaPublicShareLink(group.slug || groupId)
+      : createSanghaAppLink(groupId);
     try {
       await Share.share({
         message: `Join ${group?.name || "our Sai Family Sangha"}\n\n${
           group?.description || "Connect, serve, and grow with Sai devotees."
-        }\n\nOpen in Sai Family: ${deepLink}`,
+        }\n\nOpen in Sai Family: ${shareLink}`,
         title: group?.name || "Sai Family Sangha",
-        url: deepLink,
+        url: shareLink,
       });
     } catch {
       Alert.alert("Unable to share", "Please try sharing this Sangha again.");
