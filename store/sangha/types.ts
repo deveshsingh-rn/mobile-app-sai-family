@@ -303,6 +303,7 @@ export type SanghaChatSession = {
   heartbeatIntervalMs?: number;
   sessionId?: string;
   webSocketUrl: string;
+  websocketUrl?: string;
 };
 
 export type SanghaGroupPostComment = {

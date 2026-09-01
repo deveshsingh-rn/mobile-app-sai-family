@@ -54,7 +54,11 @@ export default function SanghaChatScreen() {
   }>();
   const dispatch = useAppDispatch();
   const conversation = useAppSelector(selectSanghaActiveConversation);
-  const conversationId = conversation?.id || routeConversationId;
+  const conversationId =
+    routeConversationId ||
+    (memberId && conversation?.participantUserId !== memberId
+      ? undefined
+      : conversation?.id);
   const messages = useAppSelector((state) =>
     selectSanghaConversationMessages(state, conversationId)
   );
@@ -76,6 +80,8 @@ export default function SanghaChatScreen() {
   const socketRef = useRef<WebSocket | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptRef = useRef(0);
   const displayName =
     memberName ||
     conversation?.participant?.name ||
@@ -115,24 +121,64 @@ export default function SanghaChatScreen() {
     }
 
     let cancelled = false;
+    let intentionallyClosed = false;
 
-    const closeSocket = () => {
+    const clearHeartbeat = () => {
       if (heartbeatRef.current) {
         clearInterval(heartbeatRef.current);
         heartbeatRef.current = null;
       }
+    };
+
+    const clearReconnectTimeout = () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    };
+
+    const closeSocket = () => {
+      intentionallyClosed = true;
+      clearHeartbeat();
+      clearReconnectTimeout();
 
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = null;
       }
 
-      socketRef.current?.close();
+      const socket = socketRef.current;
       socketRef.current = null;
+      socket?.close();
       setRemoteTyping(false);
     };
 
+    const scheduleReconnect = (connect: () => Promise<void>) => {
+      if (cancelled || intentionallyClosed || reconnectTimeoutRef.current) {
+        return;
+      }
+
+      const delay = Math.min(
+        1000 * 2 ** reconnectAttemptRef.current,
+        15000
+      );
+      reconnectAttemptRef.current += 1;
+      reconnectTimeoutRef.current = setTimeout(() => {
+        reconnectTimeoutRef.current = null;
+        void connect();
+      }, delay);
+    };
+
     const connectSocket = async () => {
+      if (
+        cancelled ||
+        intentionallyClosed ||
+        socketRef.current?.readyState === WebSocket.OPEN ||
+        socketRef.current?.readyState === WebSocket.CONNECTING
+      ) {
+        return;
+      }
+
       setSocketStatus("connecting");
 
       try {
@@ -148,19 +194,12 @@ export default function SanghaChatScreen() {
         socketRef.current = socket;
 
         socket.onopen = () => {
-          setSocketStatus("connected");
-          socket.send(
-            JSON.stringify({
-              conversationIds: [conversationId],
-              type: "subscribe",
-            })
-          );
-
+          clearHeartbeat();
           heartbeatRef.current = setInterval(() => {
             if (socket.readyState === WebSocket.OPEN) {
               socket.send(
                 JSON.stringify({
-                  sentAt: new Date().toISOString(),
+                  id: `${Date.now()}`,
                   type: "ping",
                 })
               );
@@ -173,7 +212,21 @@ export default function SanghaChatScreen() {
             const payload = JSON.parse(String(event.data));
 
             if (payload.type === "connected") {
+              reconnectAttemptRef.current = 0;
               setSocketStatus("connected");
+
+              if (Array.isArray(payload.messages)) {
+                payload.messages.forEach((message: SanghaConversationMessage) => {
+                  dispatch(
+                    receiveSanghaConversationMessage({
+                      conversationId,
+                      message,
+                    })
+                  );
+                });
+              }
+
+              socket.send(JSON.stringify({ type: "read" }));
               return;
             }
 
@@ -205,7 +258,9 @@ export default function SanghaChatScreen() {
                   },
                 })
               );
-              dispatch(markSanghaConversationReadRequest(conversationId));
+              if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ type: "read" }));
+              }
               return;
             }
 
@@ -237,23 +292,35 @@ export default function SanghaChatScreen() {
             }
 
             if (payload.type === "error") {
-              setSocketStatus("offline");
+              console.warn("[SanghaChat] Server event error", {
+                code: payload.code,
+                message: payload.message,
+              });
             }
           } catch (parseError) {
             console.warn("[SanghaChat] Invalid socket event", parseError);
           }
         };
 
-        socket.onerror = () => {
-          setSocketStatus("offline");
+        socket.onerror = (socketError) => {
+          console.warn("[SanghaChat] Socket error", socketError);
         };
 
         socket.onclose = () => {
+          if (socketRef.current === socket) {
+            socketRef.current = null;
+          }
+          clearHeartbeat();
+          if (cancelled || intentionallyClosed) {
+            return;
+          }
           setSocketStatus("offline");
+          scheduleReconnect(connectSocket);
         };
       } catch (sessionError) {
         console.warn("[SanghaChat] WebSocket unavailable", sessionError);
         setSocketStatus("offline");
+        scheduleReconnect(connectSocket);
       }
     };
 
@@ -264,6 +331,23 @@ export default function SanghaChatScreen() {
       closeSocket();
     };
   }, [conversationId, dispatch]);
+
+  useEffect(() => {
+    if (!conversationId || socketStatus !== "offline") {
+      return undefined;
+    }
+
+    const interval = setInterval(() => {
+      dispatch(
+        fetchSanghaConversationMessagesRequest({
+          conversationId,
+          limit: 30,
+        })
+      );
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [conversationId, dispatch, socketStatus]);
 
   const sendMessage = () => {
     const trimmed = draft.trim();

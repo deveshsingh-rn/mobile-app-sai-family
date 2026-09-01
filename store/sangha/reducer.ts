@@ -1510,6 +1510,7 @@ export function sanghaReducer(
     case SANGHA_ACTIONS.START_CONVERSATION_REQUEST:
       return {
         ...state,
+        activeConversation: null,
         actionPendingIds: {
           ...state.actionPendingIds,
           [action.payload.participantUserId]: true,

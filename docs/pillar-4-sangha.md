@@ -584,35 +584,25 @@ Frontend socket events sent to backend:
 ```ts
 type SanghaClientChatEvent =
   | {
-      type: "subscribe";
-      conversationIds: string[];
-    }
-  | {
       type: "message_send";
       clientMessageId: string;
-      conversationId: string;
       content: string;
     }
   | {
-      type: "message_delivered";
-      conversationId: string;
-      messageIds: string[];
+      type: "typing";
+      isTyping: boolean;
     }
   | {
-      type: "message_read";
-      conversationId: string;
-      messageIds?: string[];
-      readAt: string;
-    }
-  | {
-      type: "typing_start" | "typing_stop";
-      conversationId: string;
+      type: "read";
     }
   | {
       type: "ping";
-      sentAt: string;
+      id?: string;
     };
 ```
+
+Each short-lived session token and returned WebSocket URL is scoped to exactly
+one conversation. The client must not send a separate `subscribe` event.
 
 Backend socket events sent to frontend:
 
@@ -620,8 +610,11 @@ Backend socket events sent to frontend:
 type SanghaServerChatEvent =
   | {
       type: "connected";
-      sessionId: string;
-      serverTime: string;
+      conversationId: string;
+      userId: string;
+      messages: SanghaMessage[];
+      nextCursor: string | null;
+      heartbeatSeconds: number;
     }
   | {
       type: "message_created";
@@ -676,11 +669,17 @@ Backend rules:
 - Store `sentAt`, `deliveredAt`, and `readAt`; do not trust client timestamps for final server state.
 - Close inactive sockets after missed heartbeats.
 - Revoke chat session tokens on logout or account block.
+- Publish chat events through shared Redis pub/sub so clients connected to
+  different API instances still receive messages, typing, and read events.
+- Keep the process-local broadcast as the low-latency path and REST message
+  creation as the durable fallback.
 
 Frontend rules:
 
-- Open WebSocket after login and subscribe to active/inbox conversations.
+- Open the conversation-scoped WebSocket returned by `POST /api/sangha/chat/session`.
 - Keep REST `GET /api/sangha/conversations/:id/messages` as initial load and reconnect fallback.
+- Reconnect with bounded exponential backoff and reload recent REST messages to
+  close any missed-event gap.
 - Send optimistic messages immediately with `status: "sending"` and a stable `clientMessageId`.
 - Replace the local optimistic bubble when `message_created.clientMessageId` returns.
 - If socket is disconnected, queue local sends and retry when online; show `failed` only after backend rejects or retry budget expires.
@@ -723,6 +722,7 @@ Phase C: Realtime WebSocket
 - Add short-lived `POST /api/sangha/chat/session`.
 - Add `wss /api/sangha/chat/ws`.
 - Support realtime send, receive, typing, delivered, read, reconnect, and offline queue.
+- Use Redis pub/sub for cross-instance realtime fan-out.
 
 Phase D: Rich Messaging
 

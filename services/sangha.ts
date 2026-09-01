@@ -585,7 +585,10 @@ export async function apiCreateSanghaChatSession(payload: {
     payload
   );
 
-  return data;
+  return {
+    ...data,
+    webSocketUrl: data?.webSocketUrl || data?.websocketUrl,
+  };
 }
 
 export async function apiMarkSanghaNotificationsRead(payload: {
