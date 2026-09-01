@@ -15,6 +15,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { SanghaScreenHeader, SanghaHeaderAction } from "@/components/sangha/SanghaScreenHeader";
+import { SanghaStateView } from "@/components/sangha/SanghaStateView";
+import { SanghaColors, SanghaRadius, SanghaShadow, SanghaType } from "@/constants/sangha-theme";
+
 import {
   acceptSanghaConnectionRequest,
   acceptSanghaInvitationRequest,
@@ -319,19 +323,19 @@ export default function SanghaRequestsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FAFAF9" />
-      <View style={styles.header}>
-        <Pressable accessibilityLabel="Go back" accessibilityRole="button" onPress={() => router.back()} style={styles.iconButton}>
-          <Ionicons color="#292524" name="arrow-back" size={23} />
-        </Pressable>
-        <View style={styles.headerCopy}>
-          <Text style={styles.title}>Sangha Requests</Text>
-          <Text style={styles.subtitle}>Manage connections and group invitations</Text>
-        </View>
-        <Pressable accessibilityLabel="Open notifications" accessibilityRole="button" onPress={() => router.push("/sangha-notifications")} style={styles.iconButton}>
-          <Ionicons color="#292524" name="notifications-outline" size={22} />
-        </Pressable>
-      </View>
+      <StatusBar barStyle="dark-content" backgroundColor={SanghaColors.background} />
+      <SanghaScreenHeader
+        onBack={() => router.back()}
+        right={
+          <SanghaHeaderAction
+            accessibilityLabel="Open notifications"
+            icon="notifications-outline"
+            onPress={() => router.push("/sangha-notifications")}
+          />
+        }
+        subtitle="Manage connections and group invitations"
+        title="Sangha Requests"
+      />
 
       <View style={styles.tabs}>
         {tabs.map((tab) => {
@@ -363,22 +367,18 @@ export default function SanghaRequestsScreen() {
         }
         ListEmptyComponent={
           loading ? (
-            <View style={styles.centerState}>
-              <ActivityIndicator color="#D96A3D" size="large" />
-              <Text style={styles.stateTitle}>Loading requests</Text>
-            </View>
+            <SanghaStateView loading title="Loading requests" />
           ) : (
-            <View style={styles.centerState}>
-              <View style={styles.emptyIcon}><Ionicons color="#D96A3D" name="checkmark-circle-outline" size={34} /></View>
-              <Text style={styles.stateTitle}>You are all caught up</Text>
-              <Text style={styles.stateBody}>
-                {activeTab === "received" ? "New connection requests will appear here." : activeTab === "sent" ? "Requests you send will appear here." : "New group invitations will appear here."}
-              </Text>
-              {error ? <Pressable onPress={refresh} style={styles.retryButton}><Text style={styles.retryText}>Try again</Text></Pressable> : null}
-            </View>
+            <SanghaStateView
+              actionLabel={error ? "Try again" : undefined}
+              body={activeTab === "received" ? "New connection requests will appear here." : activeTab === "sent" ? "Requests you send will appear here." : "New group invitations will appear here."}
+              icon="checkmark-circle-outline"
+              onAction={error ? refresh : undefined}
+              title="You are all caught up"
+            />
           )
         }
-        ListFooterComponent={loading && items.length > 0 ? <ActivityIndicator color="#D96A3D" style={styles.footerLoader} /> : null}
+        ListFooterComponent={loading && items.length > 0 ? <ActivityIndicator color={SanghaColors.saffron} style={styles.footerLoader} /> : null}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
@@ -387,42 +387,37 @@ export default function SanghaRequestsScreen() {
 
 const styles = StyleSheet.create({
   actionRow: { flexDirection: "row", gap: 10, marginTop: 18 },
-  avatar: { backgroundColor: "#F5F5F4", borderRadius: 31, height: 62, width: 62 },
-  card: { backgroundColor: "#FFFFFF", borderColor: "#EEE9E2", borderRadius: 22, borderWidth: 1, marginBottom: 14, padding: 16 },
+  avatar: { backgroundColor: SanghaColors.surfaceMuted, borderRadius: 29, height: 58, width: 58 },
+  card: { backgroundColor: SanghaColors.surface, borderColor: SanghaColors.border, borderRadius: SanghaRadius.card, borderWidth: 1, marginBottom: 12, padding: 16, ...SanghaShadow },
   centerState: { alignItems: "center", maxWidth: 310, paddingHorizontal: 24 },
   count: { backgroundColor: "#E7E5E4", borderRadius: 10, color: "#57534E", fontSize: 11, fontWeight: "900", minWidth: 20, overflow: "hidden", paddingHorizontal: 5, paddingVertical: 2, textAlign: "center" },
-  date: { color: "#A8A29E", fontSize: 12, fontWeight: "700", marginTop: 7 },
+  date: { color: SanghaColors.inkTertiary, fontSize: 12, fontWeight: "700", marginTop: 7 },
   disabled: { opacity: 0.5 },
-  emptyIcon: { alignItems: "center", backgroundColor: "#FFF4E8", borderRadius: 30, height: 60, justifyContent: "center", marginBottom: 16, width: 60 },
   emptyListContent: { flexGrow: 1, justifyContent: "center" },
-  focusLabel: { alignSelf: "flex-start", backgroundColor: "#FFF4E8", borderRadius: 9, color: "#9A3412", fontSize: 12, fontWeight: "900", marginBottom: 13, overflow: "hidden", paddingHorizontal: 9, paddingVertical: 5 },
-  focusedCard: { borderColor: "#F97316", borderWidth: 2 },
+  focusLabel: { alignSelf: "flex-start", backgroundColor: SanghaColors.saffronSoft, borderRadius: 9, color: SanghaColors.saffronPressed, fontSize: 12, fontWeight: "900", marginBottom: 13, overflow: "hidden", paddingHorizontal: 9, paddingVertical: 5 },
+  focusedCard: { borderColor: SanghaColors.saffron, borderWidth: 2 },
   footerLoader: { marginVertical: 18 },
-  header: { alignItems: "center", flexDirection: "row", paddingBottom: 14, paddingHorizontal: 18, paddingTop: 10 },
-  headerCopy: { flex: 1, marginHorizontal: 12 },
-  iconButton: { alignItems: "center", backgroundColor: "#FFFFFF", borderColor: "#EEE9E2", borderRadius: 22, borderWidth: 1, height: 44, justifyContent: "center", width: 44 },
   identityCopy: { flex: 1, marginHorizontal: 13 },
   identityRow: { alignItems: "center", flexDirection: "row" },
   listContent: { paddingBottom: 36, paddingHorizontal: 16, paddingTop: 14 },
-  message: { backgroundColor: "#FAFAF9", borderRadius: 14, color: "#57534E", fontSize: 14, fontWeight: "600", lineHeight: 21, marginTop: 14, padding: 12 },
-  meta: { color: "#78716C", fontSize: 14, fontWeight: "600", lineHeight: 20, marginTop: 4 },
-  name: { color: "#292524", fontSize: 18, fontWeight: "900" },
+  message: { backgroundColor: SanghaColors.surfaceMuted, borderRadius: SanghaRadius.control, color: SanghaColors.inkSecondary, fontSize: 14, fontWeight: "600", lineHeight: 21, marginTop: 14, padding: 12 },
+  meta: { color: SanghaColors.inkSecondary, fontSize: 14, fontWeight: "600", lineHeight: 20, marginTop: 4 },
+  name: { color: SanghaColors.ink, ...SanghaType.cardTitle },
   pressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
-  primaryButton: { alignItems: "center", backgroundColor: "#D96A3D", borderRadius: 15, flex: 1, flexDirection: "row", gap: 7, height: 50, justifyContent: "center" },
+  primaryButton: { alignItems: "center", backgroundColor: SanghaColors.saffron, borderRadius: SanghaRadius.control, flex: 1, flexDirection: "row", gap: 7, height: 50, justifyContent: "center" },
   primaryButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
-  retryButton: { backgroundColor: "#292524", borderRadius: 14, marginTop: 18, paddingHorizontal: 22, paddingVertical: 12 },
+  retryButton: { backgroundColor: SanghaColors.maroon, borderRadius: 14, marginTop: 18, paddingHorizontal: 22, paddingVertical: 12 },
   retryText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
-  safeArea: { backgroundColor: "#FAFAF9", flex: 1 },
-  secondaryButton: { alignItems: "center", backgroundColor: "#F5F5F4", borderColor: "#E7E5E4", borderRadius: 15, borderWidth: 1, flex: 1, flexDirection: "row", gap: 7, height: 50, justifyContent: "center" },
+  safeArea: { backgroundColor: SanghaColors.background, flex: 1 },
+  secondaryButton: { alignItems: "center", backgroundColor: SanghaColors.surfaceMuted, borderColor: SanghaColors.border, borderRadius: SanghaRadius.control, borderWidth: 1, flex: 1, flexDirection: "row", gap: 7, height: 50, justifyContent: "center" },
   secondaryButtonText: { color: "#57534E", fontSize: 15, fontWeight: "900" },
   selectedCount: { backgroundColor: "#FED7AA", color: "#9A3412" },
-  selectedTab: { backgroundColor: "#FFF4E8", borderColor: "#FED7AA" },
-  selectedTabText: { color: "#9A3412" },
+  selectedTab: { backgroundColor: SanghaColors.saffronSoft, borderColor: SanghaColors.saffronBorder },
+  selectedTabText: { color: SanghaColors.saffronPressed },
   stateBody: { color: "#78716C", fontSize: 15, fontWeight: "600", lineHeight: 23, marginTop: 8, textAlign: "center" },
   stateTitle: { color: "#292524", fontSize: 19, fontWeight: "900", marginTop: 12, textAlign: "center" },
   subtitle: { color: "#78716C", fontSize: 12, fontWeight: "700", marginTop: 3 },
   tab: { alignItems: "center", borderColor: "transparent", borderRadius: 15, borderWidth: 1, flex: 1, flexDirection: "row", gap: 5, justifyContent: "center", minHeight: 52, paddingHorizontal: 6 },
-  tabs: { backgroundColor: "#FFFFFF", borderColor: "#EEE9E2", borderRadius: 18, borderWidth: 1, flexDirection: "row", gap: 4, marginHorizontal: 16, padding: 4 },
+  tabs: { backgroundColor: SanghaColors.surface, borderColor: SanghaColors.border, borderRadius: SanghaRadius.card, borderWidth: 1, flexDirection: "row", gap: 4, marginHorizontal: 16, padding: 4 },
   tabText: { color: "#78716C", flexShrink: 1, fontSize: 12, fontWeight: "800", textAlign: "center" },
-  title: { color: "#292524", fontSize: 23, fontWeight: "900" },
 });

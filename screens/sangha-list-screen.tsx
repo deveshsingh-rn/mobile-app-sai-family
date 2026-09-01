@@ -32,6 +32,9 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@/store/hooks';
+import { SanghaScreenHeader } from '@/components/sangha/SanghaScreenHeader';
+import { SanghaStateView } from '@/components/sangha/SanghaStateView';
+import { SanghaColors, SanghaRadius, SanghaShadow } from '@/constants/sangha-theme';
 
 function getAvatarUri(item: SanghaDevoteeSummary) {
   return (
@@ -95,20 +98,13 @@ function PersonCard({
         }
       }}
       style={{
-        backgroundColor: '#FFFFFF',
-        borderColor: '#F1F1F1',
-        borderRadius: 28,
+        backgroundColor: SanghaColors.surface,
+        borderColor: SanghaColors.border,
+        borderRadius: SanghaRadius.card,
         borderWidth: 1,
-        elevation: 2,
-        marginBottom: 18,
-        padding: 18,
-        shadowColor: '#000',
-        shadowOffset: {
-          width: 0,
-          height: 4,
-        },
-        shadowOpacity: 0.03,
-        shadowRadius: 10,
+        marginBottom: 12,
+        padding: 16,
+        ...SanghaShadow,
       }}>
       <View
         style={{
@@ -133,15 +129,15 @@ function PersonCard({
           }}>
           <Text
             style={{
-              color: '#111827',
-              fontSize: 19,
-              fontWeight: '900',
+              color: SanghaColors.ink,
+              fontSize: 17,
+              fontWeight: '800',
             }}>
             {item.name}
           </Text>
           <Text
             style={{
-              color: '#6B7280',
+              color: SanghaColors.inkSecondary,
               fontSize: 14,
               fontWeight: '700',
               marginTop: 4,
@@ -150,7 +146,7 @@ function PersonCard({
           </Text>
           <Text
             style={{
-              color: '#9CA3AF',
+              color: SanghaColors.inkTertiary,
               fontSize: 13,
               fontWeight: '600',
               marginTop: 4,
@@ -170,7 +166,7 @@ function PersonCard({
         <View
           style={{
             alignItems: 'center',
-            backgroundColor: '#FFF7ED',
+            backgroundColor: SanghaColors.saffronSoft,
             borderRadius: 14,
             flexDirection: 'row',
             paddingHorizontal: 12,
@@ -179,11 +175,11 @@ function PersonCard({
           <Ionicons
             name="sparkles"
             size={14}
-            color="#F97316"
+            color={SanghaColors.saffron}
           />
           <Text
             style={{
-              color: '#F97316',
+              color: SanghaColors.saffron,
               fontSize: 12,
               fontWeight: '800',
               marginLeft: 6,
@@ -195,9 +191,9 @@ function PersonCard({
         <View
           style={{
             alignItems: 'center',
-            backgroundColor: '#111111',
-            borderRadius: 17,
-            height: 34,
+            backgroundColor: SanghaColors.maroon,
+            borderRadius: SanghaRadius.control,
+            height: 38,
             justifyContent: 'center',
             paddingHorizontal: 16,
           }}>
@@ -281,64 +277,18 @@ export default function SanghaListScreen() {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: '#FAFAFA',
+        backgroundColor: SanghaColors.background,
       }}>
       <StatusBar
-        backgroundColor="#FAFAFA"
+        backgroundColor={SanghaColors.background}
         barStyle="dark-content"
       />
 
-      <View
-        style={{
-          alignItems: 'center',
-          flexDirection: 'row',
-          paddingHorizontal: 20,
-          paddingTop: 18,
-          paddingBottom: 14,
-        }}>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => router.back()}
-          style={{
-            alignItems: 'center',
-            backgroundColor: '#FFFFFF',
-            borderRadius: 22,
-            elevation: 2,
-            height: 44,
-            justifyContent: 'center',
-            width: 44,
-          }}>
-          <Ionicons
-            name="arrow-back"
-            size={22}
-            color="#111827"
-          />
-        </TouchableOpacity>
-
-        <View
-          style={{
-            flex: 1,
-            marginLeft: 14,
-          }}>
-          <Text
-            style={{
-              color: '#111827',
-              fontSize: 23,
-              fontWeight: '900',
-            }}>
-            {title}
-          </Text>
-          <Text
-            style={{
-              color: '#6B7280',
-              fontSize: 13,
-              fontWeight: '700',
-              marginTop: 2,
-            }}>
-            {devotees.length} devotees found
-          </Text>
-        </View>
-      </View>
+      <SanghaScreenHeader
+        onBack={() => router.back()}
+        subtitle={`${devotees.length} devotees found`}
+        title={title}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -355,26 +305,7 @@ export default function SanghaListScreen() {
           paddingTop: 8,
         }}>
         {loading && devotees.length === 0 ? (
-          <View
-            style={{
-              alignItems: 'center',
-              backgroundColor: '#FFFFFF',
-              borderColor: '#F1F1F1',
-              borderRadius: 28,
-              borderWidth: 1,
-              padding: 28,
-            }}>
-            <ActivityIndicator color="#F97316" />
-            <Text
-              style={{
-                color: '#6B7280',
-                fontSize: 14,
-                fontWeight: '800',
-                marginTop: 12,
-              }}>
-              Loading devotees
-            </Text>
-          </View>
+          <SanghaStateView loading title="Loading devotees" />
         ) : null}
 
         {!loading && error ? (
@@ -410,33 +341,11 @@ export default function SanghaListScreen() {
         ) : null}
 
         {!loading && devotees.length === 0 && !error ? (
-          <View
-            style={{
-              backgroundColor: '#FFFFFF',
-              borderColor: '#F1F1F1',
-              borderRadius: 28,
-              borderWidth: 1,
-              padding: 22,
-            }}>
-            <Text
-              style={{
-                color: '#111827',
-                fontSize: 18,
-                fontWeight: '900',
-              }}>
-              No devotees found
-            </Text>
-            <Text
-              style={{
-                color: '#6B7280',
-                fontSize: 14,
-                fontWeight: '600',
-                lineHeight: 23,
-                marginTop: 8,
-              }}>
-              Try changing filters from the Sangha discovery screen.
-            </Text>
-          </View>
+          <SanghaStateView
+            body="Try changing filters from the Sangha discovery screen."
+            icon="search-outline"
+            title="No devotees found"
+          />
         ) : null}
 
         {devotees.map((item) => (
@@ -453,8 +362,8 @@ export default function SanghaListScreen() {
             onPress={loadMore}
             style={{
               alignItems: 'center',
-              backgroundColor: '#111111',
-              borderRadius: 20,
+              backgroundColor: SanghaColors.maroon,
+              borderRadius: SanghaRadius.control,
               height: 50,
               justifyContent: 'center',
               marginTop: 2,

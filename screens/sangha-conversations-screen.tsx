@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   RefreshControl,
@@ -10,7 +9,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
 import { fetchSanghaConversationsRequest } from "@/store/sangha/actions";
@@ -21,6 +19,9 @@ import {
 } from "@/store/sangha/selectors";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { SanghaConversation } from "@/store/sangha/types";
+import { SanghaScreenHeader } from "@/components/sangha/SanghaScreenHeader";
+import { SanghaStateView } from "@/components/sangha/SanghaStateView";
+import { SanghaColors, SanghaRadius, SanghaShadow } from "@/constants/sangha-theme";
 
 function avatarForConversation(conversation: SanghaConversation) {
   const participant =
@@ -86,56 +87,13 @@ export default function SanghaConversationsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ backgroundColor: "#F8F6F2", flex: 1 }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F6F2" />
-      <View
-        style={{
-          alignItems: "center",
-          flexDirection: "row",
-          paddingHorizontal: 18,
-          paddingTop: 10,
-          paddingBottom: 14,
-        }}
-      >
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => router.back()}
-          style={{
-            alignItems: "center",
-            backgroundColor: "#FFFFFF",
-            borderColor: "#EEE7DD",
-            borderRadius: 22,
-            borderWidth: 1,
-            height: 44,
-            justifyContent: "center",
-            width: 44,
-          }}
-        >
-          <Ionicons name="arrow-back" size={21} color="#2B1308" />
-        </TouchableOpacity>
-        <View style={{ flex: 1, marginLeft: 14 }}>
-          <Text
-            style={{
-              color: "#111827",
-              fontSize: 26,
-              fontWeight: "900",
-              letterSpacing: -0.2,
-            }}
-          >
-            Sangha Chats
-          </Text>
-          <Text
-            style={{
-              color: "#78716C",
-              fontSize: 13,
-              fontWeight: "700",
-              marginTop: 3,
-            }}
-          >
-            Connected devotees and group conversations
-          </Text>
-        </View>
-      </View>
+    <SafeAreaView style={{ backgroundColor: SanghaColors.background, flex: 1 }}>
+      <StatusBar barStyle="dark-content" backgroundColor={SanghaColors.background} />
+      <SanghaScreenHeader
+        onBack={() => router.back()}
+        subtitle="Private conversations with connected devotees"
+        title="Sangha Chats"
+      />
 
       <FlatList
         contentContainerStyle={{
@@ -153,75 +111,14 @@ export default function SanghaConversationsScreen() {
           />
         }
         ListEmptyComponent={
-          <View
-            style={{
-              alignItems: "center",
-              backgroundColor: "#FFFFFF",
-              borderColor: "#EEE7DD",
-              borderRadius: 24,
-              borderWidth: 1,
-              marginTop: 36,
-              padding: 24,
-            }}
-          >
-            {loading ? (
-              <ActivityIndicator color="#F97316" />
-            ) : (
-              <>
-                <View
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: "#FFF7ED",
-                    borderRadius: 26,
-                    height: 52,
-                    justifyContent: "center",
-                    width: 52,
-                  }}
-                >
-                  <Ionicons
-                    color="#F97316"
-                    name="chatbubble-ellipses-outline"
-                    size={25}
-                  />
-                </View>
-                <Text
-                  style={{
-                    color: "#111827",
-                    fontSize: 18,
-                    fontWeight: "900",
-                    marginTop: 15,
-                  }}
-                >
-                  No chats yet
-                </Text>
-                <Text
-                  style={{
-                    color: "#78716C",
-                    fontSize: 14,
-                    fontWeight: "700",
-                    lineHeight: 22,
-                    marginTop: 8,
-                    textAlign: "center",
-                  }}
-                >
-                  Connect with a devotee first. Once they accept, your chat will appear here.
-                </Text>
-                {error ? (
-                  <Text
-                    style={{
-                      color: "#B91C1C",
-                      fontSize: 13,
-                      fontWeight: "800",
-                      marginTop: 12,
-                      textAlign: "center",
-                    }}
-                  >
-                    {error}
-                  </Text>
-                ) : null}
-              </>
-            )}
-          </View>
+          <SanghaStateView
+            actionLabel={error ? "Try again" : undefined}
+            body={error || "Connect with a devotee first. Once they accept, your chat will appear here."}
+            icon="chatbubble-ellipses-outline"
+            loading={loading}
+            onAction={error ? refresh : undefined}
+            title={loading ? "Loading conversations" : "No chats yet"}
+          />
         }
         renderItem={({ item }) => {
           const unreadCount = item.unreadCount || 0;
@@ -234,13 +131,14 @@ export default function SanghaConversationsScreen() {
               onPress={() => openConversation(item)}
               style={{
                 alignItems: "center",
-                backgroundColor: "#FFFFFF",
-                borderColor: unreadCount > 0 ? "#FED7AA" : "#EEE7DD",
-                borderRadius: 24,
+                backgroundColor: SanghaColors.surface,
+                borderColor: unreadCount > 0 ? SanghaColors.saffronBorder : SanghaColors.border,
+                borderRadius: SanghaRadius.card,
                 borderWidth: 1,
                 flexDirection: "row",
                 marginBottom: 12,
                 padding: 14,
+                ...SanghaShadow,
               }}
             >
               <Image
@@ -261,7 +159,7 @@ export default function SanghaConversationsScreen() {
                   <Text
                     numberOfLines={1}
                     style={{
-                      color: "#111827",
+                      color: SanghaColors.ink,
                       flex: 1,
                       fontSize: 16,
                       fontWeight: "900",
@@ -290,7 +188,7 @@ export default function SanghaConversationsScreen() {
                   <Text
                     numberOfLines={1}
                     style={{
-                      color: unreadCount > 0 ? "#44403C" : "#78716C",
+                      color: unreadCount > 0 ? SanghaColors.ink : SanghaColors.inkSecondary,
                       flex: 1,
                       fontSize: 14,
                       fontWeight: unreadCount > 0 ? "900" : "700",
@@ -302,7 +200,7 @@ export default function SanghaConversationsScreen() {
                     <View
                       style={{
                         alignItems: "center",
-                        backgroundColor: "#F97316",
+                        backgroundColor: SanghaColors.saffron,
                         borderRadius: 999,
                         height: 22,
                         justifyContent: "center",

@@ -45,6 +45,12 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@/store/hooks';
+import {
+  SanghaColors,
+  SanghaRadius,
+  SanghaShadow,
+  SanghaType,
+} from '@/constants/sangha-theme';
 
 const purposePresentation: Record<
   string,
@@ -185,10 +191,10 @@ const SanghaHubScreen = () => {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: '#FAFAF9',
+        backgroundColor: SanghaColors.background,
       }}>
       <StatusBar
-        backgroundColor="#FAFAF9"
+        backgroundColor={SanghaColors.background}
         barStyle="dark-content"
       />
 
@@ -199,7 +205,7 @@ const SanghaHubScreen = () => {
           <RefreshControl
             refreshing={loading}
             onRefresh={refreshHub}
-            tintColor="#F97316"
+            tintColor={SanghaColors.saffron}
           />
         }
         contentContainerStyle={{
@@ -208,20 +214,13 @@ const SanghaHubScreen = () => {
         {/* Header */}
         <View
           style={{
-            backgroundColor: '#FAFAF9',
-            borderBottomColor: '#EFEFEF',
+            backgroundColor: SanghaColors.background,
+            borderBottomColor: SanghaColors.border,
             borderBottomWidth: 1,
-            elevation: 3,
-            paddingHorizontal: 22,
-            paddingTop: 16,
-            paddingBottom: 8,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: 4,
-            },
-            shadowOpacity: 0.04,
-            shadowRadius: 8,
+            paddingHorizontal: 18,
+            paddingTop: 10,
+            paddingBottom: 10,
+            ...SanghaShadow,
             zIndex: 10,
           }}>
           {/* Top */}
@@ -235,11 +234,8 @@ const SanghaHubScreen = () => {
             <View>
               <Text
                 style={{
-                  fontSize: 28,
-                  color: '#1F2937',
-                  fontWeight: '700',
-                  fontFamily: 'serif',
-                  letterSpacing: -0.4,
+                  color: SanghaColors.ink,
+                  ...SanghaType.pageTitle,
                 }}>
                 Sangha Hub
               </Text>
@@ -247,8 +243,8 @@ const SanghaHubScreen = () => {
               <Text
                 style={{
                   marginTop: 4,
-                  fontSize: 16,
-                  color: '#6B7280',
+                  fontSize: 13,
+                  color: SanghaColors.inkSecondary,
                   fontWeight: '500',
                 }}>
                 Your Spiritual Communities
@@ -261,11 +257,11 @@ const SanghaHubScreen = () => {
                 onPress={() => router.push('/sangha-create-group')}
                 style={{
                   alignItems: 'center',
-                  backgroundColor: '#F97316',
-                  borderRadius: 27,
-                  height: 54,
+                  backgroundColor: SanghaColors.saffron,
+                  borderRadius: SanghaRadius.control,
+                  height: 44,
                   justifyContent: 'center',
-                  width: 54,
+                  width: 44,
                 }}>
                 <Ionicons
                   name="add"
@@ -278,10 +274,12 @@ const SanghaHubScreen = () => {
                 activeOpacity={0.85}
                 onPress={() => router.push('/sangha-notifications')}
                 style={{
-                  width: 54,
-                  height: 54,
-                  borderRadius: 27,
-                  backgroundColor: '#FFF7E6',
+                  width: 44,
+                  height: 44,
+                  borderRadius: SanghaRadius.control,
+                  backgroundColor: SanghaColors.saffronSoft,
+                  borderColor: SanghaColors.saffronBorder,
+                  borderWidth: 1,
                   justifyContent: 'center',
                   alignItems: 'center',
                   position: 'relative',
@@ -289,7 +287,7 @@ const SanghaHubScreen = () => {
                 <Ionicons
                   name="notifications"
                   size={22}
-                  color="#F97316"
+                  color={SanghaColors.saffron}
                 />
 
                 {unreadCount > 0 ? (
@@ -301,8 +299,8 @@ const SanghaHubScreen = () => {
                       minWidth: 18,
                       paddingHorizontal: 5,
                       position: 'absolute',
-                      right: 7,
-                      top: 8,
+                right: 4,
+                top: 4,
                     }}>
                     <Text
                       style={{
@@ -322,22 +320,15 @@ const SanghaHubScreen = () => {
           <View
             style={{
               marginTop: 12,
-              height: 58,
-              borderRadius: 31,
-              backgroundColor: '#FFFFFF',
+              height: 50,
+              borderRadius: SanghaRadius.control,
+              backgroundColor: SanghaColors.surface,
               borderWidth: 1,
-              borderColor: '#F0F0F0',
+              borderColor: SanghaColors.border,
               flexDirection: 'row',
               alignItems: 'center',
               paddingHorizontal: 18,
-              shadowColor: '#000',
-              shadowOffset: {
-                width: 0,
-                height: 4,
-              },
-              shadowOpacity: 0.03,
-              shadowRadius: 8,
-              elevation: 2,
+              ...SanghaShadow,
             }}>
             <TouchableOpacity
               activeOpacity={0.9}
@@ -350,14 +341,14 @@ const SanghaHubScreen = () => {
               <Ionicons
                 name="search"
                 size={24}
-                color="#9CA3AF"
+                color={SanghaColors.inkTertiary}
               />
               <Text
                 numberOfLines={1}
                 style={{
-                  color: '#9CA3AF',
+                  color: SanghaColors.inkTertiary,
                   flex: 1,
-                  fontSize: 17,
+                  fontSize: 15,
                   fontWeight: '500',
                   marginLeft: 12,
                 }}>
@@ -372,15 +363,15 @@ const SanghaHubScreen = () => {
               style={{
                 width: 40,
                 height: 40,
-                borderRadius: 20,
-                backgroundColor: '#FFF7ED',
+                borderRadius: SanghaRadius.control,
+                backgroundColor: SanghaColors.saffronSoft,
                 justifyContent: 'center',
                 alignItems: 'center',
               }}>
               <Ionicons
                 name="options-outline"
                 size={20}
-                color="#F97316"
+                color={SanghaColors.saffron}
               />
             </TouchableOpacity>
           </View>
@@ -433,10 +424,8 @@ const SanghaHubScreen = () => {
             }}>
             <Text
               style={{
-                fontSize: 22,
-                color: '#1F2937',
-                fontWeight: '700',
-                fontFamily: 'serif',
+                color: SanghaColors.ink,
+                ...SanghaType.sectionTitle,
               }}>
               Pending Invitations
             </Text>
@@ -753,10 +742,8 @@ const SanghaHubScreen = () => {
           {/* Title */}
           <Text
             style={{
-              fontSize: 22,
-              color: '#1F2937',
-              fontWeight: '700',
-              fontFamily: 'serif',
+              color: SanghaColors.ink,
+              ...SanghaType.sectionTitle,
             }}>
             Explore by Purpose
           </Text>
@@ -925,10 +912,8 @@ const SanghaHubScreen = () => {
             }}>
             <Text
               style={{
-                fontSize: 22,
-                color: '#1F2937',
-                fontWeight: '700',
-                fontFamily: 'serif',
+                color: SanghaColors.ink,
+                ...SanghaType.sectionTitle,
               }}>
               My Groups
             </Text>
@@ -1178,10 +1163,8 @@ const SanghaHubScreen = () => {
               }}>
               <Text
                 style={{
-                  color: '#1F2937',
-                  fontFamily: 'serif',
-                  fontSize: 24,
-                  fontWeight: '800',
+                  color: SanghaColors.ink,
+                  ...SanghaType.pageTitle,
                 }}>
                 Filter Hub
               </Text>

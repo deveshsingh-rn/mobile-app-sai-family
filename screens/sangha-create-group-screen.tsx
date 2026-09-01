@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -29,6 +28,8 @@ import {
   selectUpdatingSanghaGroup,
 } from "@/store/sangha/selectors";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { SanghaScreenHeader } from "@/components/sangha/SanghaScreenHeader";
+import { SanghaColors, SanghaRadius, SanghaShadow } from "@/constants/sangha-theme";
 
 const purposes = [
   { label: "Seva", value: "seva" },
@@ -180,45 +181,26 @@ export default function SanghaCreateGroupScreen({
   };
 
   return (
-    <SafeAreaView style={{ backgroundColor: "#FAFAF9", flex: 1 }}>
-      <StatusBar backgroundColor="#FAFAF9" barStyle="dark-content" />
+    <SafeAreaView style={{ backgroundColor: SanghaColors.background, flex: 1 }}>
+      <StatusBar backgroundColor={SanghaColors.background} barStyle="dark-content" />
+      <SanghaScreenHeader
+        onBack={() => router.back()}
+        subtitle={mode === "edit" ? "Update community details" : "Build a focused community space"}
+        title={mode === "edit" ? "Edit Sangha" : "Create Sangha"}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 40 }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.back()}
-            style={{
-              alignItems: "center",
-              backgroundColor: "#FFFFFF",
-              borderRadius: 22,
-              height: 44,
-              justifyContent: "center",
-              width: 44,
-            }}
-          >
-            <Ionicons name="arrow-back" size={22} color="#2B1308" />
-          </TouchableOpacity>
-          <View style={{ flex: 1, marginLeft: 14 }}>
-            <Text style={{ color: "#111827", fontSize: 27, fontWeight: "900" }}>
-              {mode === "edit" ? "Edit Sangha" : "Create Sangha"}
-            </Text>
-            <Text style={{ color: "#6B7280", fontSize: 14, fontWeight: "700", marginTop: 3 }}>
-              {mode === "edit" ? "Update community details" : "Build a focused community space"}
-            </Text>
-          </View>
-        </View>
-
         <View
           style={{
-            backgroundColor: "#FFFFFF",
-            borderColor: "#EEE7DD",
-            borderRadius: 26,
+            backgroundColor: SanghaColors.surface,
+            borderColor: SanghaColors.border,
+            borderRadius: SanghaRadius.card,
             borderWidth: 1,
-            marginTop: 22,
+            marginTop: 8,
             padding: 18,
+            ...SanghaShadow,
           }}
         >
           <Field
@@ -301,8 +283,8 @@ export default function SanghaCreateGroupScreen({
             onPress={submit}
             style={{
               alignItems: "center",
-              backgroundColor: canSubmit ? "#F97316" : "#D1D5DB",
-              borderRadius: 18,
+              backgroundColor: canSubmit ? SanghaColors.saffron : SanghaColors.border,
+              borderRadius: SanghaRadius.control,
               height: 52,
               justifyContent: "center",
               marginTop: 18,
@@ -403,15 +385,15 @@ function ChoiceChip({
       activeOpacity={0.85}
       onPress={onPress}
       style={{
-        backgroundColor: active ? "#F97316" : "#FFF7ED",
-        borderColor: active ? "#F97316" : "#FED7AA",
-        borderRadius: 16,
+        backgroundColor: active ? SanghaColors.saffron : SanghaColors.saffronSoft,
+        borderColor: active ? SanghaColors.saffron : SanghaColors.saffronBorder,
+        borderRadius: SanghaRadius.control,
         borderWidth: 1,
         paddingHorizontal: 13,
         paddingVertical: 9,
       }}
     >
-      <Text style={{ color: active ? "#FFFFFF" : "#9A3412", fontSize: 13, fontWeight: "900" }}>
+      <Text style={{ color: active ? SanghaColors.surface : SanghaColors.saffronPressed, fontSize: 13, fontWeight: "800" }}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -419,18 +401,18 @@ function ChoiceChip({
 }
 
 const labelStyle = {
-  color: "#374151",
+  color: SanghaColors.inkSecondary,
   fontSize: 13,
   fontWeight: "900" as const,
   marginBottom: 8,
 };
 
 const inputStyle = {
-  backgroundColor: "#F8F6F2",
-  borderColor: "#EEE7DD",
-  borderRadius: 16,
+  backgroundColor: SanghaColors.surfaceMuted,
+  borderColor: SanghaColors.border,
+  borderRadius: SanghaRadius.control,
   borderWidth: 1,
-  color: "#111827",
+  color: SanghaColors.ink,
   fontSize: 15,
   fontWeight: "700" as const,
   height: 48,

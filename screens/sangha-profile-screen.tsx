@@ -44,6 +44,9 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@/store/hooks';
+import { SanghaHeaderAction, SanghaScreenHeader } from '@/components/sangha/SanghaScreenHeader';
+import { SanghaStateView } from '@/components/sangha/SanghaStateView';
+import { SanghaColors, SanghaRadius, SanghaShadow, SanghaType } from '@/constants/sangha-theme';
 
 const profileTabs = [
   'About',
@@ -393,15 +396,15 @@ const SanghaProfileScreen = () => {
       <SafeAreaView
         style={{
           alignItems: 'center',
-          backgroundColor: '#F8F7F5',
+          backgroundColor: SanghaColors.background,
           flex: 1,
           justifyContent: 'center',
           paddingHorizontal: 24,
         }}>
-        <ActivityIndicator color="#D96A3D" />
+        <ActivityIndicator color={SanghaColors.saffron} />
         <Text
           style={{
-            color: '#8B7355',
+            color: SanghaColors.inkSecondary,
             fontSize: 15,
             fontWeight: '800',
             marginTop: 14,
@@ -416,77 +419,18 @@ const SanghaProfileScreen = () => {
     return (
       <SafeAreaView
         style={{
-          backgroundColor: '#F8F7F5',
+          backgroundColor: SanghaColors.background,
           flex: 1,
           padding: 24,
         }}>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => router.back()}
-          style={{
-            alignItems: 'center',
-            backgroundColor: '#FFFFFF',
-            borderRadius: 22,
-            height: 44,
-            justifyContent: 'center',
-            width: 44,
-          }}>
-          <Ionicons
-            name="arrow-back"
-            size={22}
-            color="#111827"
-          />
-        </TouchableOpacity>
-        <View
-          style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: 28,
-            marginTop: 28,
-            padding: 22,
-          }}>
-          <Text
-            style={{
-              color: '#111827',
-              fontSize: 20,
-              fontWeight: '900',
-            }}>
-            Profile unavailable
-          </Text>
-          <Text
-            style={{
-              color: '#8B7355',
-              fontSize: 15,
-              fontWeight: '600',
-              lineHeight: 24,
-              marginTop: 8,
-            }}>
-            {error}
-          </Text>
-          {id ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() =>
-                dispatch(fetchSanghaProfileRequest(id))
-              }
-              style={{
-                alignItems: 'center',
-                backgroundColor: '#D96A3D',
-                borderRadius: 18,
-                height: 48,
-                justifyContent: 'center',
-                marginTop: 18,
-              }}>
-              <Text
-                style={{
-                  color: '#FFFFFF',
-                  fontSize: 15,
-                  fontWeight: '900',
-                }}>
-                Retry
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
+        <SanghaScreenHeader onBack={() => router.back()} title="Devotee Profile" />
+        <SanghaStateView
+          actionLabel={id ? "Retry" : undefined}
+          body={error}
+          icon="person-outline"
+          onAction={id ? () => dispatch(fetchSanghaProfileRequest(id)) : undefined}
+          title="Profile unavailable"
+        />
       </SafeAreaView>
     );
   }
@@ -495,10 +439,10 @@ const SanghaProfileScreen = () => {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: '#F8F7F5',
+        backgroundColor: SanghaColors.background,
       }}>
       <StatusBar
-        backgroundColor="#F8F7F5"
+        backgroundColor={SanghaColors.background}
         barStyle="dark-content"
       />
 
@@ -507,87 +451,16 @@ const SanghaProfileScreen = () => {
         contentContainerStyle={{
           paddingBottom: 40,
         }}>
-        {/* Header */}
-        <View
-          style={{
-            paddingHorizontal: 24,
-            paddingTop: 22,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}>
-          {/* Back */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.back()}
-            style={{
-              width: 54,
-              height: 54,
-              borderRadius: 27,
-              backgroundColor: '#FFFFFF',
-              justifyContent: 'center',
-              alignItems: 'center',
-              shadowColor: '#000',
-              shadowOffset: {
-                width: 0,
-                height: 4,
-              },
-              shadowOpacity: 0.03,
-              shadowRadius: 8,
-              elevation: 2,
-            }}>
-            <Ionicons
-              name="arrow-back"
-              size={24}
-              color="#111827"
-            />
-          </TouchableOpacity>
-
-          {/* Title */}
-          <Text
-            style={{
-              fontSize: 24,
-              color: '#111111',
-              fontWeight: '600',
-              fontStyle: 'italic',
-              letterSpacing: -0.4,
-              fontFamily: 'serif',
-            }}>
-            Devotee Profile
-          </Text>
-
-          {/* Menu */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={handleBlock}
-            style={{
-              width: 54,
-              height: 54,
-              borderRadius: 27,
-              backgroundColor: '#FFFFFF',
-              justifyContent: 'center',
-              alignItems: 'center',
-              shadowColor: '#000',
-              shadowOffset: {
-                width: 0,
-                height: 4,
-              },
-              shadowOpacity: 0.03,
-              shadowRadius: 8,
-              elevation: 2,
-            }}>
-            <Ionicons
-              name="ban-outline"
-              size={22}
-              color="#111827"
-            />
-          </TouchableOpacity>
-        </View>
+        <SanghaScreenHeader
+          onBack={() => router.back()}
+          right={<SanghaHeaderAction accessibilityLabel="Block devotee" icon="ban-outline" onPress={handleBlock} />}
+          title="Devotee Profile"
+        />
 
         {/* Profile Section */}
         <View
           style={{
-            marginTop: 34,
+            marginTop: 16,
             alignItems: 'center',
           }}>
           {/* Avatar */}
@@ -597,11 +470,11 @@ const SanghaProfileScreen = () => {
                 uri: getAvatarUri(profile),
               }}
               style={{
-                width: 136,
-                height: 136,
-                borderRadius: 68,
-                borderWidth: 4,
-                borderColor: '#FFFFFF',
+                width: 108,
+                height: 108,
+                borderRadius: 54,
+                borderWidth: 3,
+                borderColor: SanghaColors.surface,
               }}
             />
 
@@ -640,12 +513,9 @@ const SanghaProfileScreen = () => {
           {/* Name */}
           <Text
             style={{
-              marginTop: 34,
-              fontSize: 34,
-              color: '#111111',
-              fontWeight: '700',
-              fontFamily: 'serif',
-              letterSpacing: -0.8,
+              marginTop: 22,
+              color: SanghaColors.ink,
+              ...SanghaType.pageTitle,
             }}>
             {profile?.name || 'Sai Family Devotee'}
           </Text>
@@ -654,10 +524,10 @@ const SanghaProfileScreen = () => {
           <Text
             style={{
               marginTop: 8,
-              fontSize: 16,
-              letterSpacing: 2,
-              color: '#8B7355',
-              fontWeight: '700',
+              fontSize: 14,
+              letterSpacing: 0,
+              color: SanghaColors.inkSecondary,
+              fontWeight: '600',
             }}>
             {getLocationLabel(profile)}
           </Text>
@@ -668,18 +538,13 @@ const SanghaProfileScreen = () => {
           style={{
             marginTop: 28,
             marginHorizontal: 22,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 28,
-            paddingHorizontal: 24,
-            paddingVertical: 26,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: 4,
-            },
-            shadowOpacity: 0.03,
-            shadowRadius: 10,
-            elevation: 2,
+            backgroundColor: SanghaColors.surface,
+            borderColor: SanghaColors.border,
+            borderRadius: SanghaRadius.card,
+            borderWidth: 1,
+            paddingHorizontal: 18,
+            paddingVertical: 18,
+            ...SanghaShadow,
           }}>
           {/* Quote */}
           <View
@@ -689,10 +554,10 @@ const SanghaProfileScreen = () => {
             }}>
             <Text
               style={{
-                fontSize: 44,
-                color: '#F3D5C6',
+                fontSize: 34,
+                color: SanghaColors.saffronBorder,
                 fontWeight: '700',
-                lineHeight: 48,
+                lineHeight: 38,
                 marginRight: 8,
               }}>
               “
@@ -701,11 +566,10 @@ const SanghaProfileScreen = () => {
             <Text
               style={{
                 flex: 1,
-                fontSize: 18,
-                lineHeight: 42,
-                color: '#5B5148',
+                fontSize: 15,
+                lineHeight: 24,
+                color: SanghaColors.inkSecondary,
                 fontStyle: 'italic',
-                fontFamily: 'serif',
               }}>
               {getBio(profile)}
             </Text>
@@ -1049,10 +913,8 @@ const SanghaProfileScreen = () => {
 
                 <Text
                   style={{
-                    fontSize: 24,
-                    color: '#111111',
-                    fontWeight: '700',
-                    fontFamily: 'serif',
+                    color: SanghaColors.ink,
+                    ...SanghaType.sectionTitle,
                   }}>
                   Spiritual Journey
                 </Text>
@@ -1154,10 +1016,8 @@ const SanghaProfileScreen = () => {
               }}>
               <Text
                 style={{
-                  fontSize: 26,
-                  color: '#111111',
-                  fontWeight: '700',
-                  fontFamily: 'serif',
+                  color: SanghaColors.ink,
+                  ...SanghaType.sectionTitle,
                 }}>
                 Practices & Interests
               </Text>
@@ -1236,10 +1096,8 @@ const SanghaProfileScreen = () => {
             }}>
             <Text
               style={{
-                fontSize: 24,
-                color: '#111111',
-                fontWeight: '700',
-                fontFamily: 'serif',
+                color: SanghaColors.ink,
+                ...SanghaType.sectionTitle,
               }}>
               Shared Experiences
             </Text>
@@ -1386,10 +1244,8 @@ const SanghaProfileScreen = () => {
             }}>
             <Text
               style={{
-                fontSize: 24,
-                color: '#111111',
-                fontWeight: '700',
-                fontFamily: 'serif',
+                color: SanghaColors.ink,
+                ...SanghaType.sectionTitle,
               }}>
               Events Joined
             </Text>

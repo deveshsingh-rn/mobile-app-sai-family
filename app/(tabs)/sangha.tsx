@@ -38,6 +38,12 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@/store/hooks';
+import {
+  SanghaColors,
+  SanghaRadius,
+  SanghaShadow,
+  SanghaType,
+} from '@/constants/sangha-theme';
 
 const filters = {
   distance: ['Nearby', 'Same City', 'Online'],
@@ -200,10 +206,10 @@ export default function SanghaScreen() {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: '#FAFAFA',
+        backgroundColor: SanghaColors.background,
       }}>
       <StatusBar
-        backgroundColor="#FAFAFA"
+        backgroundColor={SanghaColors.background}
         barStyle="dark-content"
       />
 
@@ -222,12 +228,10 @@ export default function SanghaScreen() {
           }}>
           <Text
             style={{
-              color: '#111827',
-              fontSize: 24,
-              fontWeight: '800',
-              letterSpacing: -0.4,
+              color: SanghaColors.ink,
+              ...SanghaType.pageTitle,
             }}>
-            Discovery
+            Sangha
           </Text>
 
           <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -237,23 +241,21 @@ export default function SanghaScreen() {
               onPress={() => router.push('/sangha-requests')}
               style={{
                 alignItems: 'center',
-                backgroundColor: '#FFFFFF',
-                borderRadius: 25,
-                elevation: 2,
-                height: 50,
+                backgroundColor: SanghaColors.surface,
+                borderColor: SanghaColors.border,
+                borderRadius: SanghaRadius.control,
+                borderWidth: 1,
+                height: 44,
                 justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.03,
-                shadowRadius: 10,
-                width: 50,
+                width: 44,
+                ...SanghaShadow,
               }}>
-              <Ionicons name="person-add-outline" size={23} color="#111827" />
+              <Ionicons name="person-add-outline" size={21} color={SanghaColors.ink} />
               {receivedConnections.length > 0 ? (
                 <View
                   style={{
                     alignItems: 'center',
-                    backgroundColor: '#D96A3D',
+                    backgroundColor: SanghaColors.saffron,
                     borderColor: '#FFFFFF',
                     borderRadius: 10,
                     borderWidth: 2,
@@ -277,18 +279,16 @@ export default function SanghaScreen() {
               onPress={() => setFilterVisible(true)}
               style={{
                 alignItems: 'center',
-                backgroundColor: '#FFFFFF',
-                borderRadius: 25,
-                elevation: 2,
-                height: 50,
+                backgroundColor: SanghaColors.surface,
+                borderColor: SanghaColors.border,
+                borderRadius: SanghaRadius.control,
+                borderWidth: 1,
+                height: 44,
                 justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.03,
-                shadowRadius: 10,
-                width: 50,
+                width: 44,
+                ...SanghaShadow,
               }}>
-              <Ionicons name="options-outline" size={23} color="#111827" />
+              <Ionicons name="options-outline" size={21} color={SanghaColors.ink} />
             </TouchableOpacity>
           </View>
         </View>
@@ -309,16 +309,16 @@ export default function SanghaScreen() {
             <View
               key={item}
               style={{
-                backgroundColor: '#FFF7ED',
-                borderColor: '#FDE7CF',
-                borderRadius: 14,
+                backgroundColor: SanghaColors.saffronSoft,
+                borderColor: SanghaColors.saffronBorder,
+                borderRadius: SanghaRadius.control,
                 borderWidth: 1,
                 paddingHorizontal: 12,
                 paddingVertical: 7,
               }}>
               <Text
                 style={{
-                  color: '#F97316',
+                  color: SanghaColors.saffronPressed,
                   fontSize: 12,
                   fontWeight: '800',
                 }}>
@@ -330,40 +330,31 @@ export default function SanghaScreen() {
 
         <View
           style={{
-            backgroundColor: '#FFFDFC',
-            borderColor: '#F5EFE7',
-            borderRadius: 30,
+            backgroundColor: SanghaColors.surface,
+            borderColor: SanghaColors.border,
+            borderRadius: SanghaRadius.panel,
             borderWidth: 1,
             elevation: 2,
             marginHorizontal: 16,
             marginTop: 22,
-            padding: 24,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: 6,
-            },
-            shadowOpacity: 0.03,
-            shadowRadius: 10,
+            padding: 20,
+            ...SanghaShadow,
           }}>
           <Text
             style={{
-              color: '#111827',
-              fontSize: 28,
-              fontWeight: '800',
-              letterSpacing: -0.6,
-              lineHeight: 34,
+              color: SanghaColors.ink,
+              ...SanghaType.pageTitle,
             }}>
             Find Your Sangha
           </Text>
 
           <Text
             style={{
-              color: '#6B7280',
-              fontSize: 17,
+              color: SanghaColors.inkSecondary,
+              fontSize: 15,
               fontWeight: '500',
-              lineHeight: 30,
-              marginTop: 12,
+              lineHeight: 23,
+              marginTop: 8,
             }}>
             Connect with devotees who share your tradition and spiritual journey.
           </Text>
@@ -373,12 +364,12 @@ export default function SanghaScreen() {
             onPress={() => router.push('/sangha-hub')}
             style={{
               alignItems: 'center',
-              backgroundColor: '#111111',
-              borderRadius: 22,
+              backgroundColor: SanghaColors.maroon,
+              borderRadius: SanghaRadius.card,
               flexDirection: 'row',
               justifyContent: 'space-between',
-              marginTop: 26,
-              padding: 18,
+              marginTop: 20,
+              padding: 16,
             }}>
             <View
               style={{
@@ -387,8 +378,8 @@ export default function SanghaScreen() {
               <Text
                 style={{
                   color: '#FFFFFF',
-                  fontSize: 20,
-                  fontWeight: '900',
+                  fontSize: 18,
+                  fontWeight: '800',
                 }}>
                 Sangha Hub
               </Text>
@@ -407,8 +398,8 @@ export default function SanghaScreen() {
             <View
               style={{
                 alignItems: 'center',
-                backgroundColor: '#FFF7ED',
-                borderRadius: 22,
+                backgroundColor: SanghaColors.saffronSoft,
+                borderRadius: SanghaRadius.control,
                 height: 44,
                 justifyContent: 'center',
                 marginLeft: 14,
@@ -417,7 +408,7 @@ export default function SanghaScreen() {
               <Ionicons
                 name="arrow-forward"
                 size={22}
-                color="#F97316"
+                color={SanghaColors.saffron}
               />
             </View>
           </TouchableOpacity>

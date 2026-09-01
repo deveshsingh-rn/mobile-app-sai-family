@@ -13,7 +13,6 @@ import {
   View,
 } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
 import {
   router,
   useLocalSearchParams,
@@ -44,6 +43,9 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@/store/hooks';
+import { SanghaScreenHeader } from '@/components/sangha/SanghaScreenHeader';
+import { SanghaStateView } from '@/components/sangha/SanghaStateView';
+import { SanghaColors, SanghaRadius } from '@/constants/sangha-theme';
 
 function avatarForInvitation(item: SanghaInvitation) {
   const invitedBy = item.invitedBy;
@@ -469,63 +471,17 @@ export default function SanghaHubListScreen() {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: '#FAFAF9',
+        backgroundColor: SanghaColors.background,
       }}>
       <StatusBar
-        backgroundColor="#FAFAF9"
+        backgroundColor={SanghaColors.background}
         barStyle="dark-content"
       />
-      <View
-        style={{
-          alignItems: 'center',
-          flexDirection: 'row',
-          paddingHorizontal: 20,
-          paddingTop: 18,
-          paddingBottom: 14,
-        }}>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => router.back()}
-          style={{
-            alignItems: 'center',
-            backgroundColor: '#FFFFFF',
-            borderRadius: 22,
-            height: 44,
-            justifyContent: 'center',
-            width: 44,
-          }}>
-          <Ionicons
-            name="arrow-back"
-            size={22}
-            color="#1F2937"
-          />
-        </TouchableOpacity>
-        <View
-          style={{
-            flex: 1,
-            marginLeft: 14,
-          }}>
-          <Text
-            numberOfLines={1}
-            style={{
-              color: '#1F2937',
-              fontFamily: 'serif',
-              fontSize: 23,
-              fontWeight: '900',
-            }}>
-            {title}
-          </Text>
-          <Text
-            style={{
-              color: '#6B7280',
-              fontSize: 13,
-              fontWeight: '700',
-              marginTop: 2,
-            }}>
-            {itemCount} items
-          </Text>
-        </View>
-      </View>
+      <SanghaScreenHeader
+        onBack={() => router.back()}
+        subtitle={`${itemCount} ${isPending ? 'invitations' : 'groups'}`}
+        title={title}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -541,24 +497,7 @@ export default function SanghaHubListScreen() {
           paddingTop: 8,
         }}>
         {loading && itemCount === 0 ? (
-          <View
-            style={{
-              alignItems: 'center',
-              backgroundColor: '#FFFFFF',
-              borderRadius: 28,
-              padding: 24,
-            }}>
-            <ActivityIndicator color="#F97316" />
-            <Text
-              style={{
-                color: '#6B7280',
-                fontSize: 14,
-                fontWeight: '800',
-                marginTop: 12,
-              }}>
-              Loading Sangha data
-            </Text>
-          </View>
+          <SanghaStateView loading title="Loading Sangha data" />
         ) : null}
 
         {!loading && error ? (
@@ -585,33 +524,11 @@ export default function SanghaHubListScreen() {
         ) : null}
 
         {!loading && itemCount === 0 && !error ? (
-          <View
-            style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: 28,
-              padding: 20,
-            }}>
-            <Text
-              style={{
-                color: '#1F2937',
-                fontSize: 17,
-                fontWeight: '900',
-              }}>
-              Nothing here yet
-            </Text>
-            <Text
-              style={{
-                color: '#6B7280',
-                fontSize: 14,
-                fontWeight: '600',
-                lineHeight: 22,
-                marginTop: 8,
-              }}>
-              {isPending
-                ? 'Pending group invitations will appear here.'
-                : 'Matching Sangha groups will appear here.'}
-            </Text>
-          </View>
+          <SanghaStateView
+            body={isPending ? 'Pending group invitations will appear here.' : 'Matching Sangha groups will appear here.'}
+            icon={isPending ? 'mail-unread-outline' : 'people-outline'}
+            title="Nothing here yet"
+          />
         ) : null}
 
         {isPending
@@ -638,8 +555,8 @@ export default function SanghaHubListScreen() {
             onPress={loadMore}
             style={{
               alignItems: 'center',
-              backgroundColor: '#1F2937',
-              borderRadius: 18,
+              backgroundColor: SanghaColors.maroon,
+              borderRadius: SanghaRadius.control,
               height: 50,
               justifyContent: 'center',
               marginTop: 4,

@@ -24,6 +24,9 @@ import {
 import { SanghaNotification } from "@/store/sangha/types";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { getSanghaNotificationDestination } from "@/utils/sangha-notification-routing";
+import { SanghaScreenHeader } from "@/components/sangha/SanghaScreenHeader";
+import { SanghaStateView } from "@/components/sangha/SanghaStateView";
+import { SanghaColors, SanghaRadius, SanghaShadow, SanghaType } from "@/constants/sangha-theme";
 
 function formatDate(value?: string) {
   if (!value) return "";
@@ -64,19 +67,20 @@ function NotificationCard({
         }
       }}
       style={{
-        backgroundColor: item.isRead ? "#FFFFFF" : "#FFF7ED",
-        borderColor: item.isRead ? "#F1F1F1" : "#FDBA74",
-        borderRadius: 24,
+        backgroundColor: item.isRead ? SanghaColors.surface : SanghaColors.saffronSoft,
+        borderColor: item.isRead ? SanghaColors.border : SanghaColors.saffronBorder,
+        borderRadius: SanghaRadius.card,
         borderWidth: 1,
-        marginBottom: 14,
+        marginBottom: 12,
         padding: 16,
+        ...SanghaShadow,
       }}
     >
       <View style={{ alignItems: "center", flexDirection: "row" }}>
         <View
           style={{
             alignItems: "center",
-            backgroundColor: item.isRead ? "#F3F4F6" : "#F97316",
+            backgroundColor: item.isRead ? SanghaColors.surfaceMuted : SanghaColors.saffron,
             borderRadius: 20,
             height: 40,
             justifyContent: "center",
@@ -92,16 +96,15 @@ function NotificationCard({
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text
             style={{
-              color: "#1F2937",
-              fontSize: 16,
-              fontWeight: "900",
+              color: SanghaColors.ink,
+              ...SanghaType.cardTitle,
             }}
           >
             {item.title || "Sangha update"}
           </Text>
           <Text
             style={{
-              color: "#6B7280",
+              color: SanghaColors.inkSecondary,
               fontSize: 14,
               fontWeight: "600",
               lineHeight: 21,
@@ -112,7 +115,7 @@ function NotificationCard({
           </Text>
           <Text
             style={{
-              color: "#F97316",
+              color: SanghaColors.saffron,
               fontSize: 12,
               fontWeight: "800",
               marginTop: 8,
@@ -130,7 +133,7 @@ function NotificationCard({
             >
               <Text
                 style={{
-                  color: "#9A3412",
+                  color: SanghaColors.saffronPressed,
                   fontSize: 13,
                   fontWeight: "900",
                 }}
@@ -138,7 +141,7 @@ function NotificationCard({
                 Open and respond
               </Text>
               <Ionicons
-                color="#9A3412"
+                color={SanghaColors.saffronPressed}
                 name="chevron-forward"
                 size={15}
                 style={{ marginLeft: 3 }}
@@ -193,51 +196,20 @@ export default function SanghaNotificationsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ backgroundColor: "#FAFAF9", flex: 1 }}>
-      <StatusBar backgroundColor="#FAFAF9" barStyle="dark-content" />
-      <View
-        style={{
-          alignItems: "center",
-          flexDirection: "row",
-          paddingHorizontal: 20,
-          paddingTop: 18,
-        }}
-      >
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => router.back()}
-          style={{
-            alignItems: "center",
-            backgroundColor: "#FFFFFF",
-            borderRadius: 22,
-            height: 44,
-            justifyContent: "center",
-            width: 44,
-          }}
-        >
-          <Ionicons name="arrow-back" size={22} color="#1F2937" />
-        </TouchableOpacity>
-        <View style={{ flex: 1, marginLeft: 14 }}>
-          <Text
-            style={{
-              color: "#1F2937",
-              fontFamily: "serif",
-              fontSize: 25,
-              fontWeight: "900",
-            }}
-          >
-            Notifications
-          </Text>
-          <Text style={{ color: "#6B7280", fontSize: 13, fontWeight: "700" }}>
-            Sangha invites, posts, events, and community updates
-          </Text>
-        </View>
-        <TouchableOpacity activeOpacity={0.85} onPress={markAllRead}>
-          <Text style={{ color: "#F97316", fontSize: 13, fontWeight: "900" }}>
-            Mark read
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={{ backgroundColor: SanghaColors.background, flex: 1 }}>
+      <StatusBar backgroundColor={SanghaColors.background} barStyle="dark-content" />
+      <SanghaScreenHeader
+        onBack={() => router.back()}
+        right={
+          <TouchableOpacity activeOpacity={0.75} onPress={markAllRead} style={{ minHeight: 44, justifyContent: "center" }}>
+            <Text style={{ color: SanghaColors.saffron, fontSize: 13, fontWeight: "800" }}>
+              Mark all read
+            </Text>
+          </TouchableOpacity>
+        }
+        subtitle="Invites, events and community updates"
+        title="Notifications"
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -247,19 +219,7 @@ export default function SanghaNotificationsScreen() {
         }}
       >
         {loading && notifications.length === 0 ? (
-          <View
-            style={{
-              alignItems: "center",
-              backgroundColor: "#FFFFFF",
-              borderRadius: 24,
-              padding: 24,
-            }}
-          >
-            <ActivityIndicator color="#F97316" />
-            <Text style={{ color: "#6B7280", fontSize: 14, fontWeight: "800", marginTop: 10 }}>
-              Loading notifications
-            </Text>
-          </View>
+          <SanghaStateView loading title="Loading notifications" />
         ) : null}
 
         {!loading && error ? (
@@ -290,14 +250,11 @@ export default function SanghaNotificationsScreen() {
         ) : null}
 
         {!loading && notifications.length === 0 && !error ? (
-          <View style={{ backgroundColor: "#FFFFFF", borderRadius: 24, padding: 20 }}>
-            <Text style={{ color: "#1F2937", fontSize: 17, fontWeight: "900" }}>
-              No notifications yet
-            </Text>
-            <Text style={{ color: "#6B7280", fontSize: 14, fontWeight: "600", lineHeight: 22, marginTop: 8 }}>
-              New Sangha activity will appear here.
-            </Text>
-          </View>
+          <SanghaStateView
+            body="New Sangha activity will appear here."
+            icon="notifications-outline"
+            title="No notifications yet"
+          />
         ) : null}
 
         {notifications.map((item) => (

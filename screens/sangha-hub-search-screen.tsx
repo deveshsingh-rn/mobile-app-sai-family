@@ -34,6 +34,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from '@/store/hooks';
+import { SanghaColors, SanghaRadius, SanghaShadow, SanghaType } from '@/constants/sangha-theme';
 
 function groupMeta(group: SanghaGroupSummary) {
   return [
@@ -103,10 +104,10 @@ export default function SanghaHubSearchScreen() {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: '#FAFAF9',
+        backgroundColor: SanghaColors.background,
       }}>
       <StatusBar
-        backgroundColor="#FAFAF9"
+        backgroundColor={SanghaColors.background}
         barStyle="dark-content"
       />
 
@@ -122,8 +123,10 @@ export default function SanghaHubSearchScreen() {
           onPress={() => router.back()}
           style={{
             alignItems: 'center',
-            backgroundColor: '#FFFFFF',
-            borderRadius: 22,
+            backgroundColor: SanghaColors.surface,
+            borderColor: SanghaColors.border,
+            borderRadius: SanghaRadius.control,
+            borderWidth: 1,
             height: 44,
             justifyContent: 'center',
             width: 44,
@@ -131,35 +134,36 @@ export default function SanghaHubSearchScreen() {
           <Ionicons
             name="arrow-back"
             size={22}
-            color="#1F2937"
+            color={SanghaColors.ink}
           />
         </TouchableOpacity>
 
         <View
           style={{
             alignItems: 'center',
-            backgroundColor: '#FFFFFF',
-            borderColor: '#F0F0F0',
-            borderRadius: 24,
+            backgroundColor: SanghaColors.surface,
+            borderColor: SanghaColors.border,
+            borderRadius: SanghaRadius.control,
             borderWidth: 1,
             flex: 1,
             flexDirection: 'row',
             height: 48,
             marginLeft: 12,
             paddingHorizontal: 15,
+            ...SanghaShadow,
           }}>
           <Ionicons
             name="search"
             size={19}
-            color="#9CA3AF"
+            color={SanghaColors.inkTertiary}
           />
           <TextInput
             autoFocus
             onChangeText={setQuery}
             placeholder="Search sangha groups..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={SanghaColors.inkTertiary}
             style={{
-              color: '#111827',
+              color: SanghaColors.ink,
               flex: 1,
               fontSize: 15,
               fontWeight: '600',
@@ -185,10 +189,8 @@ export default function SanghaHubSearchScreen() {
           }}>
           <Text
             style={{
-              color: '#1F2937',
-              fontFamily: 'serif',
-              fontSize: 22,
-              fontWeight: '800',
+              color: SanghaColors.ink,
+              ...SanghaType.sectionTitle,
             }}>
             Recent Searches
           </Text>
@@ -200,7 +202,7 @@ export default function SanghaHubSearchScreen() {
               }>
               <Text
                 style={{
-                  color: '#F97316',
+                  color: SanghaColors.saffron,
                   fontSize: 13,
                   fontWeight: '900',
                 }}>
@@ -218,13 +220,13 @@ export default function SanghaHubSearchScreen() {
             marginTop: 14,
           }}>
           {recentLoading ? (
-            <ActivityIndicator color="#F97316" />
+            <ActivityIndicator color={SanghaColors.saffron} />
           ) : null}
 
           {!recentLoading && recentSearches.length === 0 ? (
             <Text
               style={{
-                color: '#9CA3AF',
+                color: SanghaColors.inkTertiary,
                 fontSize: 14,
                 fontWeight: '700',
               }}>
@@ -239,8 +241,10 @@ export default function SanghaHubSearchScreen() {
               onPress={() => setQuery(item.query)}
               style={{
                 alignItems: 'center',
-                backgroundColor: '#FFFFFF',
-                borderRadius: 16,
+                backgroundColor: SanghaColors.surface,
+                borderColor: SanghaColors.border,
+                borderRadius: SanghaRadius.control,
+                borderWidth: 1,
                 flexDirection: 'row',
                 paddingHorizontal: 13,
                 paddingVertical: 9,
@@ -248,11 +252,11 @@ export default function SanghaHubSearchScreen() {
               <Ionicons
                 name="time"
                 size={14}
-                color="#F97316"
+                color={SanghaColors.saffron}
               />
               <Text
                 style={{
-                  color: '#4B5563',
+                  color: SanghaColors.inkSecondary,
                   fontSize: 13,
                   fontWeight: '700',
                   marginLeft: 7,
@@ -265,10 +269,8 @@ export default function SanghaHubSearchScreen() {
 
         <Text
           style={{
-            color: '#1F2937',
-            fontFamily: 'serif',
-            fontSize: 22,
-            fontWeight: '800',
+            color: SanghaColors.ink,
+            ...SanghaType.sectionTitle,
             marginTop: 30,
           }}>
           {query.trim() ? 'Search Results' : 'Suggested Groups'}

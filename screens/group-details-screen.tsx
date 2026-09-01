@@ -80,6 +80,8 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { SanghaStateView } from "@/components/sangha/SanghaStateView";
+import { SanghaColors, SanghaRadius, SanghaShadow } from "@/constants/sangha-theme";
 
 const tabs = ["Feed", "Members", "Events", "About"] as const;
 type GroupTab = (typeof tabs)[number];
@@ -300,25 +302,24 @@ export default function GroupDetailsScreen() {
 
   if (groupLoading && !group) {
     return (
-      <SafeAreaView style={{ alignItems: "center", backgroundColor: "#F8F6F2", flex: 1, justifyContent: "center" }}>
-        <ActivityIndicator color="#F97316" />
-        <Text style={{ color: "#6B7280", fontSize: 15, fontWeight: "800", marginTop: 12 }}>
-          Loading group details
-        </Text>
+      <SafeAreaView style={{ alignItems: "center", backgroundColor: SanghaColors.background, flex: 1, justifyContent: "center", padding: 22 }}>
+        <SanghaStateView loading title="Loading group details" />
       </SafeAreaView>
     );
   }
 
   if (!groupLoading && !group && error) {
     return (
-      <SafeAreaView style={{ backgroundColor: "#F8F6F2", flex: 1, padding: 22 }}>
+      <SafeAreaView style={{ backgroundColor: SanghaColors.background, flex: 1, padding: 22 }}>
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={() => router.back()}
           style={{
             alignItems: "center",
-            backgroundColor: "#FFFFFF",
-            borderRadius: 22,
+            backgroundColor: SanghaColors.surface,
+            borderColor: SanghaColors.border,
+            borderRadius: SanghaRadius.control,
+            borderWidth: 1,
             height: 44,
             justifyContent: "center",
             width: 44,
@@ -326,7 +327,7 @@ export default function GroupDetailsScreen() {
         >
           <Ionicons name="arrow-back" size={22} color="#2B1308" />
         </TouchableOpacity>
-        <View style={{ backgroundColor: "#FFFFFF", borderRadius: 24, marginTop: 22, padding: 18 }}>
+        <View style={{ backgroundColor: SanghaColors.surface, borderColor: SanghaColors.border, borderRadius: SanghaRadius.card, borderWidth: 1, marginTop: 22, padding: 18, ...SanghaShadow }}>
           <Text style={{ color: "#111827", fontSize: 19, fontWeight: "900" }}>
             Group unavailable
           </Text>
@@ -339,12 +340,12 @@ export default function GroupDetailsScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#F8F6F2" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: SanghaColors.background }}>
       <StatusBar barStyle="light-content" backgroundColor="#2B1308" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 36 }}>
         {/* HERO */}
-        <View style={{ height: 345, backgroundColor: "#2B1308" }}>
+        <View style={{ height: 320, backgroundColor: SanghaColors.maroon }}>
           <Image
             source={{
               uri: groupBanner(group),
@@ -516,10 +517,10 @@ export default function GroupDetailsScreen() {
                   width: 88,
                   height: 48,
                   borderRadius: 24,
-                  backgroundColor: "#F97316",
+              backgroundColor: SanghaColors.saffron,
                   justifyContent: "center",
                   alignItems: "center",
-                  shadowColor: "#F97316",
+                  shadowColor: SanghaColors.saffron,
                   shadowOffset: { width: 0, height: 8 },
                   shadowOpacity: 0.3,
                   shadowRadius: 12,
@@ -546,9 +547,9 @@ export default function GroupDetailsScreen() {
         <View
           style={{
             height: 46,
-            backgroundColor: "#FFFFFF",
+            backgroundColor: SanghaColors.surface,
             borderBottomWidth: 1,
-            borderBottomColor: "#E5E7EB",
+            borderBottomColor: SanghaColors.border,
             flexDirection: "row",
             alignItems: "center",
           }}
@@ -567,13 +568,13 @@ export default function GroupDetailsScreen() {
                 justifyContent: "center",
                 alignItems: "center",
                 borderBottomWidth: isActive ? 3 : 0,
-                borderBottomColor: "#F97316",
+                borderBottomColor: SanghaColors.saffron,
               }}
             >
               <Text
                 style={{
                   fontSize: 15,
-                  color: isActive ? "#F97316" : "#6B7280",
+                  color: isActive ? SanghaColors.saffron : SanghaColors.inkSecondary,
                   fontWeight: isActive ? "800" : "600",
                 }}
               >
@@ -595,13 +596,15 @@ function EmptyCard({ text }: { text: string }) {
   return (
     <View
       style={{
-        backgroundColor: "#FFFFFF",
-        borderRadius: 22,
+        backgroundColor: SanghaColors.surface,
+        borderColor: SanghaColors.border,
+        borderRadius: SanghaRadius.card,
+        borderWidth: 1,
         marginTop: 16,
         padding: 18,
       }}
     >
-      <Text style={{ color: "#6B7280", fontSize: 15, fontWeight: "700", lineHeight: 23 }}>
+      <Text style={{ color: SanghaColors.inkSecondary, fontSize: 15, fontWeight: "700", lineHeight: 23 }}>
         {text}
       </Text>
     </View>
@@ -1542,7 +1545,7 @@ function EventsSection({
           overflow: "hidden",
         }}
       >
-        <Text style={{ color: "#FFFFFF", fontSize: 22, fontFamily: "serif", fontWeight: "900" }}>
+        <Text style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "800" }}>
           Group Calendar
         </Text>
         <Text style={{ color: "rgba(255,255,255,0.76)", fontSize: 14, lineHeight: 21, marginTop: 8 }}>

@@ -37,6 +37,12 @@ import {
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { SanghaConversationMessage } from "@/store/sangha/types";
 import { apiCreateSanghaChatSession } from "@/services/sangha";
+import {
+  SanghaColors,
+  SanghaRadius,
+  SanghaShadow,
+  SanghaType,
+} from "@/constants/sangha-theme";
 
 function avatarForName(name?: string | null) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -469,8 +475,8 @@ export default function SanghaChatScreen() {
   );
 
   return (
-    <SafeAreaView style={{ backgroundColor: "#F8F6F2", flex: 1 }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F6F2" />
+    <SafeAreaView style={{ backgroundColor: SanghaColors.background, flex: 1 }}>
+      <StatusBar barStyle="dark-content" backgroundColor={SanghaColors.background} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
@@ -478,8 +484,8 @@ export default function SanghaChatScreen() {
         <View
           style={{
             alignItems: "center",
-            backgroundColor: "#FFFFFF",
-            borderBottomColor: "#EEE7DD",
+            backgroundColor: SanghaColors.surface,
+            borderBottomColor: SanghaColors.border,
             borderBottomWidth: 1,
             flexDirection: "row",
             paddingHorizontal: 18,
@@ -491,14 +497,16 @@ export default function SanghaChatScreen() {
             onPress={() => router.back()}
             style={{
               alignItems: "center",
-              backgroundColor: "#F3F4F6",
-              borderRadius: 21,
+              backgroundColor: SanghaColors.surfaceMuted,
+              borderColor: SanghaColors.border,
+              borderRadius: SanghaRadius.control,
+              borderWidth: 1,
               height: 42,
               justifyContent: "center",
               width: 42,
             }}
           >
-            <Ionicons name="arrow-back" size={21} color="#2B1308" />
+            <Ionicons name="arrow-back" size={21} color={SanghaColors.ink} />
           </TouchableOpacity>
 
           <Image
@@ -513,14 +521,14 @@ export default function SanghaChatScreen() {
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text
               numberOfLines={1}
-              style={{ color: "#111827", fontSize: 17, fontWeight: "900" }}
+              style={{ color: SanghaColors.ink, ...SanghaType.cardTitle }}
             >
               {displayName}
             </Text>
             <Text
               numberOfLines={1}
               style={{
-                color: "#6B7280",
+                color: remoteTyping ? SanghaColors.success : SanghaColors.inkSecondary,
                 fontSize: 12,
                 fontWeight: "700",
                 marginTop: 2,
@@ -537,15 +545,12 @@ export default function SanghaChatScreen() {
                       : "Community chat"}
             </Text>
           </View>
-          <View
-            style={{
-              backgroundColor:
-                socketStatus === "connected" ? "#DCFCE7" : "#F3F4F6",
-              borderRadius: 999,
-              height: 10,
-              width: 10,
-            }}
-          />
+          <View style={{ alignItems: "center", backgroundColor: socketStatus === "connected" ? SanghaColors.successSoft : SanghaColors.surfaceMuted, borderRadius: SanghaRadius.round, flexDirection: "row", paddingHorizontal: 9, paddingVertical: 6 }}>
+            <View style={{ backgroundColor: socketStatus === "connected" ? SanghaColors.success : SanghaColors.inkTertiary, borderRadius: 4, height: 7, marginRight: 5, width: 7 }} />
+            <Text style={{ color: socketStatus === "connected" ? SanghaColors.success : SanghaColors.inkSecondary, fontSize: 11, fontWeight: "800" }}>
+              {socketStatus === "connected" ? "Live" : "Offline"}
+            </Text>
+          </View>
         </View>
 
         <FlatList
@@ -559,9 +564,9 @@ export default function SanghaChatScreen() {
             <View
               style={{
                 alignSelf: "flex-start",
-                backgroundColor: "#FFFFFF",
-                borderColor: "#EEE7DD",
-                borderRadius: 20,
+                backgroundColor: SanghaColors.surface,
+                borderColor: SanghaColors.border,
+                borderRadius: SanghaRadius.card,
                 borderWidth: 1,
                 maxWidth: "82%",
                 paddingHorizontal: 15,
@@ -570,7 +575,7 @@ export default function SanghaChatScreen() {
             >
               <Text
                 style={{
-                  color: "#374151",
+                  color: SanghaColors.inkSecondary,
                   fontSize: 14,
                   fontWeight: "700",
                   lineHeight: 21,
@@ -586,7 +591,7 @@ export default function SanghaChatScreen() {
           }
           ListFooterComponent={
             messagesLoading ? (
-              <ActivityIndicator color="#F97316" style={{ marginVertical: 16 }} />
+              <ActivityIndicator color={SanghaColors.saffron} style={{ marginVertical: 16 }} />
             ) : nextCursor ? (
               <Text
                 style={{
@@ -611,19 +616,20 @@ export default function SanghaChatScreen() {
               onLongPress={() => reportMessage(message)}
               style={{
                 alignSelf: message.isMine ? "flex-end" : "flex-start",
-                backgroundColor: message.isMine ? "#F97316" : "#FFFFFF",
-                borderColor: "#EEE7DD",
-                borderRadius: 20,
+                backgroundColor: message.isMine ? SanghaColors.saffron : SanghaColors.surface,
+                borderColor: SanghaColors.border,
+                borderRadius: SanghaRadius.card,
                 borderWidth: message.isMine ? 0 : 1,
                 marginBottom: 10,
                 maxWidth: "82%",
                 paddingHorizontal: 15,
                 paddingVertical: 11,
+                ...(message.isMine ? {} : SanghaShadow),
               }}
             >
               <Text
                 style={{
-                  color: message.isMine ? "#FFFFFF" : "#374151",
+                  color: message.isMine ? SanghaColors.surface : SanghaColors.ink,
                   fontSize: 15,
                   fontWeight: "600",
                   lineHeight: 22,
@@ -634,7 +640,7 @@ export default function SanghaChatScreen() {
               {message.createdAt ? (
                 <Text
                   style={{
-                    color: message.isMine ? "#FFEDD5" : "#A8A29E",
+                    color: message.isMine ? "#FFEDD5" : SanghaColors.inkTertiary,
                     fontSize: 10,
                     fontWeight: "700",
                     marginTop: 5,
@@ -669,8 +675,8 @@ export default function SanghaChatScreen() {
         <View
           style={{
             alignItems: "center",
-            backgroundColor: "#FFFFFF",
-            borderTopColor: "#EEE7DD",
+            backgroundColor: SanghaColors.surface,
+            borderTopColor: SanghaColors.border,
             borderTopWidth: 1,
             flexDirection: "row",
             paddingHorizontal: 16,
@@ -683,11 +689,13 @@ export default function SanghaChatScreen() {
             onChangeText={handleDraftChange}
             onSubmitEditing={sendMessage}
             placeholder="Write a message"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={SanghaColors.inkTertiary}
             style={{
-              backgroundColor: "#F8F6F2",
-              borderRadius: 22,
-              color: "#111827",
+              backgroundColor: SanghaColors.surfaceMuted,
+              borderColor: SanghaColors.border,
+              borderRadius: SanghaRadius.control,
+              borderWidth: 1,
+              color: SanghaColors.ink,
               flex: 1,
               fontSize: 15,
               fontWeight: "700",
@@ -702,8 +710,8 @@ export default function SanghaChatScreen() {
             onPress={sendMessage}
             style={{
               alignItems: "center",
-              backgroundColor: conversationId && draft.trim() ? "#F97316" : "#D1D5DB",
-              borderRadius: 22,
+              backgroundColor: conversationId && draft.trim() ? SanghaColors.saffron : SanghaColors.border,
+              borderRadius: SanghaRadius.control,
               height: 44,
               justifyContent: "center",
               marginLeft: 10,
