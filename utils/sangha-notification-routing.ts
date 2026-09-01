@@ -7,7 +7,7 @@ export type SanghaNotificationDestination =
     }
   | {
       pathname: "/sangha-profile";
-      params: { id: string };
+      params: { connectionId?: string; id: string };
     }
   | {
       pathname: "/sangha-hub-list";
@@ -51,6 +51,10 @@ export function getSanghaNotificationDestination(
     notification.invitationId,
     data.invitationId
   );
+  const connectionId = stringValue(
+    notification.connectionId,
+    data.connectionId
+  );
   const actorUserId = stringValue(
     notification.actorUserId,
     notification.senderUserId,
@@ -86,7 +90,7 @@ export function getSanghaNotificationDestination(
   ) {
     return {
       pathname: "/sangha-profile",
-      params: { id: actorUserId },
+      params: { connectionId, id: actorUserId },
     };
   }
 

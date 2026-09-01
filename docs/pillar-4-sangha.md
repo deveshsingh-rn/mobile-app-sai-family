@@ -463,6 +463,24 @@ Success response: `201 Created`
 | `message_delivered` | Show single delivered indicator. |
 | `message_read` | Show read indicator only for outgoing messages. |
 
+The devotee detail response must include the pending/active connection ID so
+mobile mutations never have to infer it:
+
+```json
+{
+  "connection": {
+    "id": "connection-id",
+    "connectionId": "connection-id",
+    "status": "pending_received",
+    "canConnect": false,
+    "canMessage": false
+  }
+}
+```
+
+For one compatibility release, mobile also accepts `connectionId` from the
+notification payload and can recover it from the notification list.
+
 #### Communication Notifications
 
 Backend currently creates Sangha notifications for connection requests, accepted connections, group invitations, and new messages. Frontend should consume them from:

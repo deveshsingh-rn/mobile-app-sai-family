@@ -28,12 +28,14 @@ import {
   blockSanghaDevoteeRequest,
   declineSanghaConnectionRequest,
   disconnectSanghaDevoteeRequest,
+  fetchSanghaNotificationsRequest,
   fetchSanghaProfileRequest,
   requestSanghaConnectionRequest,
 } from '@/store/sangha/actions';
 import {
   selectIsSanghaActionPending,
   selectSanghaError,
+  selectSanghaNotifications,
   selectSanghaProfile,
   selectSanghaProfileLoading,
 } from '@/store/sangha/selectors';
@@ -171,14 +173,16 @@ function formatTimeLabel(value?: string | null) {
 }
 
 const SanghaProfileScreen = () => {
-  const { id } =
+  const { connectionId: routeConnectionId, id } =
     useLocalSearchParams<{
+      connectionId?: string;
       id?: string;
     }>();
   const dispatch = useAppDispatch();
   const profile = useAppSelector(selectSanghaProfile);
   const loading = useAppSelector(selectSanghaProfileLoading);
   const error = useAppSelector(selectSanghaError);
+  const notifications = useAppSelector(selectSanghaNotifications);
   const [activeTab, setActiveTab] =
     useState<ProfileTab>('About');
   const profileId = getProfileId(profile) || id || '';
@@ -228,12 +232,48 @@ const SanghaProfileScreen = () => {
   const canMessage =
     Boolean(profile?.canMessage) ||
     profile?.connectionStatus === 'connected';
+  const notificationConnectionId = useMemo(() => {
+    if (!profileId) {
+      return undefined;
+    }
+
+    const requestNotification = notifications.find((notification) => {
+      if (notification.type !== 'connection_request') {
+        return false;
+      }
+
+      const actorId =
+        notification.actor?.userId ||
+        notification.actor?.id ||
+        notification.data?.actorUserId;
+
+      return actorId === profileId;
+    });
+
+    return requestNotification?.data?.connectionId;
+  }, [notifications, profileId]);
+  const connectionId =
+    profile?.connectionId ||
+    routeConnectionId ||
+    notificationConnectionId;
 
   useEffect(() => {
     if (id) {
       dispatch(fetchSanghaProfileRequest(id));
     }
   }, [dispatch, id]);
+
+  useEffect(() => {
+    if (hasIncomingConnection && !connectionId) {
+      dispatch(
+        fetchSanghaNotificationsRequest({
+          limit: 50,
+          offset: 0,
+          unreadOnly: false,
+        })
+      );
+    }
+  }, [connectionId, dispatch, hasIncomingConnection]);
 
   const handleConnectionPress = () => {
     if (!profileId || actionPending) {
@@ -269,20 +309,20 @@ const SanghaProfileScreen = () => {
   };
 
   const handleAcceptConnection = () => {
-    if (!profileId || !profile?.connectionId || actionPending) {
+    if (!profileId || !connectionId || actionPending) {
       return;
     }
 
     dispatch(
       acceptSanghaConnectionRequest({
-        connectionId: profile.connectionId,
+        connectionId,
         devoteeId: profileId,
       })
     );
   };
 
   const handleDeclineConnection = () => {
-    if (!profileId || !profile?.connectionId || actionPending) {
+    if (!profileId || !connectionId || actionPending) {
       return;
     }
 
@@ -295,7 +335,7 @@ const SanghaProfileScreen = () => {
           onPress: () =>
             dispatch(
               declineSanghaConnectionRequest({
-                connectionId: profile.connectionId as string,
+                connectionId,
                 devoteeId: profileId,
               })
             ),
@@ -683,7 +723,7 @@ const SanghaProfileScreen = () => {
             }}>
             <TouchableOpacity
               activeOpacity={0.86}
-              disabled={actionPending || !profile?.connectionId}
+              disabled={actionPending || !connectionId}
               onPress={handleDeclineConnection}
               style={{
                 alignItems: 'center',
@@ -709,7 +749,7 @@ const SanghaProfileScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={0.86}
-              disabled={actionPending || !profile?.connectionId}
+              disabled={actionPending || !connectionId}
               onPress={handleAcceptConnection}
               style={{
                 alignItems: 'center',

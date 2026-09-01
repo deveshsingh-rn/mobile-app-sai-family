@@ -250,13 +250,38 @@ function* handleFetchSanghaHome(
 }
 
 function normalizeProfile(response: any) {
-  return (
+  const profile =
     response?.devotee ||
     response?.profile ||
     response?.data?.devotee ||
     response?.data?.profile ||
-    response
-  );
+    response;
+  const connection =
+    response?.connection ||
+    response?.data?.connection ||
+    {};
+
+  return {
+    ...profile,
+    canConnect:
+      connection.canConnect ?? profile?.canConnect,
+    canMessage:
+      connection.canMessage ?? profile?.canMessage,
+    connectionId:
+      connection.id ??
+      connection.connectionId ??
+      profile?.connectionId,
+    connectionStatus:
+      connection.status ??
+      connection.connectionStatus ??
+      profile?.connectionStatus,
+    events:
+      profile?.events ?? profile?.upcomingEvents ?? [],
+    experiences:
+      profile?.experiences ?? profile?.recentExperiences ?? [],
+    joinedAt:
+      profile?.joinedAt ?? profile?.memberSince,
+  };
 }
 
 function normalizeGroupsHome(response: any) {
