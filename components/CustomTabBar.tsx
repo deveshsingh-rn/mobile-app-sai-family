@@ -8,7 +8,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import {
@@ -48,9 +48,9 @@ type PillarTab = {
 
 function MalaIcon({ color, size }: React.ComponentProps<TabIcon>) {
   return (
-    <MaterialCommunityIcons
+    <FontAwesome5
       color={color}
-      name="necklace"
+      name="praying-hands"
       size={size}
     />
   );
@@ -72,7 +72,7 @@ const TABS: PillarTab[] = [
     name: "events",
   },
   {
-    displayLabel: "Directory",
+    displayLabel: "Sai Family",
     href: "/(tabs)/directory",
     Icon: Building2,
     label: "Sai Connect",
@@ -154,7 +154,7 @@ function TabItem({
       </Animated.View>
       <Text
         allowFontScaling={false}
-        numberOfLines={1}
+        numberOfLines={2}
         style={[styles.tabLabel, focused && styles.tabLabelActive]}
       >
         {displayLabel}
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   tabLabel: {
     color: COLORS.inactive,
     fontSize: 10,
-    fontWeight: "600",
+    fontWeight: "700",
     lineHeight: 11,
     marginTop: 1,
     textAlign: "center",

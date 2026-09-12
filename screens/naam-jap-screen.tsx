@@ -72,9 +72,12 @@ const SAI_IMAGE = require("@/assets/images/saijii.jpg");
 const TARGETS: NaamJapData["target"][] = [27, 54, 108];
 
 const TAB_ITEMS = [
-  { Icon: House, key: "home" as const, label: "Home" },
+
+  { Icon: House, key: "experience" as const, label: "Home" },
+
+  { Icon: BookHeart,key: "home"  as const, label: "Experience" },
   { Icon: BarChart3, key: "insights" as const, label: "Insights" },
-  { Icon: BookHeart, key: "experience" as const, label: "Experience" },
+  
   { Icon: CircleEllipsis, key: "more" as const, label: "More" },
 ];
 
@@ -304,10 +307,19 @@ export default function NaamJapScreen() {
     isAppActive,
   ]);
 
-  const switchTab = useCallback((tab: NaamJapTab) => {
-    void Haptics.selectionAsync();
-    setActiveTab(tab);
-  }, []);
+  const switchTab = useCallback(
+    (tab: NaamJapTab) => {
+      void Haptics.selectionAsync();
+
+      if (tab === "experience") {
+        router.replace("/(tabs)/experiences" as never);
+        return;
+      }
+
+      setActiveTab(tab);
+    },
+    [router]
+  );
 
   const closeSheet = () => {
     setActiveSheet(null);
@@ -476,11 +488,7 @@ export default function NaamJapScreen() {
   };
 
   const goBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(tabs)/experiences" as never);
-    }
+    router.replace("/(tabs)/experiences" as never);
   };
 
   if (!hydrated) {
@@ -499,7 +507,7 @@ export default function NaamJapScreen() {
         tint="light"
         style={[styles.header, { paddingTop: insets.top + 6 }]}
       >
-        <PressableScale
+        {/* <PressableScale
           accessibilityLabel="Close Naam Jap"
           accessibilityRole="button"
           hitSlop={6}
@@ -507,7 +515,7 @@ export default function NaamJapScreen() {
           style={styles.headerButton}
         >
           <ArrowLeft color="#292524" size={24} />
-        </PressableScale>
+        </PressableScale> */}
         <Text style={styles.headerTitle}>Naam Jap</Text>
 
         <View style={styles.headerActions}>
