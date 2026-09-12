@@ -1,4 +1,5 @@
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   ArrowLeft,
   Bookmark,
@@ -112,18 +113,31 @@ function CreateProfileAction({
       style={({ pressed }) => [
         styles.createButton,
         active && styles.activeCreateButton,
-        pressed && styles.pressedIconButton,
+        pressed && styles.pressedCreateButton,
       ]}
     >
-      {profileImageUrl ? (
-        <Image source={{ uri: profileImageUrl }} style={styles.createAvatar} />
-      ) : (
-        <View style={[styles.createAvatar, styles.createAvatarFallback]}>
-          <Text style={styles.createAvatarText}>{initial}</Text>
+      <LinearGradient
+        colors={active ? ["#C2410C", "#F59E0B"] : ["#F59E0B", "#C2410C"]}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={styles.createRing}
+      >
+        <View style={styles.createAvatarInset}>
+          {profileImageUrl ? (
+            <Image
+              resizeMode="cover"
+              source={{ uri: profileImageUrl }}
+              style={styles.createAvatar}
+            />
+          ) : (
+            <View style={[styles.createAvatar, styles.createAvatarFallback]}>
+              <Text style={styles.createAvatarText}>{initial}</Text>
+            </View>
+          )}
         </View>
-      )}
+      </LinearGradient>
       <View style={styles.createBadge}>
-        <Plus color="#FFFFFF" size={12} strokeWidth={3.2} />
+        <Plus color="#FFFFFF" size={12} strokeWidth={3.4} />
       </View>
     </Pressable>
   );
@@ -227,7 +241,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#EEE7DC",
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
-    height: 52,
+    height: 66,
     justifyContent: "space-between",
     paddingHorizontal: 14,
   },
@@ -276,22 +290,39 @@ const styles = StyleSheet.create({
   },
   createButton: {
     alignItems: "center",
-    borderColor: "#FFFFFF",
     borderRadius: 30,
-    borderWidth: 2,
     height: 60,
     justifyContent: "center",
     position: "relative",
     width: 60,
   },
   activeCreateButton: {
-    borderColor: "#F97316",
+    backgroundColor: "#FFF4E8",
+  },
+  pressedCreateButton: {
+    opacity: 0.78,
+    transform: [{ scale: 0.96 }],
+  },
+  createRing: {
+    alignItems: "center",
+    borderRadius: 28,
+    height: 56,
+    justifyContent: "center",
+    width: 56,
+  },
+  createAvatarInset: {
+    alignItems: "center",
+    backgroundColor: "#FFFCF7",
+    borderRadius: 26,
+    height: 52,
+    justifyContent: "center",
+    width: 52,
   },
   createAvatar: {
     backgroundColor: "#F1E4CE",
-    borderRadius: 30,
-    height: 60,
-    width: 60,
+    borderRadius: 24,
+    height: 48,
+    width: 48,
   },
   createAvatarFallback: {
     alignItems: "center",
@@ -299,25 +330,25 @@ const styles = StyleSheet.create({
   },
   createAvatarText: {
     color: "#9A3412",
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "900",
   },
   createBadge: {
     alignItems: "center",
     backgroundColor: "#F97316",
     borderColor: "#FFFCF7",
-    borderRadius: 9,
+    borderRadius: 10,
     borderWidth: 2,
-    bottom: -1,
-    height: 18,
+    bottom: 1,
+    height: 21,
     justifyContent: "center",
     position: "absolute",
-    right: -1,
+    right: 1,
     shadowColor: "#9A3412",
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
-    width: 18,
+    width: 21,
   },
   activeIconButton: {
     backgroundColor: "#FFF4E8",
