@@ -5,7 +5,6 @@ import {
   Bookmark,
   Plus,
   Search,
-  Sparkles,
   type LucideIcon,
 } from "lucide-react-native";
 import React from "react";
@@ -202,21 +201,6 @@ export function ExperienceTopTabs({
           profileImageUrl={profileImageUrl}
         />
 
-        <Pressable
-          accessibilityLabel="Open Sai Naam Jap counter"
-          accessibilityRole="button"
-          hitSlop={4}
-          onPress={() => router.push("/naam-jap" as never)}
-          style={({ pressed }) => [
-            styles.naamJapButton,
-            pressed && styles.pressedIconButton,
-          ]}
-        >
-          <Sparkles color="#9A3412" size={14} strokeWidth={2.4} />
-          <Text numberOfLines={1} style={styles.naamJapText}>
-            Naam Jap
-          </Text>
-        </Pressable>
       </View>
 
       <View style={styles.actions}>
@@ -269,24 +253,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "relative",
     width: 44,
-  },
-  naamJapButton: {
-    alignItems: "center",
-    backgroundColor: "#FFF4E8",
-    borderColor: "#FED7AA",
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 4,
-    height: 46,
-    // marginRight: 28,
-    justifyContent: "center",
-    paddingHorizontal: 9,
-  },
-  naamJapText: {
-    color: "#9A3412",
-    fontSize: 11,
-    fontWeight: "900",
   },
   createButton: {
     alignItems: "center",

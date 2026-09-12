@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { BlurView } from "expo-blur";
+import { router } from "expo-router";
 import {
   GlassContainer,
   GlassView,
@@ -21,8 +22,10 @@ import {
   Building2,
   CalendarDays,
   House,
+  Sparkles,
   UserCircle2,
   Users,
+  type LucideIcon,
 } from "lucide-react-native";
 
 const COLORS = {
@@ -41,7 +44,14 @@ function canUseNativeGlass() {
   }
 }
 
-const TABS = [
+type PillarTab = {
+  href?: string;
+  Icon: LucideIcon;
+  label: string;
+  name: string;
+};
+
+const TABS: PillarTab[] = [
   {
     Icon: House,
     label: "Devotee Experience",
@@ -61,6 +71,12 @@ const TABS = [
     Icon: Users,
     label: "Local community",
     name: "sangha",
+  },
+  {
+    href: "/naam-jap",
+    Icon: Sparkles,
+    label: "Naam Jap",
+    name: "naam-jap",
   },
   {
     Icon: UserCircle2,
@@ -168,14 +184,24 @@ export default function CustomTabBar({
   }, [activeTabIndex, activeTabProgress]);
 
   const tabWidth = dockWidth / TABS.length;
-  const indicatorOffset = Math.max(
-    0,
-    (tabWidth - ACTIVE_INDICATOR_WIDTH) / 2
-  );
-  const indicatorTranslateX = Animated.multiply(
-    activeTabProgress,
-    tabWidth
-  );
+  const indicatorPositions = TABS.map((_, index) => {
+    const centeredPosition =
+      index * tabWidth +
+      (tabWidth - ACTIVE_INDICATOR_WIDTH) / 2;
+    const maximumPosition = Math.max(
+      4,
+      dockWidth - ACTIVE_INDICATOR_WIDTH - 4
+    );
+
+    return Math.min(
+      Math.max(centeredPosition, 4),
+      maximumPosition
+    );
+  });
+  const indicatorTranslateX = activeTabProgress.interpolate({
+    inputRange: TABS.map((_, index) => index),
+    outputRange: indicatorPositions,
+  });
 
   if (isFocusedExperienceScreen) {
     return null;
@@ -224,7 +250,7 @@ export default function CustomTabBar({
               style={[
                 styles.indicatorPosition,
                 {
-                  left: indicatorOffset,
+                  left: 0,
                   transform: [{ translateX: indicatorTranslateX }],
                 },
               ]}
@@ -267,7 +293,14 @@ export default function CustomTabBar({
                   Icon={tab.Icon}
                   focused={focused}
                   label={tab.label}
-                  onPress={() => navigation.navigate(tab.name)}
+                  onPress={() => {
+                    if (tab.href) {
+                      router.push(tab.href as never);
+                      return;
+                    }
+
+                    navigation.navigate(tab.name);
+                  }}
                 />
               );
             })}

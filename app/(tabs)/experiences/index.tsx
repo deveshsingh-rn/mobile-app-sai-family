@@ -444,6 +444,8 @@ export default function HomeScreen() {
       {/* HEADER */}
 
       <View style={styles.fixedTop}>
+        <ExperienceTopTabs activeTab="feed" />
+
         {isHeaderIntroMounted && (
           <Animated.View
             pointerEvents={
@@ -581,7 +583,6 @@ export default function HomeScreen() {
           </Animated.View>
         )}
 
-        <ExperienceTopTabs activeTab="feed" />
       </View>
 
       {/* FEED */}
