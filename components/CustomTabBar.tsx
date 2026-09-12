@@ -4,14 +4,13 @@ import React, {
 } from "react";
 import {
   Animated,
-  Platform,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 
 import { BlurView } from "expo-blur";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Building2,
   CalendarDays,
@@ -21,12 +20,9 @@ import {
 } from "lucide-react-native";
 
 const COLORS = {
-  active: "#1F2937",
-  border: "#E7D7BE",
-  dock: "rgba(255,255,255,0.94)",
+  active: "#171717",
+  border: "rgba(120, 113, 108, 0.18)",
   inactive: "#78716C",
-  primary: "#F97316",
-  soft: "#FFF7ED",
 };
 
 const TABS = [
@@ -57,8 +53,6 @@ const TABS = [
   },
 ];
 
-const BOTTOM = Platform.OS === "ios" ? 24 : 14;
-
 function TabItem({
   focused,
   Icon,
@@ -87,15 +81,12 @@ function TabItem({
     outputRange: [1, 1.05],
   });
 
-  const activeOpacity = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-
   return (
     <Pressable
+      accessibilityLabel={label}
       accessibilityRole="button"
       accessibilityState={{ selected: focused }}
+      hitSlop={4}
       onPress={onPress}
       style={({ pressed }) => [
         styles.tabItem,
@@ -103,20 +94,6 @@ function TabItem({
         pressed && styles.pressed,
       ]}
     >
-      <Animated.View
-        style={[
-          styles.activePill,
-          {
-            opacity: activeOpacity,
-            transform: [
-              {
-                scale,
-              },
-            ],
-          },
-        ]}
-      />
-
       <Animated.View
         style={[
           styles.iconWrap,
@@ -130,21 +107,11 @@ function TabItem({
         ]}
       >
         <Icon
-          color={focused ? COLORS.primary : COLORS.inactive}
-          size={21}
-          strokeWidth={focused ? 2.5 : 2}
+          color={focused ? COLORS.active : COLORS.inactive}
+          size={27}
+          strokeWidth={focused ? 2.7 : 2}
         />
       </Animated.View>
-
-      <Text
-        numberOfLines={2}
-        style={[
-          styles.label,
-          focused && styles.labelActive,
-        ]}
-      >
-        {label}
-      </Text>
     </Pressable>
   );
 }
@@ -153,6 +120,7 @@ export default function CustomTabBar({
   navigation,
   state,
 }: any) {
+  const insets = useSafeAreaInsets();
   const activeRoute = state.routes[state.index];
   const nestedState = activeRoute?.state;
   const nestedRoute =
@@ -169,8 +137,21 @@ export default function CustomTabBar({
   }
 
   return (
-    <View pointerEvents="box-none" style={styles.wrapper}>
-      <BlurView intensity={70} tint="light" style={styles.dock}>
+    <View
+      pointerEvents="box-none"
+      style={[
+        styles.wrapper,
+        { height: 56 + Math.max(insets.bottom, 8) },
+      ]}
+    >
+      <BlurView
+        intensity={42}
+        tint="light"
+        style={[
+          styles.dock,
+          { paddingBottom: Math.max(insets.bottom, 8) },
+        ]}
+      >
         <View style={styles.tabsRow}>
           {TABS.slice(0, 2).map((tab) => {
             const index = state.routes.findIndex(
@@ -213,93 +194,42 @@ export default function CustomTabBar({
 }
 
 const styles = StyleSheet.create({
-  activePill: {
-    backgroundColor: "#FFF4E6",
-    borderColor: COLORS.primary,
-    borderRadius: 18,
-    borderWidth: 1.4,
-    bottom: 4,
-    left: 3,
-    position: "absolute",
-    right: 3,
-    top: 4,
-  },
-  
-  createPressable: {
-    alignItems: "center",
-    height: 62,
-    justifyContent: "center",
-    width: 58,
-  },
-  createSlot: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: 58,
-  },
   dock: {
-    backgroundColor: COLORS.dock,
-    borderColor: COLORS.border,
-    borderRadius: 24,
-    borderWidth: 1,
-    bottom: BOTTOM,
-    left: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.58)",
+    borderTopColor: COLORS.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    bottom: 0,
+    left: 0,
     overflow: "hidden",
-    paddingHorizontal: 5,
     position: "absolute",
-    right: 12,
-    shadowColor: "#7C2D12",
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.12,
-    shadowRadius: 22,
-    elevation: 12,
+    right: 0,
   },
   iconWrap: {
     alignItems: "center",
-    height: 24,
+    height: 32,
     justifyContent: "center",
-    width: 28,
-  },
-  label: {
-    color: COLORS.inactive,
-    flexShrink: 1,
-    fontSize: 10.5,
-    fontWeight: "400",
-    lineHeight: 12.5,
-    marginTop: 3,
-    maxWidth: "100%",
-    minHeight: 25,
-    paddingHorizontal: 1,
-    textAlign: "center",
-  },
-  labelActive: {
-    color: COLORS.active,
-    fontWeight: "500",
+    width: 32,
   },
   pressed: {
-    opacity: 0.82,
+    opacity: 0.55,
   },
   tabItem: {
     alignItems: "center",
     flex: 1,
-    height: 76,
+    height: 56,
     justifyContent: "center",
     minWidth: 0,
-    paddingHorizontal: 2,
   },
   tabItemActive: {
-    transform: [{ translateY: -2 }],
+    transform: [{ translateY: -1 }],
   },
   tabsRow: {
     alignItems: "center",
     flexDirection: "row",
-    height: 82,
+    height: 56,
   },
   wrapper: {
     bottom: 0,
-    height: 126,
     left: 0,
     position: "absolute",
     right: 0,
