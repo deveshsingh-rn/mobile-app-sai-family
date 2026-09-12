@@ -5,6 +5,7 @@ import {
   Bookmark,
   Plus,
   Search,
+  UserCircle2,
   type LucideIcon,
 } from "lucide-react-native";
 import React from "react";
@@ -28,7 +29,7 @@ type ExperienceTopTabsProps = {
 type ExperienceNavigationAction = {
   href: string;
   Icon: LucideIcon;
-  key: "search" | "post" | "bookmarks";
+  key: "search" | "post" | "bookmarks" | "profile";
   label: string;
 };
 
@@ -51,6 +52,12 @@ const EXPERIENCE_ACTIONS: ExperienceNavigationAction[] = [
     Icon: Bookmark,
     key: "bookmarks",
     label: "Saved experiences",
+  },
+  {
+    href: "/(tabs)/profile",
+    Icon: UserCircle2,
+    key: "profile",
+    label: "Open devotee profile",
   },
 ];
 
@@ -81,7 +88,7 @@ function ToolbarAction({
       <Icon
         color={active ? "#C2410C" : "#292524"}
         fill={active && Icon === Bookmark ? "#C2410C" : "none"}
-        size={23}
+        size={32}
         strokeWidth={active ? 2.45 : 2.15}
       />
       {active ? <View style={styles.activeDot} /> : null}
@@ -168,7 +175,7 @@ export function ExperienceTopTabs({
       return;
     }
 
-    if (onTabChange) {
+    if (onTabChange && action.key !== "profile") {
       onTabChange(action.key);
       return;
     }

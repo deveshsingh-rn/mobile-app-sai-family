@@ -3,6 +3,7 @@ import {
   Animated,
   Pressable,
   StyleSheet,
+  Text,
   View,
   type ViewStyle,
 } from "react-native";
@@ -19,7 +20,6 @@ import {
   CalendarDays,
   House,
   Sparkles,
-  UserCircle2,
   Users,
   type LucideIcon,
 } from "lucide-react-native";
@@ -34,6 +34,7 @@ const ACTIVE_INDICATOR_HEIGHT = 48;
 const ACTIVE_INDICATOR_WIDTH = 58;
 
 type PillarTab = {
+  displayLabel: string;
   href: string;
   Icon: LucideIcon;
   label: string;
@@ -42,40 +43,39 @@ type PillarTab = {
 
 const TABS: PillarTab[] = [
   {
+    displayLabel: "Home",
     href: "/(tabs)/experiences",
     Icon: House,
     label: "Devotee Experience",
     name: "experiences",
   },
   {
+    displayLabel: "Events",
     href: "/(tabs)/events",
     Icon: CalendarDays,
     label: "Devotee Events",
     name: "events",
   },
   {
+    displayLabel: "Directory",
     href: "/(tabs)/directory",
     Icon: Building2,
     label: "Sai Connect",
     name: "directory",
   },
   {
+    displayLabel: "Sanghat",
     href: "/(tabs)/sangha",
     Icon: Users,
     label: "Local community",
     name: "sangha",
   },
   {
+    displayLabel: "Naam Jap",
     href: "/naam-jap",
     Icon: Sparkles,
     label: "Naam Jap",
     name: "naam-jap",
-  },
-  {
-    href: "/(tabs)/profile",
-    Icon: UserCircle2,
-    label: "Devotee Profile",
-    name: "profile",
   },
 ];
 
@@ -88,11 +88,13 @@ function canUseNativeGlass() {
 }
 
 function TabItem({
+  displayLabel,
   focused,
   Icon,
   label,
   onPress,
 }: {
+  displayLabel: string;
   focused: boolean;
   Icon: LucideIcon;
   label: string;
@@ -131,10 +133,17 @@ function TabItem({
       <Animated.View style={[styles.iconWrap, { transform: [{ scale }] }]}>
         <Icon
           color={focused ? COLORS.active : COLORS.inactive}
-          size={27}
+          size={30}
           strokeWidth={focused ? 2.7 : 2}
         />
       </Animated.View>
+      <Text
+        allowFontScaling={false}
+        numberOfLines={1}
+        style={[styles.tabLabel, focused && styles.tabLabelActive]}
+      >
+        {displayLabel}
+      </Text>
     </Pressable>
   );
 }
@@ -248,6 +257,7 @@ export function PillarGlassDock({
       >
         {TABS.map((tab) => (
           <TabItem
+            displayLabel={tab.displayLabel}
             focused={tab.name === activeRouteName}
             Icon={tab.Icon}
             key={tab.name}
@@ -354,7 +364,7 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     alignItems: "center",
-    height: 32,
+    height: 29,
     justifyContent: "center",
     width: 32,
   },
@@ -371,6 +381,18 @@ const styles = StyleSheet.create({
   },
   tabItemActive: {
     transform: [{ translateY: -1 }],
+  },
+  tabLabel: {
+    color: COLORS.inactive,
+    fontSize: 10,
+    fontWeight: "600",
+    lineHeight: 11,
+    marginTop: 1,
+    textAlign: "center",
+  },
+  tabLabelActive: {
+    color: COLORS.active,
+    fontWeight: "800",
   },
   tabsRow: {
     alignItems: "center",
