@@ -28,7 +28,6 @@ import {
 } from "lucide-react-native";
 
 import {
-  CategoryChips,
   ExperienceCard,
   ExperienceCardSkeleton,
   ExperienceListFooterSkeleton,
@@ -61,35 +60,6 @@ const HEADER_ANIMATION_MS = 150;
 const SAI_BABA_WELCOME_IMAGE =
   require("@/assets/images/hariom.png");
 
-const CATEGORIES = [
-  {
-    label: "All",
-    value: "all",
-  },
-  {
-    label: "Miracles",
-    value: "miracles",
-  },
-  {
-    label: "Blessings",
-    value: "blessings",
-  },
-  {
-    label: "Darshan",
-    value: "darshan",
-  },
-  {
-    label: "Prayers",
-    value: "prayers",
-  },
-  {
-    label: "Dreams",
-    value: "dreams",
-  },
-  
-  
-];
-
 export default function HomeScreen() {
   const dispatch = useAppDispatch();
   const { width: screenWidth } =
@@ -106,9 +76,6 @@ export default function HomeScreen() {
   const account = useAppSelector(
     selectDevoteeAccount
   );
-
-  const [selectedCategory, setSelectedCategory] =
-    useState("all");
 
   const [offset, setOffset] =
     useState(0);
@@ -180,17 +147,13 @@ export default function HomeScreen() {
       fetchExperiencesRequest({
         limit: LIMIT,
         offset: 0,
-        category:
-          selectedCategory === "all"
-            ? undefined
-            : selectedCategory,
       })
     );
 
     setTimeout(() => {
       setRefreshing(false);
     }, 800);
-  }, [dispatch, selectedCategory]);
+  }, [dispatch]);
 
   // ───────────────── PAGINATION ─────────────────
 
@@ -213,11 +176,6 @@ export default function HomeScreen() {
         fetchExperiencesRequest({
           limit: LIMIT,
           offset: nextOffset,
-          category:
-            selectedCategory ===
-            "all"
-              ? undefined
-              : selectedCategory,
         })
       );
 
@@ -231,32 +189,8 @@ export default function HomeScreen() {
       loadingMore,
       feed.length,
       offset,
-      selectedCategory,
       dispatch,
     ]);
-
-  // ───────────────── CATEGORY FILTER ─────────────────
-
-  const handleCategoryChange =
-    useCallback(
-      (value: string) => {
-        setSelectedCategory(value);
-
-        setOffset(0);
-
-        dispatch(
-          fetchExperiencesRequest({
-            limit: LIMIT,
-            offset: 0,
-            category:
-              value === "all"
-                ? undefined
-                : value,
-          })
-        );
-      },
-      [dispatch]
-    );
 
   const animateHeaderIntro = useCallback(
     (visible: boolean) => {
@@ -648,23 +582,6 @@ export default function HomeScreen() {
         )}
 
         <ExperienceTopTabs activeTab="feed" />
-
-        <View
-          style={
-            styles.categoriesWrapper
-          }
-        >
-          <CategoryChips
-            activeValue={
-              selectedCategory
-            }
-            categories={CATEGORIES}
-            onChange={
-              handleCategoryChange
-            }
-            showTagline
-          />
-        </View>
       </View>
 
       {/* FEED */}
@@ -967,10 +884,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 12,
     width: 42,
-  },
-
-  categoriesWrapper: {
-    paddingBottom: 4,
   },
 
   content: {
