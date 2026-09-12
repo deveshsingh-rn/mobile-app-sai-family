@@ -1,6 +1,7 @@
 import React, {
   useEffect,
   useRef,
+  useState,
 } from "react";
 import {
   Animated,
@@ -69,13 +70,11 @@ function TabItem({
   focused,
   Icon,
   label,
-  nativeGlassAvailable,
   onPress,
 }: {
   focused: boolean;
   Icon: any;
   label: string;
-  nativeGlassAvailable: boolean;
   onPress: () => void;
 }) {
   const anim = useRef(new Animated.Value(focused ? 1 : 0)).current;
@@ -108,28 +107,6 @@ function TabItem({
         pressed && styles.pressed,
       ]}
     >
-      {nativeGlassAvailable ? (
-        <GlassView
-          colorScheme="light"
-          glassEffectStyle="regular"
-          isInteractive
-          pointerEvents="none"
-          style={[styles.glassCircle, styles.nativeGlassCircle]}
-          tintColor={focused ? "rgba(255, 237, 213, 0.42)" : "rgba(255, 255, 255, 0.2)"}
-        />
-      ) : (
-        <BlurView
-          intensity={focused ? 80 : 65}
-          pointerEvents="none"
-          style={[
-            styles.glassCircle,
-            styles.fallbackGlassCircle,
-            focused && styles.activeGlassFallback,
-          ]}
-          tint="light"
-        />
-      )}
-
       <Animated.View
         style={[
           styles.iconWrap,
@@ -158,6 +135,7 @@ export default function CustomTabBar({
 }: any) {
   const insets = useSafeAreaInsets();
   const nativeGlassAvailable = canUseNativeGlass();
+  const [dockWidth, setDockWidth] = useState(0);
   const activeRoute = state.routes[state.index];
   const nestedState = activeRoute?.state;
   const nestedRoute =
@@ -168,6 +146,30 @@ export default function CustomTabBar({
     activeRoute?.name === "experiences" &&
     (nestedRoute?.name === "[id]" ||
       nestedRoute?.name === "ask-sai");
+  const activeTabIndex = Math.max(
+    0,
+    TABS.findIndex((tab) => tab.name === activeRoute?.name)
+  );
+  const activeTabProgress = useRef(
+    new Animated.Value(activeTabIndex)
+  ).current;
+
+  useEffect(() => {
+    Animated.spring(activeTabProgress, {
+      damping: 22,
+      mass: 0.8,
+      stiffness: 230,
+      toValue: activeTabIndex,
+      useNativeDriver: true,
+    }).start();
+  }, [activeTabIndex, activeTabProgress]);
+
+  const tabWidth = dockWidth / TABS.length;
+  const indicatorOffset = Math.max(0, (tabWidth - 48) / 2);
+  const indicatorTranslateX = Animated.multiply(
+    activeTabProgress,
+    tabWidth
+  );
 
   if (isFocusedExperienceScreen) {
     return null;
@@ -178,7 +180,7 @@ export default function CustomTabBar({
       pointerEvents="box-none"
       style={[
         styles.wrapper,
-        { height: 66 + Math.max(insets.bottom, 8) },
+        { height: 76 + Math.max(insets.bottom, 8) },
       ]}
     >
       <View
@@ -187,43 +189,83 @@ export default function CustomTabBar({
           { paddingBottom: Math.max(insets.bottom, 8) },
         ]}
       >
-        <GlassContainer spacing={12} style={styles.tabsRow}>
-          {TABS.slice(0, 2).map((tab) => {
-            const index = state.routes.findIndex(
-              (route: any) => route.name === tab.name
-            );
-            const focused = state.index === index;
+        <GlassContainer
+          spacing={8}
+          style={styles.glassContainer}
+        >
+          {nativeGlassAvailable ? (
+            <GlassView
+              colorScheme="light"
+              glassEffectStyle="clear"
+              isInteractive={false}
+              pointerEvents="none"
+              style={styles.dockGlass}
+              // tintColor="rgba(255, 255, 255, 0.05)"
+              tintColor="rgba(255, 237, 213, 0.05)"
+            />
+          ) : (
+            <BlurView
+              intensity={72}
+              pointerEvents="none"
+              style={[styles.dockGlass, styles.fallbackDockGlass]}
+              tint="light"
+            />
+          )}
 
-            return (
-              <TabItem
-                key={tab.name}
-                Icon={tab.Icon}
-                focused={focused}
-                label={tab.label}
-                nativeGlassAvailable={nativeGlassAvailable}
-                onPress={() => navigation.navigate(tab.name)}
-              />
-            );
-          })}
+          {dockWidth > 0 ? (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.indicatorPosition,
+                {
+                  left: indicatorOffset,
+                  transform: [{ translateX: indicatorTranslateX }],
+                },
+              ]}
+            >
+              {nativeGlassAvailable ? (
+                <GlassView
+                  colorScheme="light"
+                  
+                    glassEffectStyle="regular"
+                  isInteractive={false}
+                  style={styles.activeIndicator}
+                  tintColor="rgba(255, 237, 213, 0.95)"
+                />
+              ) : (
+                <BlurView
+                  intensity={85}
+                  style={[
+                    styles.activeIndicator,
+                    styles.fallbackActiveIndicator,
+                  ]}
+                  tint="light"
+                />
+              )}
+            </Animated.View>
+          ) : null}
 
-         
-          {TABS.slice(2).map((tab) => {
-            const index = state.routes.findIndex(
-              (route: any) => route.name === tab.name
-            );
-            const focused = state.index === index;
+          <View
+            onLayout={(event) => setDockWidth(event.nativeEvent.layout.width)}
+            style={styles.tabsRow}
+          >
+            {TABS.map((tab) => {
+              const index = state.routes.findIndex(
+                (route: any) => route.name === tab.name
+              );
+              const focused = state.index === index;
 
-            return (
-              <TabItem
-                key={tab.name}
-                Icon={tab.Icon}
-                focused={focused}
-                label={tab.label}
-                nativeGlassAvailable={nativeGlassAvailable}
-                onPress={() => navigation.navigate(tab.name)}
-              />
-            );
-          })}
+              return (
+                <TabItem
+                  key={tab.name}
+                  Icon={tab.Icon}
+                  focused={focused}
+                  label={tab.label}
+                  onPress={() => navigation.navigate(tab.name)}
+                />
+              );
+            })}
+          </View>
         </GlassContainer>
       </View>
     </View>
@@ -232,30 +274,55 @@ export default function CustomTabBar({
 
 const styles = StyleSheet.create({
   dock: {
+    alignItems: "center",
     backgroundColor: "transparent",
     bottom: 0,
     left: 0,
     position: "absolute",
     right: 0,
   },
-  glassCircle: {
-    borderColor: "rgba(255, 255, 255, 0.72)",
-    borderRadius: 25,
+  glassContainer: {
+    borderRadius: 34,
+    height: 66,
+    marginHorizontal: 14,
+    maxWidth: 520,
+    position: "relative",
+    shadowColor: "#292524",
+    shadowOffset: { height: 8, width: 0 },
+    shadowOpacity: 0.13,
+    shadowRadius: 18,
+    width: "92%",
+  },
+  dockGlass: {
+    ...StyleSheet.absoluteFillObject,
+    borderColor: "rgba(255, 255, 255, 0.76)",
+    borderRadius: 34,
     borderWidth: StyleSheet.hairlineWidth,
-    height: 50,
     overflow: "hidden",
+  },
+  fallbackDockGlass: {
+    backgroundColor: "rgba(255, 255, 255, 0.64)",
+  },
+  indicatorPosition: {
+    height: 48,
     position: "absolute",
-    width: 50,
+    top: 9,
+    width: 48,
+    zIndex: 1,
   },
-  nativeGlassCircle: {
-    backgroundColor: "transparent",
+  activeIndicator: {
+    borderColor: "rgba(255, 255, 255, 0.88)",
+    borderRadius: 24,
+    borderWidth: StyleSheet.hairlineWidth,
+    height: 48,
+    overflow: "hidden",
+    // justifyContent: "center",
+    alignItems: "center",
+    width: 78,
   },
-  fallbackGlassCircle: {
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
-  },
-  activeGlassFallback: {
-    backgroundColor: "rgba(255, 237, 213, 0.66)",
-    borderColor: "rgba(249, 115, 22, 0.38)",
+  fallbackActiveIndicator: {
+    backgroundColor: "rgba(255, 237, 213, 0.72)",
+    borderColor: "rgba(249, 115, 22, 0.28)",
   },
   iconWrap: {
     alignItems: "center",
@@ -272,10 +339,7 @@ const styles = StyleSheet.create({
     height: 66,
     justifyContent: "center",
     minWidth: 0,
-    shadowColor: "#292524",
-    shadowOffset: { height: 5, width: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    zIndex: 2,
   },
   tabItemActive: {
     transform: [{ translateY: -1 }],
@@ -284,7 +348,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     height: 66,
-    paddingHorizontal: 10,
+    width: "100%",
+    zIndex: 2,
   },
   wrapper: {
     bottom: 0,
