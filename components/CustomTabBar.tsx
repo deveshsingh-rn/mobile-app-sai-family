@@ -11,6 +11,7 @@ import {
 
 import { BlurView } from "expo-blur";
 import {
+  GlassContainer,
   GlassView,
   isGlassEffectAPIAvailable,
 } from "expo-glass-effect";
@@ -68,15 +69,16 @@ function TabItem({
   focused,
   Icon,
   label,
+  nativeGlassAvailable,
   onPress,
 }: {
   focused: boolean;
   Icon: any;
   label: string;
+  nativeGlassAvailable: boolean;
   onPress: () => void;
 }) {
   const anim = useRef(new Animated.Value(focused ? 1 : 0)).current;
-  const nativeGlassAvailable = canUseNativeGlass();
 
   useEffect(() => {
     Animated.spring(anim, {
@@ -109,18 +111,19 @@ function TabItem({
       {nativeGlassAvailable ? (
         <GlassView
           colorScheme="light"
-          glassEffectStyle="clear"
-          isInteractive={false}
+          glassEffectStyle="regular"
+          isInteractive
           pointerEvents="none"
-          style={styles.glassCircle}
+          style={[styles.glassCircle, styles.nativeGlassCircle]}
           tintColor={focused ? "rgba(255, 237, 213, 0.42)" : "rgba(255, 255, 255, 0.2)"}
         />
       ) : (
         <BlurView
-          intensity={focused ? 68 : 48}
+          intensity={focused ? 80 : 65}
           pointerEvents="none"
           style={[
             styles.glassCircle,
+            styles.fallbackGlassCircle,
             focused && styles.activeGlassFallback,
           ]}
           tint="light"
@@ -154,6 +157,7 @@ export default function CustomTabBar({
   state,
 }: any) {
   const insets = useSafeAreaInsets();
+  const nativeGlassAvailable = canUseNativeGlass();
   const activeRoute = state.routes[state.index];
   const nestedState = activeRoute?.state;
   const nestedRoute =
@@ -183,7 +187,7 @@ export default function CustomTabBar({
           { paddingBottom: Math.max(insets.bottom, 8) },
         ]}
       >
-        <View style={styles.tabsRow}>
+        <GlassContainer spacing={12} style={styles.tabsRow}>
           {TABS.slice(0, 2).map((tab) => {
             const index = state.routes.findIndex(
               (route: any) => route.name === tab.name
@@ -196,6 +200,7 @@ export default function CustomTabBar({
                 Icon={tab.Icon}
                 focused={focused}
                 label={tab.label}
+                nativeGlassAvailable={nativeGlassAvailable}
                 onPress={() => navigation.navigate(tab.name)}
               />
             );
@@ -214,11 +219,12 @@ export default function CustomTabBar({
                 Icon={tab.Icon}
                 focused={focused}
                 label={tab.label}
+                nativeGlassAvailable={nativeGlassAvailable}
                 onPress={() => navigation.navigate(tab.name)}
               />
             );
           })}
-        </View>
+        </GlassContainer>
       </View>
     </View>
   );
@@ -233,17 +239,23 @@ const styles = StyleSheet.create({
     right: 0,
   },
   glassCircle: {
-    backgroundColor: "rgba(255, 255, 255, 0.22)",
     borderColor: "rgba(255, 255, 255, 0.72)",
     borderRadius: 25,
     borderWidth: StyleSheet.hairlineWidth,
     height: 50,
+    overflow: "hidden",
     position: "absolute",
     width: 50,
   },
+  nativeGlassCircle: {
+    backgroundColor: "transparent",
+  },
+  fallbackGlassCircle: {
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+  },
   activeGlassFallback: {
-    backgroundColor: "rgba(255, 237, 213, 0.5)",
-    borderColor: "rgba(249, 115, 22, 0.24)",
+    backgroundColor: "rgba(255, 237, 213, 0.66)",
+    borderColor: "rgba(249, 115, 22, 0.38)",
   },
   iconWrap: {
     alignItems: "center",
@@ -260,6 +272,10 @@ const styles = StyleSheet.create({
     height: 66,
     justifyContent: "center",
     minWidth: 0,
+    shadowColor: "#292524",
+    shadowOffset: { height: 5, width: 0 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
   tabItemActive: {
     transform: [{ translateY: -1 }],
