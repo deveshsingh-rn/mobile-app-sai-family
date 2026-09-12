@@ -358,7 +358,7 @@ function EventsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.headerIcon}>
-          <Text style={styles.headerBack}>‹</Text>
+          {/* <Text style={styles.headerBack}>‹</Text> */}
         </Pressable>
         <Text style={styles.headerTitle}>Events</Text>
         <Pressable style={styles.headerIcon}>
