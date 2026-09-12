@@ -30,6 +30,9 @@ const COLORS = {
   inactive: "#78716C",
 };
 
+const ACTIVE_INDICATOR_HEIGHT = 48;
+const ACTIVE_INDICATOR_WIDTH = 68;
+
 function canUseNativeGlass() {
   try {
     return isGlassEffectAPIAvailable();
@@ -165,7 +168,10 @@ export default function CustomTabBar({
   }, [activeTabIndex, activeTabProgress]);
 
   const tabWidth = dockWidth / TABS.length;
-  const indicatorOffset = Math.max(0, (tabWidth - 48) / 2);
+  const indicatorOffset = Math.max(
+    0,
+    (tabWidth - ACTIVE_INDICATOR_WIDTH) / 2
+  );
   const indicatorTranslateX = Animated.multiply(
     activeTabProgress,
     tabWidth
@@ -304,21 +310,21 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.64)",
   },
   indicatorPosition: {
-    height: 48,
+    height: ACTIVE_INDICATOR_HEIGHT,
     position: "absolute",
     top: 9,
-    width: 48,
+    width: ACTIVE_INDICATOR_WIDTH,
     zIndex: 1,
   },
   activeIndicator: {
-    borderColor: "rgba(255, 255, 255, 0.88)",
-    borderRadius: 24,
-    borderWidth: StyleSheet.hairlineWidth,
-    height: 48,
-    overflow: "hidden",
-    // justifyContent: "center",
     alignItems: "center",
-    width: 78,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius:24,
+    borderWidth: StyleSheet.hairlineWidth,
+    height: ACTIVE_INDICATOR_HEIGHT,
+    overflow: "hidden",
+    padding:15,
+    width: ACTIVE_INDICATOR_WIDTH,
   },
   fallbackActiveIndicator: {
     backgroundColor: "rgba(255, 237, 213, 0.72)",
