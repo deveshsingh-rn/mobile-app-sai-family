@@ -138,12 +138,13 @@ export type SanghaDevoteeListResult = {
 };
 
 export type SanghaGroupListParams = {
+  activity?: "active" | "quiet" | "new";
   limit?: number;
   offset?: number;
-  privacy?: string;
+  privacy?: "any" | "public" | "private" | "invite_only";
   purpose?: string;
   q?: string;
-  type?: string;
+  type?: "my" | "purpose" | "recommended" | "public";
 };
 
 export type SanghaGroupListResult = {

@@ -36,6 +36,7 @@ import {
   selectSanghaUserInvitationsPagination,
 } from '@/store/sangha/selectors';
 import {
+  SanghaGroupListParams,
   SanghaGroupSummary,
   SanghaInvitation,
 } from '@/store/sangha/types';
@@ -366,7 +367,7 @@ export default function SanghaHubListScreen() {
     : purposeName
       ? `${purposeName} Groups`
       : 'My Groups';
-  const groupsParams = useMemo(
+  const groupsParams = useMemo<SanghaGroupListParams>(
     () => ({
       limit: 20,
       offset: 0,
@@ -376,7 +377,7 @@ export default function SanghaHubListScreen() {
         : 'all',
       type:
         listType === 'groups'
-          ? 'mine'
+          ? 'my'
           : purposeName
             ? 'purpose'
             : 'recommended',
