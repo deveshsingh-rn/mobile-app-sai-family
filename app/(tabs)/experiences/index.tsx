@@ -21,6 +21,7 @@ import {
 import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   Mic2,
@@ -53,6 +54,7 @@ import {
 } from "@/store/experiences/selectors";
 
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
+import { PillarGlassDock } from "@/components/CustomTabBar";
 
 const LIMIT = 10;
 const HEADER_SCROLL_THRESHOLD = 18;
@@ -62,6 +64,7 @@ const SAI_BABA_WELCOME_IMAGE =
 
 export default function HomeScreen() {
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
   const { width: screenWidth } =
     useWindowDimensions();
 
@@ -580,6 +583,11 @@ export default function HomeScreen() {
                 </View>
               </ImageBackground>
             </Pressable>
+
+            <PillarGlassDock
+              activeRouteName="experiences"
+              style={styles.inlinePillarDock}
+            />
           </Animated.View>
         )}
 
@@ -624,6 +632,18 @@ export default function HomeScreen() {
         onViewableItemsChanged={onViewableItemsChanged}
         scrollEventThrottle={16}
       />
+
+      {!isHeaderIntroMounted ? (
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.floatingPillarDock,
+            { bottom: Math.max(insets.bottom, 8) + 8 },
+          ]}
+        >
+          <PillarGlassDock activeRouteName="experiences" />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -640,6 +660,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#E9D8BD",
     paddingTop: 54,
+  },
+
+  inlinePillarDock: {
+    alignSelf: "center",
+    marginBottom: 12,
+  },
+
+  floatingPillarDock: {
+    alignItems: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    zIndex: 50,
   },
 
   askSaiGlowFrame: {

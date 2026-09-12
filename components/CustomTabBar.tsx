@@ -1,13 +1,10 @@
-import React, {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Pressable,
   StyleSheet,
   View,
+  type ViewStyle,
 } from "react-native";
 
 import { BlurView } from "expo-blur";
@@ -17,7 +14,6 @@ import {
   GlassView,
   isGlassEffectAPIAvailable,
 } from "expo-glass-effect";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Building2,
   CalendarDays,
@@ -27,6 +23,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const COLORS = {
   active: "#171717",
@@ -34,18 +31,10 @@ const COLORS = {
 };
 
 const ACTIVE_INDICATOR_HEIGHT = 48;
-const ACTIVE_INDICATOR_WIDTH = 68;
-
-function canUseNativeGlass() {
-  try {
-    return isGlassEffectAPIAvailable();
-  } catch {
-    return false;
-  }
-}
+const ACTIVE_INDICATOR_WIDTH = 78;
 
 type PillarTab = {
-  href?: string;
+  href: string;
   Icon: LucideIcon;
   label: string;
   name: string;
@@ -53,21 +42,25 @@ type PillarTab = {
 
 const TABS: PillarTab[] = [
   {
+    href: "/(tabs)/experiences",
     Icon: House,
     label: "Devotee Experience",
     name: "experiences",
   },
   {
+    href: "/(tabs)/events",
     Icon: CalendarDays,
     label: "Devotee Events",
     name: "events",
   },
   {
+    href: "/(tabs)/directory",
     Icon: Building2,
-    label: " Sai     Connect",
+    label: "Sai Connect",
     name: "directory",
   },
   {
+    href: "/(tabs)/sangha",
     Icon: Users,
     label: "Local community",
     name: "sangha",
@@ -79,11 +72,20 @@ const TABS: PillarTab[] = [
     name: "naam-jap",
   },
   {
+    href: "/(tabs)/profile",
     Icon: UserCircle2,
     label: "Devotee Profile",
     name: "profile",
   },
 ];
+
+function canUseNativeGlass() {
+  try {
+    return isGlassEffectAPIAvailable();
+  } catch {
+    return false;
+  }
+}
 
 function TabItem({
   focused,
@@ -92,23 +94,23 @@ function TabItem({
   onPress,
 }: {
   focused: boolean;
-  Icon: any;
+  Icon: LucideIcon;
   label: string;
   onPress: () => void;
 }) {
-  const anim = useRef(new Animated.Value(focused ? 1 : 0)).current;
+  const animation = useRef(new Animated.Value(focused ? 1 : 0)).current;
 
   useEffect(() => {
-    Animated.spring(anim, {
+    Animated.spring(animation, {
       damping: 18,
       mass: 0.8,
       stiffness: 180,
       toValue: focused ? 1 : 0,
       useNativeDriver: true,
     }).start();
-  }, [anim, focused]);
+  }, [animation, focused]);
 
-  const scale = anim.interpolate({
+  const scale = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [1, 1.05],
   });
@@ -126,18 +128,7 @@ function TabItem({
         pressed && styles.pressed,
       ]}
     >
-      <Animated.View
-        style={[
-          styles.iconWrap,
-          {
-            transform: [
-              {
-                scale,
-              },
-            ],
-          },
-        ]}
-      >
+      <Animated.View style={[styles.iconWrap, { transform: [{ scale }] }]}>
         <Icon
           color={focused ? COLORS.active : COLORS.inactive}
           size={27}
@@ -148,26 +139,22 @@ function TabItem({
   );
 }
 
-export default function CustomTabBar({
-  navigation,
-  state,
-}: any) {
-  const insets = useSafeAreaInsets();
+type PillarGlassDockProps = {
+  activeRouteName: string;
+  onNavigate?: (routeName: string) => void;
+  style?: ViewStyle;
+};
+
+export function PillarGlassDock({
+  activeRouteName,
+  onNavigate,
+  style,
+}: PillarGlassDockProps) {
   const nativeGlassAvailable = canUseNativeGlass();
   const [dockWidth, setDockWidth] = useState(0);
-  const activeRoute = state.routes[state.index];
-  const nestedState = activeRoute?.state;
-  const nestedRoute =
-    nestedState?.routes?.[
-      nestedState.index ?? 0
-    ];
-  const isFocusedExperienceScreen =
-    activeRoute?.name === "experiences" &&
-    (nestedRoute?.name === "[id]" ||
-      nestedRoute?.name === "ask-sai");
   const activeTabIndex = Math.max(
     0,
-    TABS.findIndex((tab) => tab.name === activeRoute?.name)
+    TABS.findIndex((tab) => tab.name === activeRouteName)
   );
   const activeTabProgress = useRef(
     new Animated.Value(activeTabIndex)
@@ -193,17 +180,101 @@ export default function CustomTabBar({
       dockWidth - ACTIVE_INDICATOR_WIDTH - 4
     );
 
-    return Math.min(
-      Math.max(centeredPosition, 4),
-      maximumPosition
-    );
+    return Math.min(Math.max(centeredPosition, 4), maximumPosition);
   });
   const indicatorTranslateX = activeTabProgress.interpolate({
     inputRange: TABS.map((_, index) => index),
     outputRange: indicatorPositions,
   });
 
-  if (isFocusedExperienceScreen) {
+  const handleNavigate = (tab: PillarTab) => {
+    if (onNavigate && tab.name !== "naam-jap") {
+      onNavigate(tab.name);
+      return;
+    }
+
+    router.push(tab.href as never);
+  };
+
+  return (
+    <GlassContainer spacing={8} style={[styles.glassContainer, style]}>
+      {nativeGlassAvailable ? (
+        <GlassView
+          colorScheme="light"
+          glassEffectStyle="regular"
+          isInteractive={false}
+          pointerEvents="none"
+          style={styles.dockGlass}
+          tintColor="rgba(255, 255, 255, 0.2)"
+        />
+      ) : (
+        <BlurView
+          intensity={72}
+          pointerEvents="none"
+          style={[styles.dockGlass, styles.fallbackDockGlass]}
+          tint="light"
+        />
+      )}
+
+      {dockWidth > 0 ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.indicatorPosition,
+            { transform: [{ translateX: indicatorTranslateX }] },
+          ]}
+        >
+          {nativeGlassAvailable ? (
+            <GlassView
+              colorScheme="light"
+              glassEffectStyle="clear"
+              isInteractive={false}
+              style={styles.activeIndicator}
+              tintColor="rgba(255, 237, 213, 0.55)"
+            />
+          ) : (
+            <BlurView
+              intensity={85}
+              style={[styles.activeIndicator, styles.fallbackActiveIndicator]}
+              tint="light"
+            />
+          )}
+        </Animated.View>
+      ) : null}
+
+      <View
+        onLayout={(event) => setDockWidth(event.nativeEvent.layout.width)}
+        style={styles.tabsRow}
+      >
+        {TABS.map((tab) => (
+          <TabItem
+            focused={tab.name === activeRouteName}
+            Icon={tab.Icon}
+            key={tab.name}
+            label={tab.label}
+            onPress={() => handleNavigate(tab)}
+          />
+        ))}
+      </View>
+    </GlassContainer>
+  );
+}
+
+export default function CustomTabBar({ navigation, state }: any) {
+  const insets = useSafeAreaInsets();
+  const activeRoute = state.routes[state.index];
+  const nestedState = activeRoute?.state;
+  const nestedRoute = nestedState?.routes?.[nestedState.index ?? 0];
+  const nestedRouteName = nestedRoute?.name;
+  const experienceOwnsDock =
+    activeRoute?.name === "experiences" &&
+    (!nestedRouteName ||
+      nestedRouteName === "index" ||
+      nestedRouteName === "[id]" ||
+      nestedRouteName === "ask-sai");
+
+  // Experiences owns its dock so it can move from inline to floating on scroll.
+  if (experienceOwnsDock) {
     return null;
   }
 
@@ -221,91 +292,10 @@ export default function CustomTabBar({
           { paddingBottom: Math.max(insets.bottom, 8) },
         ]}
       >
-        <GlassContainer
-          spacing={8}
-          style={styles.glassContainer}
-        >
-          {nativeGlassAvailable ? (
-            <GlassView
-              colorScheme="light"
-              glassEffectStyle="clear"
-              isInteractive={false}
-              pointerEvents="none"
-              style={styles.dockGlass}
-              // tintColor="rgba(255, 255, 255, 0.05)"
-              tintColor="rgba(255, 237, 213, 0.05)"
-            />
-          ) : (
-            <BlurView
-              intensity={72}
-              pointerEvents="none"
-              style={[styles.dockGlass, styles.fallbackDockGlass]}
-              tint="light"
-            />
-          )}
-
-          {dockWidth > 0 ? (
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.indicatorPosition,
-                {
-                  left: 0,
-                  transform: [{ translateX: indicatorTranslateX }],
-                },
-              ]}
-            >
-              {nativeGlassAvailable ? (
-                <GlassView
-                  colorScheme="light"
-                  
-                    glassEffectStyle="regular"
-                  isInteractive={false}
-                  style={styles.activeIndicator}
-                  tintColor="rgba(255, 237, 213, 0.95)"
-                />
-              ) : (
-                <BlurView
-                  intensity={85}
-                  style={[
-                    styles.activeIndicator,
-                    styles.fallbackActiveIndicator,
-                  ]}
-                  tint="light"
-                />
-              )}
-            </Animated.View>
-          ) : null}
-
-          <View
-            onLayout={(event) => setDockWidth(event.nativeEvent.layout.width)}
-            style={styles.tabsRow}
-          >
-            {TABS.map((tab) => {
-              const index = state.routes.findIndex(
-                (route: any) => route.name === tab.name
-              );
-              const focused = state.index === index;
-
-              return (
-                <TabItem
-                  key={tab.name}
-                  Icon={tab.Icon}
-                  focused={focused}
-                  label={tab.label}
-                  onPress={() => {
-                    if (tab.href) {
-                      router.push(tab.href as never);
-                      return;
-                    }
-
-                    navigation.navigate(tab.name);
-                  }}
-                />
-              );
-            })}
-          </View>
-        </GlassContainer>
+        <PillarGlassDock
+          activeRouteName={activeRoute?.name ?? "experiences"}
+          onNavigate={(routeName) => navigation.navigate(routeName)}
+        />
       </View>
     </View>
   );
@@ -323,7 +313,6 @@ const styles = StyleSheet.create({
   glassContainer: {
     borderRadius: 34,
     height: 66,
-    marginHorizontal: 14,
     maxWidth: 520,
     position: "relative",
     shadowColor: "#292524",
@@ -344,6 +333,7 @@ const styles = StyleSheet.create({
   },
   indicatorPosition: {
     height: ACTIVE_INDICATOR_HEIGHT,
+    left: 0,
     position: "absolute",
     top: 9,
     width: ACTIVE_INDICATOR_WIDTH,
@@ -351,12 +341,11 @@ const styles = StyleSheet.create({
   },
   activeIndicator: {
     alignItems: "center",
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius:24,
+    borderColor: "rgba(255, 255, 255, 0.88)",
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
     height: ACTIVE_INDICATOR_HEIGHT,
     overflow: "hidden",
-    padding:15,
     width: ACTIVE_INDICATOR_WIDTH,
   },
   fallbackActiveIndicator: {
