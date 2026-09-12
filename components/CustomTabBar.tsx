@@ -8,6 +8,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import {
@@ -19,9 +20,7 @@ import {
   Building2,
   CalendarDays,
   House,
-  Sparkles,
   Users,
-  type LucideIcon,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -33,13 +32,29 @@ const COLORS = {
 const ACTIVE_INDICATOR_HEIGHT = 48;
 const ACTIVE_INDICATOR_WIDTH = 58;
 
+type TabIcon = React.ComponentType<{
+  color?: string;
+  size?: number;
+  strokeWidth?: number;
+}>;
+
 type PillarTab = {
   displayLabel: string;
   href: string;
-  Icon: LucideIcon;
+  Icon: TabIcon;
   label: string;
   name: string;
 };
+
+function MalaIcon({ color, size }: React.ComponentProps<TabIcon>) {
+  return (
+    <MaterialCommunityIcons
+      color={color}
+      name="necklace"
+      size={size}
+    />
+  );
+}
 
 const TABS: PillarTab[] = [
   {
@@ -73,7 +88,7 @@ const TABS: PillarTab[] = [
   {
     displayLabel: "Naam Jap",
     href: "/naam-jap",
-    Icon: Sparkles,
+    Icon: MalaIcon,
     label: "Naam Jap",
     name: "naam-jap",
   },
@@ -96,7 +111,7 @@ function TabItem({
 }: {
   displayLabel: string;
   focused: boolean;
-  Icon: LucideIcon;
+  Icon: TabIcon;
   label: string;
   onPress: () => void;
 }) {
