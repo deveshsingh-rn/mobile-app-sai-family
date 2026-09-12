@@ -10,6 +10,10 @@ import {
 } from "react-native";
 
 import { BlurView } from "expo-blur";
+import {
+  GlassView,
+  isGlassEffectAPIAvailable,
+} from "expo-glass-effect";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Building2,
@@ -21,9 +25,16 @@ import {
 
 const COLORS = {
   active: "#171717",
-  border: "rgba(120, 113, 108, 0.18)",
   inactive: "#78716C",
 };
+
+function canUseNativeGlass() {
+  try {
+    return isGlassEffectAPIAvailable();
+  } catch {
+    return false;
+  }
+}
 
 const TABS = [
   {
@@ -65,6 +76,7 @@ function TabItem({
   onPress: () => void;
 }) {
   const anim = useRef(new Animated.Value(focused ? 1 : 0)).current;
+  const nativeGlassAvailable = canUseNativeGlass();
 
   useEffect(() => {
     Animated.spring(anim, {
@@ -94,6 +106,27 @@ function TabItem({
         pressed && styles.pressed,
       ]}
     >
+      {nativeGlassAvailable ? (
+        <GlassView
+          colorScheme="light"
+          glassEffectStyle="clear"
+          isInteractive={false}
+          pointerEvents="none"
+          style={styles.glassCircle}
+          tintColor={focused ? "rgba(255, 237, 213, 0.42)" : "rgba(255, 255, 255, 0.2)"}
+        />
+      ) : (
+        <BlurView
+          intensity={focused ? 68 : 48}
+          pointerEvents="none"
+          style={[
+            styles.glassCircle,
+            focused && styles.activeGlassFallback,
+          ]}
+          tint="light"
+        />
+      )}
+
       <Animated.View
         style={[
           styles.iconWrap,
@@ -141,12 +174,10 @@ export default function CustomTabBar({
       pointerEvents="box-none"
       style={[
         styles.wrapper,
-        { height: 56 + Math.max(insets.bottom, 8) },
+        { height: 66 + Math.max(insets.bottom, 8) },
       ]}
     >
-      <BlurView
-        intensity={42}
-        tint="light"
+      <View
         style={[
           styles.dock,
           { paddingBottom: Math.max(insets.bottom, 8) },
@@ -188,21 +219,31 @@ export default function CustomTabBar({
             );
           })}
         </View>
-      </BlurView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   dock: {
-    backgroundColor: "rgba(255, 255, 255, 0.58)",
-    borderTopColor: COLORS.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    backgroundColor: "transparent",
     bottom: 0,
     left: 0,
-    overflow: "hidden",
     position: "absolute",
     right: 0,
+  },
+  glassCircle: {
+    backgroundColor: "rgba(255, 255, 255, 0.22)",
+    borderColor: "rgba(255, 255, 255, 0.72)",
+    borderRadius: 25,
+    borderWidth: StyleSheet.hairlineWidth,
+    height: 50,
+    position: "absolute",
+    width: 50,
+  },
+  activeGlassFallback: {
+    backgroundColor: "rgba(255, 237, 213, 0.5)",
+    borderColor: "rgba(249, 115, 22, 0.24)",
   },
   iconWrap: {
     alignItems: "center",
@@ -216,7 +257,7 @@ const styles = StyleSheet.create({
   tabItem: {
     alignItems: "center",
     flex: 1,
-    height: 56,
+    height: 66,
     justifyContent: "center",
     minWidth: 0,
   },
@@ -226,7 +267,8 @@ const styles = StyleSheet.create({
   tabsRow: {
     alignItems: "center",
     flexDirection: "row",
-    height: 56,
+    height: 66,
+    paddingHorizontal: 10,
   },
   wrapper: {
     bottom: 0,
