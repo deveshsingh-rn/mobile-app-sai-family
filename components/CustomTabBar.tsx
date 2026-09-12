@@ -31,7 +31,7 @@ const COLORS = {
 };
 
 const ACTIVE_INDICATOR_HEIGHT = 48;
-const ACTIVE_INDICATOR_WIDTH = 78;
+const ACTIVE_INDICATOR_WIDTH = 58;
 
 type PillarTab = {
   href: string;
@@ -205,7 +205,7 @@ export function PillarGlassDock({
           isInteractive={false}
           pointerEvents="none"
           style={styles.dockGlass}
-          tintColor="rgba(255, 255, 255, 0.2)"
+          tintColor="rgba(255, 255, 255, 0.9)"
         />
       ) : (
         <BlurView
