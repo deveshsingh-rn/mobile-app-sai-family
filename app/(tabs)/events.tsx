@@ -35,7 +35,6 @@ import {
   Music,
   Plus,
   Share2,
-  SlidersHorizontal,
   Stethoscope,
   Users,
 } from "lucide-react-native";
@@ -92,6 +91,10 @@ const EVENT_FILTERS: {
   { label: "Medical", value: "medical" },
   { label: "Darshan", value: "darshan" },
 ];
+
+// Keep upcoming discovery controls implemented but hidden until their next release.
+const SHOW_EVENT_MAP_TAB = false;
+const SHOW_EVENT_CATEGORY_FILTERS = false;
 
 const mapMarkers = [
   { icon: Music, left: "25%", top: "14%" },
@@ -365,21 +368,43 @@ function EventsScreen() {
         <Pressable style={styles.headerIcon}>
           <SlidersHorizontal color={EXPERIENCE_THEME.heading} size={20} />
         </Pressable> */}
-      </View>
+      {/* </View> */}
 
-      <View style={styles.controls}>
-        <View style={styles.toggleRow}>
-          <Pressable
-            onPress={() => setViewMode("map")}
-            style={[
-              styles.toggleButton,
-              viewMode === "map" && styles.toggleButtonActive,
-            ]}
-          >
-            <Map color={viewMode === "map" ? "#FFFFFF" : EXPERIENCE_THEME.paragraph} size={16} />
-            <Text style={viewMode === "map" ? styles.toggleTextActive : styles.toggleText}>Map</Text>
-          </Pressable>
-          <Pressable
+      {/* <View style={styles.controls}> */}
+        <View
+          style={[
+            styles.toggleRow,
+            !SHOW_EVENT_CATEGORY_FILTERS && styles.toggleRowWithoutFilters,
+          ]}
+        >
+          {SHOW_EVENT_MAP_TAB ? (
+            <Pressable
+              onPress={() => setViewMode("map")}
+              style={[
+                styles.toggleButton,
+                viewMode === "map" && styles.toggleButtonActive,
+              ]}
+            >
+              <Map
+                color={
+                  viewMode === "map"
+                    ? "#FFFFFF"
+                    : EXPERIENCE_THEME.paragraph
+                }
+                size={16}
+              />
+              <Text
+                style={
+                  viewMode === "map"
+                    ? styles.toggleTextActive
+                    : styles.toggleText
+                }
+              >
+                Map
+              </Text>
+            </Pressable>
+          ) : null}
+          {/* <Pressable
             onPress={() => setViewMode("list")}
             style={[
               styles.toggleButton,
@@ -388,33 +413,40 @@ function EventsScreen() {
           >
             <List color={viewMode === "list" ? "#FFFFFF" : EXPERIENCE_THEME.paragraph} size={16} />
             <Text style={viewMode === "list" ? styles.toggleTextActive : styles.toggleText}>List</Text>
-          </Pressable>
+          </Pressable> */}
         </View>
 
-        <ScrollView
-          contentContainerStyle={styles.chipsContent}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-        >
-          {EVENT_FILTERS.map((filter) => {
-            const active = selectedType === filter.value;
+        {SHOW_EVENT_CATEGORY_FILTERS ? (
+          <ScrollView
+            contentContainerStyle={styles.chipsContent}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          >
+            {EVENT_FILTERS.map((filter) => {
+              const active = selectedType === filter.value;
 
-            return (
-              <Pressable
-                key={filter.value}
-                onPress={() => setSelectedType(filter.value)}
-                style={[styles.chip, active && styles.chipActive]}
-              >
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                  {filter.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+              return (
+                <Pressable
+                  key={filter.value}
+                  onPress={() => setSelectedType(filter.value)}
+                  style={[styles.chip, active && styles.chipActive]}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      active && styles.chipTextActive,
+                    ]}
+                  >
+                    {filter.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : null}
       </View>
 
-      {viewMode === "map" ? (
+      {SHOW_EVENT_MAP_TAB && viewMode === "map" ? (
         <MapOverview events={nearbyLiveEvents} home={home} loading={nearbyLoading} />
       ) : (
       <ScrollView
@@ -1712,7 +1744,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingBottom: 12,
     paddingHorizontal: 16,
-    paddingTop: 54,
+    paddingTop: 38,
   },
   headerBack: {
     color: EXPERIENCE_THEME.heading,
@@ -2501,6 +2533,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     marginBottom: 14,
+  },
+  toggleRowWithoutFilters: {
+    marginBottom: 0,
   },
   toggleText: {
     color: EXPERIENCE_THEME.paragraph,
