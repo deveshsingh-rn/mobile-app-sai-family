@@ -368,7 +368,6 @@ export default function EventFormScreen({
   const [pickerTarget, setPickerTarget] = useState<PickerTarget>(null);
   const [selectionKind, setSelectionKind] = useState<SelectionKind | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [tagDraft, setTagDraft] = useState("");
   const [guidelineDraft, setGuidelineDraft] = useState("");
   const [faqQuestionDraft, setFaqQuestionDraft] = useState("");
   const [faqAnswerDraft, setFaqAnswerDraft] = useState("");
@@ -488,32 +487,6 @@ export default function EventFormScreen({
       });
     }
   }, [detail, eventId, mode]);
-
-  const addTag = useCallback(
-    (value = tagDraft) => {
-      const nextTag = value.trim().toLowerCase();
-
-      if (!nextTag) {
-        return;
-      }
-
-      setForm((current) => ({
-        ...current,
-        tags: current.tags.includes(nextTag)
-          ? current.tags
-          : [...current.tags, nextTag],
-      }));
-      setTagDraft("");
-    },
-    [tagDraft]
-  );
-
-  const removeTag = useCallback((tag: string) => {
-    setForm((current) => ({
-      ...current,
-      tags: current.tags.filter((item) => item !== tag),
-    }));
-  }, []);
 
   const addGuideline = useCallback(() => {
     const nextGuideline = guidelineDraft.trim();
@@ -1297,13 +1270,6 @@ export default function EventFormScreen({
           </View>
         </FormSection>
 
-        <TagsSection
-          addTag={addTag}
-          removeTag={removeTag}
-          tagDraft={tagDraft}
-          tags={form.tags}
-          setTagDraft={setTagDraft}
-        />
         <GuidelinesSection
           addGuideline={addGuideline}
           guidelineDraft={guidelineDraft}
@@ -1741,60 +1707,6 @@ function ReviewRow({label, value}: {label: string; value: string}) {
       <Text style={styles.reviewLabel}>{label}</Text>
       <Text style={styles.reviewValue}>{value}</Text>
     </View>
-  );
-}
-
-function TagsSection({
-  addTag,
-  removeTag,
-  setTagDraft,
-  tagDraft,
-  tags,
-}: {
-  addTag: (value?: string) => void;
-  removeTag: (tag: string) => void;
-  setTagDraft: (value: string) => void;
-  tagDraft: string;
-  tags: string[];
-}) {
-  const suggestedTags = ["devotional", "music", "spiritual", "family", "seva"];
-
-  return (
-    <FormSection optional subtitle="Help devotees discover your event" title="Event tags">
-      <View style={styles.tagsRow}>
-        {tags.length ? tags.map((tag) => (
-          <View key={tag} style={styles.activeTag}>
-            <Text style={styles.activeTagText}>{tag}</Text>
-            <Pressable onPress={() => removeTag(tag)} style={styles.tagClose}>
-              <X color="#FFFFFF" size={10} />
-            </Pressable>
-          </View>
-        )) : (
-          <Text style={styles.optionEmpty}>No tags added yet.</Text>
-        )}
-      </View>
-      <View style={styles.addTagWrap}>
-        <TextInput
-          onChangeText={setTagDraft}
-          onSubmitEditing={() => addTag()}
-          placeholder="Add tags..."
-          placeholderTextColor="#9CA3AF"
-          style={styles.addTagInput}
-          value={tagDraft}
-        />
-        <Pressable onPress={() => addTag()} style={styles.addTagButton}>
-          <Plus color="#FFFFFF" size={14} />
-        </Pressable>
-      </View>
-      <Text style={styles.suggestedTitle}>Suggested Tags</Text>
-      <View style={styles.suggestionRow}>
-        {suggestedTags.map((item) => (
-          <Pressable key={item} onPress={() => addTag(item)} style={styles.suggestionChip}>
-            <Text style={styles.suggestionText}>{item}</Text>
-          </Pressable>
-        ))}
-      </View>
-    </FormSection>
   );
 }
 
