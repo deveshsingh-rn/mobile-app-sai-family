@@ -559,11 +559,10 @@ export default function HomeScreen() {
                 <View style={styles.askSaiBottomRow}>
                   <View style={styles.askSaiCopy}>
                     <Text style={styles.askSaiPrompt}>
-                    Speak or Write, Seek Guidance from Sai Baba&apos;s Teachings in Shree Sai Satcharitra
+                    {'\u2022'} Speak or Write  {"\n"} 
+                    {'\u2022'} Ask Guidance from  Teachings in Shri Sai Satcharitra
                     </Text>
-                    {/* <Text style={styles.askSaiMeta}>
-                      Voice assistant for devotees
-                    </Text> */}
+                   
                   </View>
                   <View style={styles.askSaiMicButton}>
                     <Type
