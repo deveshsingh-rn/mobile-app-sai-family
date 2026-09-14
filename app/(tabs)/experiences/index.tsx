@@ -922,7 +922,7 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    paddingTop: 16,
+    paddingTop: 1,
     paddingBottom: 120,
   },
 

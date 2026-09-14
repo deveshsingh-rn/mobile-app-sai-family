@@ -396,7 +396,7 @@ function EventsScreen() {
 
   const sections = [
     {
-      background: "#FFFFFF",
+       background: EXPERIENCE_THEME.background,
       count: `${sectionCount("happeningToday", todayEvents)} Events`,
       events: todayEvents.slice(0, 4).map(toUiEvent),
       title: "Events Happening Today",
@@ -408,17 +408,17 @@ function EventsScreen() {
       title: "This Week",
     },
     {
-      background: "#FFFFFF",
+      background: EXPERIENCE_THEME.background,
       count: `${sectionCount("thisMonth", monthEvents)} Events`,
       events: monthEvents.slice(0, 4).map(toUiEvent),
       title: "This Month",
     },
-    {
-      background: EXPERIENCE_THEME.background,
-      count: `${sectionCount("comingSoon", laterEvents)} Events`,
-      events: laterEvents.slice(0, 4).map(toUiEvent),
-      title: "Coming Soon",
-    },
+    // {
+    //   background: EXPERIENCE_THEME.background,
+    //   count: `${sectionCount("comingSoon", laterEvents)} Events`,
+    //   events: laterEvents.slice(0, 4).map(toUiEvent),
+    //   title: "Coming Soon",
+    // },
   ];
 
   return (
