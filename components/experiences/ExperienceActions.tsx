@@ -16,6 +16,8 @@ import {
   Send,
 } from "lucide-react-native";
 
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
+
 type Props = {
   liked?: boolean;
   bookmarked?: boolean;
@@ -68,7 +70,7 @@ export default function ExperienceActions({
           color={
             liked
               ? "#ff4d67"
-              : "#7c7c7c"
+              : EXPERIENCE_THEME.paragraph
           }
           fill={
             liked
@@ -90,7 +92,7 @@ export default function ExperienceActions({
       >
         <MessageCircle
           size={20}
-          color="#7c7c7c"
+          color={EXPERIENCE_THEME.paragraph}
         />
 
         <Text style={styles.count}>
@@ -109,7 +111,7 @@ export default function ExperienceActions({
           color={
             reposted
               ? "#11a36a"
-              : "#7c7c7c"
+              : EXPERIENCE_THEME.paragraph
           }
         />
 
@@ -128,12 +130,12 @@ export default function ExperienceActions({
           size={20}
           color={
             bookmarked
-              ? "#d08a18"
-              : "#7c7c7c"
+              ? EXPERIENCE_THEME.heading
+              : EXPERIENCE_THEME.paragraph
           }
           fill={
             bookmarked
-              ? "#d08a18"
+              ? EXPERIENCE_THEME.heading
               : "transparent"
           }
         />
@@ -147,7 +149,7 @@ export default function ExperienceActions({
       >
         <Send
           size={19}
-          color="#7c7c7c"
+          color={EXPERIENCE_THEME.paragraph}
         />
       </Pressable>
     </View>
@@ -171,7 +173,7 @@ const styles = StyleSheet.create({
   },
 
   count: {
-    color: "#7d622e",
+    color: EXPERIENCE_THEME.paragraph,
 
     fontSize: 13,
     fontWeight: "700",

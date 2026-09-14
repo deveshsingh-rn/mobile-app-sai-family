@@ -87,8 +87,8 @@ function ToolbarAction({
       ]}
     >
       <Icon
-        color={active ? "#C2410C" : "#292524"}
-        fill={active && Icon === Bookmark ? "#C2410C" : "none"}
+        color={active ? EXPERIENCE_THEME.heading : EXPERIENCE_THEME.paragraph}
+        fill={active && Icon === Bookmark ? EXPERIENCE_THEME.heading : "none"}
         size={32}
         strokeWidth={active ? 2.45 : 2.15}
       />
@@ -198,7 +198,11 @@ export function ExperienceTopTabs({
               pressed && styles.pressedIconButton,
             ]}
           >
-            <ArrowLeft color="#292524" size={24} strokeWidth={2.2} />
+            <ArrowLeft
+              color={EXPERIENCE_THEME.paragraph}
+              size={24}
+              strokeWidth={2.2}
+            />
           </Pressable>
         ) : null}
 
@@ -271,7 +275,7 @@ const styles = StyleSheet.create({
     width: 60,
   },
   activeCreateButton: {
-    backgroundColor: "#FFF4E8",
+    backgroundColor: EXPERIENCE_THEME.background,
   },
   pressedCreateButton: {
     opacity: 0.78,
@@ -293,7 +297,7 @@ const styles = StyleSheet.create({
     width: 52,
   },
   createAvatar: {
-    backgroundColor: "#F1E4CE",
+    backgroundColor: EXPERIENCE_THEME.border,
     borderRadius: 24,
     height: 48,
     width: 48,
@@ -303,13 +307,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   createAvatarText: {
-    color: "#9A3412",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 18,
     fontWeight: "900",
   },
   createBadge: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
     borderColor: EXPERIENCE_THEME.background,
     borderRadius: 10,
     borderWidth: 2,
@@ -318,21 +322,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "absolute",
     right: 1,
-    shadowColor: "#9A3412",
+    shadowColor: EXPERIENCE_THEME.heading,
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
     width: 21,
   },
   activeIconButton: {
-    backgroundColor: "#FFF4E8",
+    backgroundColor: EXPERIENCE_THEME.background,
   },
   pressedIconButton: {
-    backgroundColor: "#F5EFE7",
+    backgroundColor: EXPERIENCE_THEME.border,
     opacity: 0.76,
   },
   activeDot: {
-    backgroundColor: "#C2410C",
+    backgroundColor: EXPERIENCE_THEME.heading,
     borderRadius: 2,
     bottom: 4,
     height: 3,

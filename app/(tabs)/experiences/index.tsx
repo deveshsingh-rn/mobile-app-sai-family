@@ -831,8 +831,8 @@ const styles = StyleSheet.create({
 
   headerIcon: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     borderWidth: 1,
     height: 44,
@@ -841,7 +841,7 @@ const styles = StyleSheet.create({
   },
 
   eyebrow: {
-    color: "#F97316",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12,
     fontWeight: "900",
   },
@@ -872,8 +872,10 @@ const styles = StyleSheet.create({
 
   primaryAction: {
     alignItems: "center",
-    backgroundColor: "#FFF4E8",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
+    borderWidth: 1,
     height: 44,
     justifyContent: "center",
     width: 44,
@@ -881,7 +883,7 @@ const styles = StyleSheet.create({
 
   heroPanel: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
+    backgroundColor: EXPERIENCE_THEME.background,
     borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: 1,

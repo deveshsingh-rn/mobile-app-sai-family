@@ -17,6 +17,8 @@ import {
   View,
 } from "react-native";
 
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
+
 export type ExperienceCategory = {
   label: string;
   value: string;
@@ -87,7 +89,11 @@ export function CategoryChips({
               ]}
             >
               <CategoryIcon
-                color={isActive ? "#9A3412" : "#A34A0A"}
+                color={
+                  isActive
+                    ? EXPERIENCE_THEME.heading
+                    : EXPERIENCE_THEME.paragraph
+                }
                 size={15}
                 strokeWidth={isActive ? 2.35 : 2}
               />
@@ -131,7 +137,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
-    color: "#44403C",
     gap: 6,
     height: 38,
     justifyContent: "center",
@@ -141,9 +146,9 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   activeChip: {
-    backgroundColor: "#FFF4E8",
-    borderColor: "#FED7AA",
-    shadowColor: "#1C1917",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
+    shadowColor: EXPERIENCE_THEME.heading,
     shadowOffset: { height: 3, width: 0 },
     shadowOpacity: 0.16,
     shadowRadius: 6,
@@ -151,7 +156,7 @@ const styles = StyleSheet.create({
   },
   inactiveChip: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7DED2",
+    borderColor: EXPERIENCE_THEME.border,
   },
   label: {
     fontSize: 13.5,
@@ -159,13 +164,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
   activeText: {
-    color: "#9A3412",
+    color: EXPERIENCE_THEME.heading,
   },
   inactiveText: {
-    color: "#44403C",
+    color: EXPERIENCE_THEME.paragraph,
   },
   activeAccent: {
-    backgroundColor: "#F59E0B",
+    backgroundColor: EXPERIENCE_THEME.heading,
     bottom: 0,
     height: 3,
     left: 12,
@@ -180,7 +185,7 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   taglineText: {
-    color: "#9A3412",
+    color: EXPERIENCE_THEME.heading,
     flexShrink: 1,
     fontSize: 12,
     fontWeight: "700",

@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { EXPERIENCE_THEME } from '@/constants/experience-theme';
+
 export function FeaturedExperience() {
   return (
     <View style={styles.container}>
@@ -11,20 +13,20 @@ export function FeaturedExperience() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff4d5',
-    borderColor: '#ead08a',
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 8,
     borderWidth: 1,
     padding: 16,
   },
   eyebrow: {
-    color: '#8e5d10',
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12,
     fontWeight: '800',
     textTransform: 'uppercase',
   },
   title: {
-    color: '#4e3309',
+    color: EXPERIENCE_THEME.heading,
     fontSize: 18,
     fontWeight: '800',
     marginTop: 8,

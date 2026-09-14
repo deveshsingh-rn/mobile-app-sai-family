@@ -79,12 +79,12 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
 
-    backgroundColor: "#f1ddba",
+    backgroundColor: EXPERIENCE_THEME.border,
   },
 
   avatarFallback: {
     alignItems: "center",
-    backgroundColor: "#f1ddba",
+    backgroundColor: EXPERIENCE_THEME.border,
     borderRadius: 20,
     height: 40,
     justifyContent: "center",
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   },
 
   avatarText: {
-    color: "#8e5d10",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 16,
     fontWeight: "900",
     textTransform: "uppercase",
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   },
 
   time: {
-    color: "#9CA3AF",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 11,
     fontWeight: "600",
     marginTop: 4,

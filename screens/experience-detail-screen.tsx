@@ -207,7 +207,7 @@ export default function ExperienceDetailScreen() {
             pressed && styles.openCommentsPressed,
           ]}
         >
-          <MessageCircle color="#6B7280" size={18} />
+          <MessageCircle color={EXPERIENCE_THEME.paragraph} size={18} />
           <Text style={styles.openCommentsText}>
             {comments.length
               ? `View all ${comments.length} comments`
@@ -320,7 +320,7 @@ export default function ExperienceDetailScreen() {
                 onPress={closeComments}
                 style={styles.closeButton}
               >
-                <X color="#374151" size={21} />
+                <X color={EXPERIENCE_THEME.paragraph} size={21} />
               </Pressable>
             </View>
 
@@ -336,7 +336,7 @@ export default function ExperienceDetailScreen() {
               ListEmptyComponent={
                 <View style={styles.noCommentsBox}>
                   <View style={styles.emptyCommentIcon}>
-                    <MessageCircle color="#F97316" size={25} />
+                    <MessageCircle color={EXPERIENCE_THEME.heading} size={25} />
                   </View>
                   <Text style={styles.noCommentsTitle}>No comments yet</Text>
                   <Text style={styles.noCommentsText}>
@@ -461,14 +461,16 @@ const styles = StyleSheet.create({
   sheetTitleRow: { alignItems: "center", flexDirection: "row" },
   sheetTitle: { color: EXPERIENCE_THEME.heading, fontSize: 17, fontWeight: "900" },
   sheetCount: {
-    color: "#F97316",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 13,
     fontWeight: "800",
     marginLeft: 7,
   },
   closeButton: {
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
+    borderWidth: 1,
     borderRadius: 16,
     height: 34,
     justifyContent: "center",
@@ -490,8 +492,8 @@ const styles = StyleSheet.create({
   },
   emptyCommentIcon: {
     alignItems: "center",
-    backgroundColor: "#FFF4E8",
-    borderColor: "#FED7AA",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 24,
     borderWidth: 1,
     height: 48,

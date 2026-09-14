@@ -387,7 +387,7 @@ export function ExperienceCard({
                   ]}
                 >
                   <MoreHorizontal
-                    color="#6B7280"
+                    color={EXPERIENCE_THEME.paragraph}
                     size={20}
                   />
                 </Pressable>
@@ -406,7 +406,7 @@ export function ExperienceCard({
 
                 {!!item.location && (
                   <View style={styles.locationRow}>
-                    <MapPin color="#9CA3AF" size={12} />
+                    <MapPin color={EXPERIENCE_THEME.paragraph} size={12} />
                     <Text numberOfLines={1} style={styles.locationText}>
                       {item.location}
                     </Text>
@@ -543,7 +543,7 @@ export function ExperienceCard({
               color={
                 item.likedByMe
                   ? "#E11D48"
-                  : "#6B7280"
+                  : EXPERIENCE_THEME.paragraph
               }
               fill={
                 item.likedByMe
@@ -578,7 +578,7 @@ export function ExperienceCard({
             ]}
           >
             <MessageCircle
-              color="#6B7280"
+              color={EXPERIENCE_THEME.paragraph}
               size={18}
             />
             <Text style={styles.actionText}>
@@ -605,7 +605,7 @@ export function ExperienceCard({
               color={
                 item.repostedByMe
                   ? "#15803D"
-                  : "#6B7280"
+                  : EXPERIENCE_THEME.paragraph
               }
               size={18}
             />
@@ -642,12 +642,12 @@ export function ExperienceCard({
             <Bookmark
               color={
                 item.bookmarkedByMe
-                  ? "#374151"
-                  : "#6B7280"
+                  ? EXPERIENCE_THEME.heading
+                  : EXPERIENCE_THEME.paragraph
               }
               fill={
                 item.bookmarkedByMe
-                  ? "#374151"
+                  ? EXPERIENCE_THEME.heading
                   : "transparent"
               }
               size={18}
@@ -669,7 +669,7 @@ export function ExperienceCard({
             ]}
           >
             <Share2
-              color="#6B7280"
+              color={EXPERIENCE_THEME.paragraph}
               size={18}
             />
           </Pressable>
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 14,
     paddingHorizontal: 16,
     paddingVertical: 15,
-    shadowColor: "#292524",
+    shadowColor: EXPERIENCE_THEME.heading,
     shadowOffset: {
       height: 7,
       width: 0,
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
   },
 
   actionPressed: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: EXPERIENCE_THEME.border,
     opacity: 0.72,
   },
 
@@ -792,8 +792,8 @@ const styles = StyleSheet.create({
   },
 
   categoryBadge: {
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 8,
     borderWidth: 1,
     maxWidth: 100,
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
   },
 
   categoryText: {
-    color: "#9A3412",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 10,
     fontWeight: "800",
     textTransform: "capitalize",
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
   },
 
   readMore: {
-    color: "#C2410C",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12,
     fontWeight: "700",
     marginTop: 3,

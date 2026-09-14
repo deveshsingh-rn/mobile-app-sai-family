@@ -60,7 +60,7 @@ export default function CommentInput({
             onChangeText={setComment}
             blurOnSubmit={false}
             placeholder="Add a comment..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={EXPERIENCE_THEME.paragraph}
             multiline
             style={styles.input}
           />
@@ -107,15 +107,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   avatar: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: EXPERIENCE_THEME.border,
     borderRadius: 19,
     height: 38,
     width: 38,
   },
   avatarFallback: {
     alignItems: "center",
-    backgroundColor: "#FFF4E8",
-    borderColor: "#FED7AA",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 19,
     borderWidth: 1,
     height: 38,
@@ -123,14 +123,14 @@ const styles = StyleSheet.create({
     width: 38,
   },
   avatarText: {
-    color: "#9A3412",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 15,
     fontWeight: "900",
     textTransform: "uppercase",
   },
   composer: {
     alignItems: "flex-end",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#FFFFFF",
     borderColor: EXPERIENCE_THEME.border,
     borderRadius: 22,
     borderWidth: 1,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
 
-    backgroundColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
   },
 
   disabled: {
