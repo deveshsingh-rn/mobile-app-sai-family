@@ -369,9 +369,6 @@ export default function EventFormScreen({
   const [selectionKind, setSelectionKind] = useState<SelectionKind | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [guidelineDraft, setGuidelineDraft] = useState("");
-  const [faqQuestionDraft, setFaqQuestionDraft] = useState("");
-  const [faqAnswerDraft, setFaqAnswerDraft] = useState("");
-  const [reviewVisible, setReviewVisible] = useState(false);
   const [draftPublishQueued, setDraftPublishQueued] = useState<string | null>(null);
   const [publishDraftRequested, setPublishDraftRequested] = useState(false);
   const wasSaving = useRef(false);
@@ -509,30 +506,6 @@ export default function EventFormScreen({
     }));
   }, []);
 
-  const addFaq = useCallback(() => {
-    const question = faqQuestionDraft.trim();
-    const answer = faqAnswerDraft.trim();
-
-    if (!question || !answer) {
-      Alert.alert("FAQ", "Add both question and answer.");
-      return;
-    }
-
-    setForm((current) => ({
-      ...current,
-      faq: [...current.faq, {answer, question}],
-    }));
-    setFaqQuestionDraft("");
-    setFaqAnswerDraft("");
-  }, [faqAnswerDraft, faqQuestionDraft]);
-
-  const removeFaq = useCallback((indexToRemove: number) => {
-    setForm((current) => ({
-      ...current,
-      faq: current.faq.filter((_, index) => index !== indexToRemove),
-    }));
-  }, []);
-
   const handleFetchTitleSuggestions = useCallback(() => {
     dispatch(
       fetchEventTitleSuggestionsRequest({
@@ -604,8 +577,7 @@ export default function EventFormScreen({
       !isFormCompleteForAutosave(form) ||
       draftSaving ||
       publishingDraft ||
-      uploadingMedia ||
-      reviewVisible
+      uploadingMedia
     ) {
       return;
     }
@@ -637,7 +609,6 @@ export default function EventFormScreen({
     isGroupEvent,
     mode,
     publishingDraft,
-    reviewVisible,
     uploadingMedia,
   ]);
 
@@ -900,7 +871,8 @@ export default function EventFormScreen({
         return;
       }
 
-      setReviewVisible(true);
+      setSubmitted(true);
+      dispatch(createEventRequest(payload));
       return;
     }
 
@@ -925,21 +897,6 @@ export default function EventFormScreen({
     setSubmitted(true);
     dispatch(updateEventRequest({...payload, id: eventId}));
   }, [detail, dispatch, eventId, form, mode, sanghaGroupId]);
-
-  const confirmCreateEvent = useCallback(() => {
-    const payload = toPayload(form, sanghaGroupId);
-    const validation = validateCreateEventPayload(payload);
-
-    if (!validation.isValid) {
-      setReviewVisible(false);
-      Alert.alert("Event", getFirstValidationError(validation));
-      return;
-    }
-
-    setReviewVisible(false);
-    setSubmitted(true);
-    dispatch(createEventRequest(payload));
-  }, [dispatch, form, sanghaGroupId]);
 
   const selectionOptions =
     selectionKind === "country"
@@ -1277,15 +1234,6 @@ export default function EventFormScreen({
           removeGuideline={removeGuideline}
           setGuidelineDraft={setGuidelineDraft}
         />
-        <FaqSection
-          addFaq={addFaq}
-          answerDraft={faqAnswerDraft}
-          faq={form.faq}
-          questionDraft={faqQuestionDraft}
-          removeFaq={removeFaq}
-          setAnswerDraft={setFaqAnswerDraft}
-          setQuestionDraft={setFaqQuestionDraft}
-        />
         <PreviewSection form={form} />
 
         {mode === "create" ? (
@@ -1360,7 +1308,7 @@ export default function EventFormScreen({
 
           <PrimaryActionButton
             disabled={submitSaving || uploadingMedia || publishingDraft}
-            label={mode === "create" ? "Review Event" : "Save Changes"}
+            label={mode === "create" ? "Create Event" : "Save Changes"}
             loading={submitSaving}
             onPress={handleSubmit}
           />
@@ -1381,14 +1329,6 @@ export default function EventFormScreen({
           value={parseDate(form[pickerTarget.field])}
         />
       )}
-
-      <ReviewEventModal
-        form={form}
-        onClose={() => setReviewVisible(false)}
-        onConfirm={confirmCreateEvent}
-        saving={submitSaving}
-        visible={reviewVisible}
-      />
 
       <Modal
         animationType="slide"
@@ -1638,78 +1578,6 @@ function RecurrenceSection({
   );
 }
 
-function ReviewEventModal({
-  form,
-  onClose,
-  onConfirm,
-  saving,
-  visible,
-}: {
-  form: EventFormState;
-  onClose: () => void;
-  onConfirm: () => void;
-  saving: boolean;
-  visible: boolean;
-}) {
-  return (
-    <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
-      <View style={styles.modalBackdrop}>
-        <View style={styles.reviewSheet}>
-          <View style={styles.selectionHeader}>
-            <Text style={styles.selectionTitle}>Review Event</Text>
-            <Pressable onPress={onClose} style={styles.selectionClose}>
-              <X color="#1F2937" size={19} />
-            </Pressable>
-          </View>
-
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.reviewTitle}>{form.title || "Untitled event"}</Text>
-            <Text style={styles.reviewDescription}>
-              {form.description || "No description added yet."}
-            </Text>
-            <ReviewRow label="Type" value={form.type} />
-            <ReviewRow label="Date" value={formatDate(form.startAt)} />
-            <ReviewRow label="Time" value={`${formatTime(form.startAt)} - ${formatTime(form.endAt)}`} />
-            <ReviewRow label="Venue" value={form.venueName || "Not added"} />
-            <ReviewRow label="Address" value={form.address || "Not added"} />
-            <ReviewRow label="Location" value={[form.city, form.state, form.country].filter(Boolean).join(", ") || "Not added"} />
-            <ReviewRow
-              label="Recurrence"
-              value={
-                form.recurrenceEnabled
-                  ? `${form.recurrenceFrequency}, ${form.recurrenceCount || "1"} occurrence(s)`
-                  : "One-time event"
-              }
-            />
-            <ReviewRow label="Tags" value={form.tags.length ? form.tags.join(", ") : "None"} />
-            <ReviewRow
-              label="Guidelines"
-              value={form.guidelines.length ? form.guidelines.join("; ") : "None"}
-            />
-            <ReviewRow label="FAQ" value={form.faq.length ? `${form.faq.length} item(s)` : "None"} />
-          </ScrollView>
-
-          <PrimaryActionButton
-            disabled={saving}
-            label="Create Event"
-            loading={saving}
-            onPress={onConfirm}
-          />
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-function ReviewRow({label, value}: {label: string; value: string}) {
-  return (
-    <View style={styles.reviewRow}>
-      <Text style={styles.reviewLabel}>{label}</Text>
-      <Text style={styles.reviewValue}>{value}</Text>
-    </View>
-  );
-}
-
 function GuidelinesSection({
   addGuideline,
   guidelineDraft,
@@ -1750,63 +1618,6 @@ function GuidelinesSection({
           <Plus color="#FFFFFF" size={14} />
         </Pressable>
       </View>
-    </FormSection>
-  );
-}
-
-function FaqSection({
-  addFaq,
-  answerDraft,
-  faq,
-  questionDraft,
-  removeFaq,
-  setAnswerDraft,
-  setQuestionDraft,
-}: {
-  addFaq: () => void;
-  answerDraft: string;
-  faq: {answer: string; question: string}[];
-  questionDraft: string;
-  removeFaq: (index: number) => void;
-  setAnswerDraft: (value: string) => void;
-  setQuestionDraft: (value: string) => void;
-}) {
-  return (
-    <FormSection
-      optional
-      subtitle="Questions and answers are saved with the event detail"
-      title="Frequently asked questions"
-    >
-      {faq.map((item, index) => (
-        <View key={`${item.question}-${index}`} style={styles.faqCard}>
-          <View style={styles.faqCopy}>
-            <Text style={styles.faqQuestion}>{item.question}</Text>
-            <Text style={styles.faqAnswer}>{item.answer}</Text>
-          </View>
-          <Pressable onPress={() => removeFaq(index)} style={styles.roundButtonSmall}>
-            <X color="#6B7280" size={15} />
-          </Pressable>
-        </View>
-      ))}
-      <TextInput
-        onChangeText={setQuestionDraft}
-        placeholder="Question"
-        placeholderTextColor="#9CA3AF"
-        style={styles.input}
-        value={questionDraft}
-      />
-      <TextInput
-        onChangeText={setAnswerDraft}
-        multiline
-        placeholder="Answer"
-        placeholderTextColor="#9CA3AF"
-        style={[styles.input, styles.smallArea]}
-        value={answerDraft}
-      />
-      <Pressable onPress={addFaq} style={styles.dashedButton}>
-        <Plus color="#9CA3AF" size={16} />
-        <Text style={styles.dashedText}>Add FAQ</Text>
-      </Pressable>
     </FormSection>
   );
 }
@@ -2326,31 +2137,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     paddingHorizontal: 16,
     paddingTop: 12,
-  },
-  faqAnswer: {
-    color: "#6B7280",
-    fontSize: 13,
-    fontWeight: "600",
-    lineHeight: 19,
-    marginTop: 4,
-  },
-  faqCard: {
-    alignItems: "flex-start",
-    backgroundColor: "#FAFAF9",
-    borderColor: "#F6EFD9",
-    borderRadius: 16,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    padding: 12,
-  },
-  faqCopy: {
-    flex: 1,
-  },
-  faqQuestion: {
-    color: "#1F2937",
-    fontSize: 14,
-    fontWeight: "900",
   },
   fieldLabel: {
     color: "#57534E",
@@ -2926,44 +2712,6 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     fontSize: 13,
     fontWeight: "900",
-  },
-  reviewDescription: {
-    color: "#6B7280",
-    fontSize: 13,
-    fontWeight: "600",
-    lineHeight: 19,
-    marginBottom: 12,
-  },
-  reviewLabel: {
-    color: "#6B7280",
-    fontSize: 12,
-    fontWeight: "800",
-    marginBottom: 4,
-  },
-  reviewRow: {
-    borderBottomColor: "#F6EFD9",
-    borderBottomWidth: 1,
-    paddingVertical: 10,
-  },
-  reviewSheet: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "86%",
-    paddingBottom: 22,
-    paddingHorizontal: 16,
-  },
-  reviewTitle: {
-    color: "#1F2937",
-    fontSize: 20,
-    fontWeight: "900",
-    marginTop: 14,
-  },
-  reviewValue: {
-    color: "#1F2937",
-    fontSize: 14,
-    fontWeight: "800",
-    lineHeight: 20,
   },
   segment: {
     alignItems: "center",
