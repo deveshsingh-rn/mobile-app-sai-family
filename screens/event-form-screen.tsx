@@ -39,7 +39,6 @@ import {
 import { MotiView } from "moti";
 import {
   ArrowRight,
-  BookOpen,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -47,18 +46,12 @@ import {
   ChevronRight,
   Clock3,
   Eye,
-  Heart,
   ImagePlus,
   LocateFixed,
-  Music,
   Plus,
   Repeat2,
   Save,
   Search,
-  Sparkles,
-  Stethoscope,
-  Users,
-  Utensils,
   X,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -168,20 +161,6 @@ const TIMEZONE_OPTIONS = [
   "Europe/London",
   "America/New_York",
   "America/Los_Angeles",
-];
-
-const typeOptions: {
-  icon: React.ComponentType<{color?: string; size?: number}>;
-  label: string;
-  value: EventType;
-}[] = [
-  {icon: Music, label: "Bhajan", value: "bhajan"},
-  {icon: Heart, label: "Pooja", value: "pooja"},
-  {icon: Users, label: "Seva", value: "seva"},
-  {icon: Stethoscope, label: "Medical", value: "medical"},
-  {icon: BookOpen, label: "Satsang", value: "satsang"},
-  {icon: Sparkles, label: "Darshan", value: "darshan"},
-  {icon: Utensils, label: "General", value: "general"},
 ];
 
 const countryOptions = Country.getAllCountries();
@@ -1177,46 +1156,8 @@ export default function EventFormScreen({
         </FormSection>
 
         <FormSection
-          completed={Boolean(form.type)}
-          step="2"
-          subtitle="Help devotees understand the nature of your event"
-          title="Choose an event type"
-        >
-          <View style={styles.typeGrid}>
-            {typeOptions.map((item) => {
-              const active = form.type === item.value;
-              const Icon = item.icon;
-
-              return (
-                <Pressable
-                  key={item.label}
-                  onPress={() => setField("type", item.value)}
-                  style={({pressed}) => [
-                    styles.typeCard,
-                    active && styles.typeCardActive,
-                    pressed && styles.controlPressed,
-                  ]}
-                >
-                  <View style={[styles.typeIcon, active && styles.typeIconActive]}>
-                    <Icon color={active ? "#C2410C" : "#6B7280"} size={20} />
-                  </View>
-                  <Text style={[styles.typeLabel, active && styles.typeLabelActive]}>
-                    {item.label}
-                  </Text>
-                  {active ? (
-                    <View style={styles.typeSelectionCheck}>
-                      <Check color="#FFFFFF" size={10} strokeWidth={3} />
-                    </View>
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </View>
-        </FormSection>
-
-        <FormSection
           completed={formProgress.items[1].complete}
-          step="3"
+          step="2"
           subtitle="Choose the date and time for your sacred event"
           title="Set the schedule"
         >
@@ -1257,7 +1198,7 @@ export default function EventFormScreen({
 
         <FormSection
           completed={formProgress.items[2].complete}
-          step="4"
+          step="3"
           subtitle="Where will the gathering take place?"
           title="Add the venue"
         >
@@ -1365,7 +1306,7 @@ export default function EventFormScreen({
 
         <FormSection
           completed={form.description.trim().length >= 10}
-          step="5"
+          step="4"
           subtitle="Share what devotees can expect from this gathering"
           title="Describe the experience"
         >
@@ -3351,56 +3292,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     marginBottom: 12,
-  },
-  typeCard: {
-    alignItems: "center",
-    backgroundColor: "#FAFAF9",
-    borderColor: "#E7E5E4",
-    borderRadius: 12,
-    borderWidth: 1,
-    flex: 1,
-    flexDirection: "row",
-    gap: 10,
-    minHeight: 60,
-    minWidth: "47%",
-    padding: 10,
-  },
-  typeCardActive: {
-    backgroundColor: "#FFF4E8",
-    borderColor: "#EA580C",
-  },
-  typeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  typeIcon: {
-    alignItems: "center",
-    backgroundColor: "#F6EFD9",
-    borderRadius: 18,
-    height: 36,
-    justifyContent: "center",
-    width: 36,
-  },
-  typeIconActive: {
-    backgroundColor: "#FFEDD5",
-  },
-  typeLabel: {
-    color: "#1F2937",
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  typeLabelActive: {
-    color: "#9A3412",
-  },
-  typeSelectionCheck: {
-    alignItems: "center",
-    backgroundColor: "#EA580C",
-    borderRadius: 9,
-    height: 18,
-    justifyContent: "center",
-    width: 18,
   },
   uploadOverlay: {
     ...StyleSheet.absoluteFillObject,
