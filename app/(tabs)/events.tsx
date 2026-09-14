@@ -81,6 +81,7 @@ import {
 } from "@/store/hooks";
 import { requestLocationPermissionWithSettingsFallback } from "@/services/location-permissions";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
+import { FontAwesome } from "@expo/vector-icons";
 
 const EVENT_FILTERS: {
   label: string;
@@ -403,7 +404,7 @@ function EventsScreen() {
        background: EXPERIENCE_THEME.background,
       count: `${sectionCount("happeningToday", todayEvents)} Events`,
       events: todayEvents.slice(0, 4).map(toUiEvent),
-      title: "Events Happening Today",
+      title: "Happening Today",
     },
     {
       background: EXPERIENCE_THEME.background,
@@ -625,6 +626,22 @@ function EventsScreen() {
             <ActivityIndicator color={EXPERIENCE_THEME.heading} size="large" />
           </View>
         ) : null}
+        <View style={styles.eventsFeedHeading}>
+          <View style={styles.eventsFeedHeadingIcon}>
+            {/* <Calendar
+              color={EXPERIENCE_THEME.heading}
+              size={21}
+              strokeWidth={2.3}
+            /> */}
+            <FontAwesome name="group" size={34} color={EXPERIENCE_THEME.heading} />
+          </View>
+          <View style={styles.eventsFeedHeadingCopy}>
+            <Text style={styles.eventsFeedHeadingTitle}>Events</Text>
+            <Text style={styles.eventsFeedHeadingSubtitle}>
+              Upcoming Sai Family Events
+            </Text>
+          </View>
+        </View>
 
         {sections.map((section) => (
           <EventSection
@@ -1218,21 +1235,21 @@ function EventQuickActions() {
     {
       href: "/events/rsvps",
       icon: CalendarCheck,
-      label: "My RSVPs",
+      label: "My Confirmed Events",
     },
-    {
-      href: "/events/my-events",
-      icon: Bookmark,
-      label: "My Events",
-    },
+    // {
+    //   href: "/events/my-events",
+    //   icon: Bookmark,
+    //   label: "My Events",
+    // },
   ] as const;
 
   return (
     <View style={styles.productSection}>
-      <SectionHeading
+      {/* <SectionHeading
         subtitle="Shortcuts for your regular event work"
         title="Quick Actions"
-      />
+      /> */}
       <View style={styles.quickGrid}>
         {actions.map((action) => {
           const Icon = action.icon;
@@ -1507,6 +1524,42 @@ function SuggestedCommunities({
 export default EventsScreen;
 
 const styles = StyleSheet.create({
+  eventsFeedHeading: {
+    alignItems: "center",
+    borderBottomColor: EXPERIENCE_THEME.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    marginHorizontal: 16,
+    paddingBottom: 12,
+    paddingTop: 16,
+  },
+  eventsFeedHeadingIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 52,
+    justifyContent: "center",
+    width: 52,
+  },
+  eventsFeedHeadingCopy: {
+    flex: 1,
+    marginLeft: 11,
+  },
+  eventsFeedHeadingTitle: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 21,
+    fontWeight: "900",
+    lineHeight: 25,
+  },
+  eventsFeedHeadingSubtitle: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 15,
+    fontWeight: "700",
+    lineHeight: 17,
+    marginTop: 1,
+  },
   eventToolbar: {
     alignItems: "center",
     backgroundColor: EXPERIENCE_THEME.background,
@@ -2258,7 +2311,7 @@ const styles = StyleSheet.create({
     width: 42,
   },
   quickLabel: {
-    color: EXPERIENCE_THEME.heading,
+    color: '#fff',
     fontSize: 13,
     fontWeight: "800",
     marginTop: 10,
@@ -2266,12 +2319,12 @@ const styles = StyleSheet.create({
   },
   quickTile: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: EXPERIENCE_THEME.heading,
     borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
-    borderWidth: 1,
+    borderWidth: 3,
     padding: 14,
-    width: "48%",
+    width: "100%",
   },
   schedulerContent: {
     gap: 9,
