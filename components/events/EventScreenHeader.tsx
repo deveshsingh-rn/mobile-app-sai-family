@@ -108,9 +108,9 @@ const styles = StyleSheet.create({
   iconSpacer: { height: 44, width: 44 },
   pressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },
   subtitle: {
-    color: "#78716C",
-    fontSize: 12,
-    fontWeight: "600",
+    color: "#191817",
+    fontSize: 14,
+    fontWeight: "700",
     marginTop: 2,
   },
   title: {

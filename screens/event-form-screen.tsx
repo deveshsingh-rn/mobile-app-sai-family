@@ -1018,10 +1018,10 @@ export default function EventFormScreen({
         onBack={() => router.back()}
         subtitle={
           mode === "create"
-            ? "Guide devotees with clear event details"
+            ? "Guide Devotees with Event Details"
             : "Keep your gathering information current"
         }
-        title={mode === "create" ? "Create Sacred Gathering" : "Edit Sacred Gathering"}
+        title={mode === "create" ? "Create Event" : "Edit Event"}
       />
 
       <ScrollView
@@ -1030,8 +1030,8 @@ export default function EventFormScreen({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.formGuide}>
-          <View style={styles.formGuideTop}>
+        {/* <View style={styles.formGuide}> */}
+          {/* <View style={styles.formGuideTop}>
             <View style={styles.formGuideIcon}>
               <CheckCircle2 color="#C2410C" size={20} strokeWidth={2.4} />
             </View>
@@ -1044,15 +1044,15 @@ export default function EventFormScreen({
               </Text>
             </View>
             <Text style={styles.formGuidePercent}>{formProgress.percent}%</Text>
-          </View>
-          <View style={styles.formGuideTrack}>
+          </View> */}
+          {/* <View style={styles.formGuideTrack}>
             <MotiView
               animate={{width: `${formProgress.percent}%`}}
               style={styles.formGuideFill}
               transition={{duration: 280, type: "timing"}}
             />
-          </View>
-          <View style={styles.formGuideItems}>
+          </View> */}
+          {/* <View style={styles.formGuideItems}>
             {formProgress.items.map((item) => (
               <View key={item.label} style={styles.formGuideItem}>
                 <View
@@ -1073,8 +1073,8 @@ export default function EventFormScreen({
                 </Text>
               </View>
             ))}
-          </View>
-        </View>
+          </View> */}
+        {/* </View> */}
 
         {!!submitError && <Text style={styles.errorText}>{submitError}</Text>}
 
@@ -1120,10 +1120,10 @@ export default function EventFormScreen({
               </View>
             ) : null}
           </Pressable>
-          <View style={styles.tipRow}>
+          {/* <View style={styles.tipRow}>
             <Sparkles color="#9CA3AF" size={13} />
             <Text style={styles.tipText}>Tip: devotional images create deeper connection</Text>
-          </View>
+          </View> */}
         </FormSection>
 
         <FormSection
@@ -1143,7 +1143,7 @@ export default function EventFormScreen({
             />
             <Text style={styles.counter}>{form.title.length}/80</Text>
           </View>
-          <Pressable
+          {/* <Pressable
             disabled={titleSuggestionsLoading}
             onPress={handleFetchTitleSuggestions}
             style={({pressed}) => [
@@ -1160,8 +1160,8 @@ export default function EventFormScreen({
             <Text style={styles.helperActionText}>
               {titleSuggestionsLoading ? "Finding titles..." : "Suggest event titles"}
             </Text>
-          </Pressable>
-          {!!titleSuggestions.length && (
+          </Pressable> */}
+          {/* {!!titleSuggestions.length && (
             <View style={styles.suggestionList}>
               {titleSuggestions.slice(0, 4).map((suggestion, index) => (
                 <Pressable
@@ -1171,9 +1171,9 @@ export default function EventFormScreen({
                 >
                   <Text style={styles.suggestionText}>{suggestion.title}</Text>
                 </Pressable>
-              ))}
-            </View>
-          )}
+              ))} */}
+            {/* </View> */}
+          {/* )} */}
         </FormSection>
 
         <FormSection
