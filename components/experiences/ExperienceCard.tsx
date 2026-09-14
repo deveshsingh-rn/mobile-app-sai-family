@@ -328,6 +328,7 @@ export function ExperienceCard({
       <View
         style={[
           styles.card,
+          disableNavigation && styles.cardExpanded,
           hideBorder && styles.cardNoBorder,
         ]}
       >
@@ -467,7 +468,10 @@ export function ExperienceCard({
                     ? "Open experience video"
                     : "Open experience photo"
                 }
-                style={styles.mediaContainer}
+                style={[
+                  styles.mediaContainer,
+                  disableNavigation && styles.mediaContainerExpanded,
+                ]}
                 onPress={(event) => {
                   event.stopPropagation();
 
@@ -683,12 +687,12 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: EXPERIENCE_THEME.background,
     borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    marginBottom: 16,
+    marginBottom: 10,
     marginHorizontal: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 15,
+    paddingHorizontal: 13,
+    paddingVertical: 12,
     shadowColor: EXPERIENCE_THEME.heading,
     shadowOffset: {
       height: 7,
@@ -697,6 +701,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 18,
     elevation: 3,
+  },
+  cardExpanded: {
+    borderRadius: 20,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
   },
   cardNoBorder: {
     borderRadius: 0,
@@ -723,11 +733,11 @@ const styles = StyleSheet.create({
   avatar: {
     alignItems: "center",
     borderColor: "#F1E4CE",
-    borderRadius: 21,
+    borderRadius: 20,
     borderWidth: 1,
-    height: 42,
+    height: 40,
     justifyContent: "center",
-    width: 42,
+    width: 40,
   },
 
   avatarText: {
@@ -810,10 +820,10 @@ const styles = StyleSheet.create({
 
   content: {
     color: EXPERIENCE_THEME.paragraph,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
-    lineHeight: 24,
-    marginTop: 9,
+    lineHeight: 21,
+    marginTop: 7,
   },
 
   readMore: {
@@ -846,9 +856,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
-    marginTop: 14,
-    minHeight: 82,
-    padding: 12,
+    marginTop: 10,
+    minHeight: 70,
+    padding: 10,
   },
 
   audioAttachmentPressed: {
@@ -859,10 +869,10 @@ const styles = StyleSheet.create({
   audioPlayButton: {
     alignItems: "center",
     backgroundColor: "#292524",
-    borderRadius: 23,
-    height: 46,
+    borderRadius: 20,
+    height: 40,
     justifyContent: "center",
-    width: 46,
+    width: 40,
   },
 
   audioAttachmentBody: {
@@ -931,15 +941,20 @@ const styles = StyleSheet.create({
   },
 
   mediaContainer: {
-    aspectRatio: 1.55,
+    aspectRatio: 1.9,
     backgroundColor: "#F3F4F6",
     borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
-    marginTop: 14,
+    marginTop: 10,
     overflow: "hidden",
     position: "relative",
     width: "100%",
+  },
+  mediaContainerExpanded: {
+    aspectRatio: 1.55,
+    borderRadius: 16,
+    marginTop: 14,
   },
 
   media: {
@@ -975,8 +990,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 12,
-    paddingTop: 8,
+    marginTop: 9,
+    paddingTop: 6,
   },
 
   actionButton: {

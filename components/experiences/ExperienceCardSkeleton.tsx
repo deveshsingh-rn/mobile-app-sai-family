@@ -57,9 +57,9 @@ export function ExperienceCardSkeleton({
           <View key={index} style={styles.card}>
             <View style={styles.header}>
               <ShimmerBlock
-                height={42}
+                height={40}
                 radius="round"
-                width={42}
+                width={40}
               />
 
               <View style={styles.identity}>
@@ -105,8 +105,8 @@ export function ExperienceCardSkeleton({
             </View>
 
             <ShimmerBlock
-              height={202}
-              radius={16}
+              height={170}
+              radius={14}
               width="100%"
             />
 
@@ -354,20 +354,20 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 12,
-    paddingTop: 10,
+    marginTop: 9,
+    paddingTop: 6,
   },
   card: {
     backgroundColor: EXPERIENCE_THEME.background,
     borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    marginBottom: 16,
+    marginBottom: 10,
     marginHorizontal: 14,
-    padding: 16,
+    padding: 13,
   },
   category: {
-    marginTop: 13,
+    marginTop: 9,
   },
   comments: {
     gap: 18,
@@ -476,9 +476,9 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   story: {
-    gap: 10,
-    marginBottom: 15,
-    marginTop: 12,
+    gap: 8,
+    marginBottom: 10,
+    marginTop: 9,
   },
   topBarSpacer: {
     width: 40,
