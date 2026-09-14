@@ -110,6 +110,39 @@ function updateEventById(
     : event;
 }
 
+function mapHomeEvents(
+  home: EventsState["home"],
+  updateEvent: (event: any) => any
+): EventsState["home"] {
+  if (!home) {
+    return home;
+  }
+
+  return {
+    ...home,
+    sections: home.sections
+      ? Object.fromEntries(
+          Object.entries(home.sections).map(([key, section]) => [
+            key,
+            {
+              ...section,
+              events: (section.events || []).map(updateEvent),
+            },
+          ])
+        )
+      : home.sections,
+    trendingSections: home.trendingSections
+      ? Object.fromEntries(
+          Object.entries(home.trendingSections).map(([key, events]) => [
+            key,
+            (events || []).map(updateEvent),
+          ])
+        )
+      : home.trendingSections,
+    trendingThisWeek: (home.trendingThisWeek || []).map(updateEvent),
+  };
+}
+
 function getCheckInKey(eventId?: string, userId?: string) {
   return `${eventId || ""}:${userId || ""}`;
 }
@@ -629,6 +662,7 @@ export function eventsReducer(
             ? updateEvent(state.detail)
             : state.detail,
         feed: state.feed.map(updateEvent),
+        home: mapHomeEvents(state.home, updateEvent),
         myRsvps: rsvpedByMe
           ? state.myRsvps.some(
               (event) =>
@@ -677,6 +711,9 @@ export function eventsReducer(
               }
             : state.detail,
         feed: state.feed.map((event) =>
+          updateEventById(event, id, changes)
+        ),
+        home: mapHomeEvents(state.home, (event) =>
           updateEventById(event, id, changes)
         ),
         eventBookmarks:
@@ -740,6 +777,9 @@ export function eventsReducer(
               }
             : state.detail,
         feed: state.feed.map((event) =>
+          updateEventById(event, id, changes)
+        ),
+        home: mapHomeEvents(state.home, (event) =>
           updateEventById(event, id, changes)
         ),
       };
