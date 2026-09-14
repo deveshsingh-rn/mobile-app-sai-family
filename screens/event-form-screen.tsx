@@ -1673,7 +1673,7 @@ function RecurrenceSection({
       {enabled ? (
         <View style={styles.recurrenceControls}>
           <View style={styles.segmentRow}>
-            {(["daily", "weekly", "monthly"] as const).map((item) => (
+            {(["Daily", "Weekly", "Monthly"] as const).map((item) => (
               <Pressable
                 key={item}
                 onPress={() => setFrequency(item)}
