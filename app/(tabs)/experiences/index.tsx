@@ -55,6 +55,7 @@ import {
 
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { PillarGlassDock } from "@/components/CustomTabBar";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const LIMIT = 10;
 const HEADER_SCROLL_THRESHOLD = 18;
@@ -650,14 +651,13 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-
-    backgroundColor: "#FAFAF9",
+    backgroundColor: EXPERIENCE_THEME.background,
   },
 
   fixedTop: {
-    backgroundColor: "#FFFCF7",
+    backgroundColor: EXPERIENCE_THEME.background,
     borderBottomWidth: 1,
-    borderBottomColor: "#E9D8BD",
+    borderBottomColor: EXPERIENCE_THEME.border,
     paddingTop: 54,
   },
 
@@ -807,7 +807,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#E9D8BD",
+    borderBottomColor: EXPERIENCE_THEME.border,
     backdropFilter: "blur(10px)",
     shadowColor: "#ed9a1e",
     shadowOffset: {
@@ -847,7 +847,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
 
     fontSize: 24,
     fontWeight: "900",
@@ -862,7 +862,7 @@ const styles = StyleSheet.create({
   headerAction: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     borderWidth: 1,
     height: 44,
@@ -882,7 +882,7 @@ const styles = StyleSheet.create({
   heroPanel: {
     alignItems: "center",
     backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
@@ -896,14 +896,14 @@ const styles = StyleSheet.create({
   },
 
   heroTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 15,
     fontWeight: "900",
     lineHeight: 22,
   },
 
   heroMeta: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     fontWeight: "700",
     marginTop: 4,
@@ -943,7 +943,7 @@ const styles = StyleSheet.create({
   },
 
   emptyText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
 
     fontSize: 16,
     fontWeight: "800",

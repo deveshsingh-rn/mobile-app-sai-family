@@ -47,6 +47,7 @@ import {
 import type {
   ExperienceCategory,
 } from "@/store/experiences/types";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const CONTENT_LIMIT = 3000;
 
@@ -295,13 +296,13 @@ export default function EditExperienceScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFCF7",
+    backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
   },
   header: {
     alignItems: "center",
-    backgroundColor: "#FFFCF7",
-    borderBottomColor: "#E9D8BD",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: 1,
     flexDirection: "row",
     paddingBottom: 13,
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
   iconButton: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     borderWidth: 1,
     height: 44,
@@ -328,7 +329,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   title: {
-    color: "#292524",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 20,
     fontWeight: "900",
     marginTop: 1,
@@ -356,7 +357,7 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#E9D8BD",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     marginBottom: 15,
@@ -368,12 +369,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   sectionTitle: {
-    color: "#292524",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 17,
     fontWeight: "900",
   },
   sectionHint: {
-    color: "#78716C",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 6,
@@ -384,7 +385,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   storyInput: {
-    color: "#292524",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 17,
     fontWeight: "600",
     lineHeight: 26,
@@ -426,11 +427,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   locationInput: {
-    backgroundColor: "#FAFAF9",
-    borderColor: "#E7E5E4",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 12,
     borderWidth: 1,
-    color: "#292524",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 16,
     fontWeight: "600",
     height: 52,
@@ -438,7 +439,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   mediaNote: {
-    color: "#78716C",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     lineHeight: 20,
     paddingHorizontal: 6,

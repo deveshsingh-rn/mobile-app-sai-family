@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import { SendHorizonal } from "lucide-react-native";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 type Props = {
   loading?: boolean;
@@ -93,11 +94,9 @@ export default function CommentInput({
 const styles = StyleSheet.create({
   wrapper: {
     borderTopWidth: 1,
-    borderTopColor:
-      "#E5E7EB",
+    borderTopColor: EXPERIENCE_THEME.border,
 
-    backgroundColor:
-      "#FFFFFF",
+    backgroundColor: EXPERIENCE_THEME.background,
   },
 
   container: {
@@ -132,7 +131,7 @@ const styles = StyleSheet.create({
   composer: {
     alignItems: "flex-end",
     backgroundColor: "#F3F4F6",
-    borderColor: "#E5E7EB",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 22,
     borderWidth: 1,
     flex: 1,
@@ -148,7 +147,7 @@ const styles = StyleSheet.create({
 
     paddingHorizontal: 14,
     paddingVertical: 11,
-    color: "#111827",
+    color: EXPERIENCE_THEME.paragraph,
 
     fontSize: 15,
     lineHeight: 21,

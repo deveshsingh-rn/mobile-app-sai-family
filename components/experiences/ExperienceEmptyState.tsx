@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { EXPERIENCE_THEME } from '@/constants/experience-theme';
 
 export function ExperienceEmptyState() {
   return (
@@ -16,12 +17,12 @@ const styles = StyleSheet.create({
     paddingVertical: 36,
   },
   title: {
-    color: '#4e3309',
+    color: EXPERIENCE_THEME.heading,
     fontSize: 20,
     fontWeight: '800',
   },
   description: {
-    color: '#79571b',
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     lineHeight: 21,
     marginTop: 8,

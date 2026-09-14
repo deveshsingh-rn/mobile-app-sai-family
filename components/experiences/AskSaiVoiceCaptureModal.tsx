@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 type AskSaiVoiceCaptureModalProps = {
   error?: string;
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
     width: 84,
   },
   title: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 22,
     fontWeight: "900",
     letterSpacing: 0,
@@ -202,7 +203,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   subtitle: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     fontWeight: "600",
     lineHeight: 21,
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   secondaryText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 15,
     fontWeight: "800",
   },

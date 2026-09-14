@@ -67,6 +67,7 @@ import {
   selectExperienceCategories,
 } from "@/store/experiences/selectors";
 import { CategoryChips } from "@/components/experiences";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 type MediaType =
   | "image"
   | "video"
@@ -924,14 +925,14 @@ function VoiceOption({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFCF8",
+    backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
   },
 
   header: {
     alignItems: "center",
-    backgroundColor: "#FFFCF8",
-    borderBottomColor: "#EDE7DE",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     minHeight: 64,
@@ -940,13 +941,13 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#292524",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 17,
     fontWeight: "800",
   },
 
   headerSubtitle: {
-    color: "#78716C",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 1,
@@ -998,7 +999,7 @@ const styles = StyleSheet.create({
   },
 
   composerSurface: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
     minHeight: 460,
     paddingBottom: 20,
@@ -1006,15 +1007,15 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    backgroundColor: "#FAF8F4",
-    borderColor: "#E9E2D8",
+    backgroundColor: "#FFFFFF",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     borderWidth: 1,
     marginTop: 12,
     minHeight: 190,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: "#292524",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 17,
     lineHeight: 26,
     fontWeight: "500",
@@ -1030,13 +1031,13 @@ const styles = StyleSheet.create({
   },
 
   sectionLabel: {
-    color: "#292524",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 16,
     fontWeight: "800",
   },
 
   categorySection: {
-    borderBottomColor: "#ECE7DF",
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     marginBottom: 20,
     marginHorizontal: -18,
@@ -1056,14 +1057,14 @@ const styles = StyleSheet.create({
   },
 
   categoryTitle: {
-    color: "#292524",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 15,
     fontWeight: "800",
     // borderWidth: 1,
   },
 
   categoryHint: {
-    color: "#78716C",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
@@ -1081,7 +1082,7 @@ const styles = StyleSheet.create({
   },
 
   composerHint: {
-    color: "#78716C",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     fontWeight: "600",
     marginTop: 4,
@@ -1113,7 +1114,7 @@ const styles = StyleSheet.create({
   },
 
   mediaContainer: {
-    borderColor: "#EEE8DF",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     borderWidth: 1,
     marginTop: 16,
@@ -1183,19 +1184,19 @@ const styles = StyleSheet.create({
   },
 
   audioTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 16,
     fontWeight: "900",
   },
 
   audioName: {
     marginTop: 4,
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
   },
 
   audioRequirement: {
-    borderTopColor: "#FED7AA",
+    borderTopColor: EXPERIENCE_THEME.border,
     borderTopWidth: StyleSheet.hairlineWidth,
     color: "#B42318",
     fontSize: 12,
@@ -1228,8 +1229,8 @@ const styles = StyleSheet.create({
 
   toolbar: {
     alignItems: "center",
-    backgroundColor: "#FFFCF8",
-    borderTopColor: "#EDE7DE",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderTopColor: EXPERIENCE_THEME.border,
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     minHeight: 76,
@@ -1247,7 +1248,7 @@ const styles = StyleSheet.create({
   actionButton: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7DED2",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 13,
     borderWidth: 1,
     flex: 1,
@@ -1268,7 +1269,7 @@ const styles = StyleSheet.create({
   },
 
   actionLabel: {
-    color: "#44403C",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     fontWeight: "800",
   },
@@ -1289,7 +1290,7 @@ const styles = StyleSheet.create({
   },
 
   voiceSheet: {
-    backgroundColor: "#FFFCF7",
+    backgroundColor: EXPERIENCE_THEME.background,
     borderColor: "rgba(255,255,255,0.8)",
     borderRadius: 22,
     borderWidth: 1,
@@ -1327,7 +1328,7 @@ const styles = StyleSheet.create({
   },
 
   sheetTitle: {
-    color: "#292524",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 20,
     fontWeight: "800",
     lineHeight: 26,
@@ -1335,7 +1336,7 @@ const styles = StyleSheet.create({
   },
 
   sheetDescription: {
-    color: "#78716C",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     lineHeight: 21,
     marginTop: 8,
@@ -1354,7 +1355,7 @@ const styles = StyleSheet.create({
   voiceOption: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#ECE4D8",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 15,
     borderWidth: 1,
     flexDirection: "row",
@@ -1382,13 +1383,13 @@ const styles = StyleSheet.create({
   },
 
   voiceOptionTitle: {
-    color: "#292524",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 16,
     fontWeight: "800",
   },
 
   voiceOptionDescription: {
-    color: "#78716C",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     lineHeight: 18,
     marginTop: 3,

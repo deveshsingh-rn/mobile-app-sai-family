@@ -13,6 +13,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useAppSelector } from "@/store/hooks";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 export type ExperienceTopTabKey =
   | "feed"
@@ -228,8 +229,8 @@ export function ExperienceTopTabs({
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: "center",
-    backgroundColor: "#FFFCF7",
-    borderBottomColor: "#EEE7DC",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     height: 66,
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
   },
   createAvatarInset: {
     alignItems: "center",
-    backgroundColor: "#FFFCF7",
+    backgroundColor: EXPERIENCE_THEME.background,
     borderRadius: 26,
     height: 52,
     justifyContent: "center",
@@ -309,7 +310,7 @@ const styles = StyleSheet.create({
   createBadge: {
     alignItems: "center",
     backgroundColor: "#F97316",
-    borderColor: "#FFFCF7",
+    borderColor: EXPERIENCE_THEME.background,
     borderRadius: 10,
     borderWidth: 2,
     bottom: 1,

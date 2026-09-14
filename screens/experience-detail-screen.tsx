@@ -51,6 +51,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 export default function ExperienceDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -363,14 +364,14 @@ export default function ExperienceDetailScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FAFAF9",
+    backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
   },
 
   topBar: {
     alignItems: "center",
-    backgroundColor: "#FAFAF9",
-    borderBottomColor: "#E7D7BE",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -382,7 +383,7 @@ const styles = StyleSheet.create({
   backButton: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 12,
     borderWidth: 1,
     height: 40,
@@ -391,7 +392,7 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 18,
     fontWeight: "900",
   },
@@ -407,7 +408,7 @@ const styles = StyleSheet.create({
 
   openCommentsButton: {
     alignItems: "center",
-    borderTopColor: "#E5E7EB",
+    borderTopColor: EXPERIENCE_THEME.border,
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     marginHorizontal: 16,
@@ -416,7 +417,7 @@ const styles = StyleSheet.create({
   },
   openCommentsPressed: { opacity: 0.58 },
   openCommentsText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     fontWeight: "600",
     marginLeft: 9,
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
   },
   sheetHeader: {
     alignItems: "center",
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -458,7 +459,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   sheetTitleRow: { alignItems: "center", flexDirection: "row" },
-  sheetTitle: { color: "#111827", fontSize: 17, fontWeight: "900" },
+  sheetTitle: { color: EXPERIENCE_THEME.heading, fontSize: 17, fontWeight: "900" },
   sheetCount: {
     color: "#F97316",
     fontSize: 13,
@@ -500,13 +501,13 @@ const styles = StyleSheet.create({
   },
 
   noCommentsTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 16,
     fontWeight: "800",
   },
 
   noCommentsText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     fontWeight: "500",
     marginTop: 8,
@@ -523,14 +524,14 @@ const styles = StyleSheet.create({
 
   emptyContainer: {
     alignItems: "center",
-    backgroundColor: "#FAFAF9",
+    backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 28,
   },
 
   emptyText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 16,
     fontWeight: "700",
     textAlign: "center",

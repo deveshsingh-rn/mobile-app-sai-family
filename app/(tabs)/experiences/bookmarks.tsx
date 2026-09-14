@@ -26,6 +26,7 @@ import {
   ExperienceListFooterSkeleton,
   ExperienceTopTabs,
 } from "@/components/experiences";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import {
   fetchBookmarkedExperiencesRequest,
@@ -284,13 +285,13 @@ export default function BookmarkedExperiencesScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FAFAF9",
+    backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
   },
 
   fixedTop: {
-    backgroundColor: "#FFFCF7",
-    borderBottomColor: "#E9D8BD",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: 1,
     paddingTop: 54,
     zIndex: 10,
@@ -328,7 +329,7 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 24,
     fontWeight: "900",
   },
@@ -341,7 +342,7 @@ const styles = StyleSheet.create({
   headerAction: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     borderWidth: 1,
     height: 44,
@@ -390,14 +391,14 @@ const styles = StyleSheet.create({
   },
 
   stateTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 19,
     fontWeight: "900",
     textAlign: "center",
   },
 
   stateText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 15,
     fontWeight: "700",
     lineHeight: 22,

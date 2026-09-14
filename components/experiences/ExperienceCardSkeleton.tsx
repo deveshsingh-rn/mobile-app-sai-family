@@ -6,6 +6,7 @@ import {
 } from "react-native";
 
 import { Skeleton } from "moti/skeleton";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const SHIMMER_COLORS = [
   "#EEEAE4",
@@ -349,7 +350,7 @@ export function ExperienceEditSkeleton() {
 const styles = StyleSheet.create({
   actions: {
     alignItems: "center",
-    borderTopColor: "#F1F0EE",
+    borderTopColor: EXPERIENCE_THEME.border,
     borderTopWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -357,8 +358,8 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E7E5E4",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 16,
@@ -383,8 +384,8 @@ const styles = StyleSheet.create({
     gap: 11,
   },
   detailCard: {
-    backgroundColor: "#FFFFFF",
-    borderBottomColor: "#E7E5E4",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: 1,
     padding: 18,
   },
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
     marginLeft: 11,
   },
   detailPage: {
-    backgroundColor: "#FAFAF9",
+    backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
   },
   detailStory: {
@@ -404,7 +405,7 @@ const styles = StyleSheet.create({
   },
   detailTopBar: {
     alignItems: "center",
-    borderBottomColor: "#E7E5E4",
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -418,7 +419,7 @@ const styles = StyleSheet.create({
   },
   editHeader: {
     alignItems: "center",
-    borderBottomColor: "#E7E5E4",
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: 1,
     flexDirection: "row",
     paddingBottom: 13,
@@ -426,12 +427,12 @@ const styles = StyleSheet.create({
     paddingTop: 56,
   },
   editPage: {
-    backgroundColor: "#FFFCF7",
+    backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
   },
   editSection: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#E9D8BD",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     minHeight: 118,

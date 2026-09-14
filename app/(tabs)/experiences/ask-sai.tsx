@@ -65,6 +65,7 @@ import {
 import { trackProductEvent } from "@/services/product-analytics";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { useAppSelector } from "@/store/hooks";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import type {
   SaiAudioStreamChunkEvent,
   SaiAudioStreamErrorEvent,
@@ -3326,7 +3327,7 @@ export default function AskSaiScreen() {
 
 const styles = StyleSheet.create({
   root: {
-    backgroundColor: "#FFF8E7",
+    backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
   },
   gradient: {
@@ -3413,7 +3414,7 @@ const styles = StyleSheet.create({
   },
   heroPanel: {
     backgroundColor: "#FFFBEB",
-    borderColor: "#F3E1BE",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     borderWidth: 1,
     marginTop: 10,
@@ -3452,13 +3453,13 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   heroTitle: {
-    color: "#23201D",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 15,
     fontWeight: "500",
     // lineHeight: 9,
   },
   heroText: {
-    color: "#7C5A35",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 11,
     fontWeight: "600",
     lineHeight: 16,
@@ -3503,7 +3504,7 @@ const styles = StyleSheet.create({
   },
   historyCard: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#F0DFC6",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: 1,
     minHeight: 86,
@@ -3515,7 +3516,7 @@ const styles = StyleSheet.create({
     borderColor: "#B45309",
   },
   historyTitle: {
-    color: "#23201D",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 14,
     fontWeight: "900",
     lineHeight: 19,
@@ -3533,14 +3534,14 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#F3E1BE",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 22,
     borderWidth: 1,
     // marginTop: 16,
     padding: 16,
   },
   label: {
-    color: "#4B5563",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 13,
     fontWeight: "900",
     marginBottom: 10,
@@ -3561,12 +3562,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   languageTitle: {
-    color: "#2F2A24",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 15,
     fontWeight: "700",
   },
   languageSubtitle: {
-    color: "#786A5A",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 10,
     fontWeight: "500",
     lineHeight: 17,
@@ -3849,7 +3850,7 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   suggestionText: {
-    color: "#4B5563",
+    color: EXPERIENCE_THEME.paragraph,
     flex: 1,
     fontSize: 14,
     fontWeight: "800",
@@ -3946,7 +3947,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   feedbackRow: {
-    borderTopColor: "#F3E1BE",
+    borderTopColor: EXPERIENCE_THEME.border,
     borderTopWidth: 1,
     marginTop: 18,
     paddingTop: 16,
@@ -4007,7 +4008,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   messageText: {
-    color: "#374151",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     fontWeight: "700",
     lineHeight: 20,

@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 type Props = {
   item: any;
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
   commentRow: { flexDirection: "row", flexWrap: "wrap" },
 
   name: {
-    color: "#111827",
+    color: EXPERIENCE_THEME.heading,
     fontWeight: "800",
     fontSize: 14,
     lineHeight: 20,
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
   },
 
   comment: {
-    color: "#374151",
+    color: EXPERIENCE_THEME.paragraph,
     flexShrink: 1,
     fontSize: 14,
     lineHeight: 20,

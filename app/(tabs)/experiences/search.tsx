@@ -30,6 +30,7 @@ import {
   ExperienceListFooterSkeleton,
   ExperienceTopTabs,
 } from "@/components/experiences";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 import {
   clearExperienceSearch,
@@ -428,12 +429,12 @@ export default function SearchExperiencesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAF9",
+    backgroundColor: EXPERIENCE_THEME.background,
   },
 
   fixedTop: {
-    backgroundColor: "#FFFCF7",
-    borderBottomColor: "#E9D8BD",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: 1,
     paddingTop: 54,
     zIndex: 10,
@@ -471,7 +472,7 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 24,
     fontWeight: "900",
   },
@@ -494,7 +495,7 @@ const styles = StyleSheet.create({
   inputBox: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -503,7 +504,7 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.paragraph,
     flex: 1,
     fontSize: 16,
     fontWeight: "700",
@@ -559,14 +560,14 @@ const styles = StyleSheet.create({
   },
 
   stateTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 19,
     fontWeight: "900",
     textAlign: "center",
   },
 
   stateText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 15,
     fontWeight: "700",
     lineHeight: 22,

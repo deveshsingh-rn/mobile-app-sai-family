@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BookOpenText, Sparkles, UserCircle2 } from 'lucide-react-native';
 
 import { CategoryChips, ExperienceTopTabs } from '@/components/experiences';
+import { EXPERIENCE_THEME } from '@/constants/experience-theme';
 
 const CATEGORIES = [
   { label: 'All', value: 'all' },
@@ -63,11 +64,11 @@ export default function ExperienceCategoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAF9',
+    backgroundColor: EXPERIENCE_THEME.background,
   },
   fixedTop: {
-    backgroundColor: '#FFFCF7',
-    borderBottomColor: '#E9D8BD',
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: 1,
     paddingTop: 54,
     zIndex: 10,
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   headerTitle: {
-    color: '#1F2937',
+    color: EXPERIENCE_THEME.heading,
     fontSize: 24,
     fontWeight: '900',
   },
@@ -121,7 +122,7 @@ const styles = StyleSheet.create({
   },
   panel: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#E7D7BE',
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: 1,
     gap: 18,
@@ -147,12 +148,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   panelTitle: {
-    color: '#1F2937',
+    color: EXPERIENCE_THEME.heading,
     fontSize: 22,
     fontWeight: '900',
   },
   panelDescription: {
-    color: '#6B7280',
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 21,
@@ -160,18 +161,18 @@ const styles = StyleSheet.create({
   },
   guideCard: {
     backgroundColor: '#FFF7ED',
-    borderColor: '#FED7AA',
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
   },
   guideTitle: {
-    color: '#1F2937',
+    color: EXPERIENCE_THEME.heading,
     fontSize: 17,
     fontWeight: '900',
   },
   guideText: {
-    color: '#78716C',
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 15,
     fontWeight: '700',
     lineHeight: 23,

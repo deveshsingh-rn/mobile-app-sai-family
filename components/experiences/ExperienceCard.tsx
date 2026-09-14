@@ -43,6 +43,7 @@ import { useDispatch } from "react-redux";
 import {
   toggleLikeRequest,
 } from "@/store/experiences/actions";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const formatCount = (value?: number) => {
   const count = Number(value) || 0;
@@ -680,8 +681,8 @@ export function ExperienceCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E7E5E4",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 16,
@@ -748,7 +749,7 @@ const styles = StyleSheet.create({
   },
 
   name: {
-    color: "#111827",
+    color: EXPERIENCE_THEME.heading,
     flexShrink: 1,
     fontSize: 14.5,
     fontWeight: "900",
@@ -763,7 +764,7 @@ const styles = StyleSheet.create({
   },
 
   dateText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 11,
     fontWeight: "500",
   },
@@ -808,7 +809,7 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    color: "#292524",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 16,
     fontWeight: "600",
     lineHeight: 24,
@@ -832,7 +833,7 @@ const styles = StyleSheet.create({
   },
 
   locationText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     flex: 1,
     fontSize: 10,
     fontWeight: "600",
@@ -841,7 +842,7 @@ const styles = StyleSheet.create({
   audioAttachment: {
     alignItems: "center",
     backgroundColor: "#FFF8ED",
-    borderColor: "#F3DFC0",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
@@ -877,7 +878,7 @@ const styles = StyleSheet.create({
   },
 
   audioAttachmentTitle: {
-    color: "#292524",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 13,
     fontWeight: "800",
   },
@@ -913,7 +914,7 @@ const styles = StyleSheet.create({
   audioUnavailable: {
     alignItems: "center",
     backgroundColor: "#FFF8ED",
-    borderColor: "#F3DFC0",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
@@ -924,7 +925,7 @@ const styles = StyleSheet.create({
   },
 
   audioUnavailableText: {
-    color: "#78716C",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -932,7 +933,7 @@ const styles = StyleSheet.create({
   mediaContainer: {
     aspectRatio: 1.55,
     backgroundColor: "#F3F4F6",
-    borderColor: "#E5E7EB",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     marginTop: 14,
@@ -970,7 +971,7 @@ const styles = StyleSheet.create({
 
   actions: {
     alignItems: "center",
-    borderTopColor: "#F1F0EE",
+    borderTopColor: EXPERIENCE_THEME.border,
     borderTopWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -997,7 +998,7 @@ const styles = StyleSheet.create({
   },
 
   actionText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 11,
     fontWeight: "600",
   },
