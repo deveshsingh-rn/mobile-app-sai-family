@@ -28,7 +28,6 @@ import {
   HandHeart,
   Heart,
   LocateFixed,
-  List,
   Map,
   MapPin,
   Minus,
@@ -326,33 +325,97 @@ function EventsScreen() {
     [nearbyEvents]
   );
 
-  const todayEvents = sectionEventsFromHome(home, "happeningToday");
-  const weekEvents = sectionEventsFromHome(home, "thisWeek");
-  const monthEvents = sectionEventsFromHome(home, "thisMonth");
-  const laterEvents = sectionEventsFromHome(home, "comingSoon");
+  const fallbackSections = useMemo(() => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date(startOfToday);
+    endOfToday.setDate(endOfToday.getDate() + 1);
+
+    const endOfWeek = new Date(startOfToday);
+    endOfWeek.setDate(endOfWeek.getDate() + 7);
+
+    const endOfMonth = new Date(
+      startOfToday.getFullYear(),
+      startOfToday.getMonth() + 1,
+      1
+    );
+
+    const upcomingEvents = events
+      .filter((event) => {
+        const startAt = new Date(event.startAt).getTime();
+        return Number.isFinite(startAt) && startAt >= startOfToday.getTime();
+      })
+      .sort(
+        (first, second) =>
+          new Date(first.startAt).getTime() -
+          new Date(second.startAt).getTime()
+      );
+
+    return {
+      comingSoon: upcomingEvents.filter(
+        (event) => new Date(event.startAt) >= endOfWeek
+      ),
+      happeningToday: upcomingEvents.filter((event) => {
+        const startAt = new Date(event.startAt);
+        return startAt >= startOfToday && startAt < endOfToday;
+      }),
+      thisMonth: upcomingEvents.filter(
+        (event) => new Date(event.startAt) < endOfMonth
+      ),
+      thisWeek: upcomingEvents.filter(
+        (event) => new Date(event.startAt) < endOfWeek
+      ),
+    };
+  }, [events]);
+
+  const resolveSectionEvents = (
+    key: "happeningToday" | "thisWeek" | "thisMonth" | "comingSoon"
+  ) => {
+    const sectionEvents = sectionEventsFromHome(home, key);
+
+    if (sectionEvents.length) {
+      return sectionEvents;
+    }
+
+    const trendingKey = key === "happeningToday" ? "today" : key;
+    const trendingEvents = home?.trendingSections?.[trendingKey] || [];
+
+    return trendingEvents.length ? trendingEvents : fallbackSections[key];
+  };
+
+  const todayEvents = resolveSectionEvents("happeningToday");
+  const weekEvents = resolveSectionEvents("thisWeek");
+  const monthEvents = resolveSectionEvents("thisMonth");
+  const laterEvents = resolveSectionEvents("comingSoon");
+
+  const sectionCount = (
+    key: "happeningToday" | "thisWeek" | "thisMonth" | "comingSoon",
+    sectionEvents: SaiEvent[]
+  ) => Math.max(sectionCountFromHome(home, key), sectionEvents.length);
 
   const sections = [
     {
       background: "#FFFFFF",
-      count: `${sectionCountFromHome(home, "happeningToday")} Events`,
+      count: `${sectionCount("happeningToday", todayEvents)} Events`,
       events: todayEvents.slice(0, 4).map(toUiEvent),
       title: "Events Happening Today",
     },
     {
       background: EXPERIENCE_THEME.background,
-      count: `${sectionCountFromHome(home, "thisWeek")} Events`,
+      count: `${sectionCount("thisWeek", weekEvents)} Events`,
       events: weekEvents.slice(0, 4).map(toUiEvent),
       title: "This Week",
     },
     {
       background: "#FFFFFF",
-      count: `${sectionCountFromHome(home, "thisMonth")} Events`,
+      count: `${sectionCount("thisMonth", monthEvents)} Events`,
       events: monthEvents.slice(0, 4).map(toUiEvent),
       title: "This Month",
     },
     {
       background: EXPERIENCE_THEME.background,
-      count: `${sectionCountFromHome(home, "comingSoon")} Events`,
+      count: `${sectionCount("comingSoon", laterEvents)} Events`,
       events: laterEvents.slice(0, 4).map(toUiEvent),
       title: "Coming Soon",
     },
