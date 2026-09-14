@@ -1275,33 +1275,6 @@ export default function EventFormScreen({
             <SelectButton label="City" onPress={() => setSelectionKind("city")} value={form.city || "Choose city"} />
             <SelectButton label="Timezone" onPress={() => setSelectionKind("timezone")} value={form.timezone} />
           </View>
-          <View style={styles.twoColumns}>
-            <View style={styles.coordinateField}>
-              <Text style={styles.fieldLabel}>Latitude</Text>
-              <PolishedInput
-                keyboardType="numbers-and-punctuation"
-                onChangeText={(value) => setField("latitude", value)}
-                placeholder="18.5204"
-                placeholderTextColor="#9CA3AF"
-                style={styles.input}
-                value={form.latitude}
-              />
-            </View>
-            <View style={styles.coordinateField}>
-              <Text style={styles.fieldLabel}>Longitude</Text>
-              <PolishedInput
-                keyboardType="numbers-and-punctuation"
-                onChangeText={(value) => setField("longitude", value)}
-                placeholder="73.8567"
-                placeholderTextColor="#9CA3AF"
-                style={styles.input}
-                value={form.longitude}
-              />
-            </View>
-          </View>
-          <Text style={styles.coordinateHint}>
-            Coordinates are filled automatically when you use your current location or choose a venue.
-          </Text>
         </FormSection>
 
         <FormSection
@@ -1673,14 +1646,14 @@ function RecurrenceSection({
       {enabled ? (
         <View style={styles.recurrenceControls}>
           <View style={styles.segmentRow}>
-            {(["Daily", "Weekly", "Monthly"] as const).map((item) => (
+            {(["daily", "weekly", "monthly"] as const).map((item) => (
               <Pressable
                 key={item}
                 onPress={() => setFrequency(item)}
                 style={[styles.segment, frequency === item && styles.segmentActive]}
               >
                 <Text style={[styles.segmentText, frequency === item && styles.segmentTextActive]}>
-                  {item}
+                  {item.charAt(0).toUpperCase() + item.slice(1)}
                 </Text>
               </Pressable>
             ))}
@@ -2312,16 +2285,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: 40,
-  },
-  coordinateField: {
-    flex: 1,
-  },
-  coordinateHint: {
-    color: "#78716C",
-    fontSize: 12,
-    fontWeight: "600",
-    lineHeight: 18,
-    marginTop: -2,
   },
   counter: {
     color: "#9CA3AF",
