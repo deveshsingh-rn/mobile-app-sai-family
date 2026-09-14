@@ -1109,7 +1109,7 @@ export default function EventFormScreen({
           completed={form.title.trim().length >= 3}
           step="1"
           subtitle="This is the first thing devotees will see"
-          title="Name your gathering"
+          title="Name Your Gathering"
         >
           <View style={styles.inputWrap}>
             <PolishedInput
@@ -1159,7 +1159,7 @@ export default function EventFormScreen({
           completed={formProgress.items[1].complete}
           step="2"
           subtitle="Choose the date and time for your sacred event"
-          title="Set the schedule"
+          title="Set the Schedule"
         >
           <DateField
             icon={<CalendarDays color="#9CA3AF" size={18} />}
@@ -1200,7 +1200,7 @@ export default function EventFormScreen({
           completed={formProgress.items[2].complete}
           step="3"
           subtitle="Where will the gathering take place?"
-          title="Add the venue"
+          title="Add the Venue"
         >
           <PolishedInput
             onChangeText={(value) => setField("venueName", value)}
@@ -1209,7 +1209,7 @@ export default function EventFormScreen({
             style={styles.input}
             value={form.venueName}
           />
-          <Pressable
+          {/* <Pressable
             disabled={placesLoading}
             onPress={handleSearchPlaces}
             style={({pressed}) => [
@@ -1226,8 +1226,8 @@ export default function EventFormScreen({
             <Text style={styles.helperActionText}>
               {placesLoading ? "Searching venues..." : "Find a venue"}
             </Text>
-          </Pressable>
-          {!!places.length && (
+          </Pressable> */}
+          {/* {!!places.length && (
             <View style={styles.placeList}>
               {places.slice(0, 5).map((place) => (
                 <Pressable
@@ -1242,7 +1242,7 @@ export default function EventFormScreen({
                 </Pressable>
               ))}
             </View>
-          )}
+          )} */}
           <PolishedInput
             multiline
             onChangeText={(value) => setField("address", value)}
@@ -2963,7 +2963,7 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     color: "#78716C",
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "800",
     lineHeight: 19,
     marginTop: 5,
   },
