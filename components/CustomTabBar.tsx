@@ -23,10 +23,11 @@ import {
   Users,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const COLORS = {
-  active: "#171717",
-  inactive: "#78716C",
+  active: EXPERIENCE_THEME.heading,
+  inactive: EXPERIENCE_THEME.paragraph,
 };
 
 const ACTIVE_INDICATOR_HEIGHT = 48;
@@ -229,7 +230,7 @@ export function PillarGlassDock({
           isInteractive={false}
           pointerEvents="none"
           style={styles.dockGlass}
-          tintColor="rgba(255, 255, 255, 0.9)"
+          tintColor="rgba(255, 248, 236, 0.82)"
         />
       ) : (
         <BlurView
@@ -254,7 +255,7 @@ export function PillarGlassDock({
               glassEffectStyle="clear"
               isInteractive={false}
               style={styles.activeIndicator}
-              tintColor="rgba(255, 237, 213, 0.55)"
+              tintColor="rgba(241, 217, 181, 0.62)"
             />
           ) : (
             <BlurView
@@ -340,7 +341,7 @@ const styles = StyleSheet.create({
     height: 66,
     maxWidth: 520,
     position: "relative",
-    shadowColor: "#292524",
+    shadowColor: EXPERIENCE_THEME.heading,
     shadowOffset: { height: 8, width: 0 },
     shadowOpacity: 0.13,
     shadowRadius: 18,
@@ -348,13 +349,13 @@ const styles = StyleSheet.create({
   },
   dockGlass: {
     ...StyleSheet.absoluteFillObject,
-    borderColor: "rgba(255, 255, 255, 0.76)",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 34,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
   },
   fallbackDockGlass: {
-    backgroundColor: "rgba(255, 255, 255, 0.64)",
+    backgroundColor: "rgba(255, 248, 236, 0.82)",
   },
   indicatorPosition: {
     height: ACTIVE_INDICATOR_HEIGHT,
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
   },
   activeIndicator: {
     alignItems: "center",
-    borderColor: "rgba(255, 255, 255, 0.88)",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
     height: ACTIVE_INDICATOR_HEIGHT,
@@ -374,8 +375,8 @@ const styles = StyleSheet.create({
     width: ACTIVE_INDICATOR_WIDTH,
   },
   fallbackActiveIndicator: {
-    backgroundColor: "rgba(255, 237, 213, 0.72)",
-    borderColor: "rgba(249, 115, 22, 0.28)",
+    backgroundColor: "rgba(241, 217, 181, 0.62)",
+    borderColor: EXPERIENCE_THEME.border,
   },
   iconWrap: {
     alignItems: "center",

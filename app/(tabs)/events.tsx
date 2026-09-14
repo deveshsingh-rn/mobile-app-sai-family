@@ -18,6 +18,7 @@ import {
 
 import { router } from "expo-router";
 import * as Location from "expo-location";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import {
   Bookmark,
   Calendar,
@@ -335,7 +336,7 @@ function EventsScreen() {
       title: "Happening Today",
     },
     {
-      background: "#FAFAF9",
+      background: EXPERIENCE_THEME.background,
       count: `${sectionCountFromHome(home, "thisWeek")} events`,
       events: weekEvents.slice(0, 4).map(toUiEvent),
       title: "This Week",
@@ -347,7 +348,7 @@ function EventsScreen() {
       title: "This Month",
     },
     {
-      background: "#FAFAF9",
+      background: EXPERIENCE_THEME.background,
       count: `${sectionCountFromHome(home, "comingSoon")} events`,
       events: laterEvents.slice(0, 4).map(toUiEvent),
       title: "Coming Soon",
@@ -357,13 +358,13 @@ function EventsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.headerIcon}>
+        {/* <Pressable onPress={() => router.back()} style={styles.headerIcon}> */}
           {/* <Text style={styles.headerBack}>‹</Text> */}
-        </Pressable>
-        <Text style={styles.headerTitle}>Events</Text>
+        {/* </Pressable> */}
+        {/* <Text style={styles.headerTitle}>Events</Text>
         <Pressable style={styles.headerIcon}>
-          <SlidersHorizontal color="#1F2937" size={20} />
-        </Pressable>
+          <SlidersHorizontal color={EXPERIENCE_THEME.heading} size={20} />
+        </Pressable> */}
       </View>
 
       <View style={styles.controls}>
@@ -375,7 +376,7 @@ function EventsScreen() {
               viewMode === "map" && styles.toggleButtonActive,
             ]}
           >
-            <Map color={viewMode === "map" ? "#FFFFFF" : "#6B7280"} size={16} />
+            <Map color={viewMode === "map" ? "#FFFFFF" : EXPERIENCE_THEME.paragraph} size={16} />
             <Text style={viewMode === "map" ? styles.toggleTextActive : styles.toggleText}>Map</Text>
           </Pressable>
           <Pressable
@@ -385,7 +386,7 @@ function EventsScreen() {
               viewMode === "list" && styles.toggleButtonActive,
             ]}
           >
-            <List color={viewMode === "list" ? "#FFFFFF" : "#6B7280"} size={16} />
+            <List color={viewMode === "list" ? "#FFFFFF" : EXPERIENCE_THEME.paragraph} size={16} />
             <Text style={viewMode === "list" ? styles.toggleTextActive : styles.toggleText}>List</Text>
           </Pressable>
         </View>
@@ -421,7 +422,7 @@ function EventsScreen() {
           <RefreshControl
             onRefresh={handleRefresh}
             refreshing={refreshing}
-            tintColor="#1F2937"
+            tintColor={EXPERIENCE_THEME.heading}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -429,7 +430,7 @@ function EventsScreen() {
         {!!error && <Text style={styles.errorText}>{error}</Text>}
         {(loading || homeLoading) && events.length === 0 ? (
           <View style={styles.loadingBox}>
-            <ActivityIndicator color="#1F2937" size="large" />
+            <ActivityIndicator color={EXPERIENCE_THEME.heading} size="large" />
           </View>
         ) : null}
 
@@ -514,7 +515,7 @@ function MapOverview({
         </View>
 
         <View style={styles.distanceBadge}>
-          <MapPin color="#6B7280" size={13} />
+          <MapPin color={EXPERIENCE_THEME.paragraph} size={13} />
           <Text style={styles.distanceText}>Within 25 km</Text>
         </View>
 
@@ -523,9 +524,9 @@ function MapOverview({
         </View>
 
         <View style={styles.mapControls}>
-          <MapControlButton icon={<Plus color="#4B5563" size={16} />} />
-          <MapControlButton icon={<Minus color="#4B5563" size={16} />} />
-          <MapControlButton icon={<LocateFixed color="#4B5563" size={16} />} />
+          <MapControlButton icon={<Plus color={EXPERIENCE_THEME.paragraph} size={16} />} />
+          <MapControlButton icon={<Minus color={EXPERIENCE_THEME.paragraph} size={16} />} />
+          <MapControlButton icon={<LocateFixed color={EXPERIENCE_THEME.paragraph} size={16} />} />
         </View>
       </View>
 
@@ -589,8 +590,8 @@ function NearbyEventCard({
         </View>
         <View style={styles.nearbyHeart}>
           <Heart
-            color="#4B5563"
-            fill={event.bookmarkedByMe ? "#6B7280" : "transparent"}
+            color={EXPERIENCE_THEME.paragraph}
+            fill={event.bookmarkedByMe ? EXPERIENCE_THEME.paragraph : "transparent"}
             size={14}
           />
         </View>
@@ -613,11 +614,11 @@ function NearbyEventCard({
         </Text>
         <View style={styles.nearbyMetaRow}>
           <View style={styles.nearbyMetaItem}>
-            <Calendar color="#9CA3AF" size={12} />
+            <Calendar color={EXPERIENCE_THEME.paragraph} size={12} />
             <Text style={styles.nearbyMetaText}>{formatDate(event.startAt)}</Text>
           </View>
           <View style={styles.nearbyMetaItem}>
-            <Users color="#9CA3AF" size={12} />
+            <Users color={EXPERIENCE_THEME.paragraph} size={12} />
             <Text style={styles.nearbyMetaText}>{event.rsvps || 0} going</Text>
           </View>
         </View>
@@ -676,7 +677,7 @@ function EventSection({
 
       {!events.length && !loading && !error && (
         <View style={styles.emptySectionCard}>
-          <Calendar color="#9CA3AF" size={18} />
+          <Calendar color={EXPERIENCE_THEME.paragraph} size={18} />
           <Text style={styles.emptySectionText}>
             No live events returned for this section.
           </Text>
@@ -686,7 +687,7 @@ function EventSection({
       {!!moreLabel && (
         <Pressable style={styles.viewMoreButton}>
           <Text style={styles.viewMoreText}>{moreLabel}</Text>
-          <ChevronDown color="#4B5563" size={16} />
+          <ChevronDown color={EXPERIENCE_THEME.paragraph} size={16} />
         </Pressable>
       )}
     </View>
@@ -742,11 +743,11 @@ function EventCard({
               style={[styles.bookmarkButton, bookmarkPending && styles.disabledButton]}
             >
               {bookmarkPending ? (
-                <ActivityIndicator color="#6B7280" size="small" />
+                <ActivityIndicator color={EXPERIENCE_THEME.paragraph} size="small" />
               ) : (
                 <Bookmark
-                  color="#6B7280"
-                  fill={event.bookmarked ? "#1F2937" : "transparent"}
+                  color={EXPERIENCE_THEME.paragraph}
+                  fill={event.bookmarked ? EXPERIENCE_THEME.heading : "transparent"}
                   size={18}
                 />
               )}
@@ -783,9 +784,9 @@ function EventCard({
           ]}
         >
           {rsvpPending ? (
-            <ActivityIndicator color={event.going ? "#FFFFFF" : "#4B5563"} size="small" />
+            <ActivityIndicator color={event.going ? "#FFFFFF" : EXPERIENCE_THEME.paragraph} size="small" />
           ) : (
-            <CalendarCheck color={event.going ? "#FFFFFF" : "#4B5563"} size={16} />
+            <CalendarCheck color={event.going ? "#FFFFFF" : EXPERIENCE_THEME.paragraph} size={16} />
           )}
           <Text style={[styles.rsvpButtonText, event.going && styles.rsvpButtonTextActive]}>
             {rsvpPending ? "Updating" : event.going ? "Going" : "Interested"}
@@ -800,9 +801,9 @@ function EventCard({
           style={[styles.shareButton, sharePending && styles.disabledButton]}
         >
           {sharePending ? (
-            <ActivityIndicator color="#4B5563" size="small" />
+            <ActivityIndicator color={EXPERIENCE_THEME.paragraph} size="small" />
           ) : (
-            <Share2 color="#4B5563" size={16} />
+            <Share2 color={EXPERIENCE_THEME.paragraph} size={16} />
           )}
         </Pressable>
       </View>
@@ -830,7 +831,7 @@ function SectionLoader() {
 function InlineProductLoader() {
   return (
     <View style={styles.inlineLoader}>
-      <ActivityIndicator color="#F97316" size="small" />
+      <ActivityIndicator color={EXPERIENCE_THEME.heading} size="small" />
       <Text style={styles.inlineLoaderText}>Loading live data...</Text>
     </View>
   );
@@ -861,7 +862,7 @@ function MetaRow({
 
   return (
     <View style={styles.metaRow}>
-      <Icon color="#6B7280" size={13} />
+      <Icon color={EXPERIENCE_THEME.paragraph} size={13} />
       <Text numberOfLines={1} style={styles.metaText}>
         {label}
       </Text>
@@ -953,7 +954,7 @@ function EventTypeGuide({
               style={styles.typeGuideCard}
             >
               <View style={styles.typeGuideIcon}>
-                <Icon color="#1F2937" size={22} />
+                <Icon color={EXPERIENCE_THEME.heading} size={22} />
               </View>
               <Text style={styles.typeGuideTitle}>{item.label}</Text>
               <Text style={styles.typeGuideSummary}>{item.summary}</Text>
@@ -1061,7 +1062,7 @@ function EventQuickActions() {
               style={styles.quickTile}
             >
               <View style={styles.quickIcon}>
-                <Icon color="#1F2937" size={20} />
+                <Icon color={EXPERIENCE_THEME.heading} size={20} />
               </View>
               <Text style={styles.quickLabel}>{action.label}</Text>
             </Pressable>
@@ -1232,7 +1233,7 @@ function CreateEventCta() {
           Share your spiritual gatherings, satsangs, and community events with the Sai Family.
         </Text>
         <Pressable onPress={() => router.push("/events/create")} style={styles.createButton}>
-          <Plus color="#1F2937" size={16} />
+          <Plus color={EXPERIENCE_THEME.heading} size={16} />
           <Text style={styles.createButtonText}>Create New Event</Text>
         </Pressable>
       </View>
@@ -1259,10 +1260,10 @@ function ActivityStats({
     <View style={styles.statsSection}>
       <Text style={styles.smallSectionTitle}>Live Event Activity</Text>
       <View style={styles.statsGrid}>
-        <StatCard icon={<CalendarCheck color="#1F2937" size={19} />} label="Events Listed" value={String(stats?.totalEvents ?? events.length)} />
-        <StatCard icon={<Users color="#1F2937" size={19} />} label="Total RSVPs" value={String(stats?.totalRsvps ?? totalRsvps)} />
-        <StatCard icon={<Bookmark color="#1F2937" size={19} />} label="Bookmarked" value={String(stats?.savedEvents ?? savedEventsCount ?? bookmarked)} />
-        <StatCard icon={<MapPin color="#1F2937" size={19} />} label="Cities" value={String(cities)} />
+        <StatCard icon={<CalendarCheck color={EXPERIENCE_THEME.heading} size={19} />} label="Events Listed" value={String(stats?.totalEvents ?? events.length)} />
+        <StatCard icon={<Users color={EXPERIENCE_THEME.heading} size={19} />} label="Total RSVPs" value={String(stats?.totalRsvps ?? totalRsvps)} />
+        <StatCard icon={<Bookmark color={EXPERIENCE_THEME.heading} size={19} />} label="Bookmarked" value={String(stats?.savedEvents ?? savedEventsCount ?? bookmarked)} />
+        <StatCard icon={<MapPin color={EXPERIENCE_THEME.heading} size={19} />} label="Cities" value={String(cities)} />
       </View>
       {!!totalComments && (
         <Text style={styles.activityFootnote}>
@@ -1302,7 +1303,7 @@ function SuggestedCommunities({
     <View style={styles.communitySection}>
       <View style={styles.sectionHeader}>
         <Text style={styles.smallSectionTitle}>Community Calendars</Text>
-        {loading && <ActivityIndicator color="#F97316" />}
+        {loading && <ActivityIndicator color={EXPERIENCE_THEME.heading} />}
       </View>
 
       {calendars.map((calendar) => (
@@ -1316,9 +1317,9 @@ function SuggestedCommunities({
               {calendar.description || "Community event calendar from backend."}
             </Text>
             <View style={styles.communityMeta}>
-              <Users color="#6B7280" size={13} />
+              <Users color={EXPERIENCE_THEME.paragraph} size={13} />
               <Text style={styles.communityMetaText}>{calendar.subscribers ?? 0} subscribers</Text>
-              <Calendar color="#6B7280" size={13} />
+              <Calendar color={EXPERIENCE_THEME.paragraph} size={13} />
               <Text style={styles.communityMetaText}>{eventTypeLabel(calendar.type)}</Text>
             </View>
             <Pressable style={[styles.joinButton, calendar.subscribedByMe && styles.joinButtonActive]}>
@@ -1331,7 +1332,7 @@ function SuggestedCommunities({
       ))}
       {!loading && !calendars.length && (
         <View style={styles.emptySectionCard}>
-          <Users color="#9CA3AF" size={18} />
+          <Users color={EXPERIENCE_THEME.paragraph} size={18} />
           <Text style={styles.emptySectionText}>
             No community calendars returned yet.
           </Text>
@@ -1352,14 +1353,14 @@ const styles = StyleSheet.create({
   },
   attendeeIcon: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
     borderRadius: 12,
     height: 24,
     justifyContent: "center",
     width: 24,
   },
   attendeeText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     flex: 1,
     fontSize: 12,
     fontWeight: "600",
@@ -1379,7 +1380,7 @@ const styles = StyleSheet.create({
   },
   committeeAvatar: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
     borderRadius: 20,
     height: 40,
     justifyContent: "center",
@@ -1395,7 +1396,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   committeeMeta: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 3,
@@ -1403,7 +1404,7 @@ const styles = StyleSheet.create({
   committeeRow: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -1411,12 +1412,12 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   committeeTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 15,
     fontWeight: "800",
   },
   committeeTrend: {
-    color: "#4B5563",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 11,
     fontWeight: "800",
     maxWidth: 96,
@@ -1431,7 +1432,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     marginBottom: 12,
@@ -1448,10 +1449,10 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   cardPressed: {
-    backgroundColor: "#FAFAF9",
+    backgroundColor: EXPERIENCE_THEME.background,
   },
   cardTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     flex: 1,
     fontSize: 16,
     fontWeight: "700",
@@ -1470,7 +1471,7 @@ const styles = StyleSheet.create({
   chip: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F1E8DA",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: 1,
     height: 36,
@@ -1478,11 +1479,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   chipActive: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
+    borderColor: EXPERIENCE_THEME.heading,
   },
   chipText: {
-    color: "#4B5563",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     fontWeight: "500",
   },
@@ -1499,7 +1500,7 @@ const styles = StyleSheet.create({
   },
   communityCard: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -1508,7 +1509,7 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   communityDescription: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     lineHeight: 18,
     marginTop: 4,
@@ -1520,7 +1521,7 @@ const styles = StyleSheet.create({
     marginTop: 9,
   },
   communityMetaText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 11,
     marginRight: 8,
   },
@@ -1532,45 +1533,45 @@ const styles = StyleSheet.create({
   },
   communityThumb: {
     alignItems: "center",
-    backgroundColor: "#F1E8DA",
+    backgroundColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     height: 56,
     justifyContent: "center",
     width: 56,
   },
   communityTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 16,
     fontWeight: "700",
   },
   container: {
-    backgroundColor: "#FAFAF9",
+    backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
   },
   controls: {
-    backgroundColor: "#FAFAF9",
-    borderBottomColor: "#F6EFD9",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   organiserAvatar: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
+    backgroundColor: EXPERIENCE_THEME.background,
     borderRadius: 26,
     height: 52,
     justifyContent: "center",
     width: 52,
   },
   organiserAvatarText: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 14,
     fontWeight: "900",
   },
   organiserCard: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: 1,
     marginRight: 12,
@@ -1581,20 +1582,20 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   organiserEvents: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12,
     fontWeight: "900",
     marginTop: 10,
   },
   organiserName: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 15,
     fontWeight: "900",
     marginTop: 10,
     textAlign: "center",
   },
   organiserSpecialty: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 5,
@@ -1612,7 +1613,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   createButtonText: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 14,
     fontWeight: "800",
   },
@@ -1635,7 +1636,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   createText: {
-    color: "#F1E8DA",
+    color: EXPERIENCE_THEME.border,
     fontSize: 14,
     lineHeight: 21,
     marginTop: 8,
@@ -1647,7 +1648,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   dot: {
-    backgroundColor: "#9CA3AF",
+    backgroundColor: EXPERIENCE_THEME.paragraph,
     borderRadius: 2,
     height: 4,
     width: 4,
@@ -1656,7 +1657,7 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   activityFootnote: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "700",
     lineHeight: 18,
@@ -1665,7 +1666,7 @@ const styles = StyleSheet.create({
   emptySectionCard: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -1673,15 +1674,15 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   emptySectionText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     flex: 1,
     fontSize: 13,
     fontWeight: "700",
   },
   inlineLoader: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#F6EFD9",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
@@ -1691,7 +1692,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   inlineLoaderText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "800",
   },
@@ -1704,8 +1705,8 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    backgroundColor: "rgba(250,250,249,0.96)",
-    borderBottomColor: "#F6EFD9",
+    backgroundColor: "rgba(255,248,236,0.96)",
+    borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1714,7 +1715,7 @@ const styles = StyleSheet.create({
     paddingTop: 54,
   },
   headerBack: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 34,
     lineHeight: 34,
   },
@@ -1726,13 +1727,13 @@ const styles = StyleSheet.create({
     width: 40,
   },
   headerTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 18,
     fontWeight: "700",
   },
   joinButton: {
     alignItems: "center",
-    borderColor: "#F1E8DA",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 12,
     borderWidth: 1,
     height: 36,
@@ -1740,11 +1741,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   joinButtonActive: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
+    borderColor: EXPERIENCE_THEME.heading,
   },
   joinButtonText: {
-    color: "#4B5563",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -1758,7 +1759,7 @@ const styles = StyleSheet.create({
   distanceBadge: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.92)",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
@@ -1770,12 +1771,12 @@ const styles = StyleSheet.create({
     top: 16,
   },
   distanceText: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12,
     fontWeight: "700",
   },
   eventCountBadge: {
-    backgroundColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 7,
@@ -1789,14 +1790,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   mapCanvas: {
-    backgroundColor: "#FFF7ED",
+    backgroundColor: EXPERIENCE_THEME.background,
     height: 500,
     marginTop: 12,
     overflow: "hidden",
     position: "relative",
   },
   mapChipDot: {
-    backgroundColor: "#9CA3AF",
+    backgroundColor: EXPERIENCE_THEME.paragraph,
     borderRadius: 4,
     height: 8,
     width: 8,
@@ -1804,7 +1805,7 @@ const styles = StyleSheet.create({
   mapControlButton: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 20,
     borderWidth: 1,
     height: 40,
@@ -1820,7 +1821,7 @@ const styles = StyleSheet.create({
   mapFilterChip: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.92)",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
@@ -1829,8 +1830,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   mapFilterChipActive: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
+    borderColor: EXPERIENCE_THEME.heading,
   },
   mapFilterContent: {
     gap: 8,
@@ -1838,7 +1839,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   mapFilterText: {
-    color: "#4B5563",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -1865,7 +1866,7 @@ const styles = StyleSheet.create({
   },
   mapMarker: {
     alignItems: "center",
-    backgroundColor: "#6B7280",
+    backgroundColor: EXPERIENCE_THEME.paragraph,
     borderColor: "#FFFFFF",
     borderRadius: 20,
     borderWidth: 4,
@@ -1885,7 +1886,7 @@ const styles = StyleSheet.create({
   mapSearchCard: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.94)",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -1900,7 +1901,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   mapSearchInput: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     flex: 1,
     fontSize: 14,
     fontWeight: "600",
@@ -1908,14 +1909,14 @@ const styles = StyleSheet.create({
   },
   micButton: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
+    backgroundColor: EXPERIENCE_THEME.background,
     borderRadius: 16,
     height: 32,
     justifyContent: "center",
     width: 32,
   },
   metaMuted: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
   },
   metaRow: {
@@ -1925,7 +1926,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   metaText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     flexShrink: 1,
     fontSize: 12,
     fontWeight: "500",
@@ -1933,7 +1934,7 @@ const styles = StyleSheet.create({
   rsvpButton: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F1E8DA",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 12,
     borderWidth: 1,
     flex: 1,
@@ -1943,11 +1944,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   rsvpButtonActive: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
+    borderColor: EXPERIENCE_THEME.heading,
   },
   rsvpButtonText: {
-    color: "#4B5563",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -1955,7 +1956,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   productAction: {
-    color: "#4B5563",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     fontWeight: "800",
   },
@@ -1975,19 +1976,19 @@ const styles = StyleSheet.create({
     paddingVertical: 22,
   },
   productSectionAlt: {
-    backgroundColor: "#FAFAF9",
+    backgroundColor: EXPERIENCE_THEME.background,
     paddingHorizontal: 16,
     paddingVertical: 22,
   },
   productSubtitle: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     fontWeight: "600",
     lineHeight: 18,
     marginTop: 4,
   },
   productTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 20,
     fontWeight: "900",
   },
@@ -2004,14 +2005,14 @@ const styles = StyleSheet.create({
   },
   quickIcon: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
+    backgroundColor: EXPERIENCE_THEME.background,
     borderRadius: 14,
     height: 42,
     justifyContent: "center",
     width: 42,
   },
   quickLabel: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 13,
     fontWeight: "800",
     marginTop: 10,
@@ -2020,7 +2021,7 @@ const styles = StyleSheet.create({
   quickTile: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: 1,
     padding: 14,
@@ -2031,7 +2032,7 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   schedulerCount: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 20,
     fontWeight: "900",
     marginTop: 8,
@@ -2042,7 +2043,7 @@ const styles = StyleSheet.create({
   schedulerDay: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: 1,
     minHeight: 108,
@@ -2051,19 +2052,19 @@ const styles = StyleSheet.create({
     width: 78,
   },
   schedulerDayActive: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
+    borderColor: EXPERIENCE_THEME.heading,
   },
   schedulerDayText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "900",
   },
   schedulerDayTextActive: {
-    color: "#F1E8DA",
+    color: EXPERIENCE_THEME.border,
   },
   schedulerLabel: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 11,
     fontWeight: "700",
     marginTop: 5,
@@ -2076,7 +2077,7 @@ const styles = StyleSheet.create({
   },
   nearbyCard: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     marginRight: 12,
@@ -2084,7 +2085,7 @@ const styles = StyleSheet.create({
     width: 280,
   },
   nearbyCardTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 14,
     fontWeight: "800",
   },
@@ -2093,14 +2094,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   nearbyDescription: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 5,
   },
   nearbyEmpty: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     justifyContent: "center",
@@ -2127,7 +2128,7 @@ const styles = StyleSheet.create({
   },
   nearbyHeader: {
     alignItems: "center",
-    borderBottomColor: "#FFF7ED",
+    borderBottomColor: EXPERIENCE_THEME.background,
     borderBottomWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -2147,13 +2148,13 @@ const styles = StyleSheet.create({
   },
   nearbyImage: {
     alignItems: "center",
-    backgroundColor: "#F6EFD9",
+    backgroundColor: EXPERIENCE_THEME.border,
     height: 128,
     justifyContent: "center",
     position: "relative",
   },
   nearbyImageText: {
-    color: "#9CA3AF",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -2169,7 +2170,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   nearbyMetaText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 10,
     fontWeight: "600",
   },
@@ -2184,18 +2185,18 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
   },
   nearbySubtitle: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 4,
   },
   nearbyTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 18,
     fontWeight: "800",
   },
   nearbyTypeBadge: {
-    backgroundColor: "#6B7280",
+    backgroundColor: EXPERIENCE_THEME.paragraph,
     borderRadius: 10,
     left: 8,
     paddingHorizontal: 8,
@@ -2209,7 +2210,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   nearbyViewAll: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "800",
   },
@@ -2219,7 +2220,7 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   sectionCount: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     fontWeight: "500",
   },
@@ -2248,13 +2249,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 20,
     fontWeight: "800",
   },
   shareButton: {
     alignItems: "center",
-    borderColor: "#F1E8DA",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 12,
     borderWidth: 1,
     height: 40,
@@ -2268,7 +2269,7 @@ const styles = StyleSheet.create({
   skeletonCard: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -2276,37 +2277,37 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   skeletonLine: {
-    backgroundColor: "#F6EFD9",
+    backgroundColor: EXPERIENCE_THEME.border,
     borderRadius: 6,
     height: 10,
     width: "58%",
   },
   skeletonLineWide: {
-    backgroundColor: "#F1E8DA",
+    backgroundColor: EXPERIENCE_THEME.border,
     borderRadius: 6,
     height: 12,
     width: "82%",
   },
   skeletonPill: {
-    backgroundColor: "#FFF7ED",
+    backgroundColor: EXPERIENCE_THEME.background,
     borderRadius: 12,
     height: 24,
     width: 104,
   },
   skeletonThumb: {
-    backgroundColor: "#F6EFD9",
+    backgroundColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     height: 62,
     width: 62,
   },
   smallSectionTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 18,
     fontWeight: "800",
   },
   statCard: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
@@ -2314,7 +2315,7 @@ const styles = StyleSheet.create({
   },
   statIcon: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
+    backgroundColor: EXPERIENCE_THEME.background,
     borderRadius: 12,
     height: 40,
     justifyContent: "center",
@@ -2322,7 +2323,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   statLabel: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
   },
   statsGrid: {
@@ -2332,18 +2333,18 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   statsSection: {
-    backgroundColor: "#FAFAF9",
+    backgroundColor: EXPERIENCE_THEME.background,
     padding: 16,
     paddingVertical: 24,
   },
   statValue: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 24,
     fontWeight: "800",
     marginBottom: 2,
   },
   storyAccent: {
-    backgroundColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
     borderRadius: 3,
     width: 5,
   },
@@ -2352,14 +2353,14 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
   },
   storyBy: {
-    color: "#4B5563",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "900",
     marginTop: 10,
   },
   storyCard: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
@@ -2367,20 +2368,20 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   storyText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     fontWeight: "600",
     lineHeight: 20,
     marginTop: 5,
   },
   storyTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 15,
     fontWeight: "900",
   },
   sheetHandle: {
     alignSelf: "center",
-    backgroundColor: "#F1E8DA",
+    backgroundColor: EXPERIENCE_THEME.border,
     borderRadius: 2,
     height: 4,
     marginBottom: 12,
@@ -2389,7 +2390,7 @@ const styles = StyleSheet.create({
   },
   thumbnail: {
     alignItems: "center",
-    backgroundColor: "#F1E8DA",
+    backgroundColor: EXPERIENCE_THEME.border,
     borderRadius: 12,
     height: 80,
     justifyContent: "center",
@@ -2408,13 +2409,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   trendingMeta: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 4,
   },
   trendingRank: {
-    color: "#9CA3AF",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 22,
     fontWeight: "900",
     marginRight: 12,
@@ -2423,7 +2424,7 @@ const styles = StyleSheet.create({
   trendingRow: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
@@ -2431,19 +2432,19 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   trendingTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 15,
     fontWeight: "900",
   },
   trendingValue: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12,
     fontWeight: "900",
     marginLeft: 10,
   },
   typeGuideCard: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 18,
     borderWidth: 1,
     marginRight: 12,
@@ -2454,28 +2455,28 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   typeGuideCount: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12,
     fontWeight: "900",
     marginTop: 12,
   },
   typeGuideIcon: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
+    backgroundColor: EXPERIENCE_THEME.background,
     borderRadius: 16,
     height: 46,
     justifyContent: "center",
     width: 46,
   },
   typeGuideSummary: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 6,
     minHeight: 50,
   },
   typeGuideTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 16,
     fontWeight: "900",
     marginTop: 12,
@@ -2483,7 +2484,7 @@ const styles = StyleSheet.create({
   toggleButton: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F1E8DA",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 12,
     borderWidth: 1,
     flex: 1,
@@ -2493,8 +2494,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   toggleButtonActive: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: EXPERIENCE_THEME.heading,
+    borderColor: EXPERIENCE_THEME.heading,
   },
   toggleRow: {
     flexDirection: "row",
@@ -2502,7 +2503,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   toggleText: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -2512,14 +2513,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   viewAllText: {
-    color: "#4B5563",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     fontWeight: "700",
   },
   viewMoreButton: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#F1E8DA",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 12,
     borderStyle: "dashed",
     borderWidth: 2,
@@ -2529,7 +2530,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   viewMoreText: {
-    color: "#4B5563",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -2547,7 +2548,7 @@ const styles = StyleSheet.create({
     width: 56,
   },
   userMarkerCore: {
-    backgroundColor: "#6B7280",
+    backgroundColor: EXPERIENCE_THEME.paragraph,
     borderColor: "#FFFFFF",
     borderRadius: 8,
     borderWidth: 4,
