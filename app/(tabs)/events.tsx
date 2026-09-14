@@ -614,6 +614,10 @@ function EventsScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: 110,
+        }}
+        
       >
         {!!error && <Text style={styles.errorText}>{error}</Text>}
         {(loading || homeLoading) && events.length === 0 ? (
@@ -638,7 +642,7 @@ function EventsScreen() {
         ))}
 
         <EventProductSections home={home} loading={homeLoading} />
-        <ActivityStats
+        {/* <ActivityStats
           events={events}
           home={home}
           savedEventsCount={
@@ -649,7 +653,7 @@ function EventsScreen() {
         <SuggestedCommunities
           calendars={communityCalendars}
           loading={communityCalendarsLoading}
-        />
+        /> */}
       </ScrollView>
       )}
     </View>
@@ -751,7 +755,7 @@ function MapOverview({
         </ScrollView>
       </View>
 
-      <EventProductSections compact home={home} loading={loading} />
+      {/* <EventProductSections compact home={home} loading={loading} /> */}
     </ScrollView>
   );
 }
@@ -971,12 +975,18 @@ function EventCard({
           ]}
         >
           {rsvpPending ? (
-            <ActivityIndicator color={event.going ? "#FFFFFF" : EXPERIENCE_THEME.paragraph} size="small" />
+            <ActivityIndicator
+              color={event.going ? EXPERIENCE_THEME.paragraph : "#FFFFFF"}
+              size="small"
+            />
           ) : (
-            <CalendarCheck color={event.going ? "#FFFFFF" : EXPERIENCE_THEME.paragraph} size={16} />
+            <CalendarCheck
+              color={event.going ? EXPERIENCE_THEME.paragraph : "#FFFFFF"}
+              size={16}
+            />
           )}
           <Text style={[styles.rsvpButtonText, event.going && styles.rsvpButtonTextActive]}>
-            {rsvpPending ? "Updating" : event.going ? "Going" : "Interested"}
+            {rsvpPending ? "Updating" : event.going ? "Confirmed" : "Confirm"}
           </Text>
         </Pressable>
         <Pressable
@@ -1075,11 +1085,11 @@ function EventProductSections({
   return (
     <View style={[styles.productWrap, compact && styles.productWrapCompact]}>
       <EventQuickActions />
-      <EventTypeGuide home={home} loading={loading} />
-      <TrendingThisWeek home={home} loading={loading} />
+      {/* <EventTypeGuide home={home} loading={loading} /> */}
+      {/* <TrendingThisWeek home={home} loading={loading} /> */}
       
-      <WeekScheduler home={home} loading={loading} />
-      <TopOrganisers home={home} loading={loading} />
+      {/* <WeekScheduler home={home} loading={loading} /> */}
+      {/* <TopOrganisers home={home} loading={loading} /> */}
     </View>
   );
 }
@@ -2169,8 +2179,8 @@ const styles = StyleSheet.create({
   },
   rsvpButton: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: EXPERIENCE_THEME.border,
+    backgroundColor: EXPERIENCE_THEME.heading,
+    borderColor: EXPERIENCE_THEME.heading,
     borderRadius: 12,
     borderWidth: 1,
     flex: 1,
@@ -2180,16 +2190,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   rsvpButtonActive: {
-    backgroundColor: EXPERIENCE_THEME.heading,
-    borderColor: EXPERIENCE_THEME.heading,
+    backgroundColor: "#FFFFFF",
+    borderColor: EXPERIENCE_THEME.border,
   },
   rsvpButtonText: {
-    color: EXPERIENCE_THEME.paragraph,
+    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "700",
   },
   rsvpButtonTextActive: {
-    color: "#FFFFFF",
+    color: EXPERIENCE_THEME.paragraph,
   },
   productAction: {
     color: EXPERIENCE_THEME.paragraph,
