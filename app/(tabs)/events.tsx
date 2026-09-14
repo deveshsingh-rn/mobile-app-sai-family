@@ -7,6 +7,7 @@ import React, {
 
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -17,6 +18,7 @@ import {
 } from "react-native";
 
 import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import {
@@ -28,6 +30,7 @@ import {
   HandHeart,
   Heart,
   LocateFixed,
+  List,
   Map,
   MapPin,
   Minus,
@@ -77,6 +80,7 @@ import {
   useAppSelector,
 } from "@/store/hooks";
 import { requestLocationPermissionWithSettingsFallback } from "@/services/location-permissions";
+import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 
 const EVENT_FILTERS: {
   label: string;
@@ -188,6 +192,7 @@ const sectionCountFromHome = (
 
 function EventsScreen() {
   const dispatch = useAppDispatch();
+  const account = useAppSelector(selectDevoteeAccount);
   const events = useAppSelector(selectEventsFeed);
   const home = useAppSelector(selectEventsHome);
   const homeLoading = useAppSelector(selectEventsHomeLoading);
@@ -387,7 +392,6 @@ function EventsScreen() {
   const todayEvents = resolveSectionEvents("happeningToday");
   const weekEvents = resolveSectionEvents("thisWeek");
   const monthEvents = resolveSectionEvents("thisMonth");
-  const laterEvents = resolveSectionEvents("comingSoon");
 
   const sectionCount = (
     key: "happeningToday" | "thisWeek" | "thisMonth" | "comingSoon",
@@ -421,93 +425,182 @@ function EventsScreen() {
     // },
   ];
 
+  const profileImageUrl =
+    account?.profileImage?.uri ||
+    account?.profileImageUrl ||
+    account?.profile?.profileImageUrl;
+  const profileInitial = account?.name?.trim().charAt(0).toUpperCase() || "S";
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        {/* <Pressable onPress={() => router.back()} style={styles.headerIcon}> */}
-          {/* <Text style={styles.headerBack}>‹</Text> */}
-        {/* </Pressable> */}
-        {/* <Text style={styles.headerTitle}>Events</Text>
-        <Pressable style={styles.headerIcon}>
-          <SlidersHorizontal color={EXPERIENCE_THEME.heading} size={20} />
-        </Pressable> */}
-      {/* </View> */}
-
-      {/* <View style={styles.controls}> */}
-        <View
-          style={[
-            styles.toggleRow,
-            !SHOW_EVENT_CATEGORY_FILTERS && styles.toggleRowWithoutFilters,
+      <View style={styles.eventToolbar}>
+        <Pressable
+          accessibilityLabel="Create event"
+          accessibilityRole="button"
+          hitSlop={6}
+          onPress={() => router.push("/events/create")}
+          style={({ pressed }) => [
+            styles.createEventProfileButton,
+            pressed && styles.toolbarButtonPressed,
           ]}
         >
-          {SHOW_EVENT_MAP_TAB ? (
-            <Pressable
-              onPress={() => setViewMode("map")}
-              style={[
-                styles.toggleButton,
-                viewMode === "map" && styles.toggleButtonActive,
-              ]}
-            >
-              <Map
-                color={
-                  viewMode === "map"
-                    ? "#FFFFFF"
-                    : EXPERIENCE_THEME.paragraph
-                }
-                size={16}
-              />
-              <Text
-                style={
-                  viewMode === "map"
-                    ? styles.toggleTextActive
-                    : styles.toggleText
-                }
-              >
-                Map
-              </Text>
-            </Pressable>
-          ) : null}
-          {/* <Pressable
-            onPress={() => setViewMode("list")}
-            style={[
-              styles.toggleButton,
-              viewMode === "list" && styles.toggleButtonActive,
+          <LinearGradient
+            colors={[EXPERIENCE_THEME.heading, "#D97706"]}
+            end={{ x: 1, y: 1 }}
+            start={{ x: 0, y: 0 }}
+            style={styles.createEventRing}
+          >
+            <View style={styles.createEventAvatarInset}>
+              {profileImageUrl ? (
+                <Image
+                  accessibilityLabel={`${account?.name || "Devotee"} profile photo`}
+                  resizeMode="cover"
+                  source={{ uri: profileImageUrl }}
+                  style={styles.createEventAvatar}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.createEventAvatar,
+                    styles.createEventAvatarFallback,
+                  ]}
+                >
+                  <Text style={styles.createEventAvatarText}>
+                    {profileInitial}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </LinearGradient>
+          <View style={styles.createEventBadge}>
+            <Plus color="#FFFFFF" size={12} strokeWidth={3.4} />
+          </View>
+        </Pressable>
+
+        <View style={styles.eventToolbarActions}>
+          <Pressable
+            accessibilityLabel="Saved events"
+            accessibilityRole="button"
+            hitSlop={6}
+            onPress={() => router.push("/events/bookmarks")}
+            style={({ pressed }) => [
+              styles.eventToolbarIconButton,
+              pressed && styles.toolbarButtonPressed,
             ]}
           >
-            <List color={viewMode === "list" ? "#FFFFFF" : EXPERIENCE_THEME.paragraph} size={16} />
-            <Text style={viewMode === "list" ? styles.toggleTextActive : styles.toggleText}>List</Text>
-          </Pressable> */}
-        </View>
+            <Bookmark
+              color={EXPERIENCE_THEME.paragraph}
+              size={30}
+              strokeWidth={2.15}
+            />
+          </Pressable>
 
-        {SHOW_EVENT_CATEGORY_FILTERS ? (
-          <ScrollView
-            contentContainerStyle={styles.chipsContent}
-            horizontal
-            showsHorizontalScrollIndicator={false}
+          <Pressable
+            accessibilityLabel="Event calendar"
+            accessibilityRole="button"
+            hitSlop={6}
+            onPress={() => router.push("/events/calendar")}
+            style={({ pressed }) => [
+              styles.eventToolbarIconButton,
+              pressed && styles.toolbarButtonPressed,
+            ]}
           >
-            {EVENT_FILTERS.map((filter) => {
-              const active = selectedType === filter.value;
-
-              return (
-                <Pressable
-                  key={filter.value}
-                  onPress={() => setSelectedType(filter.value)}
-                  style={[styles.chip, active && styles.chipActive]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      active && styles.chipTextActive,
-                    ]}
-                  >
-                    {filter.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        ) : null}
+            <Calendar
+              color={EXPERIENCE_THEME.paragraph}
+              size={30}
+              strokeWidth={2.15}
+            />
+          </Pressable>
+        </View>
       </View>
+
+      {SHOW_EVENT_MAP_TAB || SHOW_EVENT_CATEGORY_FILTERS ? (
+        <View style={styles.controls}>
+          {SHOW_EVENT_MAP_TAB ? (
+            <View style={styles.toggleRow}>
+              <Pressable
+                onPress={() => setViewMode("map")}
+                style={[
+                  styles.toggleButton,
+                  viewMode === "map" && styles.toggleButtonActive,
+                ]}
+              >
+                <Map
+                  color={
+                    viewMode === "map"
+                      ? "#FFFFFF"
+                      : EXPERIENCE_THEME.paragraph
+                  }
+                  size={16}
+                />
+                <Text
+                  style={
+                    viewMode === "map"
+                      ? styles.toggleTextActive
+                      : styles.toggleText
+                  }
+                >
+                  Map
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setViewMode("list")}
+                style={[
+                  styles.toggleButton,
+                  viewMode === "list" && styles.toggleButtonActive,
+                ]}
+              >
+                <List
+                  color={
+                    viewMode === "list"
+                      ? "#FFFFFF"
+                      : EXPERIENCE_THEME.paragraph
+                  }
+                  size={16}
+                />
+                <Text
+                  style={
+                    viewMode === "list"
+                      ? styles.toggleTextActive
+                      : styles.toggleText
+                  }
+                >
+                  List
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {SHOW_EVENT_CATEGORY_FILTERS ? (
+            <ScrollView
+              contentContainerStyle={styles.chipsContent}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            >
+              {EVENT_FILTERS.map((filter) => {
+                const active = selectedType === filter.value;
+
+                return (
+                  <Pressable
+                    key={filter.value}
+                    onPress={() => setSelectedType(filter.value)}
+                    style={[styles.chip, active && styles.chipActive]}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        active && styles.chipTextActive,
+                      ]}
+                    >
+                      {filter.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          ) : null}
+        </View>
+      ) : null}
 
       {SHOW_EVENT_MAP_TAB && viewMode === "map" ? (
         <MapOverview events={nearbyLiveEvents} home={home} loading={nearbyLoading} />
@@ -545,7 +638,6 @@ function EventsScreen() {
         ))}
 
         <EventProductSections home={home} loading={homeLoading} />
-        <CreateEventCta />
         <ActivityStats
           events={events}
           home={home}
@@ -1114,21 +1206,6 @@ function TrendingThisWeek({
 function EventQuickActions() {
   const actions = [
     {
-      href: "/events/create",
-      icon: Plus,
-      label: "Create",
-    },
-    {
-      href: "/events/calendar",
-      icon: Calendar,
-      label: "Calendar",
-    },
-    {
-      href: "/events/bookmarks",
-      icon: Bookmark,
-      label: "Saved",
-    },
-    {
       href: "/events/rsvps",
       icon: CalendarCheck,
       label: "My RSVPs",
@@ -1316,26 +1393,6 @@ function SectionHeading({
   );
 }
 
-function CreateEventCta() {
-  return (
-    <View style={styles.createSection}>
-      <View style={styles.createCard}>
-        <View style={styles.createIcon}>
-          <Plus color="#FFFFFF" size={22} />
-        </View>
-        <Text style={styles.createTitle}>Host Your Event</Text>
-        <Text style={styles.createText}>
-          Share your spiritual gatherings, satsangs, and community events with the Sai Family.
-        </Text>
-        <Pressable onPress={() => router.push("/events/create")} style={styles.createButton}>
-          <Plus color={EXPERIENCE_THEME.heading} size={16} />
-          <Text style={styles.createButtonText}>Create New Event</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
 function ActivityStats({
   events,
   home,
@@ -1440,6 +1497,90 @@ function SuggestedCommunities({
 export default EventsScreen;
 
 const styles = StyleSheet.create({
+  eventToolbar: {
+    alignItems: "center",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderBottomColor: EXPERIENCE_THEME.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    minHeight: 120,
+    paddingBottom: 6,
+    paddingHorizontal: 14,
+    paddingTop: 54,
+  },
+  eventToolbarActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+  },
+  eventToolbarIconButton: {
+    alignItems: "center",
+    borderRadius: 12,
+    height: 52,
+    justifyContent: "center",
+    width: 52,
+  },
+  toolbarButtonPressed: {
+    backgroundColor: EXPERIENCE_THEME.border,
+    opacity: 0.76,
+    transform: [{ scale: 0.96 }],
+  },
+  createEventProfileButton: {
+    alignItems: "center",
+    borderRadius: 30,
+    height: 60,
+    justifyContent: "center",
+    position: "relative",
+    width: 60,
+  },
+  createEventRing: {
+    alignItems: "center",
+    borderRadius: 28,
+    height: 56,
+    justifyContent: "center",
+    width: 56,
+  },
+  createEventAvatarInset: {
+    alignItems: "center",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderRadius: 26,
+    height: 52,
+    justifyContent: "center",
+    width: 52,
+  },
+  createEventAvatar: {
+    backgroundColor: EXPERIENCE_THEME.border,
+    borderRadius: 24,
+    height: 48,
+    width: 48,
+  },
+  createEventAvatarFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  createEventAvatarText: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  createEventBadge: {
+    alignItems: "center",
+    backgroundColor: EXPERIENCE_THEME.heading,
+    borderColor: EXPERIENCE_THEME.background,
+    borderRadius: 10,
+    borderWidth: 2,
+    bottom: 1,
+    height: 21,
+    justifyContent: "center",
+    position: "absolute",
+    right: 1,
+    shadowColor: EXPERIENCE_THEME.heading,
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    width: 21,
+  },
   attendeeRow: {
     alignItems: "center",
     flexDirection: "row",
