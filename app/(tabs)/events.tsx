@@ -2190,8 +2190,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   rsvpButtonActive: {
-    backgroundColor: "#FFFFFF",
-    borderColor: EXPERIENCE_THEME.border,
+    backgroundColor: "#F97316",
+    borderColor: '#f9f8f6',
   },
   rsvpButtonText: {
     color: "#FFFFFF",
@@ -2468,7 +2468,7 @@ const styles = StyleSheet.create({
   sectionCount: {
     color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "700",
   },
   sectionHeader: {
     alignItems: "center",
