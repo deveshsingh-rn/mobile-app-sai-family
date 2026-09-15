@@ -25,7 +25,7 @@ export function createEventPublicShareLink(eventId: string) {
 }
 
 export function createEventCalendarLink(eventId: string) {
-  return `${publicBaseUrl()}/events/${encodeURIComponent(eventId)}/calendar.ics`;
+  return `${createEventPublicShareLink(eventId)}#add-to-calendar`;
 }
 
 export function createEventShareMessage({

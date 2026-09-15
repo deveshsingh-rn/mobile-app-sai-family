@@ -57,14 +57,23 @@ The HTML page should include:
 
 ## Public Add-To-Calendar Route
 
-The shared WhatsApp message also contains:
+The shared WhatsApp message links to the safe event landing page calendar
+section:
+
+```text
+https://saifamily.sustaininsight.com/events/:eventId#add-to-calendar
+```
+
+The landing page then exposes an explicit calendar download action backed by:
 
 ```http
 GET /events/:eventId/calendar.ics
 ```
 
-This endpoint must be public for published events and return a single RFC 5545
-calendar event:
+Do not share the `.ics` download URL directly in WhatsApp because messaging apps
+and embedded browsers can classify direct calendar downloads as unsafe. The
+endpoint must be public for published events and return a single RFC 5545
+calendar event after the user presses the landing-page button:
 
 ```http
 Content-Type: text/calendar; charset=utf-8
@@ -125,9 +134,11 @@ addresses will not work.
 4. Share the URL in a new WhatsApp chat.
 5. Confirm banner, title, date/location summary, and domain are visible.
 6. Tap the card and confirm the app/event fallback flow works.
-7. Tap `Add to your calendar` and confirm one event opens/imports with the
-   correct timezone, start/end time, title, and venue.
-8. Update the banner/title and confirm the preview refreshes after cache expiry.
+7. Tap the shared `Add to your calendar` link and confirm it opens the secure
+   event landing page without a warning.
+8. Press the landing-page `Add to calendar` button and confirm one event
+   opens/imports with the correct timezone, start/end time, title, and venue.
+9. Update the banner/title and confirm the preview refreshes after cache expiry.
 
 Note: WhatsApp caches link previews aggressively. During testing, use a new
 event ID or append a temporary version query parameter after backend metadata is
