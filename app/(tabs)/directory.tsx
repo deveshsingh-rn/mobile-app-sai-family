@@ -838,17 +838,17 @@ export default function DirectoryScreen() {
             <View
               style={{
                 alignItems: 'center',
-                backgroundColor: '#F97316',
+                backgroundColor: '#fff',
                 borderRadius: 22,
                 height: 44,
                 justifyContent: 'center',
                 width: 44,
               }}>
               <FamilySilhouetteIcon
-                color="#FFFFFF"
-                fill="#FFFFFF"
-                height={25}
-                width={25}
+                color="#7C2D12"
+                fill="#7C2D12"
+                height={35}
+                width={35}
               />
             </View>
 
@@ -861,7 +861,7 @@ export default function DirectoryScreen() {
                 lineHeight: 28,
                 marginLeft: 14,
               }}>
-              Welcome to Sai Ki Family 🙏
+              Welcome to Sai Ki Family
             </Text>
           </View>
 
