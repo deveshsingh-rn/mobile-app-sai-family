@@ -21,6 +21,7 @@ import {
 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { Plus, Search } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DirectoryHomeSkeleton } from '@/components/ui/Skeleton';
@@ -782,7 +783,7 @@ export default function DirectoryScreen() {
             </View>
           </LinearGradient>
           <View style={styles.createListingBadge}>
-            <Ionicons color="#FFFFFF" name="add" size={15} />
+            <Plus color="#FFFFFF" size={12} strokeWidth={3.4} />
           </View>
         </Pressable>
 
@@ -795,7 +796,7 @@ export default function DirectoryScreen() {
             styles.directoryToolbarIconButton,
             pressed && styles.toolbarButtonPressed,
           ]}>
-          <Ionicons color="#4B4037" name="search" size={28} />
+          <Search color="#4B4037" size={30} strokeWidth={2.15} />
         </Pressable>
       </View>
 
@@ -1328,9 +1329,9 @@ export default function DirectoryScreen() {
 const styles = StyleSheet.create({
   createListingAvatar: {
     backgroundColor: '#F1D9B5',
-    borderRadius: 28,
-    height: 56,
-    width: 56,
+    borderRadius: 24,
+    height: 48,
+    width: 48,
   },
   createListingAvatarFallback: {
     alignItems: 'center',
@@ -1339,10 +1340,10 @@ const styles = StyleSheet.create({
   createListingAvatarInset: {
     alignItems: 'center',
     backgroundColor: '#FFF8EC',
-    borderRadius: 30,
-    height: 60,
+    borderRadius: 26,
+    height: 52,
     justifyContent: 'center',
-    width: 60,
+    width: 52,
   },
   createListingAvatarText: {
     color: '#7C2D12',
@@ -1353,10 +1354,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#7C2D12',
     borderColor: '#FFF8EC',
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 2,
     bottom: 1,
-    height: 24,
+    height: 21,
     justifyContent: 'center',
     position: 'absolute',
     right: 1,
@@ -1364,22 +1365,22 @@ const styles = StyleSheet.create({
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
-    width: 24,
+    width: 21,
   },
   createListingProfileButton: {
     alignItems: 'center',
-    borderRadius: 34,
-    height: 68,
+    borderRadius: 30,
+    height: 60,
     justifyContent: 'center',
     position: 'relative',
-    width: 68,
+    width: 60,
   },
   createListingRing: {
     alignItems: 'center',
-    borderRadius: 32,
-    height: 64,
+    borderRadius: 28,
+    height: 56,
     justifyContent: 'center',
-    width: 64,
+    width: 56,
   },
   directoryToolbar: {
     alignItems: 'center',
@@ -1394,10 +1395,10 @@ const styles = StyleSheet.create({
   },
   directoryToolbarIconButton: {
     alignItems: 'center',
-    borderRadius: 14,
-    height: 60,
+    borderRadius: 12,
+    height: 52,
     justifyContent: 'center',
-    width: 60,
+    width: 52,
   },
   toolbarButtonPressed: {
     backgroundColor: '#F1D9B5',
