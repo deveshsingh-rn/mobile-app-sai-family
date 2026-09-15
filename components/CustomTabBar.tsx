@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import { Asset } from "expo-asset";
 import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import {
@@ -17,12 +18,12 @@ import {
   isGlassEffectAPIAvailable,
 } from "expo-glass-effect";
 import {
-  Building2,
   CalendarDays,
   House,
   Users,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SvgUri } from "react-native-svg";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const COLORS = {
@@ -32,6 +33,9 @@ const COLORS = {
 
 const ACTIVE_INDICATOR_HEIGHT = 48;
 const ACTIVE_INDICATOR_WIDTH = 58;
+const FAMILY_ICON_URI = Asset.fromModule(
+  require("../assets/icons/family-silhouette-svgrepo-com.svg")
+).uri;
 
 type TabIcon = React.ComponentType<{
   color?: string;
@@ -57,6 +61,17 @@ function MalaIcon({ color, size }: React.ComponentProps<TabIcon>) {
   );
 }
 
+function FamilyIcon({ color, size = 30 }: React.ComponentProps<TabIcon>) {
+  return (
+    <SvgUri
+      height={size}
+      override={{ fill: color }}
+      uri={FAMILY_ICON_URI}
+      width={size}
+    />
+  );
+}
+
 const TABS: PillarTab[] = [
   {
     displayLabel: "Home",
@@ -75,7 +90,7 @@ const TABS: PillarTab[] = [
   {
     displayLabel: "Sai Family",
     href: "/(tabs)/directory",
-    Icon: Building2,
+    Icon: FamilyIcon,
     label: "Sai Connect",
     name: "directory",
   },
