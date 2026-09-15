@@ -2243,7 +2243,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   rsvpButtonActive: {
-    backgroundColor: "#F97316",
+    backgroundColor: "#5CE65C",
     borderColor: '#f9f8f6',
   },
   rsvpButtonText: {

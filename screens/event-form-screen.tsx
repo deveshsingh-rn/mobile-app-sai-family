@@ -45,7 +45,6 @@ import {
   ChevronDown,
   ChevronRight,
   Clock3,
-  Eye,
   ImagePlus,
   LocateFixed,
   Plus,
@@ -1234,9 +1233,7 @@ export default function EventFormScreen({
           removeGuideline={removeGuideline}
           setGuidelineDraft={setGuidelineDraft}
         />
-        <PreviewSection form={form} />
-
-        {mode === "create" ? (
+        {/* {mode === "create" ? (
           <View style={styles.autosaveInline}>
             <View
               style={[
@@ -1254,24 +1251,9 @@ export default function EventFormScreen({
                     : "Autosave starts after required details are complete"}
             </Text>
           </View>
-        ) : null}
+        ) : null} */}
 
         <View style={styles.actionSection}>
-          <View style={styles.actionIntro}>
-            <View style={styles.actionIntroIcon}>
-              <Eye color="#C2410C" size={18} />
-            </View>
-            <View style={styles.actionIntroCopy}>
-              <Text style={styles.actionIntroTitle}>
-                {mode === "create" ? "Review before publishing" : "Ready to save changes?"}
-              </Text>
-              <Text style={styles.actionIntroText}>
-                {mode === "create"
-                  ? "Check how devotees will see your event before it goes live."
-                  : "Your updates will appear on the event page after saving."}
-              </Text>
-            </View>
-          </View>
           {mode === "create" && !isGroupEvent ? (
             <Pressable
               disabled={draftSaving || publishingDraft || uploadingMedia}
@@ -1622,34 +1604,6 @@ function GuidelinesSection({
   );
 }
 
-function PreviewSection({form}: {form: EventFormState}) {
-  const previewTitle = form.title || "Untitled event";
-  const previewLocation = [form.venueName, form.city, form.state]
-    .filter(Boolean)
-    .join(", ");
-
-  return (
-    <View style={styles.previewSection}>
-      <View style={styles.previewCard}>
-        <View style={styles.previewTop}>
-          <View style={styles.previewIcon}>
-            <Eye color="#6B7280" size={18} />
-          </View>
-          <View style={styles.organizerCopy}>
-            <Text style={styles.previewTitle}>{previewTitle}</Text>
-            <Text style={styles.previewText}>
-              {previewLocation || "Location will appear here"} · {formatDate(form.startAt)}
-            </Text>
-          </View>
-        </View>
-        <Text numberOfLines={3} style={styles.previewDescription}>
-          {form.description || "Description preview will appear here."}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   actionSection: {
     backgroundColor: "#FFFFFF",
@@ -1661,35 +1615,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 12,
     padding: 16,
-  },
-  actionIntro: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 2,
-  },
-  actionIntroCopy: {
-    flex: 1,
-  },
-  actionIntroIcon: {
-    alignItems: "center",
-    backgroundColor: "#FFF4E8",
-    borderRadius: 20,
-    height: 40,
-    justifyContent: "center",
-    width: 40,
-  },
-  actionIntroText: {
-    color: "#78716C",
-    fontSize: 13,
-    fontWeight: "600",
-    lineHeight: 19,
-    marginTop: 3,
-  },
-  actionIntroTitle: {
-    color: "#1C1917",
-    fontSize: 16,
-    fontWeight: "900",
   },
   activeTag: {
     alignItems: "center",
@@ -2466,40 +2391,6 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 8,
   },
-  previewButton: {
-    alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#F1E8DA",
-    borderRadius: 12,
-    borderWidth: 2,
-    justifyContent: "center",
-    minHeight: 46,
-  },
-  previewButtonText: {
-    color: "#1F2937",
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  previewCard: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#F6EFD9",
-    borderRadius: 16,
-    borderWidth: 2,
-    padding: 14,
-  },
-  previewIcon: {
-    alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderRadius: 20,
-    height: 40,
-    justifyContent: "center",
-    width: 40,
-  },
-  previewSection: {
-    backgroundColor: "#F7F7F5",
-    paddingHorizontal: 12,
-    paddingVertical: 16,
-  },
   primaryButtonPressed: {
     opacity: 0.86,
     transform: [{scale: 0.985}],
@@ -2513,31 +2404,6 @@ const styles = StyleSheet.create({
     minHeight: 56,
     paddingHorizontal: 18,
     width: "100%",
-  },
-  previewDescription: {
-    color: "#6B7280",
-    fontSize: 13,
-    fontWeight: "600",
-    lineHeight: 19,
-    marginTop: 12,
-  },
-  previewText: {
-    color: "#6B7280",
-    fontSize: 12,
-    fontWeight: "600",
-    lineHeight: 18,
-    marginTop: 3,
-  },
-  previewTitle: {
-    color: "#1F2937",
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  previewTop: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 12,
   },
   progressActive: {
     backgroundColor: "#F97316",
