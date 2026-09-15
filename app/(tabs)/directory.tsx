@@ -782,7 +782,7 @@ export default function DirectoryScreen() {
             </View>
           </LinearGradient>
           <View style={styles.createListingBadge}>
-            <Ionicons color="#FFFFFF" name="add" size={13} />
+            <Ionicons color="#FFFFFF" name="add" size={15} />
           </View>
         </Pressable>
 
@@ -795,7 +795,7 @@ export default function DirectoryScreen() {
             styles.directoryToolbarIconButton,
             pressed && styles.toolbarButtonPressed,
           ]}>
-          <Ionicons color="#4B4037" name="search" size={23} />
+          <Ionicons color="#4B4037" name="search" size={28} />
         </Pressable>
       </View>
 
@@ -1328,9 +1328,9 @@ export default function DirectoryScreen() {
 const styles = StyleSheet.create({
   createListingAvatar: {
     backgroundColor: '#F1D9B5',
-    borderRadius: 24,
-    height: 48,
-    width: 48,
+    borderRadius: 28,
+    height: 56,
+    width: 56,
   },
   createListingAvatarFallback: {
     alignItems: 'center',
@@ -1339,10 +1339,10 @@ const styles = StyleSheet.create({
   createListingAvatarInset: {
     alignItems: 'center',
     backgroundColor: '#FFF8EC',
-    borderRadius: 26,
-    height: 52,
+    borderRadius: 30,
+    height: 60,
     justifyContent: 'center',
-    width: 52,
+    width: 60,
   },
   createListingAvatarText: {
     color: '#7C2D12',
@@ -1353,10 +1353,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#7C2D12',
     borderColor: '#FFF8EC',
-    borderRadius: 11,
+    borderRadius: 12,
     borderWidth: 2,
     bottom: 1,
-    height: 22,
+    height: 24,
     justifyContent: 'center',
     position: 'absolute',
     right: 1,
@@ -1364,22 +1364,22 @@ const styles = StyleSheet.create({
     shadowOffset: { height: 2, width: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
-    width: 22,
+    width: 24,
   },
   createListingProfileButton: {
     alignItems: 'center',
-    borderRadius: 30,
-    height:50,
+    borderRadius: 34,
+    height: 68,
     justifyContent: 'center',
     position: 'relative',
-    width: 50,
+    width: 68,
   },
   createListingRing: {
     alignItems: 'center',
-    borderRadius: 28,
-    height: 56,
+    borderRadius: 32,
+    height: 64,
     justifyContent: 'center',
-    width: 56,
+    width: 64,
   },
   directoryToolbar: {
     alignItems: 'center',
@@ -1388,16 +1388,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    minHeight: 72,
+    minHeight: 80,
     paddingHorizontal: 14,
     paddingVertical: 6,
   },
   directoryToolbarIconButton: {
     alignItems: 'center',
     borderRadius: 14,
-    height: 52,
+    height: 60,
     justifyContent: 'center',
-    width: 52,
+    width: 60,
   },
   toolbarButtonPressed: {
     backgroundColor: '#F1D9B5',
