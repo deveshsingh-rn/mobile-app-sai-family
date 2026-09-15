@@ -24,6 +24,10 @@ export function createEventPublicShareLink(eventId: string) {
   return `${publicBaseUrl()}/events/${encodeURIComponent(eventId)}`;
 }
 
+export function createEventCalendarLink(eventId: string) {
+  return `${publicBaseUrl()}/events/${encodeURIComponent(eventId)}/calendar.ics`;
+}
+
 export function createEventShareMessage({
   date,
   eventId,
@@ -32,12 +36,14 @@ export function createEventShareMessage({
   title,
 }: EventShareDetails) {
   const eventUrl = createEventPublicShareLink(eventId);
+  const calendarUrl = createEventCalendarLink(eventId);
   const safeTitle = escapeWhatsAppFormatting(title) || "Sai Family Event";
   const safeDate = escapeWhatsAppFormatting(date) || "Date pending";
   const safeTime = escapeWhatsAppFormatting(time) || "Time pending";
   const safeLocation = escapeWhatsAppFormatting(location) || "Venue pending";
 
   return [
+    "*You are invited to Join*",
     "*SAI FAMILY EVENT*",
     "",
     `*${safeTitle}*`,
@@ -49,6 +55,9 @@ export function createEventShareMessage({
     "*View details and RSVP:*",
     eventUrl,
     "",
-    "Om Sai Ram",
+    "*Add to your calendar:*",
+    calendarUrl,
+    "",
+    "*Om Sai Ram*",
   ].join("\n");
 }

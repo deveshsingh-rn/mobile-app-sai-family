@@ -55,6 +55,46 @@ The HTML page should include:
 - No attendee names, phone numbers, email addresses, coordinates, or private
   organizer data.
 
+## Public Add-To-Calendar Route
+
+The shared WhatsApp message also contains:
+
+```http
+GET /events/:eventId/calendar.ics
+```
+
+This endpoint must be public for published events and return a single RFC 5545
+calendar event:
+
+```http
+Content-Type: text/calendar; charset=utf-8
+Content-Disposition: attachment; filename="sai-family-event.ics"
+```
+
+Required calendar fields:
+
+```text
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Sai Family//Events//EN
+BEGIN:VEVENT
+UID:EVENT_ID@saifamily.sustaininsight.com
+DTSTAMP:UTC_GENERATED_AT
+DTSTART:UTC_EVENT_START
+DTEND:UTC_EVENT_END
+SUMMARY:EVENT_TITLE
+DESCRIPTION:SAFE_EVENT_DESCRIPTION_AND_PUBLIC_URL
+LOCATION:VENUE_AND_ADDRESS
+URL:CANONICAL_EVENT_URL
+END:VEVENT
+END:VCALENDAR
+```
+
+Escape ICS special characters and fold long lines correctly. Draft, cancelled,
+private, deleted, or missing events must not return calendar data. This route is
+different from authenticated `GET /api/users/me/calendar.ics`, which exports a
+user's complete calendar and must never be shared publicly.
+
 ## Performance And Caching
 
 - Return metadata server-side in the first HTML response. Do not rely on client
@@ -85,7 +125,9 @@ addresses will not work.
 4. Share the URL in a new WhatsApp chat.
 5. Confirm banner, title, date/location summary, and domain are visible.
 6. Tap the card and confirm the app/event fallback flow works.
-7. Update the banner/title and confirm the preview refreshes after cache expiry.
+7. Tap `Add to your calendar` and confirm one event opens/imports with the
+   correct timezone, start/end time, title, and venue.
+8. Update the banner/title and confirm the preview refreshes after cache expiry.
 
 Note: WhatsApp caches link previews aggressively. During testing, use a new
 event ID or append a temporary version query parameter after backend metadata is
