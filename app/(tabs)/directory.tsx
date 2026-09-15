@@ -4,11 +4,12 @@ import React, {
 } from 'react';
 import {
   Image,
+  Pressable,
   RefreshControl,
   ScrollView,
   StatusBar,
+  StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -18,6 +19,7 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -29,6 +31,7 @@ import {
   selectDirectoryHomeLoading,
 } from '@/store/directory';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { selectDevoteeAccount } from '@/store/devotee-account/selectors';
 import type {
   DirectoryCategory,
   DirectoryListing,
@@ -695,6 +698,7 @@ function FeaturedBusinessCard({
 
 export default function DirectoryScreen() {
   const dispatch = useAppDispatch();
+  const account = useAppSelector(selectDevoteeAccount);
   const home = useAppSelector(selectDirectoryHome);
   const loading = useAppSelector(selectDirectoryHomeLoading);
   const error = useAppSelector(selectDirectoryError);
@@ -721,6 +725,12 @@ export default function DirectoryScreen() {
   const homeCategories = (
     popularCategories.length ? popularCategories : categories
   ).slice(0, 8);
+  const profileImageUrl =
+    account?.profileImage?.uri ||
+    account?.profileImageUrl ||
+    account?.profile?.profileImageUrl;
+  const profileInitial =
+    account?.name?.trim().charAt(0).toUpperCase() || 'S';
 
   return (
     <SafeAreaView
@@ -733,134 +743,59 @@ export default function DirectoryScreen() {
         barStyle="dark-content"
       />
 
-        <View
-          style={{
-            paddingHorizontal: 24,
-            paddingTop: 18,
-          }}>
-          <View
-            style={{
-              alignItems: 'center',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-            }}>
-            <View>
-              <Text
-                style={{
-                  color: '#111111',
-                  fontSize: 28,
-                  fontWeight: '800',
-                  letterSpacing: -0.5,
-                }}>
-                Sai Family
-              </Text>
-
-              <Text
-                style={{
-                  color: '#6B7280',
-                  fontSize: 15,
-                  fontWeight: '500',
-                  marginTop: 2,
-                }}>
-                Trusted community services
-              </Text>
+      <View style={styles.directoryToolbar}>
+        <Pressable
+          accessibilityLabel="Create directory listing"
+          accessibilityRole="button"
+          hitSlop={6}
+          onPress={() => router.push('/directory/create-listing')}
+          style={({ pressed }) => [
+            styles.createListingProfileButton,
+            pressed && styles.toolbarButtonPressed,
+          ]}>
+          <LinearGradient
+            colors={['#7C2D12', '#D97706']}
+            end={{ x: 1, y: 1 }}
+            start={{ x: 0, y: 0 }}
+            style={styles.createListingRing}>
+            <View style={styles.createListingAvatarInset}>
+              {profileImageUrl ? (
+                <Image
+                  accessibilityLabel={`${account?.name || 'Devotee'} profile photo`}
+                  resizeMode="cover"
+                  source={{ uri: profileImageUrl }}
+                  style={styles.createListingAvatar}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.createListingAvatar,
+                    styles.createListingAvatarFallback,
+                  ]}>
+                  <Text style={styles.createListingAvatarText}>
+                    {profileInitial}
+                  </Text>
+                </View>
+              )}
             </View>
-
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() =>
-                router.push('/directory/create-listing')
-              }
-              style={{
-                alignItems: 'center',
-                backgroundColor: '#FAF8F6',
-                borderRadius: 28,
-                elevation: 2,
-                height: 56,
-                justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOffset: {
-                  height: 3,
-                  width: 0,
-                },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                width: 56,
-              }}>
-              <Ionicons
-                name="add"
-                size={24}
-                color="#F97316"
-              />
-            </TouchableOpacity>
+          </LinearGradient>
+          <View style={styles.createListingBadge}>
+            <Ionicons color="#FFFFFF" name="add" size={13} />
           </View>
+        </Pressable>
 
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() =>
-              router.push('/directory/business-search')
-            }
-            style={{
-              alignItems: 'center',
-              backgroundColor: '#FFFFFF',
-              borderRadius: 33,
-              elevation: 2,
-              flexDirection: 'row',
-              height: 56,
-              marginVertical: 8,
-              paddingHorizontal: 22,
-              shadowColor: '#000',
-              shadowOffset: {
-                height: 5,
-                width: 0,
-              },
-              shadowOpacity: 0.04,
-              shadowRadius: 10,
-              width: '100%',
-            }}>
-            <Ionicons
-              name="search"
-              size={24}
-              color="#E5E7EB"
-            />
-
-            <TextInput
-              editable={false}
-              onPressIn={() =>
-                router.push('/directory/business-search')
-              }
-              placeholder="Find a devotee's service near you..."
-              placeholderTextColor="#9CA3AF"
-              style={{
-                color: '#111827',
-                flex: 1,
-                fontSize: 18,
-                fontWeight: '500',
-                marginLeft: 14,
-              }}
-            />
-
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() =>
-                router.push('/directory/business-search')
-              }
-              style={{
-                alignItems: 'center',
-                backgroundColor: '#FFF7ED',
-                borderRadius: 20,
-                height: 40,
-                justifyContent: 'center',
-                width: 40,
-              }}>
-              <Ionicons
-                name="options-outline"
-                size={20}
-                color="#F97316"
-              />
-            </TouchableOpacity>
-          </TouchableOpacity>
-          </View>
+        <Pressable
+          accessibilityLabel="Search directory"
+          accessibilityRole="button"
+          hitSlop={6}
+          onPress={() => router.push('/directory/business-search')}
+          style={({ pressed }) => [
+            styles.directoryToolbarIconButton,
+            pressed && styles.toolbarButtonPressed,
+          ]}>
+          <Ionicons color="#4B4037" name="search" size={23} />
+        </Pressable>
+      </View>
 
 
       <ScrollView
@@ -1387,3 +1322,84 @@ export default function DirectoryScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  createListingAvatar: {
+    backgroundColor: '#F1D9B5',
+    borderRadius: 24,
+    height: 48,
+    width: 48,
+  },
+  createListingAvatarFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createListingAvatarInset: {
+    alignItems: 'center',
+    backgroundColor: '#FFF8EC',
+    borderRadius: 26,
+    height: 52,
+    justifyContent: 'center',
+    width: 52,
+  },
+  createListingAvatarText: {
+    color: '#7C2D12',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  createListingBadge: {
+    alignItems: 'center',
+    backgroundColor: '#7C2D12',
+    borderColor: '#FFF8EC',
+    borderRadius: 11,
+    borderWidth: 2,
+    bottom: 1,
+    height: 22,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 1,
+    shadowColor: '#7C2D12',
+    shadowOffset: { height: 2, width: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    width: 22,
+  },
+  createListingProfileButton: {
+    alignItems: 'center',
+    borderRadius: 30,
+    height: 60,
+    justifyContent: 'center',
+    position: 'relative',
+    width: 60,
+  },
+  createListingRing: {
+    alignItems: 'center',
+    borderRadius: 28,
+    height: 56,
+    justifyContent: 'center',
+    width: 56,
+  },
+  directoryToolbar: {
+    alignItems: 'center',
+    backgroundColor: '#FFF8EC',
+    borderBottomColor: '#F1D9B5',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 72,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  directoryToolbarIconButton: {
+    alignItems: 'center',
+    borderRadius: 14,
+    height: 52,
+    justifyContent: 'center',
+    width: 52,
+  },
+  toolbarButtonPressed: {
+    backgroundColor: '#F1D9B5',
+    opacity: 0.76,
+    transform: [{ scale: 0.96 }],
+  },
+});
