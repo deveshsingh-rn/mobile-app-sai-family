@@ -93,13 +93,13 @@ const TABS: PillarTab[] = [
     label: "Sai Connect",
     name: "directory",
   },
-  {
-    displayLabel: "Sanghat",
-    href: "/(tabs)/sangha",
-    Icon: Users,
-    label: "Local community",
-    name: "sangha",
-  },
+  // {
+  //   displayLabel: "Sanghat",
+  //   href: "/(tabs)/sangha",
+  //   Icon: Users,
+  //   label: "Local community",
+  //   name: "sangha",
+  // },
   {
     displayLabel: "Naam Jap",
     href: "/naam-jap",
