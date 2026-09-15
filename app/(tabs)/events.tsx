@@ -82,6 +82,7 @@ import {
 import { requestLocationPermissionWithSettingsFallback } from "@/services/location-permissions";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { FontAwesome } from "@expo/vector-icons";
+import { createEventShareMessage } from "@/utils/event-links";
 
 const EVENT_FILTERS: {
   label: string;
@@ -311,7 +312,13 @@ function EventsScreen() {
       }
 
       const result = await Share.share({
-        message: `${event.title}\n${event.date} · ${event.time}\n${event.location}`,
+        message: createEventShareMessage({
+          date: event.date,
+          eventId: event.sourceId,
+          location: event.location,
+          time: event.time,
+          title: event.title,
+        }),
         title: event.title,
       });
 

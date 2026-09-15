@@ -100,6 +100,7 @@ import type {
   EventUserSummary,
   SaiEvent,
 } from "@/store/events/types";
+import { createEventShareMessage } from "@/utils/event-links";
 import {
   useAppDispatch,
   useAppSelector,
@@ -450,7 +451,13 @@ export default function EventDetailRoute() {
     }
 
     const result = await Share.share({
-      message: `${detail.title}\n${formatLongDate(detail.startAt)} · ${formatTime(detail.startAt)}\n${getEventLocation(detail)}`,
+      message: createEventShareMessage({
+        date: formatLongDate(detail.startAt),
+        eventId: detail.id,
+        location: getEventLocation(detail),
+        time: `${formatTime(detail.startAt)} - ${formatTime(detail.endAt)}`,
+        title: detail.title,
+      }),
       title: detail.title,
     });
 
