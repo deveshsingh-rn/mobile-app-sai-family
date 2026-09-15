@@ -433,7 +433,7 @@ function CategoryItem({
       <Text
         style={{
           color: '#374151',
-          fontSize: 14,
+          fontSize: 12,
           fontWeight: '600',
           lineHeight: 19,
           marginTop: 14,
@@ -828,7 +828,7 @@ export default function DirectoryScreen() {
             borderTopColor: '#F1D9B5',
             // borderTopWidth: 1,
             paddingHorizontal: 24,
-            paddingBottom: 22,
+            // paddingBottom: 22,
           }}>
           <View
             style={{
@@ -873,22 +873,22 @@ export default function DirectoryScreen() {
               lineHeight: 25,
               marginTop: 5,
             }}>
-            Community of Sai Bhakts working in different fields and always ready to support each other.
+            Community of Sai Bhakts Working in Different Fields and Always Ready to Support Each Other.
           </Text>
         </View>
 
-          <View
+          {/* <View
             style={{
               paddingHorizontal: 24,
               // paddingTop: 18,
-            }}>
+            }}> */}
 
-          <View
+          {/* <View
             style={{
               flexDirection: 'row',
               marginTop: 8,
-            }}>
-            <TouchableOpacity
+            }}> */}
+            {/* <TouchableOpacity
               activeOpacity={0.86}
               onPress={() =>
                 router.push('/directory/saved-listings')
@@ -919,9 +919,9 @@ export default function DirectoryScreen() {
                 }}>
                 Saved
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               activeOpacity={0.86}
               onPress={() =>
                 router.push('/directory/my-listings')
@@ -952,10 +952,10 @@ export default function DirectoryScreen() {
                 }}>
                 My Listings
               </Text>
-            </TouchableOpacity>
-          </View>
+            </TouchableOpacity> */}
+          {/* </View> */}
 
-          {stats ? (
+          {/* {stats ? (
             <View
               style={{
                 flexDirection: 'row',
@@ -1011,8 +1011,8 @@ export default function DirectoryScreen() {
                 </View>
               ))}
             </View>
-          ) : null}
-        </View>
+          ) : null} */}
+        {/* </View> */}
 
         <View
           style={{
