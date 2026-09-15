@@ -727,7 +727,7 @@ export default function DirectoryScreen() {
   const stats = home?.stats;
   const homeCategories = (
     popularCategories.length ? popularCategories : categories
-  ).slice(0, 8);
+  ).slice(0, 12);
   const profileImageUrl =
     account?.profileImage?.uri ||
     account?.profileImageUrl ||
