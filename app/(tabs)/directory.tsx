@@ -735,11 +735,13 @@ export default function DirectoryScreen() {
   return (
     <SafeAreaView
       style={{
-        backgroundColor: '#F5F3EF',
+        backgroundColor: '#FFF8EC',
         flex: 1,
       }}>
+
+        {/* devesh */}
       <StatusBar
-        backgroundColor="#F5F3EF"
+        backgroundColor='#FFF8EC'
         barStyle="dark-content"
       />
 
@@ -1367,10 +1369,10 @@ const styles = StyleSheet.create({
   createListingProfileButton: {
     alignItems: 'center',
     borderRadius: 30,
-    height: 60,
+    height:50,
     justifyContent: 'center',
     position: 'relative',
-    width: 60,
+    width: 50,
   },
   createListingRing: {
     alignItems: 'center',
