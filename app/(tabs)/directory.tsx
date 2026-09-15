@@ -37,6 +37,7 @@ import type {
   DirectoryCategory,
   DirectoryListing,
 } from '@/store/directory/types';
+import { EXPERIENCE_THEME } from '@/constants/experience-theme';
 
 const CATEGORY_STYLES: Record<
   string,
@@ -743,6 +744,7 @@ export default function DirectoryScreen() {
         {/* devesh */}
       <StatusBar
         backgroundColor='#FFF8EC'
+        // backgroundColor='#2f2d29'
         barStyle="dark-content"
       />
 
@@ -796,7 +798,9 @@ export default function DirectoryScreen() {
             styles.directoryToolbarIconButton,
             pressed && styles.toolbarButtonPressed,
           ]}>
-          <Search color="#4B4037" size={30} strokeWidth={2.15} />
+          <Search  color={EXPERIENCE_THEME.paragraph}
+                        size={30}
+                        strokeWidth={2.85} />
         </Pressable>
       </View>
 
@@ -818,12 +822,12 @@ export default function DirectoryScreen() {
           accessibilityLabel="Welcome to Sai Ki Family. A trusted global community where Sai devotees empower one another through business, careers, collaboration, mentorship, emergency support, and acts of kindness."
           style={{
             backgroundColor: '#FFF8EC',
-            borderBottomColor: '#F1D9B5',
-            borderBottomWidth: 1,
+            // borderBottomColor: '#F1D9B5',
+            // borderBottomWidth: 1,
             borderTopColor: '#F1D9B5',
-            borderTopWidth: 1,
+            // borderTopWidth: 1,
             paddingHorizontal: 24,
-            paddingVertical: 22,
+            paddingBottom: 22,
           }}>
           <View
             style={{
@@ -865,7 +869,7 @@ export default function DirectoryScreen() {
               fontSize: 16,
               fontWeight: '500',
               lineHeight: 25,
-              marginTop: 15,
+              marginTop: 5,
             }}>
             Community of Sai Bhakts working in different fields and always ready to support each other.
           </Text>
@@ -874,13 +878,13 @@ export default function DirectoryScreen() {
           <View
             style={{
               paddingHorizontal: 24,
-              paddingTop: 18,
+              // paddingTop: 18,
             }}>
 
           <View
             style={{
               flexDirection: 'row',
-              marginTop: 18,
+              marginTop: 8,
             }}>
             <TouchableOpacity
               activeOpacity={0.86}
@@ -1385,13 +1389,13 @@ const styles = StyleSheet.create({
   directoryToolbar: {
     alignItems: 'center',
     backgroundColor: '#FFF8EC',
-    borderBottomColor: '#F1D9B5',
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    // borderBottomColor: '#F1D9B5',
+    // borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    minHeight: 80,
+    // minHeight: 80,
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    // paddingVertical: 6,
   },
   directoryToolbarIconButton: {
     alignItems: 'center',
