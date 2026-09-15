@@ -752,7 +752,7 @@ export default function DirectoryScreen() {
                   fontWeight: '800',
                   letterSpacing: -0.5,
                 }}>
-                Sai Connect
+                Sai Family
               </Text>
 
               <Text
@@ -929,11 +929,7 @@ export default function DirectoryScreen() {
               lineHeight: 25,
               marginTop: 15,
             }}>
-            A trusted global community where Sai devotees empower one
-            another through business, careers, collaboration, mentorship,
-            emergency support, and acts of kindness. Together, we grow by
-            living Sai Baba&apos;s timeless values of faith, honesty,
-            compassion, and selfless service.
+            Community of Sai Bhakts working in different fields and always ready to support each other.
           </Text>
         </View>
 
