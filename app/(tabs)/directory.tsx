@@ -24,6 +24,7 @@ import { router } from 'expo-router';
 import { Plus, Search } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import FamilySilhouetteIcon from '@/assets/icons/family-silhouette-svgrepo-com.svg';
 import { DirectoryHomeSkeleton } from '@/components/ui/Skeleton';
 import {
   fetchDirectoryHomeRequest,
@@ -843,10 +844,11 @@ export default function DirectoryScreen() {
                 justifyContent: 'center',
                 width: 44,
               }}>
-              <MaterialCommunityIcons
+              <FamilySilhouetteIcon
                 color="#FFFFFF"
-                name="hand-heart-outline"
-                size={23}
+                fill="#FFFFFF"
+                height={25}
+                width={25}
               />
             </View>
 
@@ -867,7 +869,7 @@ export default function DirectoryScreen() {
             style={{
               color: '#4B4037',
               fontSize: 16,
-              fontWeight: '500',
+              fontWeight: '700',
               lineHeight: 25,
               marginTop: 5,
             }}>
