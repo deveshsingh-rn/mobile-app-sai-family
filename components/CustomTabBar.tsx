@@ -47,13 +47,15 @@ type PillarTab = {
   name: string;
 };
 
-function MalaIcon({ color, size }: React.ComponentProps<TabIcon>) {
+function MalaIcon({ color, size = 30 }: React.ComponentProps<TabIcon>) {
+  const malaSize = size + 10;
+
   return (
     <NaamJapMalaIcon
       color={color}
       fill={color}
-      height={size}
-      width={size}
+      height={malaSize}
+      width={malaSize}
     />
   );
 }
