@@ -8,6 +8,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import {
@@ -22,7 +23,6 @@ import {
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FamilySilhouetteIcon from "../assets/icons/family-silhouette-svgrepo-com.svg";
-import NaamJapMalaIcon from "../assets/icons/naam-jap-mala.svg";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const COLORS = {
@@ -47,15 +47,12 @@ type PillarTab = {
   name: string;
 };
 
-function MalaIcon({ color, size = 30 }: React.ComponentProps<TabIcon>) {
-  const malaSize = size + 10;
-
+function MalaIcon({ color, size }: React.ComponentProps<TabIcon>) {
   return (
-    <NaamJapMalaIcon
+    <FontAwesome5
       color={color}
-      fill={color}
-      height={malaSize}
-      width={malaSize}
+      name="praying-hands"
+      size={size}
     />
   );
 }
