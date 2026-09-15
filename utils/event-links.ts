@@ -16,6 +16,10 @@ function publicBaseUrl() {
   ).replace(/\/$/, "");
 }
 
+function escapeWhatsAppFormatting(value: string) {
+  return value.replace(/[*_~`]/g, "").replace(/\s+/g, " ").trim();
+}
+
 export function createEventPublicShareLink(eventId: string) {
   return `${publicBaseUrl()}/events/${encodeURIComponent(eventId)}`;
 }
@@ -28,15 +32,23 @@ export function createEventShareMessage({
   title,
 }: EventShareDetails) {
   const eventUrl = createEventPublicShareLink(eventId);
+  const safeTitle = escapeWhatsAppFormatting(title) || "Sai Family Event";
+  const safeDate = escapeWhatsAppFormatting(date) || "Date pending";
+  const safeTime = escapeWhatsAppFormatting(time) || "Time pending";
+  const safeLocation = escapeWhatsAppFormatting(location) || "Venue pending";
 
   return [
-    "Join this Sai Family event",
+    "*SAI FAMILY EVENT*",
     "",
-    title,
-    `${date} | ${time}`,
-    location,
+    `*${safeTitle}*`,
     "",
-    "View details and RSVP:",
+    `*Date:* ${safeDate}`,
+    `*Time:* ${safeTime}`,
+    `*Venue:* ${safeLocation}`,
+    "",
+    "*View details and RSVP:*",
     eventUrl,
+    "",
+    "Om Sai Ram",
   ].join("\n");
 }
