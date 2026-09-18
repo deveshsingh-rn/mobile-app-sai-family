@@ -291,10 +291,11 @@ export default function ProfileScreen() {
         <View>
           <Text style={styles.eyebrow}>Sai Family</Text>
           <Text style={styles.title}>Profile</Text>
+          <Text style={styles.subtitle}>Your space for a calmer daily practice.</Text>
         </View>
 
         <View style={styles.headerBadge}>
-          <ShieldCheck color="#1F2937" size={20} />
+          <ShieldCheck color="#3E5F52" size={20} />
         </View>
       </View>
 
@@ -409,6 +410,7 @@ export default function ProfileScreen() {
         </View>
       ) : (
         <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Daily practice</Text>
           <MorningSaiAlarmCard devoteeName={account?.name} />
           {/* <View style={styles.securityCard}> */}
             {/* <View style={styles.securityHeader}>
@@ -577,7 +579,8 @@ export default function ProfileScreen() {
               </View>
             )} */}
           {/* </View> */}
-           <SettingRow
+          <Text style={styles.sectionLabel}>Account & app</Text>
+          <SettingRow
             description="Log out of your devotee account."
             hideComingSoon
             icon={<LogOut size={21} color="#DC2626" />}
@@ -735,7 +738,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   container: {
-    backgroundColor: "#FAFAF9",
+    backgroundColor: "#F7F5F0",
     flex: 1,
   },
   content: {
@@ -788,8 +791,8 @@ const styles = StyleSheet.create({
   },
   headerBadge: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
+    backgroundColor: "#EAF2ED",
+    borderColor: "#C9DED2",
     borderRadius: 12,
     borderWidth: 1,
     height: 42,
@@ -797,7 +800,7 @@ const styles = StyleSheet.create({
     width: 42,
   },
   heroCard: {
-    backgroundColor: "#1F2937",
+    backgroundColor: "#23463B",
     borderRadius: 18,
     marginBottom: 16,
     padding: 16,
@@ -814,7 +817,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   memberId: {
-    color: "#FDBA74",
+    color: "#F8C66D",
     fontSize: 13,
     fontWeight: "900",
     marginTop: 4,
@@ -933,6 +936,14 @@ const styles = StyleSheet.create({
   section: {
     gap: 14,
   },
+  sectionLabel: {
+    color: "#6D766F",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    marginLeft: 2,
+    textTransform: "uppercase",
+  },
   segment: {
     backgroundColor: "#FFFFFF",
     borderColor: "#E7D7BE",
@@ -951,7 +962,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   segmentButtonActive: {
-    backgroundColor: "#F97316",
+    backgroundColor: "#3E5F52",
   },
   segmentText: {
     color: "#6B7280",
@@ -1101,6 +1112,12 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     fontSize: 34,
     fontWeight: "900",
+  },
+  subtitle: {
+    color: "#747B75",
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 2,
   },
   verifiedPanel: {
     alignItems: "center",
