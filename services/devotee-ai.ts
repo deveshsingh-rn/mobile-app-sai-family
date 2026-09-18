@@ -22,7 +22,7 @@ export type DevoteeAiSupportedLocale =
 const normalizeDevoteeAiLocale = (
   locale?: string
 ): DevoteeAiSupportedLocale =>
-  locale === "en-IN" ? "en-IN" : "hi-IN";
+  locale === "hi-IN" ? "hi-IN" : "en-IN";
 
 export type AskDevoteeQuestionPayload = {
   conversationId?: string;
@@ -484,7 +484,7 @@ export async function createDevoteeAiVoiceSession(
         ),
         pillar: payload?.pillar || "experiences",
         secondaryLocale: normalizeDevoteeAiLocale(
-          payload?.secondaryLocale || "en-IN"
+          payload?.secondaryLocale || (payload?.locale === "hi-IN" ? "en-IN" : "hi-IN")
         ),
         voiceProvider: payload?.voiceProvider || "elevenlabs",
         conversationId: payload?.conversationId,

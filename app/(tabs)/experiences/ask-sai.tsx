@@ -146,11 +146,14 @@ const personalizeSaiAnswer = (text: string, devoteeName: string) => {
   const name = devoteeName.trim();
 
   if (!answer || !name) return answer;
-  if (answer.toLocaleLowerCase().startsWith(name.toLocaleLowerCase())) {
+  const greeting = /[\u0900-\u097F]/.test(answer) ? `बेटा ${name}` : `My child, ${name}`;
+  if (/^(?:बेटा|प्रिय|my child|dear)(?:\s|,)/i.test(answer) && answer.toLocaleLowerCase().includes(name.toLocaleLowerCase())) {
     return answer;
   }
-
-  return `${name}, ${answer}`;
+  const content = answer.toLocaleLowerCase().startsWith(name.toLocaleLowerCase())
+    ? answer.slice(name.length).replace(/^[,\s]+/, "")
+    : answer;
+  return `${greeting}, ${content}`;
 };
 
 const detectTranscriptLanguage = (
@@ -609,7 +612,7 @@ export default function AskSaiScreen() {
   const [voicePartialTranscript, setVoicePartialTranscript] = useState("");
   const [voiceFinalTranscript, setVoiceFinalTranscript] = useState("");
   const [selectedLanguageLocale, setSelectedLanguageLocale] =
-    useState<DevoteeAiSupportedLocale>("hi-IN");
+    useState<DevoteeAiSupportedLocale>("en-IN");
   const selectedLanguage = useMemo(
     () =>
       ASK_SAI_LANGUAGE_OPTIONS.find(
@@ -2655,10 +2658,13 @@ export default function AskSaiScreen() {
     stopWaitingTone,
   ]);
 
-  const stopAndAskAgain = useCallback(() => {
-    setIsVoiceModalVisible(true);
-    void listenAgainFromModal();
-  }, [listenAgainFromModal]);
+  const stopAnswer = useCallback(async () => {
+    await stopWaitingTone();
+    await stopSpeech();
+    closeVoiceSession();
+    setIsVoiceModalVisible(false);
+    setVoicePlaybackStage("idle");
+  }, [closeVoiceSession, stopSpeech, stopWaitingTone]);
 
   const openConversation = useCallback(
     async (id: string) => {
@@ -2975,7 +2981,8 @@ export default function AskSaiScreen() {
                   return (
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
+                      accessibilityState={{ selected: isSelected, disabled: isSubmitting || isVoiceControlActive || isSpeaking }}
+                      disabled={isSubmitting || isVoiceControlActive || isSpeaking}
                       key={option.locale}
                       onPress={() => selectLanguage(option.locale)}
                       style={[
@@ -3100,11 +3107,11 @@ export default function AskSaiScreen() {
             <View style={styles.inputActions}>
               <Pressable
                 accessibilityLabel={
-                  isVoiceControlActive ? "Stop voice question" : "Ask Sai by voice"
+                  isSpeaking ? "Stop voice reply" : isVoiceControlActive ? "Stop voice question" : "Ask Sai by voice"
                 }
                 accessibilityRole="button"
-                disabled={isSubmitting}
-                onPress={openVoiceModal}
+                disabled={isSubmitting && !isSpeaking}
+                onPress={isSpeaking ? stopAnswer : openVoiceModal}
                 style={({ pressed }) => [
                   styles.micButton,
                   isVoiceControlActive && styles.micButtonActive,
@@ -3122,7 +3129,7 @@ export default function AskSaiScreen() {
                     isVoiceControlActive && styles.micButtonTextActive,
                   ]}
                 >
-                  {isVoiceControlActive ? "Stop" : "Speak"}
+                  {isSpeaking || isVoiceControlActive ? "Stop" : "Speak"}
                 </Text>
               </Pressable>
 
@@ -3162,12 +3169,12 @@ export default function AskSaiScreen() {
                   <Pressable
                     accessibilityLabel={
                       isSpeaking
-                        ? "Stop voice reply and ask again"
+                        ? "Stop voice reply"
                         : "Play voice reply"
                     }
                     onPress={
                       isSpeaking
-                        ? stopAndAskAgain
+                        ? stopAnswer
                         : speakAnswer
                     }
                     style={({ pressed }) => [
@@ -3179,7 +3186,7 @@ export default function AskSaiScreen() {
                       <>
                         <Pause color="#FFFFFF" size={18} fill="#FFFFFF" />
                         <Text style={styles.speakButtonText}>
-                          Stop & ask
+                          Stop
                         </Text>
                       </>
                     ) : (
