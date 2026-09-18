@@ -725,9 +725,13 @@ export default function DirectoryScreen() {
   const popularCategories = home?.popularCategories || [];
   const trendingListings = home?.trendingListings || [];
   const stats = home?.stats;
-  const homeCategories = (
-    popularCategories.length ? popularCategories : categories
-  ).slice(0, 12);
+  const popularCategoryIds = new Set(
+    popularCategories.map((category) => category.id)
+  );
+  const homeCategories = [
+    ...popularCategories,
+    ...categories.filter((category) => !popularCategoryIds.has(category.id)),
+  ].slice(0, 12);
   const profileImageUrl =
     account?.profileImage?.uri ||
     account?.profileImageUrl ||
@@ -1053,7 +1057,7 @@ export default function DirectoryScreen() {
               Popular Categories
             </Text>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => router.push('/directory/categories')}>
               <Text
@@ -1064,7 +1068,7 @@ export default function DirectoryScreen() {
                 }}>
                 See all
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           <View
