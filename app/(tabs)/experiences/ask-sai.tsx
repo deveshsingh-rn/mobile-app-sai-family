@@ -91,13 +91,8 @@ type AiLanguageOption = {
 };
 
 const ASK_SAI_LANGUAGE_OPTIONS: AiLanguageOption[] = [
-  {
-    description: "Speak Hindi or English. Baba replies in Hindi.",
-    label: "Hindi",
-    locale: "hi-IN",
-    nativeLabel: "हिंदी",
-    secondaryLocale: "en-IN",
-  },
+
+
   {
     description: "Speak Hindi or English. Baba replies in English.",
     label: "English",
@@ -105,6 +100,16 @@ const ASK_SAI_LANGUAGE_OPTIONS: AiLanguageOption[] = [
     nativeLabel: "English",
     secondaryLocale: "hi-IN",
   },
+
+  {
+    description: "Speak Hindi or English. Baba replies in Hindi.",
+    label: "Hindi",
+    locale: "hi-IN",
+    nativeLabel: "हिंदी",
+    secondaryLocale: "en-IN",
+  },
+
+
 ];
 
 const FULL_DUPLEX_VOICE_ENABLED =
@@ -810,9 +815,9 @@ export default function AskSaiScreen() {
       setVoicePlaybackStage("buffering");
       const [{ createAudioPlayer, setAudioModeAsync }, FileSystem] =
         await Promise.all([
-        import("expo-audio"),
-        import("expo-file-system/legacy"),
-      ]);
+          import("expo-audio"),
+          import("expo-file-system/legacy"),
+        ]);
       const audioBytes = combineBase64Chunks(audioChunks);
 
       if (audioBytes.byteLength === 0) {
@@ -1504,7 +1509,7 @@ export default function AskSaiScreen() {
 
           if (
             event.text.trim().toLocaleLowerCase() ===
-              BACKEND_MOCK_TRANSCRIPT.toLocaleLowerCase() &&
+            BACKEND_MOCK_TRANSCRIPT.toLocaleLowerCase() &&
             typeof transcriptElapsedMs === "number" &&
             transcriptElapsedMs < 2500
           ) {
@@ -1610,12 +1615,12 @@ export default function AskSaiScreen() {
               return currentMessages.map((message) =>
                 message.id === completedAssistantMessageId
                   ? {
-                      ...message,
-                      content: personalizeSaiAnswer(
-                        voiceAnswerBufferRef.current,
-                        devoteeName
-                      ),
-                    }
+                    ...message,
+                    content: personalizeSaiAnswer(
+                      voiceAnswerBufferRef.current,
+                      devoteeName
+                    ),
+                  }
                   : message
               );
             });
@@ -1672,33 +1677,33 @@ export default function AskSaiScreen() {
             frontendLatency: {
               connectedMs:
                 voiceTimingRef.current.tapAt &&
-                voiceTimingRef.current.connectedAt
+                  voiceTimingRef.current.connectedAt
                   ? voiceTimingRef.current.connectedAt -
-                    voiceTimingRef.current.tapAt
+                  voiceTimingRef.current.tapAt
                   : undefined,
               firstAnswerMs:
                 voiceTimingRef.current.tapAt &&
-                voiceTimingRef.current.firstAnswerAt
+                  voiceTimingRef.current.firstAnswerAt
                   ? voiceTimingRef.current.firstAnswerAt -
-                    voiceTimingRef.current.tapAt
+                  voiceTimingRef.current.tapAt
                   : undefined,
               firstAudioMs:
                 voiceTimingRef.current.tapAt &&
-                voiceTimingRef.current.firstAudioChunkAt
+                  voiceTimingRef.current.firstAudioChunkAt
                   ? voiceTimingRef.current.firstAudioChunkAt -
-                    voiceTimingRef.current.tapAt
+                  voiceTimingRef.current.tapAt
                   : undefined,
               firstMicChunkMs:
                 voiceTimingRef.current.tapAt &&
-                voiceTimingRef.current.firstMicChunkAt
+                  voiceTimingRef.current.firstMicChunkAt
                   ? voiceTimingRef.current.firstMicChunkAt -
-                    voiceTimingRef.current.tapAt
+                  voiceTimingRef.current.tapAt
                   : undefined,
               firstTranscriptMs:
                 voiceTimingRef.current.tapAt &&
-                voiceTimingRef.current.firstTranscriptAt
+                  voiceTimingRef.current.firstTranscriptAt
                   ? voiceTimingRef.current.firstTranscriptAt -
-                    voiceTimingRef.current.tapAt
+                  voiceTimingRef.current.tapAt
                   : undefined,
               totalMs: voiceTimingRef.current.tapAt
                 ? Date.now() - voiceTimingRef.current.tapAt
@@ -1720,34 +1725,34 @@ export default function AskSaiScreen() {
               appendUniqueMessages(currentMessages, [
                 ...(finalQuestion
                   ? [
-                      {
-                        content: finalQuestion,
-                        id: `${event.turnId}-user`,
-                        role: "user" as const,
-                      },
-                    ]
+                    {
+                      content: finalQuestion,
+                      id: `${event.turnId}-user`,
+                      role: "user" as const,
+                    },
+                  ]
                   : []),
                 ...(finalAnswer
                   ? [
-                      {
-                        content: finalAnswer,
-                        id: assistantMessageId,
-                        latencyMs: event.latency?.totalMs,
-                        role: "assistant" as const,
-                      },
-                    ]
+                    {
+                      content: finalAnswer,
+                      id: assistantMessageId,
+                      latencyMs: event.latency?.totalMs,
+                      role: "assistant" as const,
+                    },
+                  ]
                   : []),
               ])
             );
             setLastResponse(
               finalAnswer
                 ? {
-                    answer: finalAnswer,
-                    conversationId: event.conversationId || conversationId,
-                    latencyMs: event.latency?.totalMs,
-                    messageId: event.messageId,
-                    model: voiceSession?.providers?.llm,
-                  }
+                  answer: finalAnswer,
+                  conversationId: event.conversationId || conversationId,
+                  latencyMs: event.latency?.totalMs,
+                  messageId: event.messageId,
+                  model: voiceSession?.providers?.llm,
+                }
                 : null
             );
           }
@@ -1986,7 +1991,7 @@ export default function AskSaiScreen() {
             setIsListening(false);
             setVoiceError(
               event.message ||
-                "Voice input is unavailable. Please type your question."
+              "Voice input is unavailable. Please type your question."
             );
           }
         );
@@ -2318,7 +2323,7 @@ export default function AskSaiScreen() {
 
           if (
             process.env.EXPO_PUBLIC_API_BASE_URL ===
-              "https://saifamily.sustaininsight.com" &&
+            "https://saifamily.sustaininsight.com" &&
             !session.webSocketUrl.startsWith(
               "wss://saifamily.sustaininsight.com/api/ai/voice/ws"
             )
@@ -2523,7 +2528,7 @@ export default function AskSaiScreen() {
 
       setVoiceError(
         errorMessage ||
-          "Voice input needs a custom development build. Please type your question for now."
+        "Voice input needs a custom development build. Please type your question for now."
       );
     }
   }, [
@@ -2702,9 +2707,9 @@ export default function AskSaiScreen() {
         const personalizedMessages = detail.messages.map((message) =>
           message.role === "assistant"
             ? {
-                ...message,
-                content: personalizeSaiAnswer(message.content, devoteeName),
-              }
+              ...message,
+              content: personalizeSaiAnswer(message.content, devoteeName),
+            }
             : message
         );
         const personalizedAssistantAnswer = assistantMessage
@@ -2718,13 +2723,13 @@ export default function AskSaiScreen() {
         setLastResponse(
           assistantMessage
             ? {
-                answer: personalizedAssistantAnswer,
-                cached: assistantMessage.cached,
-                conversationId: detail.conversation.id,
-                latencyMs: assistantMessage.latencyMs ?? undefined,
-                messageId: assistantMessage.id,
-                model: assistantMessage.model || undefined,
-              }
+              answer: personalizedAssistantAnswer,
+              cached: assistantMessage.cached,
+              conversationId: detail.conversation.id,
+              latencyMs: assistantMessage.latencyMs ?? undefined,
+              messageId: assistantMessage.id,
+              model: assistantMessage.model || undefined,
+            }
             : null
         );
         setSafetyNote("");
@@ -2930,7 +2935,7 @@ export default function AskSaiScreen() {
             </ImageBackground>
           </LinearGradient>
 
-          
+
 
           {authMessage ? (
             <View style={styles.authCard}>
@@ -2940,46 +2945,6 @@ export default function AskSaiScreen() {
           ) : null}
 
           <View style={styles.historyBlock}>
-            {/* <View style={styles.historyHeader}>
-              <View style={styles.historyTitleRow}>
-                <History color="#B45309" size={18} strokeWidth={2.4} />
-                <Text style={styles.sectionTitle}>Recent guidance</Text>
-              </View>
-              {isLoadingHistory ? (
-                <ActivityIndicator color="#B45309" size="small" />
-              ) : null}
-            </View> */}
-
-            {/* {conversations.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.historyScroller}
-              >
-                {conversations.map((item) => (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => openConversation(item.id)}
-                    style={({ pressed }) => [
-                      styles.historyCard,
-                      item.id === conversationId && styles.activeHistoryCard,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text numberOfLines={2} style={styles.historyTitle}>
-                      {item.title || "Sai guidance"}
-                    </Text>
-                    <Text style={styles.historyMeta}>
-                      {item.messageCount || 0} messages
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            ) : (
-              <Text style={styles.emptyHistoryText}>
-                Your recent questions will appear here.
-              </Text>
-            )} */}
           </View>
 
           <View
@@ -2991,7 +2956,7 @@ export default function AskSaiScreen() {
             <View style={styles.questionHeader}>
               <View style={styles.languageTitleCopy}>
                 <Text style={styles.languageSubtitle}>
-                  Choose language. You can speak in Hindi or English.
+                  You can Speak or Write in English or Hindi * .
                 </Text>
               </View>
               <View style={styles.languageToggle}>
@@ -3054,17 +3019,10 @@ export default function AskSaiScreen() {
                   ]}
                 >
                   <RotateCcw
-                  color="#9A3412" size={18} strokeWidth={2.5} />
+                    color="#9A3412" size={18} strokeWidth={2.5} />
                 </Pressable>
               ) : null}
             </View>
-            {/* <View style={styles.voiceModeHint}>
-              <Volume2 color="#B45309" size={16} strokeWidth={2.3} />
-              <Text style={styles.voiceModeHintText}>
-                Language is detected automatically. Sai currently replies in
-                Hindi.
-              </Text>
-            </View> */}
             <View style={styles.heroPanel}>
             <Text style={styles.heroText}>
               By using Ask Sai, you agree to the App Terms & Conditions and
@@ -3183,8 +3141,8 @@ export default function AskSaiScreen() {
                   <Text style={styles.answerTitle}>Sai Assistant says</Text>
                 </View>
                 {voiceHadAudioChunksRef.current ||
-                !FULL_DUPLEX_VOICE_ENABLED ||
-                VOICE_PROVIDER !== "elevenlabs" ? (
+                  !FULL_DUPLEX_VOICE_ENABLED ||
+                  VOICE_PROVIDER !== "elevenlabs" ? (
                   <Pressable
                     accessibilityLabel={
                       isSpeaking
@@ -3335,6 +3293,15 @@ export default function AskSaiScreen() {
               </Pressable>
             ))}
           </View>
+          <View style={styles.heroPanel}>
+            <Text style={{ fontFamily: 'CustomFont-Bold', fontSize: 12, color: EXPERIENCE_THEME.heading, marginBottom: 4, fontWeight: '700' }}>
+              *  {" "}
+            </Text>
+            <Text style={styles.heroText}>
+              By using Ask Sai, you agree to the App Terms & Conditions and
+              Disclaimer.
+            </Text>
+          </View>
         </ScrollView>
       </LinearGradient>
 
@@ -3446,6 +3413,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    flexDirection: "row",
   },
   heroActions: {
     flexDirection: "row",
