@@ -2628,59 +2628,7 @@ export default function AskSaiScreen() {
     closeVoiceSession();
   }, [closeVoiceSession, stopWaitingTone]);
 
-  const listenAgainFromModal = useCallback(async () => {
-    const activeTurnId = activeVoiceTurnIdRef.current;
-
-    if (
-      activeTurnId &&
-      voiceSocketRef.current?.readyState === WebSocket.OPEN
-    ) {
-      voiceSocketRef.current.send({
-        turnId: activeTurnId,
-        type: "barge_in",
-      });
-      logVoiceDebug("Voice reply interrupted by user", {
-        turnId: activeTurnId,
-      });
-    }
-
-    await stopWaitingTone();
-    await stopSpeech();
-    setAnswer("");
-    setVoiceError("");
-    setVoicePlaybackStage("idle");
-    setVoicePartialTranscript("");
-    setVoiceFinalTranscript("");
-    setQuestion("");
-    voiceFinalTranscriptRef.current = "";
-
-    if (isListening) {
-      try {
-        const ExpoSpeechRecognitionModule =
-          await getSpeechRecognitionModule();
-        ExpoSpeechRecognitionModule.stop();
-      } catch {
-        // Listener cleanup is best effort.
-      }
-    }
-
-    if (FULL_DUPLEX_VOICE_ENABLED) {
-      closeVoiceSession();
-      setTimeout(() => {
-        setIsVoiceModalVisible(true);
-        void handleVoiceQuestionRef.current?.();
-      }, 260);
-      return;
-    }
-
-    await startSpeechRecognitionFallback();
-  }, [
-    closeVoiceSession,
-    isListening,
-    startSpeechRecognitionFallback,
-    stopSpeech,
-    stopWaitingTone,
-  ]);
+ 
 
   const stopAnswer = useCallback(async () => {
     await stopWaitingTone();
@@ -2751,72 +2699,7 @@ export default function AskSaiScreen() {
     [devoteeName, stopSpeech]
   );
 
-  const deleteCurrentConversation = useCallback(() => {
-    if (!conversationId) {
-      return;
-    }
-
-    Alert.alert(
-      "Delete conversation?",
-      "This will remove this Sai assistant conversation from your history.",
-      [
-        { style: "cancel", text: "Cancel" },
-        {
-          style: "destructive",
-          text: "Delete",
-          onPress: async () => {
-            try {
-              await deleteDevoteeAiConversation(conversationId);
-              resetConversation();
-              await loadConversations();
-              trackProductEvent("Devotee Conversation Deleted", {
-                pillar: "experiences",
-              });
-            } catch (error) {
-              Alert.alert(
-                "Delete failed",
-                error instanceof Error
-                  ? error.message
-                  : "Unable to delete this conversation."
-              );
-            }
-          },
-        },
-      ]
-    );
-  }, [conversationId, loadConversations, resetConversation]);
-
-  const sendFeedback = useCallback(
-    async (rating: "helpful" | "not_helpful") => {
-      if (!feedbackMessageId) {
-        return;
-      }
-
-      try {
-        await submitDevoteeAiFeedback(feedbackMessageId, {
-          rating,
-          reason:
-            rating === "helpful"
-              ? "Helpful and easy to understand."
-              : "Needs improvement for this devotee.",
-        });
-
-        Alert.alert("Thank you", "Your feedback helps improve Sai assistant.");
-        trackProductEvent("Devotee Answer Feedback Sent", {
-          pillar: "experiences",
-          rating,
-        });
-      } catch (error) {
-        Alert.alert(
-          "Feedback failed",
-          error instanceof Error
-            ? error.message
-            : "Unable to save feedback."
-        );
-      }
-    },
-    [feedbackMessageId]
-  );
+  
 
   const detectedTranscriptLanguage = detectTranscriptLanguage(
     voicePartialTranscript || voiceFinalTranscript
@@ -3023,12 +2906,7 @@ export default function AskSaiScreen() {
                 </Pressable>
               ) : null}
             </View>
-            <View style={styles.heroPanel}>
-            <Text style={styles.heroText}>
-              By using Ask Sai, you agree to the App Terms & Conditions and
-              Disclaimer.
-            </Text>
-          </View>
+          
 
             <SaiRamWaitingCard
               active={
