@@ -643,7 +643,10 @@ export default function AskSaiScreen() {
   );
 
   const isVoiceControlActive =
-    isListening || voiceConnectionState !== "idle";
+    isListening ||
+    (activeVoiceTurnId !== null &&
+      voiceConnectionState !== "idle" &&
+      voiceConnectionState !== "error");
 
   useEffect(() => {
     voiceConnectionStateRef.current = voiceConnectionState;
@@ -1784,6 +1787,10 @@ export default function AskSaiScreen() {
 
           activeVoiceTurnIdRef.current = null;
           setActiveVoiceTurnId(null);
+          pendingVoiceStartRef.current = null;
+          const completedSocket = voiceSocketRef.current;
+          voiceSocketRef.current = null;
+          completedSocket?.close();
           void cleanupBackendVoiceSessions("turn-complete");
           void loadConversations();
           break;
@@ -2362,6 +2369,10 @@ export default function AskSaiScreen() {
               turnId,
             });
 
+            if (voiceSocketRef.current && voiceSocketRef.current !== socketClient) {
+              return;
+            }
+
             if (voiceConnectedTimeoutRef.current) {
               clearTimeout(voiceConnectedTimeoutRef.current);
               voiceConnectedTimeoutRef.current = null;
@@ -2391,6 +2402,10 @@ export default function AskSaiScreen() {
               state: voiceConnectionState,
               turnId,
             });
+
+            if (voiceSocketRef.current && voiceSocketRef.current !== socketClient) {
+              return;
+            }
 
             if (voiceConnectedTimeoutRef.current) {
               clearTimeout(voiceConnectedTimeoutRef.current);
@@ -2545,12 +2560,16 @@ export default function AskSaiScreen() {
   }, []);
 
   const openVoiceModal = useCallback(() => {
+    if (isSpeaking || isSubmitting) {
+      return;
+    }
+
     setIsVoiceModalVisible(true);
 
-    if (!isVoiceControlActive && !isSubmitting) {
+    if (!isVoiceControlActive) {
       void handleVoiceQuestion();
     }
-  }, [handleVoiceQuestion, isSubmitting, isVoiceControlActive]);
+  }, [handleVoiceQuestion, isSpeaking, isSubmitting, isVoiceControlActive]);
 
   const submitVoiceModal = useCallback(async () => {
     if (isSubmitting) {
