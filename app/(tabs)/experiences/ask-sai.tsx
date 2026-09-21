@@ -603,6 +603,8 @@ export default function AskSaiScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isVoiceModalVisible, setIsVoiceModalVisible] = useState(false);
+  const [voiceInputLevel, setVoiceInputLevel] = useState(0);
+  const lastVoiceLevelUpdateRef = useRef(0);
   const [isWaitingToneActive, setIsWaitingToneActive] = useState(false);
   const [voicePlaybackStage, setVoicePlaybackStage] =
     useState<VoicePlaybackStage>("idle");
@@ -1089,6 +1091,7 @@ export default function AskSaiScreen() {
 
     pendingVoiceStartRef.current = null;
     isMicCaptureReadyRef.current = false;
+    setVoiceInputLevel(0);
     void stopWaitingTone();
 
     void getSaiAudioStreamModule()
@@ -1280,6 +1283,7 @@ export default function AskSaiScreen() {
     }
 
     isMicCaptureReadyRef.current = false;
+    setVoiceInputLevel(0);
     setIsListening(false);
     setVoiceConnectionState("connected");
     voiceTimingRef.current.startedAt = Date.now();
@@ -1330,6 +1334,25 @@ export default function AskSaiScreen() {
           });
 
           voiceChunkCountRef.current += 1;
+
+          if (Date.now() - lastVoiceLevelUpdateRef.current >= 160) {
+            lastVoiceLevelUpdateRef.current = Date.now();
+            try {
+              const pcm = globalThis.atob(event.data);
+              let energy = 0;
+              let sampleCount = 0;
+              for (let index = 0; index + 1 < pcm.length; index += 24) {
+                const sample = pcm.charCodeAt(index) | (pcm.charCodeAt(index + 1) << 8);
+                const signed = sample > 32767 ? sample - 65536 : sample;
+                energy += signed * signed;
+                sampleCount += 1;
+              }
+              const rms = Math.sqrt(energy / Math.max(sampleCount, 1));
+              setVoiceInputLevel(Math.min(1, rms / 9000));
+            } catch {
+              // The visualizer must never interrupt microphone streaming.
+            }
+          }
 
           if (!voiceTimingRef.current.firstMicChunkAt) {
             voiceTimingRef.current.firstMicChunkAt = Date.now();
@@ -1558,6 +1581,7 @@ export default function AskSaiScreen() {
           setIsVoiceModalVisible(false);
           startWaitingTone();
           isMicCaptureReadyRef.current = false;
+          setVoiceInputLevel(0);
           setIsListening(false);
           void getSaiAudioStreamModule()
             .then((audioStream) => audioStream.stopSaiAudioStreamAsync())
@@ -2009,8 +2033,9 @@ export default function AskSaiScreen() {
           return;
         }
 
-        isMicCaptureReadyRef.current = false;
-        setIsListening(false);
+      isMicCaptureReadyRef.current = false;
+      setVoiceInputLevel(0);
+      setIsListening(false);
         setVoiceError(
           "Voice input needs a custom development build. Please type your question for now."
         );
@@ -2055,6 +2080,7 @@ export default function AskSaiScreen() {
         setVoiceFinalTranscript("");
         voiceFinalTranscriptRef.current = "";
         isMicCaptureReadyRef.current = false;
+        setVoiceInputLevel(0);
         setIsListening(false);
         ExpoSpeechRecognitionModule.start({
           addsPunctuation: true,
@@ -2086,6 +2112,7 @@ export default function AskSaiScreen() {
         return true;
       } catch (error) {
         isMicCaptureReadyRef.current = false;
+        setVoiceInputLevel(0);
         setIsListening(false);
         logVoiceDebug("Speech recognition fallback failed", {
           error: error instanceof Error ? error.message : String(error),
@@ -2122,6 +2149,7 @@ export default function AskSaiScreen() {
         activeVoiceTurnIdRef.current = null;
         setActiveVoiceTurnId(null);
         isMicCaptureReadyRef.current = false;
+        setVoiceInputLevel(0);
         setIsListening(false);
         setVoiceConnectionState("idle");
         setVoiceError("");
@@ -2158,6 +2186,7 @@ export default function AskSaiScreen() {
 
       setIsListening(false);
       isMicCaptureReadyRef.current = false;
+      setVoiceInputLevel(0);
       setVoiceConnectionState("thinking");
       return;
     }
@@ -2172,6 +2201,7 @@ export default function AskSaiScreen() {
       }
 
       isMicCaptureReadyRef.current = false;
+      setVoiceInputLevel(0);
       setIsListening(false);
       return;
     }
@@ -2394,6 +2424,7 @@ export default function AskSaiScreen() {
             voiceSocketRef.current = null;
             activeVoiceTurnIdRef.current = null;
             isMicCaptureReadyRef.current = false;
+            setVoiceInputLevel(0);
             setActiveVoiceTurnId(null);
             setIsListening(false);
             setVoiceConnectionState((currentState) =>
@@ -2422,6 +2453,7 @@ export default function AskSaiScreen() {
             });
             pendingVoiceStartRef.current = null;
             isMicCaptureReadyRef.current = false;
+            setVoiceInputLevel(0);
             setIsListening(false);
             setVoiceConnectionState("error");
             setVoicePlaybackStage("failed");
@@ -3188,6 +3220,7 @@ export default function AskSaiScreen() {
         hasCapturedTranscript={hasCapturedTranscript}
         isListening={isListening}
         isStarting={isVoiceStarting}
+        level={voiceInputLevel}
         onCancel={closeVoiceModal}
         onSubmit={submitVoiceModal}
         visible={isVoiceModalVisible}
