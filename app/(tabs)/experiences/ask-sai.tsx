@@ -66,6 +66,12 @@ import { trackProductEvent } from "@/services/product-analytics";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { useAppSelector } from "@/store/hooks";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
+import {
+  emptyVoiceActivity,
+  hasFinishedSpeaking,
+  recordAudioActivity,
+  recordTranscriptActivity,
+} from "@/utils/voice-silence";
 import type {
   SaiAudioStreamChunkEvent,
   SaiAudioStreamErrorEvent,
@@ -124,7 +130,6 @@ const VOICE_DEBUG_ENABLED =
   __DEV__ || FULL_DUPLEX_VOICE_ENABLED;
 const SAI_RAM_CYCLE_MS = 1800;
 const VOICE_SILENCE_SUBMIT_MS = 2000;
-const VOICE_ACTIVITY_RMS_THRESHOLD = 320;
 
 const logVoiceDebug = (message: string, payload?: Record<string, unknown>) => {
   if (!VOICE_DEBUG_ENABLED) {
@@ -534,9 +539,7 @@ export default function AskSaiScreen() {
   const submitVoiceModalRef = useRef<(() => Promise<void>) | null>(null);
   const voiceModalOpenRef = useRef(false);
   const autoSubmitInProgressRef = useRef(false);
-  const speechDetectedRef = useRef(false);
-  const voiceActivityFramesRef = useRef(0);
-  const lastSpeechAtRef = useRef(0);
+  const voiceActivityRef = useRef(emptyVoiceActivity());
   const fallbackSilenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMicCaptureReadyRef = useRef(false);
   const voiceSessionRef = useRef<DevoteeAiVoiceSession | null>(null);
@@ -1107,9 +1110,7 @@ export default function AskSaiScreen() {
     }
     voiceModalOpenRef.current = false;
     autoSubmitInProgressRef.current = false;
-    speechDetectedRef.current = false;
-    voiceActivityFramesRef.current = 0;
-    lastSpeechAtRef.current = 0;
+    voiceActivityRef.current = emptyVoiceActivity();
     setVoiceInputLevel(0);
     void stopWaitingTone();
 
@@ -1369,26 +1370,20 @@ export default function AskSaiScreen() {
               const rms = Math.sqrt(energy / Math.max(sampleCount, 1));
               setVoiceInputLevel(Math.min(1, rms / 9000));
 
-              if (rms >= VOICE_ACTIVITY_RMS_THRESHOLD) {
-                voiceActivityFramesRef.current += 1;
-                if (voiceActivityFramesRef.current >= 2) {
-                  speechDetectedRef.current = true;
-                  lastSpeechAtRef.current = Date.now();
-                }
-              } else {
-                voiceActivityFramesRef.current = 0;
-                if (
-                  speechDetectedRef.current &&
-                  voiceModalOpenRef.current &&
-                  !autoSubmitInProgressRef.current &&
-                  Date.now() - lastSpeechAtRef.current >= VOICE_SILENCE_SUBMIT_MS
-                ) {
-                  autoSubmitInProgressRef.current = true;
-                  logVoiceDebug("Auto-submitting after voice silence", {
-                    turnId: pendingStart.turnId,
-                  });
-                  void submitVoiceModalRef.current?.();
-                }
+              const now = Date.now();
+              voiceActivityRef.current = recordAudioActivity(voiceActivityRef.current, rms, now);
+              if (
+                voiceModalOpenRef.current &&
+                !autoSubmitInProgressRef.current &&
+                hasFinishedSpeaking(voiceActivityRef.current, now)
+              ) {
+                autoSubmitInProgressRef.current = true;
+                logVoiceDebug("Auto-submitting after voice silence", {
+                  lastSoundAgoMs: now - voiceActivityRef.current.lastSoundAt,
+                  rms: Math.round(rms),
+                  turnId: pendingStart.turnId,
+                });
+                void submitVoiceModalRef.current?.();
               }
             } catch {
               // The visualizer must never interrupt microphone streaming.
@@ -1550,8 +1545,7 @@ export default function AskSaiScreen() {
           break;
 
         case "transcript_partial":
-          speechDetectedRef.current = true;
-          lastSpeechAtRef.current = Date.now();
+          voiceActivityRef.current = recordTranscriptActivity(voiceActivityRef.current, Date.now());
           if (!voiceTimingRef.current.firstTranscriptAt) {
             voiceTimingRef.current.firstTranscriptAt = Date.now();
             logVoiceDebug("First transcript received", {
@@ -2660,9 +2654,7 @@ export default function AskSaiScreen() {
       return;
     }
 
-    speechDetectedRef.current = false;
-    voiceActivityFramesRef.current = 0;
-    lastSpeechAtRef.current = 0;
+    voiceActivityRef.current = emptyVoiceActivity();
     autoSubmitInProgressRef.current = false;
     voiceModalOpenRef.current = true;
     setIsVoiceModalVisible(true);

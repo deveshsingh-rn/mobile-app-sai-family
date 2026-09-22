@@ -561,7 +561,7 @@ export default function HomeScreen() {
                   <View style={styles.askSaiCopy}>
                     <Text style={styles.askSaiPrompt}>
                     {'\u2022'} Speak or Write  {"\n"} 
-                    {'\u2022'} Ask Guidance from  Teachings in Shri Sai Satcharitra
+                    {'\u2022'} Seek Guidance from Shri Sai Satcharitra
                     </Text>
                    
                   </View>
