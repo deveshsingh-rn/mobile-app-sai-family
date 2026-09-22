@@ -70,6 +70,7 @@ import type {
   SaiAudioStreamChunkEvent,
   SaiAudioStreamErrorEvent,
 } from "sai-audio-stream";
+import { FontWeight } from "@shopify/react-native-skia";
 
 const SUGGESTED_QUESTIONS = [
   "How can I keep faith during a difficult time?",
@@ -2954,8 +2955,11 @@ export default function AskSaiScreen() {
           >
             <View style={styles.questionHeader}>
               <View style={styles.languageTitleCopy}>
+                <Text style={{ fontFamily: 'CustomFont-Bold', fontSize: 12, color: EXPERIENCE_THEME.heading,  marginTop: 6, fontWeight: '700'}} >
+                  * {" "}
+                </Text>
                 <Text style={styles.languageSubtitle}>
-                  You can Speak or Write in English or Hindi * .
+                  You can Speak or Write in English or Hindi.
                 </Text>
               </View>
               <View style={styles.languageToggle}>
@@ -3548,6 +3552,7 @@ const styles = StyleSheet.create({
   },
   languageTitleCopy: {
     flex: 1,
+    flexDirection:'row'
   },
   languageTitle: {
     color: EXPERIENCE_THEME.heading,
@@ -3560,6 +3565,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     lineHeight: 17,
     marginTop: 2,
+    width: "80%",
   },
   languageScroller: {
     gap: 9,
