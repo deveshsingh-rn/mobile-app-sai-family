@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Mic, Send } from "lucide-react-native";
+import { Mic } from "lucide-react-native";
 import { MotiView } from "moti";
 import {
   ActivityIndicator,
@@ -47,7 +47,6 @@ type AskSaiVoiceCaptureModalProps = {
   isStarting: boolean;
   level: number;
   onCancel: () => void;
-  onSubmit: () => void;
   visible: boolean;
 };
 
@@ -58,11 +57,8 @@ export function AskSaiVoiceCaptureModal({
   isStarting,
   level,
   onCancel,
-  onSubmit,
   visible,
 }: AskSaiVoiceCaptureModalProps) {
-  const isSubmitDisabled =
-    isStarting || (!isListening && !hasCapturedTranscript);
   const rotation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -164,45 +160,32 @@ export function AskSaiVoiceCaptureModal({
 
           <Text accessibilityLiveRegion="polite" style={styles.title}>
             {isListening
-              ? "Speak now"
+              ? "Speak Now"
               : error
                 ? "Could not start listening"
-                : "Getting ready to listen"}
+                : hasCapturedTranscript
+                  ? "Getting Ready to Listen"
+                : "Getting Ready to Listen"}
           </Text>
           <Text style={styles.subtitle}>
             {isListening
-              ? "We are listening. Speak naturally in Hindi or English."
-              : error || "Start speaking when the ring lights up."}
+              ? "Pause for 2 seconds When You have finished Speaking, your Question will be Sent Automatically."
+              : error || (hasCapturedTranscript
+                ? ""
+                : "Start Speaking When the Ring Lights Up.")}
           </Text>
 
-          {hasCapturedTranscript ? (
-            <Text style={styles.capturedHint}>
-              Your words are appearing on the Ask Sai screen.
-            </Text>
-          ) : null}
+          {/* {hasCapturedTranscript ? ( */}
+            {/* // <Text style={styles.capturedHint}> */}
+             {/* <Text > */}
+              {/* Your words are appearing on the Ask Sai screen. */}
+            {/* </Text> */}
+          {/* ) : null}x */}
 
           <View style={styles.actions}>
             <Pressable
               accessibilityRole="button"
-              accessibilityState={{ disabled: isSubmitDisabled }}
-              disabled={isSubmitDisabled}
-              onPress={onSubmit}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                isSubmitDisabled && styles.primaryButtonDisabled,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.primaryText}>
-                {isStarting ? "Please wait" : "Done"}
-              </Text>
-              {!isStarting ? (
-                <Send color="#FFFFFF" size={17} strokeWidth={2.5} />
-              ) : null}
-            </Pressable>
-
-            <Pressable
-              accessibilityRole="button"
+              accessibilityLabel="Cancel voice question"
               onPress={onCancel}
               style={({ pressed }) => [
                 styles.secondaryButton,
@@ -278,6 +261,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 21,
     marginTop: 8,
+    marginBottom: 14,
     textAlign: "center",
   },
   capturedHint: {
@@ -295,29 +279,14 @@ const styles = StyleSheet.create({
   actions: {
     alignSelf: "stretch",
     gap: 10,
-    marginTop: 22,
-  },
-  primaryButton: {
-    alignItems: "center",
-    backgroundColor: EXPERIENCE_THEME.heading,
-    borderRadius: 8,
-    flexDirection: "row",
-    gap: 8,
-    height: 52,
-    justifyContent: "center",
-  },
-  primaryButtonDisabled: {
-    opacity: 0.68,
-  },
-  primaryText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "900",
+    marginTop: 8,
   },
   secondaryButton: {
     alignItems: "center",
-    borderRadius: 14,
-    height: 46,
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 52,
     justifyContent: "center",
   },
   secondaryText: {

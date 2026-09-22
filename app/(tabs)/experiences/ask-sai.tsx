@@ -122,6 +122,8 @@ const VOICE_PROVIDER: "elevenlabs" | "mock" =
 const VOICE_DEBUG_ENABLED =
   __DEV__ || FULL_DUPLEX_VOICE_ENABLED;
 const SAI_RAM_CYCLE_MS = 1800;
+const VOICE_SILENCE_SUBMIT_MS = 2000;
+const VOICE_ACTIVITY_RMS_THRESHOLD = 320;
 
 const logVoiceDebug = (message: string, payload?: Record<string, unknown>) => {
   if (!VOICE_DEBUG_ENABLED) {
@@ -528,6 +530,13 @@ export default function AskSaiScreen() {
   const voiceSocketRef =
     useRef<ReturnType<typeof createDevoteeAiVoiceSocket> | null>(null);
   const handleVoiceQuestionRef = useRef<(() => Promise<void>) | null>(null);
+  const submitVoiceModalRef = useRef<(() => Promise<void>) | null>(null);
+  const voiceModalOpenRef = useRef(false);
+  const autoSubmitInProgressRef = useRef(false);
+  const speechDetectedRef = useRef(false);
+  const voiceActivityFramesRef = useRef(0);
+  const lastSpeechAtRef = useRef(0);
+  const fallbackSilenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMicCaptureReadyRef = useRef(false);
   const voiceSessionRef = useRef<DevoteeAiVoiceSession | null>(null);
   const pendingVoiceStartRef = useRef<PendingVoiceStartContext | null>(null);
@@ -1091,6 +1100,15 @@ export default function AskSaiScreen() {
 
     pendingVoiceStartRef.current = null;
     isMicCaptureReadyRef.current = false;
+    if (fallbackSilenceTimerRef.current) {
+      clearTimeout(fallbackSilenceTimerRef.current);
+      fallbackSilenceTimerRef.current = null;
+    }
+    voiceModalOpenRef.current = false;
+    autoSubmitInProgressRef.current = false;
+    speechDetectedRef.current = false;
+    voiceActivityFramesRef.current = 0;
+    lastSpeechAtRef.current = 0;
     setVoiceInputLevel(0);
     void stopWaitingTone();
 
@@ -1349,6 +1367,28 @@ export default function AskSaiScreen() {
               }
               const rms = Math.sqrt(energy / Math.max(sampleCount, 1));
               setVoiceInputLevel(Math.min(1, rms / 9000));
+
+              if (rms >= VOICE_ACTIVITY_RMS_THRESHOLD) {
+                voiceActivityFramesRef.current += 1;
+                if (voiceActivityFramesRef.current >= 2) {
+                  speechDetectedRef.current = true;
+                  lastSpeechAtRef.current = Date.now();
+                }
+              } else {
+                voiceActivityFramesRef.current = 0;
+                if (
+                  speechDetectedRef.current &&
+                  voiceModalOpenRef.current &&
+                  !autoSubmitInProgressRef.current &&
+                  Date.now() - lastSpeechAtRef.current >= VOICE_SILENCE_SUBMIT_MS
+                ) {
+                  autoSubmitInProgressRef.current = true;
+                  logVoiceDebug("Auto-submitting after voice silence", {
+                    turnId: pendingStart.turnId,
+                  });
+                  void submitVoiceModalRef.current?.();
+                }
+              }
             } catch {
               // The visualizer must never interrupt microphone streaming.
             }
@@ -1509,6 +1549,8 @@ export default function AskSaiScreen() {
           break;
 
         case "transcript_partial":
+          speechDetectedRef.current = true;
+          lastSpeechAtRef.current = Date.now();
           if (!voiceTimingRef.current.firstTranscriptAt) {
             voiceTimingRef.current.firstTranscriptAt = Date.now();
             logVoiceDebug("First transcript received", {
@@ -1579,6 +1621,7 @@ export default function AskSaiScreen() {
           setVoicePartialTranscript("");
           setQuestion(event.text);
           setIsVoiceModalVisible(false);
+          voiceModalOpenRef.current = false;
           startWaitingTone();
           isMicCaptureReadyRef.current = false;
           setVoiceInputLevel(0);
@@ -1997,6 +2040,21 @@ export default function AskSaiScreen() {
             setQuestion(transcript);
             setVoiceError("");
             setVoicePartialTranscript(event.isFinal ? "" : transcript);
+
+            if (voiceModalOpenRef.current && !voiceSocketRef.current) {
+              if (fallbackSilenceTimerRef.current) {
+                clearTimeout(fallbackSilenceTimerRef.current);
+              }
+              fallbackSilenceTimerRef.current = setTimeout(() => {
+                fallbackSilenceTimerRef.current = null;
+                if (!voiceModalOpenRef.current || autoSubmitInProgressRef.current) {
+                  return;
+                }
+                autoSubmitInProgressRef.current = true;
+                logVoiceDebug("Auto-submitting after transcript silence");
+                void submitVoiceModalRef.current?.();
+              }, VOICE_SILENCE_SUBMIT_MS);
+            }
 
             if (event.isFinal) {
               isMicCaptureReadyRef.current = false;
@@ -2601,6 +2659,11 @@ export default function AskSaiScreen() {
       return;
     }
 
+    speechDetectedRef.current = false;
+    voiceActivityFramesRef.current = 0;
+    lastSpeechAtRef.current = 0;
+    autoSubmitInProgressRef.current = false;
+    voiceModalOpenRef.current = true;
     setIsVoiceModalVisible(true);
 
     if (!isVoiceControlActive) {
@@ -2610,14 +2673,16 @@ export default function AskSaiScreen() {
 
   const submitVoiceModal = useCallback(async () => {
     if (isSubmitting) {
+      autoSubmitInProgressRef.current = false;
       return;
     }
 
     if (FULL_DUPLEX_VOICE_ENABLED && voiceSocketRef.current) {
-      await handleVoiceQuestion();
+      voiceModalOpenRef.current = false;
       setIsVoiceModalVisible(false);
       startWaitingTone();
       revealQuestionInput();
+      await handleVoiceQuestion();
       return;
     }
 
@@ -2628,7 +2693,16 @@ export default function AskSaiScreen() {
     ).trim();
 
     if (fallbackQuestion.length >= 3) {
+      voiceModalOpenRef.current = false;
       setIsVoiceModalVisible(false);
+      setIsListening(false);
+      setVoiceInputLevel(0);
+      try {
+        const recognition = await getSpeechRecognitionModule();
+        recognition.stop();
+      } catch {
+        // Recognition may have already stopped after a final transcript.
+      }
       startWaitingTone();
       revealQuestionInput();
       try {
@@ -2637,9 +2711,10 @@ export default function AskSaiScreen() {
         await stopWaitingTone();
       }
     } else {
+      autoSubmitInProgressRef.current = false;
       Alert.alert(
         "Speak your question",
-        "Please speak or write a little more before submitting."
+        "Please speak a little more. Your question will send when you pause."
       );
     }
   }, [
@@ -2654,7 +2729,16 @@ export default function AskSaiScreen() {
     voicePartialTranscript,
   ]);
 
+  useEffect(() => {
+    submitVoiceModalRef.current = submitVoiceModal;
+  }, [submitVoiceModal]);
+
   const closeVoiceModal = useCallback(async () => {
+    voiceModalOpenRef.current = false;
+    if (fallbackSilenceTimerRef.current) {
+      clearTimeout(fallbackSilenceTimerRef.current);
+      fallbackSilenceTimerRef.current = null;
+    }
     setIsVoiceModalVisible(false);
     await stopWaitingTone();
     closeVoiceSession();
@@ -3222,7 +3306,6 @@ export default function AskSaiScreen() {
         isStarting={isVoiceStarting}
         level={voiceInputLevel}
         onCancel={closeVoiceModal}
-        onSubmit={submitVoiceModal}
         visible={isVoiceModalVisible}
       />
     </KeyboardAvoidingView>
