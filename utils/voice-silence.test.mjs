@@ -53,3 +53,23 @@ test("a natural pause resets when the devotee resumes speaking", () => {
   activity = recordAudioActivity(activity, 20, 3900);
   assert.equal(hasFinishedSpeaking(activity, 3900), true);
 });
+
+test("steady room noise after speech does not keep extending the silence window", () => {
+  let activity = emptyVoiceActivity();
+  for (let now = 100; now <= 3000; now += 100) {
+    activity = recordAudioActivity(activity, now % 300 ? 1200 : 800, now);
+    assert.equal(hasFinishedSpeaking(activity, now), false);
+  }
+  for (let now = 3100; now <= 4900; now += 100) {
+    activity = recordAudioActivity(activity, 110, now);
+    assert.equal(hasFinishedSpeaking(activity, now), false);
+  }
+  activity = recordAudioActivity(activity, 110, 5000);
+  assert.equal(hasFinishedSpeaking(activity, 5000), true);
+});
+
+test("the silence deadline can be checked without waiting for another audio callback", () => {
+  const activity = recordTranscriptActivity(emptyVoiceActivity(), 1000);
+  assert.equal(hasFinishedSpeaking(activity, 2999), false);
+  assert.equal(hasFinishedSpeaking(activity, 3000), true);
+});

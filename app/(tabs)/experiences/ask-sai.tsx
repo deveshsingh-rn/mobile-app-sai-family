@@ -65,6 +65,8 @@ import {
 import { trackProductEvent } from "@/services/product-analytics";
 import { playVoiceSegment } from "@/services/voice-segment-playback";
 import { VoiceSegmentQueue, type VoiceAudioSegment } from "@/utils/voice-segment-queue";
+import { createVoiceCaptureStop } from "@/utils/voice-capture-stop";
+import { voiceLatencySnapshot, type VoiceTiming } from "@/utils/voice-latency";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { useAppSelector } from "@/store/hooks";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
@@ -542,8 +544,10 @@ export default function AskSaiScreen() {
   const voiceModalOpenRef = useRef(false);
   const autoSubmitInProgressRef = useRef(false);
   const voiceActivityRef = useRef(emptyVoiceActivity());
+  const lastActivityTranscriptRef = useRef("");
   const fallbackSilenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMicCaptureReadyRef = useRef(false);
+  const voiceCaptureStopRef = useRef<(() => Promise<void>) | null>(null);
   const voiceSessionRef = useRef<DevoteeAiVoiceSession | null>(null);
   const pendingVoiceStartRef = useRef<PendingVoiceStartContext | null>(null);
   const voiceConnectedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -590,19 +594,14 @@ export default function AskSaiScreen() {
     start: (when?: number, offset?: number) => void;
   } | null>(null);
   const voiceAudioDecodeQueueRef = useRef(Promise.resolve());
-  const voiceTimingRef = useRef<{
-    connectedAt?: number;
-    firstAnswerAt?: number;
-    firstAudioChunkAt?: number;
-    firstPlaybackAt?: number;
-    inputEndedAt?: number;
-    firstMicChunkAt?: number;
-    firstTranscriptAt?: number;
-    sessionCreatedAt?: number;
-    socketOpenedAt?: number;
-    startedAt?: number;
-    tapAt?: number;
-  }>({});
+  const voiceTimingRef = useRef<VoiceTiming>({});
+  const logVoiceLatency = useCallback((stage: string, turnId?: string | null) => {
+    if (!VOICE_DEBUG_ENABLED) return;
+    console.log(`[AskSaiLatency] ${stage}`, {
+      turnId,
+      ...voiceLatencySnapshot(voiceTimingRef.current),
+    });
+  }, []);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [conversationId, setConversationId] = useState<string | undefined>();
@@ -707,6 +706,10 @@ export default function AskSaiScreen() {
     void loadConversations();
   }, [loadConversations]);
 
+  const stopVoiceCapture = useCallback(() => {
+    return voiceCaptureStopRef.current?.() ?? Promise.resolve();
+  }, []);
+
   const stopVoicePlayback = useCallback(async () => {
     voiceSegmentQueueRef.current?.stop();
     voiceSegmentQueueRef.current = null;
@@ -800,7 +803,11 @@ export default function AskSaiScreen() {
     if (voiceSegmentQueueRef.current?.turnId !== segment.turnId) {
       voiceSegmentQueueRef.current?.stop();
       voiceSegmentQueueRef.current = new VoiceSegmentQueue(segment.turnId, {
-        play: playVoiceSegment,
+        play: async (item, signal, onStarted) => {
+          await stopVoiceCapture();
+          if (signal.aborted) return;
+          await playVoiceSegment(item, signal, onStarted);
+        },
         onStarted: () => {
           if (!voiceTimingRef.current.firstPlaybackAt) {
             voiceTimingRef.current.firstPlaybackAt = Date.now();
@@ -840,7 +847,7 @@ export default function AskSaiScreen() {
       });
     }
     voiceSegmentQueueRef.current.enqueue(segment);
-  }, [stopWaitingTone]);
+  }, [stopVoiceCapture, stopWaitingTone]);
 
   const ensureVoicePlaybackQueue = useCallback(async () => {
     if (!voiceAudioContextRef.current || !voiceAudioQueueRef.current) {
@@ -884,6 +891,7 @@ export default function AskSaiScreen() {
 
     try {
       setVoicePlaybackStage("buffering");
+      await stopVoiceCapture();
       const [{ createAudioPlayer, setAudioModeAsync }, FileSystem] =
         await Promise.all([
           import("expo-audio"),
@@ -969,6 +977,11 @@ export default function AskSaiScreen() {
         3000
       );
 
+      if (completedVoiceTurnIdRef.current === turnId && !voiceTimingRef.current.firstPlaybackAt) {
+        voiceTimingRef.current.firstPlaybackAt = Date.now();
+        logVoiceLatency("playback_started", turnId);
+      }
+
       setIsSpeaking(true);
       setVoiceConnectionState("speaking");
       setVoicePlaybackStage("playing");
@@ -1018,7 +1031,7 @@ export default function AskSaiScreen() {
       });
       return false;
     }
-  }, [stopWaitingTone]);
+  }, [logVoiceLatency, stopVoiceCapture, stopWaitingTone]);
 
   const enqueueVoiceAudioChunk = useCallback(
     (event: Extract<DevoteeAiVoiceServerEvent, { type: "audio_chunk" }>) => {
@@ -1171,8 +1184,7 @@ export default function AskSaiScreen() {
     setVoiceInputLevel(0);
     void stopWaitingTone();
 
-    void getSaiAudioStreamModule()
-      .then((audioStream) => audioStream.stopSaiAudioStreamAsync())
+    void stopVoiceCapture()
       .catch(() => {
         // The native stream module may be unavailable in Expo Go.
       });
@@ -1203,7 +1215,7 @@ export default function AskSaiScreen() {
     setVoiceConnectionState("idle");
     setVoicePartialTranscript("");
     void cleanupBackendVoiceSessions("local-close");
-  }, [cleanupBackendVoiceSessions, stopVoicePlayback, stopWaitingTone]);
+  }, [cleanupBackendVoiceSessions, stopVoiceCapture, stopVoicePlayback, stopWaitingTone]);
 
   useEffect(() => {
     return () => {
@@ -1390,7 +1402,7 @@ export default function AskSaiScreen() {
     });
 
     pendingStart.socketClient.send({
-      audioDelivery: "sentence_mp3",
+      // Keep the proven full-reply MP3 flow until sentence playback passes device QA.
       audio: {
         channels: pendingStart.audioChannels,
         chunkMs: pendingStart.audioChunkMs,
@@ -1440,19 +1452,6 @@ export default function AskSaiScreen() {
 
               const now = Date.now();
               voiceActivityRef.current = recordAudioActivity(voiceActivityRef.current, rms, now);
-              if (
-                voiceModalOpenRef.current &&
-                !autoSubmitInProgressRef.current &&
-                hasFinishedSpeaking(voiceActivityRef.current, now)
-              ) {
-                autoSubmitInProgressRef.current = true;
-                logVoiceDebug("Auto-submitting after voice silence", {
-                  lastSoundAgoMs: now - voiceActivityRef.current.lastSoundAt,
-                  rms: Math.round(rms),
-                  turnId: pendingStart.turnId,
-                });
-                void submitVoiceModalRef.current?.();
-              }
             } catch {
               // The visualizer must never interrupt microphone streaming.
             }
@@ -1491,11 +1490,14 @@ export default function AskSaiScreen() {
           setVoiceError(event.message);
           isMicCaptureReadyRef.current = false;
           setIsListening(false);
-          void pendingStart.audioStream.stopSaiAudioStreamAsync();
+          void stopVoiceCapture().catch(() => undefined);
         }
       );
 
     try {
+      voiceCaptureStopRef.current = createVoiceCaptureStop(
+        () => pendingStart.audioStream.stopSaiAudioStreamAsync()
+      );
       const startResult =
         await pendingStart.audioStream.startSaiAudioStreamAsync({
           chunkMs: pendingStart.audioChunkMs,
@@ -1512,11 +1514,13 @@ export default function AskSaiScreen() {
         activeVoiceTurnIdRef.current !== pendingStart.turnId ||
         pendingStart.socketClient.readyState !== WebSocket.OPEN
       ) {
-        await pendingStart.audioStream.stopSaiAudioStreamAsync();
+        await stopVoiceCapture();
         return;
       }
 
       isMicCaptureReadyRef.current = true;
+      voiceTimingRef.current.micReadyAt = Date.now();
+      logVoiceLatency("mic_ready", pendingStart.turnId);
       setIsListening(true);
       setVoiceConnectionState("listening");
       void Haptics.notificationAsync(
@@ -1555,7 +1559,7 @@ export default function AskSaiScreen() {
         turnId: pendingStart.turnId,
       });
     }
-  }, [cleanupBackendVoiceSessions]);
+  }, [cleanupBackendVoiceSessions, logVoiceLatency, stopVoiceCapture]);
 
   const handleVoiceServerEvent = useCallback(
     (event: DevoteeAiVoiceServerEvent) => {
@@ -1613,7 +1617,10 @@ export default function AskSaiScreen() {
           break;
 
         case "transcript_partial":
-          voiceActivityRef.current = recordTranscriptActivity(voiceActivityRef.current, Date.now());
+          if (event.text !== lastActivityTranscriptRef.current) {
+            lastActivityTranscriptRef.current = event.text;
+            voiceActivityRef.current = recordTranscriptActivity(voiceActivityRef.current, Date.now());
+          }
           if (!voiceTimingRef.current.firstTranscriptAt) {
             voiceTimingRef.current.firstTranscriptAt = Date.now();
             logVoiceDebug("First transcript received", {
@@ -1631,6 +1638,8 @@ export default function AskSaiScreen() {
           break;
 
         case "transcript_final": {
+          voiceTimingRef.current.finalTranscriptAt = Date.now();
+          logVoiceLatency("transcript_final", event.turnId);
           const transcriptElapsedMs = voiceTimingRef.current.startedAt
             ? Date.now() - voiceTimingRef.current.startedAt
             : undefined;
@@ -1656,8 +1665,7 @@ export default function AskSaiScreen() {
             setVoiceFinalTranscript("");
             setQuestion("");
             voiceFinalTranscriptRef.current = "";
-            void getSaiAudioStreamModule()
-              .then((audioStream) => audioStream.stopSaiAudioStreamAsync())
+            void stopVoiceCapture()
               .catch(() => {
                 // Recording cleanup is best effort.
               });
@@ -1689,8 +1697,7 @@ export default function AskSaiScreen() {
           isMicCaptureReadyRef.current = false;
           setVoiceInputLevel(0);
           setIsListening(false);
-          void getSaiAudioStreamModule()
-            .then((audioStream) => audioStream.stopSaiAudioStreamAsync())
+          void stopVoiceCapture()
             .catch(() => {
               // The native stream module may be unavailable in Expo Go.
             });
@@ -1701,6 +1708,7 @@ export default function AskSaiScreen() {
         case "answer_delta":
           if (!voiceTimingRef.current.firstAnswerAt) {
             voiceTimingRef.current.firstAnswerAt = Date.now();
+            logVoiceLatency("first_text", event.turnId);
             logVoiceDebug("First answer delta received", {
               msSinceTap:
                 voiceTimingRef.current.tapAt
@@ -1765,6 +1773,7 @@ export default function AskSaiScreen() {
         case "audio_chunk":
           if (!voiceTimingRef.current.firstAudioChunkAt) {
             voiceTimingRef.current.firstAudioChunkAt = Date.now();
+            logVoiceLatency("first_audio_received", event.turnId);
             logVoiceDebug("First response audio chunk received", {
               dataLength: event.data.length,
               format: event.format,
@@ -1787,6 +1796,8 @@ export default function AskSaiScreen() {
           break;
 
         case "turn_complete": {
+          voiceTimingRef.current.turnCompletedAt = Date.now();
+          logVoiceLatency("reply_received", event.turnId);
           completedVoiceTurnIdRef.current = event.turnId;
           const finalQuestion = voiceFinalTranscriptRef.current || question;
           const finalAnswer = personalizeSaiAnswer(
@@ -1960,12 +1971,14 @@ export default function AskSaiScreen() {
       devoteeName,
       enqueueVoiceAudioChunk,
       loadConversations,
+      logVoiceLatency,
       playBufferedVoiceAudio,
       question,
       selectedLanguage.locale,
       speakText,
       startWaitingTone,
       startConnectedVoiceStreaming,
+      stopVoiceCapture,
       stopSpeech,
       stopWaitingTone,
       voiceSession?.providers?.llm,
@@ -2290,10 +2303,12 @@ export default function AskSaiScreen() {
       }
 
       const activeTurnId = activeVoiceTurnIdRef.current;
+      voiceTimingRef.current.submitRequestedAt = Date.now();
+      voiceTimingRef.current.lastSpeechAt = voiceActivityRef.current.lastSoundAt || undefined;
+      logVoiceLatency("submit_requested", activeTurnId);
 
       try {
-        const audioStream = await getSaiAudioStreamModule();
-        await audioStream.stopSaiAudioStreamAsync();
+        await stopVoiceCapture();
       } catch {
         // Native stream may already be stopped or unavailable.
       }
@@ -2312,6 +2327,7 @@ export default function AskSaiScreen() {
           turnId: activeTurnId,
           type: "end_input",
         });
+        logVoiceLatency("input_sent", activeTurnId);
       }
 
       setIsListening(false);
@@ -2553,7 +2569,7 @@ export default function AskSaiScreen() {
               voiceConnectedTimeoutRef.current = null;
             }
 
-            void audioStream.stopSaiAudioStreamAsync().catch(() => {
+            void stopVoiceCapture().catch(() => {
               // Recording may already be stopped.
             });
             audioChunkSubscriptionRef.current?.remove();
@@ -2590,7 +2606,7 @@ export default function AskSaiScreen() {
               voiceConnectedTimeoutRef.current = null;
             }
 
-            void audioStream.stopSaiAudioStreamAsync().catch(() => {
+            void stopVoiceCapture().catch(() => {
               // Recording may already be stopped.
             });
             pendingVoiceStartRef.current = null;
@@ -2710,11 +2726,13 @@ export default function AskSaiScreen() {
     conversationId,
     devoteeName,
     handleVoiceServerEvent,
+    logVoiceLatency,
     isListening,
     selectedLanguage.locale,
     selectedLanguage.secondaryLocale,
     startSpeechRecognitionFallback,
     stopSpeech,
+    stopVoiceCapture,
     voiceConnectionState,
   ]);
 
@@ -2744,6 +2762,7 @@ export default function AskSaiScreen() {
     }
 
     voiceActivityRef.current = emptyVoiceActivity();
+    lastActivityTranscriptRef.current = "";
     autoSubmitInProgressRef.current = false;
     voiceModalOpenRef.current = true;
     setIsVoiceModalVisible(true);
@@ -2814,6 +2833,23 @@ export default function AskSaiScreen() {
   useEffect(() => {
     submitVoiceModalRef.current = submitVoiceModal;
   }, [submitVoiceModal]);
+
+  useEffect(() => {
+    if (!isVoiceModalVisible) return;
+    const timer = setInterval(() => {
+      if (!voiceModalOpenRef.current || !isMicCaptureReadyRef.current ||
+          !voiceSocketRef.current || autoSubmitInProgressRef.current) return;
+      const now = Date.now();
+      if (!hasFinishedSpeaking(voiceActivityRef.current, now)) return;
+      autoSubmitInProgressRef.current = true;
+      logVoiceDebug("Auto-submitting after voice silence", {
+        lastSoundAgoMs: now - voiceActivityRef.current.lastSoundAt,
+        turnId: activeVoiceTurnIdRef.current,
+      });
+      void submitVoiceModalRef.current?.();
+    }, 100);
+    return () => clearInterval(timer);
+  }, [isVoiceModalVisible]);
 
   const closeVoiceModal = useCallback(async () => {
     voiceModalOpenRef.current = false;
