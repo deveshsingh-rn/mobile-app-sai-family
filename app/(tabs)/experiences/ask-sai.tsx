@@ -63,6 +63,8 @@ import {
   submitDevoteeAiFeedback,
 } from "@/services/devotee-ai";
 import { trackProductEvent } from "@/services/product-analytics";
+import { playVoiceSegment } from "@/services/voice-segment-playback";
+import { VoiceSegmentQueue, type VoiceAudioSegment } from "@/utils/voice-segment-queue";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { useAppSelector } from "@/store/hooks";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
@@ -558,6 +560,8 @@ export default function AskSaiScreen() {
   const completedVoiceAssistantMessageIdRef = useRef<string | null>(null);
   const voiceAnswerBufferRef = useRef("");
   const voiceAudioChunkPartsRef = useRef<string[]>([]);
+  const voiceSegmentsRef = useRef<VoiceAudioSegment[]>([]);
+  const voiceSegmentQueueRef = useRef<VoiceSegmentQueue | null>(null);
   const voiceChunkCountRef = useRef(0);
   const voiceResponseChunkCountRef = useRef(0);
   const voiceFallbackAudioFileUriRef = useRef<string | null>(null);
@@ -590,6 +594,8 @@ export default function AskSaiScreen() {
     connectedAt?: number;
     firstAnswerAt?: number;
     firstAudioChunkAt?: number;
+    firstPlaybackAt?: number;
+    inputEndedAt?: number;
     firstMicChunkAt?: number;
     firstTranscriptAt?: number;
     sessionCreatedAt?: number;
@@ -664,6 +670,8 @@ export default function AskSaiScreen() {
 
   const isVoiceControlActive =
     isListening ||
+    voicePlaybackStage === "buffering" ||
+    voicePlaybackStage === "playing" ||
     (activeVoiceTurnId !== null &&
       voiceConnectionState !== "idle" &&
       voiceConnectionState !== "error");
@@ -700,6 +708,8 @@ export default function AskSaiScreen() {
   }, [loadConversations]);
 
   const stopVoicePlayback = useCallback(async () => {
+    voiceSegmentQueueRef.current?.stop();
+    voiceSegmentQueueRef.current = null;
     voiceAudioDecodeQueueRef.current = Promise.resolve();
 
     try {
@@ -785,6 +795,52 @@ export default function AskSaiScreen() {
 
     logVoiceDebug("Waiting feedback started");
   }, []);
+
+  const enqueueSentenceAudio = useCallback((segment: VoiceAudioSegment) => {
+    if (voiceSegmentQueueRef.current?.turnId !== segment.turnId) {
+      voiceSegmentQueueRef.current?.stop();
+      voiceSegmentQueueRef.current = new VoiceSegmentQueue(segment.turnId, {
+        play: playVoiceSegment,
+        onStarted: () => {
+          if (!voiceTimingRef.current.firstPlaybackAt) {
+            voiceTimingRef.current.firstPlaybackAt = Date.now();
+            logVoiceProductionCheck("First sentence playback started", {
+              turnId: segment.turnId,
+              afterSpeechMs: voiceTimingRef.current.inputEndedAt
+                ? Date.now() - voiceTimingRef.current.inputEndedAt : undefined,
+              beforeTurnComplete: completedVoiceTurnIdRef.current !== segment.turnId,
+            });
+          }
+          void stopWaitingTone();
+          setIsSpeaking(true);
+          setVoiceConnectionState("speaking");
+          setVoicePlaybackStage("playing");
+        },
+        onWaiting: () => {
+          setIsSpeaking(false);
+          setVoiceConnectionState("thinking");
+          setVoicePlaybackStage("buffering");
+        },
+        onComplete: () => {
+          void stopWaitingTone();
+          setIsSpeaking(false);
+          setVoiceConnectionState("idle");
+          setVoicePlaybackStage("completed");
+        },
+        onError: (error) => {
+          void stopWaitingTone();
+          setIsSpeaking(false);
+          setVoiceConnectionState("error");
+          setVoicePlaybackStage("failed");
+          setVoiceError("Voice playback stopped. You can read the reply or try voice again.");
+          logVoiceProductionCheck("Sentence playback failed", {
+            turnId: segment.turnId, error: error instanceof Error ? error.message : String(error),
+          });
+        },
+      });
+    }
+    voiceSegmentQueueRef.current.enqueue(segment);
+  }, [stopWaitingTone]);
 
   const ensureVoicePlaybackQueue = useCallback(async () => {
     if (!voiceAudioContextRef.current || !voiceAudioQueueRef.current) {
@@ -966,10 +1022,7 @@ export default function AskSaiScreen() {
 
   const enqueueVoiceAudioChunk = useCallback(
     (event: Extract<DevoteeAiVoiceServerEvent, { type: "audio_chunk" }>) => {
-      if (
-        activeVoiceTurnIdRef.current &&
-        event.turnId !== activeVoiceTurnIdRef.current
-      ) {
+      if (event.turnId !== activeVoiceTurnIdRef.current) {
         return;
       }
 
@@ -990,6 +1043,16 @@ export default function AskSaiScreen() {
 
       if (!event.data) {
         voiceLivePlaybackFailedRef.current = true;
+        return;
+      }
+
+      if (event.completeSegment && event.format.startsWith("mp3")) {
+        const segment = { turnId: event.turnId, index: event.segmentIndex ?? -1, data: event.data };
+        if (segment.index === voiceSegmentsRef.current.length && voiceSegmentsRef.current.length < 16) {
+          voiceSegmentsRef.current.push(segment);
+        }
+        voiceHadAudioChunksRef.current = true;
+        enqueueSentenceAudio(segment);
         return;
       }
 
@@ -1044,7 +1107,7 @@ export default function AskSaiScreen() {
           });
         });
     },
-    [ensureVoicePlaybackQueue, stopWaitingTone]
+    [enqueueSentenceAudio, ensureVoicePlaybackQueue, stopWaitingTone]
   );
 
   const stopSpeech = useCallback(async () => {
@@ -1056,13 +1119,7 @@ export default function AskSaiScreen() {
       });
     }
 
-    if (
-      voiceFallbackAudioPlayerRef.current ||
-      voiceAudioContextRef.current ||
-      voiceAudioQueueRef.current
-    ) {
-      await stopVoicePlayback();
-    }
+    await stopVoicePlayback();
 
     setIsSpeaking(false);
   }, [stopVoicePlayback]);
@@ -1133,6 +1190,7 @@ export default function AskSaiScreen() {
     completedVoiceAssistantMessageIdRef.current = null;
     voiceAnswerBufferRef.current = "";
     voiceAudioChunkPartsRef.current = [];
+    voiceSegmentsRef.current = [];
     voiceChunkCountRef.current = 0;
     voiceResponseChunkCountRef.current = 0;
     voiceFinalTranscriptRef.current = "";
@@ -1236,6 +1294,14 @@ export default function AskSaiScreen() {
       }
 
       if (voiceAudioChunkPartsRef.current.length === 0) {
+        if (voiceSegmentsRef.current.length) {
+          await stopVoicePlayback();
+          const replayTurnId = `replay-${Date.now()}`;
+          setVoiceError("");
+          for (const segment of voiceSegmentsRef.current) enqueueSentenceAudio({ ...segment, turnId: replayTurnId });
+          voiceSegmentQueueRef.current?.finish(voiceSegmentsRef.current.length);
+          return;
+        }
         Alert.alert(
           "Voice reply",
           "This answer was requested as text. Use Speak for a new question to receive an ElevenLabs voice reply."
@@ -1276,6 +1342,7 @@ export default function AskSaiScreen() {
     await speakText(answer);
   }, [
     answer,
+    enqueueSentenceAudio,
     isSpeaking,
     playBufferedVoiceAudio,
     speakText,
@@ -1323,6 +1390,7 @@ export default function AskSaiScreen() {
     });
 
     pendingStart.socketClient.send({
+      audioDelivery: "sentence_mp3",
       audio: {
         channels: pendingStart.audioChannels,
         chunkMs: pendingStart.audioChunkMs,
@@ -1504,8 +1572,8 @@ export default function AskSaiScreen() {
 
       if (
         eventTurnId &&
-        activeVoiceTurnIdRef.current &&
-        eventTurnId !== activeVoiceTurnIdRef.current
+        eventTurnId !== activeVoiceTurnIdRef.current &&
+        (activeVoiceTurnIdRef.current !== null || eventTurnId !== completedVoiceTurnIdRef.current)
       ) {
         logVoiceDebug("Ignoring stale server event", {
           activeTurnId: activeVoiceTurnIdRef.current,
@@ -1533,7 +1601,7 @@ export default function AskSaiScreen() {
             setVoiceConnectionState("connected");
             void startConnectedVoiceStreaming();
           } else if (event.state === "speaking") {
-            setVoiceConnectionState("thinking");
+            setVoiceConnectionState((current) => current === "speaking" ? current : "thinking");
           } else if (
             event.state === "listening" &&
             !isMicCaptureReadyRef.current
@@ -1633,7 +1701,6 @@ export default function AskSaiScreen() {
         case "answer_delta":
           if (!voiceTimingRef.current.firstAnswerAt) {
             voiceTimingRef.current.firstAnswerAt = Date.now();
-            void stopWaitingTone();
             logVoiceDebug("First answer delta received", {
               msSinceTap:
                 voiceTimingRef.current.tapAt
@@ -1691,7 +1758,7 @@ export default function AskSaiScreen() {
               turnId: event.turnId,
             });
           } else {
-            setVoiceConnectionState("thinking");
+            setVoiceConnectionState((current) => current === "speaking" ? current : "thinking");
           }
           break;
 
@@ -1709,7 +1776,7 @@ export default function AskSaiScreen() {
             });
           }
           enqueueVoiceAudioChunk(event);
-          setVoiceConnectionState("thinking");
+          setVoiceConnectionState((current) => current === "speaking" ? current : "thinking");
           break;
 
         case "stop_playback":
@@ -1824,6 +1891,10 @@ export default function AskSaiScreen() {
           voiceFinalTranscriptRef.current = "";
 
           if (
+            voiceSegmentQueueRef.current?.turnId === event.turnId
+          ) {
+            voiceSegmentQueueRef.current.finish(event.audioSegments);
+          } else if (
             VOICE_PROVIDER === "elevenlabs" &&
             voiceAudioChunkPartsRef.current.length > 0
           ) {
@@ -1864,6 +1935,8 @@ export default function AskSaiScreen() {
         }
 
         case "error":
+          voiceSegmentQueueRef.current?.stop();
+          setIsSpeaking(false);
           logVoiceDebug("Server error event", {
             answerLength: voiceAnswerBufferRef.current.length,
             code: event.code,
@@ -1917,8 +1990,10 @@ export default function AskSaiScreen() {
       setQuestion(questionToAsk);
 
       try {
+        if (voiceSocketRef.current || activeVoiceTurnIdRef.current) closeVoiceSession();
         await stopSpeech();
         voiceAudioChunkPartsRef.current = [];
+        voiceSegmentsRef.current = [];
         voiceHadAudioChunksRef.current = false;
         setVoicePlaybackStage("idle");
         setIsSubmitting(true);
@@ -1998,6 +2073,7 @@ export default function AskSaiScreen() {
       }
     },
     [
+      closeVoiceSession,
       conversationId,
       devoteeName,
       loadConversations,
@@ -2231,6 +2307,7 @@ export default function AskSaiScreen() {
           turnId: activeTurnId,
         });
 
+        voiceTimingRef.current.inputEndedAt = Date.now();
         voiceSocketRef.current.send({
           turnId: activeTurnId,
           type: "end_input",
@@ -2287,6 +2364,7 @@ export default function AskSaiScreen() {
         voiceAnswerBufferRef.current = "";
         voiceAudioChunkPartsRef.current = [];
         voiceResponseChunkCountRef.current = 0;
+        voiceSegmentsRef.current = [];
         completedVoiceTurnIdRef.current = null;
         completedVoiceAssistantMessageIdRef.current = null;
         voiceHadAudioChunksRef.current = false;
@@ -2460,6 +2538,15 @@ export default function AskSaiScreen() {
             if (voiceSocketRef.current && voiceSocketRef.current !== socketClient) {
               return;
             }
+            if (activeVoiceTurnIdRef.current && activeVoiceTurnIdRef.current !== turnId) return;
+            const replyCompleted = completedVoiceTurnIdRef.current === turnId;
+            if (!replyCompleted && voiceSegmentQueueRef.current?.turnId === turnId) {
+              voiceSegmentQueueRef.current.stop();
+              setIsSpeaking(false);
+              setVoicePlaybackStage("failed");
+              setVoiceError("The connection ended before the reply finished. Please try again.");
+              setVoiceConnectionState("error");
+            }
 
             if (voiceConnectedTimeoutRef.current) {
               clearTimeout(voiceConnectedTimeoutRef.current);
@@ -2481,7 +2568,7 @@ export default function AskSaiScreen() {
             setActiveVoiceTurnId(null);
             setIsListening(false);
             setVoiceConnectionState((currentState) =>
-              currentState === "error" || currentState === "speaking"
+              replyCompleted || currentState === "error" || currentState === "speaking"
                 ? currentState
                 : "idle"
             );
@@ -2495,6 +2582,8 @@ export default function AskSaiScreen() {
             if (voiceSocketRef.current && voiceSocketRef.current !== socketClient) {
               return;
             }
+            voiceSegmentQueueRef.current?.stop();
+            setIsSpeaking(false);
 
             if (voiceConnectedTimeoutRef.current) {
               clearTimeout(voiceConnectedTimeoutRef.current);
@@ -2740,9 +2829,9 @@ export default function AskSaiScreen() {
  
 
   const stopAnswer = useCallback(async () => {
+    closeVoiceSession();
     await stopWaitingTone();
     await stopSpeech();
-    closeVoiceSession();
     setIsVoiceModalVisible(false);
     setVoicePlaybackStage("idle");
   }, [closeVoiceSession, stopSpeech, stopWaitingTone]);
@@ -3078,7 +3167,7 @@ export default function AskSaiScreen() {
                 }
                 accessibilityRole="button"
                 disabled={isSubmitting && !isSpeaking}
-                onPress={isSpeaking ? stopAnswer : openVoiceModal}
+                onPress={isSpeaking || isVoiceControlActive ? stopAnswer : openVoiceModal}
                 style={({ pressed }) => [
                   styles.micButton,
                   isVoiceControlActive && styles.micButtonActive,
@@ -3135,12 +3224,12 @@ export default function AskSaiScreen() {
                   VOICE_PROVIDER !== "elevenlabs" ? (
                   <Pressable
                     accessibilityLabel={
-                      isSpeaking
+                      isSpeaking || isVoiceControlActive
                         ? "Stop voice reply"
                         : "Play voice reply"
                     }
                     onPress={
-                      isSpeaking
+                      isSpeaking || isVoiceControlActive
                         ? stopAnswer
                         : speakAnswer
                     }
@@ -3149,7 +3238,7 @@ export default function AskSaiScreen() {
                       pressed && styles.pressed,
                     ]}
                   >
-                    {isSpeaking ? (
+                    {isSpeaking || isVoiceControlActive ? (
                       <>
                         <Pause color="#FFFFFF" size={18} fill="#FFFFFF" />
                         <Text style={styles.speakButtonText}>

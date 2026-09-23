@@ -154,6 +154,7 @@ export type DevoteeAiVoiceClientEvent =
       };
       turnId: string;
       type: "start";
+      audioDelivery?: "sentence_mp3";
     }
   | {
       data: string;
@@ -189,6 +190,8 @@ export type DevoteeAiVoiceServerEvent =
       format: "mp3_44100_128" | "mp3_44100" | "wav_16000" | string;
       turnId: string;
       type: "audio_chunk";
+      completeSegment?: boolean;
+      segmentIndex?: number;
     }
   | {
       reason?: string;
@@ -204,6 +207,7 @@ export type DevoteeAiVoiceServerEvent =
         totalMs?: number;
       };
       messageId?: string;
+      audioSegments?: number;
       turnId: string;
       type: "turn_complete";
     }
