@@ -3425,7 +3425,7 @@ export default function AskSaiScreen() {
               *  {" "}
             </Text>
             <Text style={styles.heroText}>
-              By using Ask Sai, you agree to the App Terms & Conditions and
+              By using Sai Assistant, you agree to the App Terms & Conditions and
               Disclaimer.
             </Text>
           </View>

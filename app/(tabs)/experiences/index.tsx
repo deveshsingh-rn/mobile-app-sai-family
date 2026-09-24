@@ -548,11 +548,18 @@ export default function HomeScreen() {
 
                 <View style={styles.askSaiBottomRow}>
                   <View style={styles.askSaiCopy}>
-                    <Text style={styles.askSaiPrompt}>
-                    {'\u2022'} Speak or Write  {"\n"} 
-                    {'\u2022'} Seek Guidance from Shri Sai Satcharitra
-                    </Text>
-                   
+                    <View style={styles.askSaiPromptList}>
+                      <View style={styles.askSaiPromptRow}>
+                        <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
+                        <Text style={styles.askSaiPrompt}>Speak or Write</Text>
+                      </View>
+                      <View style={styles.askSaiPromptRow}>
+                        <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
+                        <Text style={styles.askSaiPrompt}>
+                          Seek Guidance from Shri Sai Satcharitra
+                        </Text>
+                      </View>
+                    </View>
                   </View>
                   <View style={styles.askSaiMicButton}>
                     <Mic2
@@ -753,11 +760,30 @@ const styles = StyleSheet.create({
 
   askSaiPrompt: {
     color: "#FFF7E1",
+    flexShrink: 1,
     fontSize: 17,
     fontWeight: "700",
     lineHeight: 19,
-    maxHeight: 240,
-    width: "100%",
+    textShadowColor: "rgba(0, 0, 0, 0.32)",
+    textShadowOffset: { height: 1, width: 0 },
+    textShadowRadius: 5,
+  },
+
+  askSaiPromptList: {
+    gap: 2,
+  },
+
+  askSaiPromptRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 6,
+  },
+
+  askSaiPromptBullet: {
+    color: "#FFE2A0",
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 19,
     textShadowColor: "rgba(0, 0, 0, 0.32)",
     textShadowOffset: { height: 1, width: 0 },
     textShadowRadius: 5,
