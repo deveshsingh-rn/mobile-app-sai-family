@@ -555,15 +555,16 @@ export default function HomeScreen() {
                    
                   </View>
                   <View style={styles.askSaiMicButton}>
-                    <Type
+                    <Mic2
                       color="#3A2108"
                       size={26}
                       strokeWidth={2.4}
                     />
+                    
                   </View>
 
                   <View style={styles.askSaiMicButton}>
-                    <Mic2
+                    <Type
                       color="#3A2108"
                       size={26}
                       strokeWidth={2.4}
