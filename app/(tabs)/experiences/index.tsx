@@ -20,7 +20,7 @@ import {
 
 import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -104,6 +104,23 @@ export default function HomeScreen() {
   ).current;
   const isHeaderIntroVisibleRef = useRef(true);
   const lastScrollYRef = useRef(0);
+  const scrollDirectionRef = useRef<-1 | 0 | 1>(0);
+  const scrollDirectionStartYRef = useRef(0);
+  const hasReceivedInitialScrollRef = useRef(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      headerIntroProgress.stopAnimation();
+      headerIntroProgress.setValue(1);
+      isHeaderIntroVisibleRef.current = true;
+      setIsHeaderIntroMounted(true);
+      setIsHeaderIntroVisible(true);
+      lastScrollYRef.current = 0;
+      scrollDirectionRef.current = 0;
+      scrollDirectionStartYRef.current = 0;
+      hasReceivedInitialScrollRef.current = false;
+    }, [headerIntroProgress])
+  );
 
   useEffect(() => {
     if (!isHeaderIntroMounted) {
@@ -208,6 +225,7 @@ export default function HomeScreen() {
       isHeaderIntroVisibleRef.current =
         visible;
       setIsHeaderIntroVisible(visible);
+      headerIntroProgress.stopAnimation();
 
       if (visible) {
         setIsHeaderIntroMounted(true);
@@ -226,7 +244,10 @@ export default function HomeScreen() {
         toValue: 0,
         useNativeDriver: true,
       }).start(({ finished }) => {
-        if (finished) {
+        if (
+          finished &&
+          !isHeaderIntroVisibleRef.current
+        ) {
           setIsHeaderIntroMounted(false);
         }
       });
@@ -241,22 +262,45 @@ export default function HomeScreen() {
           event.nativeEvent.contentOffset.y,
           0
         );
+
+        if (!hasReceivedInitialScrollRef.current) {
+          hasReceivedInitialScrollRef.current = true;
+          lastScrollYRef.current = currentY;
+          scrollDirectionStartYRef.current = currentY;
+          animateHeaderIntro(true);
+          return;
+        }
+
         const diff =
           currentY -
           lastScrollYRef.current;
 
         if (currentY < 20) {
           animateHeaderIntro(true);
-        } else if (
-          diff >
-          HEADER_SCROLL_THRESHOLD
-        ) {
-          animateHeaderIntro(false);
-        } else if (
-          diff <
-          -HEADER_SCROLL_THRESHOLD
-        ) {
-          animateHeaderIntro(true);
+          scrollDirectionRef.current = 0;
+          scrollDirectionStartYRef.current = currentY;
+        } else if (Math.abs(diff) > 0.5) {
+          const direction: -1 | 1 = diff > 0 ? 1 : -1;
+
+          if (scrollDirectionRef.current !== direction) {
+            scrollDirectionRef.current = direction;
+            scrollDirectionStartYRef.current = currentY;
+          }
+
+          const directionalDistance =
+            currentY - scrollDirectionStartYRef.current;
+
+          if (
+            direction === 1 &&
+            directionalDistance >= HEADER_SCROLL_THRESHOLD
+          ) {
+            animateHeaderIntro(false);
+          } else if (
+            direction === -1 &&
+            directionalDistance <= -HEADER_SCROLL_THRESHOLD
+          ) {
+            animateHeaderIntro(true);
+          }
         }
 
         lastScrollYRef.current =
