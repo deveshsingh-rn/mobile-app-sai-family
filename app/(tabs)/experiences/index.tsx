@@ -543,18 +543,7 @@ export default function HomeScreen() {
                 />
 
                 <View style={styles.askSaiTopRow}>
-                  {/* <View>
-                    <Text style={styles.askSaiEyebrow}>
-                      OM SAI RAM
-                    </Text>
-                    <Text style={styles.askSaiTitle}>
-                      Ask Sai
-                    </Text>
-                  </View>
-
-                  <View style={styles.headerActions}>
-                   
-                  </View> */}
+                 
                 </View>
 
                 <View style={styles.askSaiBottomRow}>

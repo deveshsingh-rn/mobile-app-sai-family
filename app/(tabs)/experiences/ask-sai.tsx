@@ -3043,11 +3043,23 @@ export default function AskSaiScreen() {
               </Pressable>
 
               <View style={styles.heroImageCopy}>
-                <Text style={styles.heroEyebrow}>OM SAI RAM</Text>
-                <Text style={styles.heroImageTitle}>Ask Sai</Text>
-                <Text style={styles.heroImageSubtitle}>
-                  Share what is in your heart. Receive peaceful guidance.
-                </Text>
+                {/* <Text style={styles.heroEyebrow}>OM SAI RAM</Text>
+                <Text style={styles.heroImageTitle}>Ask Sai</Text> */}
+                <View
+                  accessibilityLabel="Speak or write. Seek guidance from Shri Sai Satcharitra."
+                  style={styles.heroPromptList}
+                >
+                  <View style={styles.heroPromptRow}>
+                    <Text aria-hidden style={styles.heroPromptBullet}>•</Text>
+                    <Text style={styles.heroImageSubtitle}>Speak or Write</Text>
+                  </View>
+                  <View style={styles.heroPromptRow}>
+                    <Text aria-hidden style={styles.heroPromptBullet}>•</Text>
+                    <Text style={styles.heroImageSubtitle}>
+                      Seek Guidance from Shri Sai Satcharitra
+                    </Text>
+                  </View>
+                </View>
               </View>
             </ImageBackground>
           </LinearGradient>
@@ -3483,7 +3495,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.96 }],
   },
   heroImageCopy: {
-    maxWidth: "62%",
+    maxWidth: "66%",
     position: "relative",
     zIndex: 1,
   },
@@ -3509,10 +3521,28 @@ const styles = StyleSheet.create({
   },
   heroImageSubtitle: {
     color: "#FFF7E1",
-    fontSize: 12,
+    fontSize: 17,
     fontWeight: "700",
-    lineHeight: 17,
+    lineHeight: 19,
+    flexShrink: 1,
+    textShadowColor: "rgba(0,0,0,0.34)",
+    textShadowOffset: { height: 1, width: 0 },
+    textShadowRadius: 5,
+  },
+  heroPromptList: {
+    gap: 2,
     marginTop: 4,
+  },
+  heroPromptRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 6,
+  },
+  heroPromptBullet: {
+    color: "#FFE2A0",
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 19,
     textShadowColor: "rgba(0,0,0,0.34)",
     textShadowOffset: { height: 1, width: 0 },
     textShadowRadius: 5,
