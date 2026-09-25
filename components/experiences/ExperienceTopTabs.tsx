@@ -49,6 +49,13 @@ const CREATE_POST_ACTION: ExperienceNavigationAction = {
   label: "Create a post",
 };
 
+const PROFILE_ACTION: ExperienceNavigationAction = {
+  href: "/(tabs)/profile",
+  Icon: UserCircle2,
+  key: "profile",
+  label: "Open devotee profile",
+};
+
 const EXPERIENCE_ACTIONS: ExperienceNavigationAction[] = [
   {
     href: "/(tabs)/experiences/search",
@@ -61,12 +68,6 @@ const EXPERIENCE_ACTIONS: ExperienceNavigationAction[] = [
     Icon: Bookmark,
     key: "bookmarks",
     label: "Saved experiences",
-  },
-  {
-    href: "/(tabs)/profile",
-    Icon: UserCircle2,
-    key: "profile",
-    label: "Open devotee profile",
   },
 ];
 
@@ -252,7 +253,12 @@ export function ExperienceTopTabs({
               strokeWidth={2.2}
             />
           </Pressable>
-        ) : null}
+        ) : (
+          <ProfileToolbarAction
+            onPress={() => handleActionPress(PROFILE_ACTION)}
+            profileImageUrl={profileImageUrl}
+          />
+        )}
 
         {showCreateAction ? (
           <ExperienceCreatePostButton
@@ -266,23 +272,15 @@ export function ExperienceTopTabs({
       </View>
 
       <View style={styles.actions}>
-        {EXPERIENCE_ACTIONS.map((action) =>
-          action.key === "profile" ? (
-            <ProfileToolbarAction
-              key={action.key}
-              onPress={() => handleActionPress(action)}
-              profileImageUrl={profileImageUrl}
-            />
-          ) : (
-            <ToolbarAction
-              active={activeTab === action.key}
-              Icon={action.Icon}
-              key={action.key}
-              label={action.label}
-              onPress={() => handleActionPress(action)}
-            />
-          )
-        )}
+        {EXPERIENCE_ACTIONS.map((action) => (
+          <ToolbarAction
+            active={activeTab === action.key}
+            Icon={action.Icon}
+            key={action.key}
+            label={action.label}
+            onPress={() => handleActionPress(action)}
+          />
+        ))}
       </View>
     </View>
   );
@@ -327,10 +325,10 @@ const styles = StyleSheet.create({
   profileToolbarImage: {
     backgroundColor: EXPERIENCE_THEME.border,
     borderColor: EXPERIENCE_THEME.heading,
-    borderRadius: 18,
+    borderRadius: 25,
     borderWidth: 1.5,
-    height: 36,
-    width: 36,
+    height: 50,
+    width: 50,
   },
   createButton: {
     alignItems: "center",
