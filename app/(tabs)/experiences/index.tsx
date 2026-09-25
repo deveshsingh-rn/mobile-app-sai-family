@@ -646,7 +646,7 @@ export default function HomeScreen() {
               <View style={styles.experienceIntroTitleRow}>
                 <ExperienceCreatePostButton
                   active={false}
-                  imageSource={require("@/assets/images/babasai.png")}
+                  imageSource={require("@/assets/images/saibaba1.png")}
                   name={account?.name}
                   onPress={openCreatePost}
                 />

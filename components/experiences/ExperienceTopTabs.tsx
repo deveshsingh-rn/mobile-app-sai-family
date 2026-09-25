@@ -179,7 +179,7 @@ export function ExperienceCreatePostButton({
           {imageSource || profileImageUrl ? (
             <Image
               accessibilityIgnoresInvertColors
-              resizeMode="cover"
+              resizeMode="contain"
               source={imageSource ?? { uri: profileImageUrl! }}
               style={styles.createAvatar}
             />
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     width: 52,
   },
   createAvatar: {
-    backgroundColor: EXPERIENCE_THEME.border,
+    backgroundColor: "#1e1d1c",
     borderRadius: 24,
     height: 48,
     width: 48,
