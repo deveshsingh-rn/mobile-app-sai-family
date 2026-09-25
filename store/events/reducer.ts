@@ -27,6 +27,8 @@ export const initialEventsState: EventsState = {
   currentDraftId: null,
   detail: null,
   draftSaving: false,
+  draftsLoading: false,
+  draftsPagination: null,
   draftsById: {},
   error: null,
   eventBookmarks: [],
@@ -247,6 +249,13 @@ export function eventsReducer(
       return {
         ...state,
         draftSaving: true,
+        error: null,
+      };
+
+    case EVENTS_ACTIONS.FETCH_DRAFTS_REQUEST:
+      return {
+        ...state,
+        draftsLoading: true,
         error: null,
       };
 
@@ -515,6 +524,22 @@ export function eventsReducer(
         myEventsPagination:
           action.payload?.pagination || null,
       };
+
+    case EVENTS_ACTIONS.FETCH_DRAFTS_SUCCESS: {
+      const drafts = action.payload?.drafts || [];
+      const nextDrafts = Object.fromEntries(
+        drafts.map((draft: { id: string }) => [draft.id, draft])
+      );
+
+      return {
+        ...state,
+        draftsById: shouldAppend(action.payload)
+          ? {...state.draftsById, ...nextDrafts}
+          : nextDrafts,
+        draftsLoading: false,
+        draftsPagination: action.payload?.pagination || null,
+      };
+    }
 
     case EVENTS_ACTIONS.FETCH_CALENDAR_SUCCESS:
       return {
@@ -1134,18 +1159,17 @@ export function eventsReducer(
       const publishedEvents = event
         ? [event, ...events]
         : events;
+      const draftsById = {...state.draftsById};
+
+      if (draft?.id) {
+        delete draftsById[draft.id];
+      }
 
       return {
         ...state,
-        currentDraftId:
-          draft?.id || state.currentDraftId,
+        currentDraftId: null,
         draftSaving: false,
-        draftsById: draft?.id
-          ? {
-              ...state.draftsById,
-              [draft.id]: draft,
-          }
-          : state.draftsById,
+        draftsById,
         feed: publishedEvents.length
           ? mergeById(publishedEvents, state.feed)
           : state.feed,
@@ -1235,6 +1259,13 @@ export function eventsReducer(
       return {
         ...state,
         draftSaving: false,
+        error: action.payload,
+      };
+
+    case EVENTS_ACTIONS.FETCH_DRAFTS_FAILURE:
+      return {
+        ...state,
+        draftsLoading: false,
         error: action.payload,
       };
 

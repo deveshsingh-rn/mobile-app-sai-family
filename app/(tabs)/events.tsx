@@ -25,6 +25,7 @@ import {
   Bookmark,
   Calendar,
   CalendarCheck,
+  CalendarDays,
   ChevronDown,
   Clock3,
   HandHeart,
@@ -489,6 +490,23 @@ function EventsScreen() {
         </Pressable>
 
         <View style={styles.eventToolbarActions}>
+          <Pressable
+            accessibilityLabel="My events"
+            accessibilityRole="button"
+            hitSlop={6}
+            onPress={() => router.push("/events/my-events")}
+            style={({ pressed }) => [
+              styles.eventToolbarIconButton,
+              pressed && styles.toolbarButtonPressed,
+            ]}
+          >
+            <CalendarDays
+              color={EXPERIENCE_THEME.paragraph}
+              size={30}
+              strokeWidth={2.15}
+            />
+          </Pressable>
+
           <Pressable
             accessibilityLabel="Saved events"
             accessibilityRole="button"

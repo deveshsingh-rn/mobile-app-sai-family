@@ -24,6 +24,7 @@ import {
   CalendarPlus,
   Clock3,
   Edit3,
+  FilePenLine,
   Filter,
   History,
   Image,
@@ -38,11 +39,15 @@ import {
 
 import {
   fetchEventAnalyticsRequest,
+  fetchEventDraftsRequest,
   fetchMyEventsRequest,
   fetchMyRsvpsRequest,
 } from "@/store/events/actions";
 import {
   selectEventAnalyticsMap,
+  selectEventDraftsById,
+  selectEventDraftsLoading,
+  selectEventDraftsPagination,
   selectEventsError,
   selectEventsLoading,
   selectMyEventRsvps,
@@ -52,6 +57,7 @@ import {
 } from "@/store/events/selectors";
 import {
   EventAnalytics,
+  EventDraft,
   EventPagination,
   SaiEvent,
 } from "@/store/events/types";
@@ -62,7 +68,7 @@ import {
 import { EventScreenHeader } from "@/components/events/EventScreenHeader";
 import { EventListSkeleton } from "@/components/events/EventSkeletons";
 
-type MyEventsTab = "attending" | "posted";
+type MyEventsTab = "attending" | "drafts" | "posted";
 type EventFilter = "all" | "upcoming" | "past" | "nearby";
 
 type DisplayEvent = {
@@ -215,16 +221,20 @@ export default function MyEventsRoute() {
   const error = useAppSelector(selectEventsError);
   const myEvents = useAppSelector(selectMyEvents);
   const myEventsPagination = useAppSelector(selectMyEventsPagination);
+  const draftsById = useAppSelector(selectEventDraftsById);
+  const draftsLoading = useAppSelector(selectEventDraftsLoading);
+  const draftsPagination = useAppSelector(selectEventDraftsPagination);
   const analyticsByEventId = useAppSelector(selectEventAnalyticsMap);
   const rsvps = useAppSelector(selectMyEventRsvps);
   const rsvpPagination = useAppSelector(selectMyEventRsvpsPagination);
-  const [activeTab, setActiveTab] = useState<MyEventsTab>("attending");
+  const [activeTab, setActiveTab] = useState<MyEventsTab>("posted");
   const [activeFilter, setActiveFilter] = useState<EventFilter>("all");
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(() => {
     dispatch(fetchMyRsvpsRequest({limit: 20, offset: 0}));
     dispatch(fetchMyEventsRequest({limit: 20, offset: 0}));
+    dispatch(fetchEventDraftsRequest({limit: 20, offset: 0, status: "active"}));
   }, [dispatch]);
 
   useEffect(() => {
@@ -257,6 +267,17 @@ export default function MyEventsRoute() {
         )
       ),
     [activeFilter, analyticsByEventId, myEvents]
+  );
+
+  const activeDrafts = useMemo(
+    () => Object.values(draftsById)
+      .filter((draft) => !draft.publishedAt)
+      .sort(
+        (first, second) =>
+          new Date(second.updatedAt || second.createdAt || 0).getTime() -
+          new Date(first.updatedAt || first.createdAt || 0).getTime()
+      ),
+    [draftsById]
   );
 
   const visibleEvents = activeTab === "attending" ? attendingEvents : postedEvents;
@@ -301,11 +322,16 @@ export default function MyEventsRoute() {
     [analyticsByEventId, myEvents]
   );
   const activePagination: EventPagination | null | undefined =
-    activeTab === "posted" ? myEventsPagination : rsvpPagination;
+    activeTab === "drafts"
+      ? draftsPagination
+      : activeTab === "posted"
+        ? myEventsPagination
+        : rsvpPagination;
+  const activeLoading = activeTab === "drafts" ? draftsLoading : loading;
   const canLoadMore = Boolean(
     activePagination?.hasMore &&
       activePagination.nextOffset != null &&
-      !loading
+      !activeLoading
   );
 
   const handleRefresh = useCallback(() => {
@@ -330,11 +356,14 @@ export default function MyEventsRoute() {
       offset: activePagination?.nextOffset || 0,
     };
 
-    dispatch(
-      activeTab === "posted"
-        ? fetchMyEventsRequest(params)
-        : fetchMyRsvpsRequest(params)
-    );
+    if (activeTab === "drafts") {
+      dispatch(fetchEventDraftsRequest({...params, status: "active"}));
+      return;
+    }
+
+    dispatch(activeTab === "posted"
+      ? fetchMyEventsRequest(params)
+      : fetchMyRsvpsRequest(params));
   }, [
     activePagination?.limit,
     activePagination?.nextOffset,
@@ -367,14 +396,19 @@ export default function MyEventsRoute() {
         <View style={styles.tabPanel}>
           <View style={styles.segmented}>
             <TabButton
+              active={activeTab === "posted"}
+              label="Published"
+              onPress={() => setActiveTab("posted")}
+            />
+            <TabButton
+              active={activeTab === "drafts"}
+              label="Drafts"
+              onPress={() => setActiveTab("drafts")}
+            />
+            <TabButton
               active={activeTab === "attending"}
               label="I'm Attending"
               onPress={() => setActiveTab("attending")}
-            />
-            <TabButton
-              active={activeTab === "posted"}
-              label="My Posted Events"
-              onPress={() => setActiveTab("posted")}
             />
           </View>
 
@@ -385,7 +419,9 @@ export default function MyEventsRoute() {
               value={
                 activeTab === "attending"
                   ? `${rsvps.length} Events`
-                  : `${myEvents.length} Events`
+                  : activeTab === "drafts"
+                    ? `${activeDrafts.length} Drafts`
+                    : `${myEvents.length} Events`
               }
             />
             <StatMini
@@ -394,45 +430,56 @@ export default function MyEventsRoute() {
               value={
                 activeTab === "attending"
                   ? `${rsvpUpcomingCount} Soon`
-                  : `${postedAnalytics.rsvps} RSVPs`
+                  : activeTab === "drafts"
+                    ? "Continue anytime"
+                    : `${postedAnalytics.rsvps} RSVPs`
               }
             />
           </View>
         </View>
 
-        <FilterBar
-          activeFilter={activeFilter}
-          onChange={setActiveFilter}
-        />
+        {activeTab !== "drafts" ? (
+          <FilterBar
+            activeFilter={activeFilter}
+            onChange={setActiveFilter}
+          />
+        ) : null}
 
         {!!error && <Text style={styles.errorText}>{error}</Text>}
 
         {activeTab === "attending" ? (
           nextRsvpEvent ? <UrgentAlert event={nextRsvpEvent} /> : null
-        ) : (
+        ) : activeTab === "posted" ? (
           <PostedStats
             analytics={postedAnalytics}
             events={myEvents.length}
             upcoming={postedUpcomingCount}
           />
-        )}
+        ) : null}
 
-        {loading && !refreshing ? (
+        {activeLoading && !refreshing ? (
           <EventListSkeleton count={2} />
         ) : null}
 
         <View style={styles.cardsSection}>
-          {visibleEvents.map((event, index) => (
-            <MyEventCard
-              key={`${event.title}-${index}`}
-              event={event}
-              mode={activeTab}
-            />
-          ))}
-          {!loading && !visibleEvents.length && (
+          {activeTab === "drafts"
+            ? activeDrafts.map((draft) => (
+                <EventDraftCard draft={draft} key={draft.id} />
+              ))
+            : visibleEvents.map((event, index) => (
+                <MyEventCard
+                  key={`${event.id || event.title}-${index}`}
+                  event={event}
+                  mode={activeTab}
+                />
+              ))}
+          {!activeLoading &&
+            (activeTab === "drafts" ? !activeDrafts.length : !visibleEvents.length) && (
             <EmptyState
               text={
-                activeTab === "attending"
+                activeTab === "drafts"
+                  ? "Saved drafts will appear here. Start an event and save it when you are ready."
+                  : activeTab === "attending"
                   ? "Your RSVP events from backend will appear here."
                   : "Events created by you will appear here."
               }
@@ -744,6 +791,61 @@ function MyEventCard({
   );
 }
 
+function EventDraftCard({draft}: {draft: EventDraft}) {
+  const updatedAt = draft.updatedAt || draft.createdAt;
+  const location = draft.venueName || draft.city || draft.address || "Location not added";
+
+  return (
+    <Pressable
+      accessibilityLabel={`Continue draft ${draft.title || "Untitled event"}`}
+      accessibilityRole="button"
+      onPress={() =>
+        router.push({
+          pathname: "/events/create",
+          params: {draft: draft.id},
+        } as any)
+      }
+      style={({pressed}) => [
+        styles.draftCard,
+        pressed && styles.draftCardPressed,
+      ]}
+    >
+      <View style={styles.draftCardHeader}>
+        <View style={styles.draftIconWrap}>
+          <FilePenLine color="#9A3412" size={22} strokeWidth={2.2} />
+        </View>
+        <View style={styles.draftHeadingCopy}>
+          <Text style={styles.draftStatus}>DRAFT</Text>
+          <Text numberOfLines={2} style={styles.draftTitle}>
+            {draft.title || "Untitled event"}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.draftMetaRow}>
+        <CalendarClock color="#78716C" size={15} />
+        <Text numberOfLines={1} style={styles.draftMetaText}>
+          {draft.startAt ? formatDate(draft.startAt) : "Date not selected"}
+        </Text>
+      </View>
+      <View style={styles.draftMetaRow}>
+        <MapPin color="#78716C" size={15} />
+        <Text numberOfLines={1} style={styles.draftMetaText}>{location}</Text>
+      </View>
+
+      <View style={styles.draftFooter}>
+        <Text style={styles.draftUpdatedText}>
+          {updatedAt ? `Updated ${formatDate(updatedAt)}` : "Saved draft"}
+        </Text>
+        <View style={styles.continueDraftButton}>
+          <Edit3 color="#FFFFFF" size={14} />
+          <Text style={styles.continueDraftText}>Continue</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
 function AttendeeRow({
   muted,
   text,
@@ -1010,6 +1112,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#FAFAF9",
     flex: 1,
   },
+  continueDraftButton: {
+    alignItems: "center",
+    backgroundColor: "#9A3412",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 7,
+    minHeight: 40,
+    paddingHorizontal: 15,
+  },
+  continueDraftText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
+  },
   dateOverlay: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.92)",
@@ -1050,6 +1166,76 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     textAlign: "center",
+  },
+  draftCard: {
+    backgroundColor: "#FFF8EC",
+    borderColor: "#F1D9B5",
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 16,
+  },
+  draftCardPressed: {
+    opacity: 0.82,
+    transform: [{scale: 0.99}],
+  },
+  draftCardHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 14,
+  },
+  draftFooter: {
+    alignItems: "center",
+    borderTopColor: "#F1D9B5",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 14,
+    paddingTop: 13,
+  },
+  draftHeadingCopy: {
+    flex: 1,
+  },
+  draftIconWrap: {
+    alignItems: "center",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 48,
+    justifyContent: "center",
+    width: 48,
+  },
+  draftMetaRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+  },
+  draftMetaText: {
+    color: "#4B4037",
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  draftStatus: {
+    color: "#C2410C",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  draftTitle: {
+    color: "#7C2D12",
+    fontSize: 17,
+    fontWeight: "900",
+    lineHeight: 22,
+    marginTop: 3,
+  },
+  draftUpdatedText: {
+    color: "#78716C",
+    flex: 1,
+    fontSize: 11,
+    fontWeight: "700",
+    marginRight: 10,
   },
   eventCard: {
     backgroundColor: "#FFFFFF",

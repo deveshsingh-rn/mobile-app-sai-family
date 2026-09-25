@@ -10,6 +10,7 @@ import {
   EventCommentsResult,
   EventBookmarksResult,
   EventDraft,
+  EventDraftListResult,
   EventDraftPayload,
   EventDraftPublishResult,
   EventListParams,
@@ -238,6 +239,34 @@ export const createEventDraftRequest = (
   ({
     payload,
     type: EVENTS_ACTIONS.CREATE_DRAFT_REQUEST,
+  } as const);
+
+export const fetchEventDraftsRequest = (
+  payload: {
+    limit?: number;
+    offset?: number;
+    status?: "active" | "all" | "published";
+  } = {}
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_DRAFTS_REQUEST,
+  } as const);
+
+export const fetchEventDraftsSuccess = (
+  payload: EventDraftListResult
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_DRAFTS_SUCCESS,
+  } as const);
+
+export const fetchEventDraftsFailure = (
+  payload: string
+) =>
+  ({
+    payload,
+    type: EVENTS_ACTIONS.FETCH_DRAFTS_FAILURE,
   } as const);
 
 export const createEventDraftSuccess = (

@@ -68,6 +68,23 @@ export const selectIsSavingEventDraft = (
   state: RootState
 ) => selectEventsState(state).draftSaving;
 
+export const selectEventDraftsById = (
+  state: RootState
+) => selectEventsState(state).draftsById;
+
+export const selectEventDraftsLoading = (
+  state: RootState
+) => selectEventsState(state).draftsLoading;
+
+export const selectEventDraftsPagination = (
+  state: RootState
+) => selectEventsState(state).draftsPagination;
+
+export const selectEventDraftById = (
+  state: RootState,
+  id?: string
+) => id ? selectEventsState(state).draftsById[id] || null : null;
+
 export const selectIsPublishingEventDraft = (
   state: RootState
 ) => selectEventsState(state).publishingDraft;

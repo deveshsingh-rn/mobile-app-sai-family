@@ -68,6 +68,7 @@ import {
 } from "@/store/events/actions";
 import {
   selectCurrentEventDraft,
+  selectEventDraftById,
   selectEventDetail,
   selectEventPlaces,
   selectEventPlacesLoading,
@@ -342,7 +343,8 @@ export default function EventFormScreen({
 }: {
   mode: EventFormMode;
 }) {
-  const {groupId, id} = useLocalSearchParams<{
+  const {draft, groupId, id} = useLocalSearchParams<{
+    draft?: string;
     groupId?: string;
     id?: string;
   }>();
@@ -353,6 +355,10 @@ export default function EventFormScreen({
   const uploadingMedia = useAppSelector(selectIsUploadingEventMedia);
   const uploadedMedia = useAppSelector(selectUploadedEventMedia);
   const currentDraft = useAppSelector(selectCurrentEventDraft);
+  const requestedDraftId = Array.isArray(draft) ? draft[0] : draft;
+  const requestedDraft = useAppSelector((state) =>
+    selectEventDraftById(state, requestedDraftId)
+  );
   const draftSaving = useAppSelector(selectIsSavingEventDraft);
   const publishingDraft = useAppSelector(selectIsPublishingEventDraft);
   const publishedDraftEvent = useAppSelector(selectPublishedDraftEvent);
@@ -373,13 +379,14 @@ export default function EventFormScreen({
   const [publishDraftRequested, setPublishDraftRequested] = useState(false);
   const wasSaving = useRef(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hydratedDraftId = useRef<string | null>(null);
 
   const eventId = Array.isArray(id) ? id[0] : id;
   const sanghaGroupId = Array.isArray(groupId) ? groupId[0] : groupId;
   const isGroupEvent = mode === "create" && Boolean(sanghaGroupId);
   const submitError = error;
   const submitSaving = saving;
-  const draftId = currentDraft?.id || null;
+  const draftId = requestedDraftId || currentDraft?.id || null;
 
   const formProgress = useMemo(() => {
     const startAt = new Date(form.startAt).getTime();
@@ -484,6 +491,47 @@ export default function EventFormScreen({
       });
     }
   }, [detail, eventId, mode]);
+
+  useEffect(() => {
+    if (
+      mode !== "create" ||
+      !requestedDraft ||
+      hydratedDraftId.current === requestedDraft.id
+    ) {
+      return;
+    }
+
+    const recurrence = requestedDraft.recurrence;
+
+    setForm({
+      address: requestedDraft.address || "",
+      bannerUrl: requestedDraft.bannerUrl || "",
+      city: requestedDraft.city || "",
+      country: requestedDraft.country || "India",
+      description: requestedDraft.description || "",
+      endAt: requestedDraft.endAt || "",
+      faq: requestedDraft.faq || [],
+      guidelines: requestedDraft.guidelines || [],
+      latitude: String(requestedDraft.latitude ?? ""),
+      longitude: String(requestedDraft.longitude ?? ""),
+      recurrenceCount: String(recurrence?.count || 3),
+      recurrenceEnabled: Boolean(recurrence),
+      recurrenceFrequency:
+        recurrence?.frequency === "daily" ||
+        recurrence?.frequency === "monthly" ||
+        recurrence?.frequency === "weekly"
+          ? recurrence.frequency
+          : "weekly",
+      startAt: requestedDraft.startAt || "",
+      state: requestedDraft.state || "",
+      tags: requestedDraft.tags || [],
+      timezone: requestedDraft.timezone || "Asia/Kolkata",
+      title: requestedDraft.title || "",
+      type: requestedDraft.type || "bhajan",
+      venueName: requestedDraft.venueName || "",
+    });
+    hydratedDraftId.current = requestedDraft.id;
+  }, [mode, requestedDraft]);
 
   const addGuideline = useCallback(() => {
     const nextGuideline = guidelineDraft.trim();

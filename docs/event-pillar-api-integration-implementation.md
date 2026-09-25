@@ -423,6 +423,12 @@ API plan:
 - `POST /api/events/suggestions/title` for suggestions.
 - `GET /api/places/search` for venue search.
 - `POST /api/events/drafts`, `PATCH /api/events/drafts/:id`, `POST /api/events/drafts/:id/publish`.
+- `GET /api/events/drafts?status=active&limit=20&offset=0` returns
+  `{ drafts, pagination }`, so My Events restores a user's drafts after an
+  app restart or login on another device.
+- `GET /api/events/drafts/:id` returns `{ draft }` and is scoped to the
+  authenticated owner, so a selected draft can reopen safely before `PATCH`
+  or publish.
 - Keep current `POST /api/media/upload` + `bannerUrl` JSON create/update.
 - Add direct multipart create/update later only if product chooses a one-request upload flow.
 

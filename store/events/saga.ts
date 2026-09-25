@@ -19,6 +19,7 @@ import {
   apiFetchEventCalendar,
   apiFetchEventComments,
   apiFetchEventDetail,
+  apiFetchEventDrafts,
   apiFetchEventPhotos,
   apiFetchEventRecommendations,
   apiFetchEventReviews,
@@ -79,6 +80,8 @@ import {
   fetchEventCommentsSuccess,
   fetchEventDetailFailure,
   fetchEventDetailSuccess,
+  fetchEventDraftsFailure,
+  fetchEventDraftsSuccess,
   fetchEventPhotosFailure,
   fetchEventPhotosSuccess,
   fetchEventRecommendationsFailure,
@@ -986,6 +989,32 @@ function* createEventDraftWorker(
   }
 }
 
+function* fetchEventDraftsWorker(
+  action: EventsAction
+): Generator<any, void, any> {
+  try {
+    const response = yield call(
+      apiFetchEventDrafts,
+      action.payload || {}
+    );
+
+    yield put(
+      fetchEventDraftsSuccess({
+        drafts: Array.isArray(response?.drafts)
+          ? response.drafts
+          : [],
+        pagination: response?.pagination || null,
+      })
+    );
+  } catch (error) {
+    yield put(
+      fetchEventDraftsFailure(
+        getErrorMessage(error)
+      )
+    );
+  }
+}
+
 function* updateEventDraftWorker(
   action: EventsAction
 ): Generator<any, void, any> {
@@ -1838,6 +1867,10 @@ export function* eventsSaga() {
   yield takeLatest(
     EVENTS_ACTIONS.CREATE_DRAFT_REQUEST,
     createEventDraftWorker
+  );
+  yield takeLatest(
+    EVENTS_ACTIONS.FETCH_DRAFTS_REQUEST,
+    fetchEventDraftsWorker
   );
   yield takeLatest(
     EVENTS_ACTIONS.UPDATE_DRAFT_REQUEST,

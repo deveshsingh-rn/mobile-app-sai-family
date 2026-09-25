@@ -14,6 +14,7 @@ import type {
   EventReviewsResult,
   EventCheckInResult,
   EventDraft,
+  EventDraftListResult,
   EventDraftPayload,
   EventDraftPublishResult,
   EventHomeResult,
@@ -135,6 +136,29 @@ export async function apiCreateEventDraft(
   const { data } = await apiClient.post(
     "/api/events/drafts",
     payload
+  );
+
+  return data;
+}
+
+export async function apiFetchEventDrafts(params: {
+  limit?: number;
+  offset?: number;
+  status?: "active" | "all" | "published";
+} = {}): Promise<EventDraftListResult> {
+  const { data } = await apiClient.get(
+    "/api/events/drafts",
+    { params }
+  );
+
+  return data;
+}
+
+export async function apiFetchEventDraft(
+  id: string
+): Promise<{ draft: EventDraft }> {
+  const { data } = await apiClient.get(
+    `/api/events/drafts/${id}`
   );
 
   return data;

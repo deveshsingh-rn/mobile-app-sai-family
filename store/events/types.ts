@@ -492,6 +492,11 @@ export type EventDraftPublishResult = {
   series?: unknown;
 };
 
+export type EventDraftListResult = {
+  drafts: EventDraft[];
+  pagination?: EventPagination | null;
+};
+
 export type EventPlace = {
   address?: string;
   city?: string;
@@ -545,6 +550,8 @@ export type EventsState = {
   currentDraftId: string | null;
   detail: SaiEvent | null;
   draftSaving: boolean;
+  draftsLoading: boolean;
+  draftsPagination: EventPagination | null;
   draftsById: Record<string, EventDraft>;
   error: string | null;
   eventBookmarks: SaiEvent[];
@@ -655,6 +662,12 @@ export const EVENTS_ACTIONS = {
     "events/fetchDetailRequest",
   FETCH_DETAIL_SUCCESS:
     "events/fetchDetailSuccess",
+  FETCH_DRAFTS_FAILURE:
+    "events/fetchDraftsFailure",
+  FETCH_DRAFTS_REQUEST:
+    "events/fetchDraftsRequest",
+  FETCH_DRAFTS_SUCCESS:
+    "events/fetchDraftsSuccess",
   FETCH_FEED_FAILURE:
     "events/fetchFeedFailure",
   FETCH_FEED_REQUEST:
