@@ -659,7 +659,7 @@ export default function HomeScreen() {
               </View>
 
               <Text style={styles.experienceIntroText}>
-                Sai Mandirs Worldwide, Miracles, Moments when Baba Blessed You. Receive more Sai Blessings
+                Sai Mandirs Worldwide, Miracles, Moments when Baba Blessed You. Receive Sai Blessings
               </Text>
             </View>
 
