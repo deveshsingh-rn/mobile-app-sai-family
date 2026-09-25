@@ -644,12 +644,13 @@ export default function HomeScreen() {
       {/* FEED */}
         <View style={styles.experienceIntro}>
               <View style={styles.experienceIntroTitleRow}>
-                <ExperienceCreatePostButton
-                  active={false}
-                  imageSource={require("@/assets/images/saibaba1.png")}
-                  name={account?.name}
-                  onPress={openCreatePost}
-                />
+                  <ExperienceCreatePostButton
+                    active={false}
+                    imageSource={require("@/assets/images/saibaba1.png")}
+                    name={account?.name}
+                    onPress={openCreatePost}
+                    size="large"
+                  />
                 <Text style={styles.experienceIntroTitle}>
                   Share your Sai Journey
                 </Text>

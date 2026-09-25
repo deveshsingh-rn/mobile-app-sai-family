@@ -148,14 +148,17 @@ export function ExperienceCreatePostButton({
   name,
   onPress,
   profileImageUrl,
+  size = "default",
 }: {
   active: boolean;
   imageSource?: ImageSourcePropType;
   name?: string;
   onPress: () => void;
   profileImageUrl?: string;
+  size?: "default" | "large";
 }) {
   const initial = name?.trim().charAt(0).toUpperCase() || "S";
+  const isLarge = size === "large";
 
   return (
     <Pressable
@@ -166,6 +169,7 @@ export function ExperienceCreatePostButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.createButton,
+        isLarge && styles.createButtonLarge,
         active && styles.activeCreateButton,
         pressed && styles.pressedCreateButton,
       ]}
@@ -174,25 +178,43 @@ export function ExperienceCreatePostButton({
         colors={active ? ["#C2410C", "#F59E0B"] : ["#F59E0B", "#C2410C"]}
         end={{ x: 1, y: 1 }}
         start={{ x: 0, y: 0 }}
-        style={styles.createRing}
+        style={[styles.createRing, isLarge && styles.createRingLarge]}
       >
-        <View style={styles.createAvatarInset}>
+        <View
+          style={[
+            styles.createAvatarInset,
+            isLarge && styles.createAvatarInsetLarge,
+          ]}
+        >
           {imageSource || profileImageUrl ? (
             <Image
               accessibilityIgnoresInvertColors
               resizeMode="contain"
               source={imageSource ?? { uri: profileImageUrl! }}
-              style={styles.createAvatar}
+              style={[styles.createAvatar, isLarge && styles.createAvatarLarge]}
             />
           ) : (
-            <View style={[styles.createAvatar, styles.createAvatarFallback]}>
-              <Text style={styles.createAvatarText}>{initial}</Text>
+            <View
+              style={[
+                styles.createAvatar,
+                styles.createAvatarFallback,
+                isLarge && styles.createAvatarLarge,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.createAvatarText,
+                  isLarge && styles.createAvatarTextLarge,
+                ]}
+              >
+                {initial}
+              </Text>
             </View>
           )}
         </View>
       </LinearGradient>
-      <View style={styles.createBadge}>
-        <Plus color="#FFFFFF" size={12} strokeWidth={3.4} />
+      <View style={[styles.createBadge, isLarge && styles.createBadgeLarge]}>
+        <Plus color="#FFFFFF" size={isLarge ? 16 : 12} strokeWidth={3.4} />
       </View>
     </Pressable>
   );
@@ -338,6 +360,11 @@ const styles = StyleSheet.create({
     position: "relative",
     width: 60,
   },
+  createButtonLarge: {
+    borderRadius: 38,
+    height: 76,
+    width: 76,
+  },
   activeCreateButton: {
     backgroundColor: EXPERIENCE_THEME.background,
   },
@@ -352,6 +379,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 56,
   },
+  createRingLarge: {
+    borderRadius: 36,
+    height: 72,
+    width: 72,
+  },
   createAvatarInset: {
     alignItems: "center",
     backgroundColor: EXPERIENCE_THEME.background,
@@ -360,11 +392,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 52,
   },
+  createAvatarInsetLarge: {
+    borderRadius: 34,
+    height: 68,
+    width: 68,
+  },
   createAvatar: {
     backgroundColor: "#1e1d1c",
     borderRadius: 24,
     height: 48,
     width: 48,
+  },
+  createAvatarLarge: {
+    borderRadius: 32,
+    height: 64,
+    width: 64,
   },
   createAvatarFallback: {
     alignItems: "center",
@@ -374,6 +416,9 @@ const styles = StyleSheet.create({
     color: EXPERIENCE_THEME.heading,
     fontSize: 18,
     fontWeight: "900",
+  },
+  createAvatarTextLarge: {
+    fontSize: 22,
   },
   createBadge: {
     alignItems: "center",
@@ -391,6 +436,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 3,
     width: 21,
+  },
+  createBadgeLarge: {
+    borderRadius: 13,
+    height: 27,
+    width: 27,
   },
   activeIconButton: {
     backgroundColor: EXPERIENCE_THEME.background,
