@@ -365,6 +365,7 @@ export default function EventFormScreen({
   const [waitingForBannerUpload, setWaitingForBannerUpload] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<PickerTarget>(null);
+  const [pickerValue, setPickerValue] = useState<Date>(getInitialDate);
   const [selectionKind, setSelectionKind] = useState<SelectionKind | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [guidelineDraft, setGuidelineDraft] = useState("");
@@ -705,42 +706,51 @@ export default function EventFormScreen({
 
   const openDatePicker = useCallback(
     (field: "endAt" | "startAt", pickerMode: "date" | "time") => {
+      setPickerValue(parseDate(form[field]));
       setPickerTarget({field, mode: pickerMode});
     },
-    []
+    [form]
   );
 
   const handleDateChange = useCallback(
     (event: DateTimePickerEvent, selectedDate?: Date) => {
-      setPickerTarget(null);
-
-      if (!pickerTarget || !selectedDate) {
+      if (event.type === "dismissed" || !selectedDate) {
         return;
       }
 
-      const current = parseDate(form[pickerTarget.field]);
-      const next = new Date(current);
-
-      if (pickerTarget.mode === "date") {
-        next.setFullYear(
-          selectedDate.getFullYear(),
-          selectedDate.getMonth(),
-          selectedDate.getDate()
-        );
-      } else {
-        next.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0, 0);
-      }
-
-      setField(pickerTarget.field, next.toISOString());
-
-      if (pickerTarget.field === "startAt" && !form.endAt) {
-        const end = new Date(next);
-        end.setHours(end.getHours() + 1);
-        setField("endAt", end.toISOString());
-      }
+      setPickerValue(selectedDate);
     },
-    [form, pickerTarget, setField]
+    []
   );
+
+  const handleConfirmDate = useCallback(() => {
+    if (!pickerTarget) {
+      return;
+    }
+
+    const current = parseDate(form[pickerTarget.field]);
+    const next = new Date(current);
+
+    if (pickerTarget.mode === "date") {
+      next.setFullYear(
+        pickerValue.getFullYear(),
+        pickerValue.getMonth(),
+        pickerValue.getDate()
+      );
+    } else {
+      next.setHours(pickerValue.getHours(), pickerValue.getMinutes(), 0, 0);
+    }
+
+    setField(pickerTarget.field, next.toISOString());
+
+    if (pickerTarget.field === "startAt" && !form.endAt) {
+      const end = new Date(next);
+      end.setHours(end.getHours() + 1);
+      setField("endAt", end.toISOString());
+    }
+
+    setPickerTarget(null);
+  }, [form, pickerTarget, pickerValue, setField]);
 
   const handleUseCurrentLocation = useCallback(async () => {
     const hasPermission =
@@ -1175,7 +1185,7 @@ export default function EventFormScreen({
           <PolishedInput
             multiline
             onChangeText={(value) => setField("address", value)}
-            placeholder="Full address or directions"
+            placeholder="Full address"
             placeholderTextColor="#9CA3AF"
             style={[styles.input, styles.smallArea]}
             value={form.address}
@@ -1303,14 +1313,54 @@ export default function EventFormScreen({
         </View>
       </ScrollView>
 
-      {pickerTarget && (
-        <DateTimePicker
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          mode={pickerTarget.mode}
-          onChange={handleDateChange}
-          value={parseDate(form[pickerTarget.field])}
-        />
-      )}
+      <Modal
+        animationType="slide"
+        onRequestClose={() => setPickerTarget(null)}
+        transparent
+        visible={Boolean(pickerTarget)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.datePickerSheet}>
+            <View style={styles.datePickerHeader}>
+              <Pressable
+                hitSlop={8}
+                onPress={() => setPickerTarget(null)}
+                style={({pressed}) => [
+                  styles.datePickerHeaderButton,
+                  pressed && styles.controlPressed,
+                ]}
+              >
+                <Text style={styles.datePickerCancelText}>Cancel</Text>
+              </Pressable>
+              <View style={styles.datePickerTitleWrap}>
+                <Text style={styles.datePickerEyebrow}>EVENT SCHEDULE</Text>
+                <Text style={styles.datePickerTitle}>
+                  {pickerTarget?.mode === "date" ? "Select date" : "Select time"}
+                </Text>
+              </View>
+              <Pressable
+                hitSlop={8}
+                onPress={handleConfirmDate}
+                style={({pressed}) => [
+                  styles.datePickerConfirmButton,
+                  pressed && styles.controlPressed,
+                ]}
+              >
+                <Text style={styles.datePickerConfirmText}>OK</Text>
+              </Pressable>
+            </View>
+
+            {pickerTarget ? (
+              <DateTimePicker
+                display="spinner"
+                mode={pickerTarget.mode}
+                onChange={handleDateChange}
+                value={pickerValue}
+              />
+            ) : null}
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         animationType="slide"
@@ -2026,6 +2076,62 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     fontSize: 14,
     fontWeight: "800",
+  },
+  datePickerCancelText: {
+    color: "#6B7280",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  datePickerConfirmButton: {
+    alignItems: "center",
+    backgroundColor: "#9A3412",
+    borderRadius: 12,
+    justifyContent: "center",
+    minHeight: 40,
+    minWidth: 56,
+    paddingHorizontal: 14,
+  },
+  datePickerConfirmText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  datePickerEyebrow: {
+    color: "#C2410C",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  datePickerHeader: {
+    alignItems: "center",
+    borderBottomColor: "#F1D9B5",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+  },
+  datePickerHeaderButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 40,
+    minWidth: 56,
+  },
+  datePickerSheet: {
+    backgroundColor: "#FFF8EC",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: "hidden",
+    paddingBottom: Platform.OS === "ios" ? 24 : 16,
+  },
+  datePickerTitle: {
+    color: "#7C2D12",
+    fontSize: 17,
+    fontWeight: "900",
+    marginTop: 2,
+  },
+  datePickerTitleWrap: {
+    alignItems: "center",
+    flex: 1,
   },
   draftButton: {
     alignItems: "center",
