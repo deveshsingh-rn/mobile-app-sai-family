@@ -25,6 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   Mic2,
+  Sparkles,
   Type,
 } from "lucide-react-native";
 
@@ -520,6 +521,8 @@ export default function HomeScreen() {
               },
             ]}
           >
+          
+
             <Pressable
               accessibilityHint="Opens the Ask Sai voice and text assistant"
               accessibilityLabel="Ask Sai"
@@ -635,6 +638,28 @@ export default function HomeScreen() {
       </View>
 
       {/* FEED */}
+        <View
+              accessible
+              accessibilityLabel="Share your Sai Journey. Sai Mandirs Worldwide, Miracles, Moments when Baba Blessed You. Receive more Sai blessings."
+              style={styles.experienceIntro}
+            >
+              <View style={styles.experienceIntroTitleRow}>
+                <View style={styles.experienceIntroIcon}>
+                  <Sparkles
+                    color={EXPERIENCE_THEME.heading}
+                    size={27}
+                    strokeWidth={2.3}
+                  />
+                </View>
+                <Text style={styles.experienceIntroTitle}>
+                  Share your Sai Journey
+                </Text>
+              </View>
+
+              <Text style={styles.experienceIntroText}>
+                Sai Mandirs Worldwide, Miracles, Moments when Baba Blessed You. Receive more Sai Blessings
+              </Text>
+            </View>
 
       <FlashList
         data={feed}
@@ -713,6 +738,42 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     zIndex: 50,
+  },
+
+  experienceIntro: {
+    paddingBottom: 14,
+    paddingHorizontal: 24,
+  },
+
+  experienceIntroTitleRow: {
+    alignItems: "center",
+    flexDirection: "row",
+  },
+
+  experienceIntroIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    height: 44,
+    justifyContent: "center",
+    width: 44,
+  },
+
+  experienceIntroTitle: {
+    color: EXPERIENCE_THEME.heading,
+    flex: 1,
+    fontSize: 21,
+    fontWeight: "800",
+    lineHeight: 28,
+    marginLeft: 14,
+  },
+
+  experienceIntroText: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 16,
+    fontWeight: "700",
+    lineHeight: 25,
+    marginTop: 5,
   },
 
   askSaiGlowFrame: {

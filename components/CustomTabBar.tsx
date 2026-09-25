@@ -70,7 +70,7 @@ function FamilyIcon({ color, size = 30 }: React.ComponentProps<TabIcon>) {
 
 const TABS: PillarTab[] = [
   {
-    displayLabel: "Home",
+    displayLabel: "Experiences",
     href: "/(tabs)/experiences",
     Icon: House,
     label: "Devotee Experience",
