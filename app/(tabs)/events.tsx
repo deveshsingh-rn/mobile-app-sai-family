@@ -448,41 +448,44 @@ function EventsScreen() {
           hitSlop={6}
           onPress={() => router.push("/events/create")}
           style={({ pressed }) => [
-            styles.createEventProfileButton,
+            styles.createEventAction,
             pressed && styles.toolbarButtonPressed,
           ]}
         >
-          <LinearGradient
-            colors={[EXPERIENCE_THEME.heading, "#D97706"]}
-            end={{ x: 1, y: 1 }}
-            start={{ x: 0, y: 0 }}
-            style={styles.createEventRing}
-          >
-            <View style={styles.createEventAvatarInset}>
-              {profileImageUrl ? (
-                <Image
-                  accessibilityLabel={`${account?.name || "Devotee"} profile photo`}
-                  resizeMode="cover"
-                  source={{ uri: profileImageUrl }}
-                  style={styles.createEventAvatar}
-                />
-              ) : (
-                <View
-                  style={[
-                    styles.createEventAvatar,
-                    styles.createEventAvatarFallback,
-                  ]}
-                >
-                  <Text style={styles.createEventAvatarText}>
-                    {profileInitial}
-                  </Text>
-                </View>
-              )}
+          <View style={styles.createEventProfileButton}>
+            <LinearGradient
+              colors={[EXPERIENCE_THEME.heading, "#D97706"]}
+              end={{ x: 1, y: 1 }}
+              start={{ x: 0, y: 0 }}
+              style={styles.createEventRing}
+            >
+              <View style={styles.createEventAvatarInset}>
+                {profileImageUrl ? (
+                  <Image
+                    accessibilityLabel={`${account?.name || "Devotee"} profile photo`}
+                    resizeMode="cover"
+                    source={{ uri: profileImageUrl }}
+                    style={styles.createEventAvatar}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.createEventAvatar,
+                      styles.createEventAvatarFallback,
+                    ]}
+                  >
+                    <Text style={styles.createEventAvatarText}>
+                      {profileInitial}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </LinearGradient>
+            <View style={styles.createEventBadge}>
+              <Plus color="#FFFFFF" size={12} strokeWidth={3.4} />
             </View>
-          </LinearGradient>
-          <View style={styles.createEventBadge}>
-            <Plus color="#FFFFFF" size={12} strokeWidth={3.4} />
           </View>
+          <Text style={styles.createEventActionLabel}>Create Event</Text>
         </Pressable>
 
         <View style={styles.eventToolbarActions}>
@@ -1595,6 +1598,21 @@ const styles = StyleSheet.create({
     backgroundColor: EXPERIENCE_THEME.border,
     opacity: 0.76,
     transform: [{ scale: 0.96 }],
+  },
+  createEventAction: {
+    alignItems: "center",
+    borderRadius: 14,
+    flexDirection: "row",
+    gap: 10,
+    minHeight: 60,
+    paddingLeft: 4,
+    paddingRight: 2,
+  },
+  createEventActionLabel: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 17,
+    fontWeight: "800",
+    lineHeight: 22,
   },
   createEventProfileButton: {
     alignItems: "center",
