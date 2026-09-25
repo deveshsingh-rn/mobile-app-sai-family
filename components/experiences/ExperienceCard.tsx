@@ -845,7 +845,7 @@ const styles = StyleSheet.create({
   locationText: {
     color: EXPERIENCE_THEME.paragraph,
     flex: 1,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "600",
   },
 
