@@ -8,7 +8,6 @@ import React, {
 import {
   Animated,
   Easing,
-  Image,
   ImageBackground,
   Pressable,
   RefreshControl,
@@ -32,6 +31,7 @@ import {
 import {
   ExperienceCard,
   ExperienceCardSkeleton,
+  ExperienceCreatePostButton,
   ExperienceListFooterSkeleton,
   ExperienceTopTabs,
 } from "@/components/experiences";
@@ -380,6 +380,10 @@ export default function HomeScreen() {
     router.push("/(tabs)/experiences/ask-sai" as any);
   }, []);
 
+  const openCreatePost = useCallback(() => {
+    router.push("/(tabs)/experiences/post" as any);
+  }, []);
+
   // ───────────────── VIEWABILITY (AUTO-PLAY/PAUSE) ─────────────────
 
   const viewabilityConfig = React.useMemo(() => ({
@@ -493,7 +497,7 @@ export default function HomeScreen() {
       {/* HEADER */}
 
       <View style={styles.fixedTop}>
-        <ExperienceTopTabs activeTab="feed" />
+        <ExperienceTopTabs activeTab="feed" showCreateAction={false} />
 
         {isHeaderIntroMounted && (
           <Animated.View
@@ -638,21 +642,14 @@ export default function HomeScreen() {
       </View>
 
       {/* FEED */}
-        <View
-              accessible
-              accessibilityLabel="Share your Sai Journey. Sai Mandirs Worldwide, Miracles, Moments when Baba Blessed You. Receive more Sai blessings."
-              style={styles.experienceIntro}
-            >
+        <View style={styles.experienceIntro}>
               <View style={styles.experienceIntroTitleRow}>
-                <View style={styles.experienceIntroIcon}>
-                  <Image
-                    accessibilityIgnoresInvertColors
-                    aria-hidden
-                    resizeMode="contain"
-                    source={require("@/assets/images/saibaba1.png")}
-                    style={styles.experienceIntroImage}
-                  />
-                </View>
+                <ExperienceCreatePostButton
+                  active={false}
+                  imageSource={require("@/assets/images/babasai.png")}
+                  name={account?.name}
+                  onPress={openCreatePost}
+                />
                 <Text style={styles.experienceIntroTitle}>
                   Share your Sai Journey
                 </Text>
@@ -750,21 +747,6 @@ const styles = StyleSheet.create({
   experienceIntroTitleRow: {
     alignItems: "center",
     flexDirection: "row",
-  },
-
-  experienceIntroIcon: {
-    alignItems: "center",
-    backgroundColor: "#000000",
-    borderRadius: 22,
-    height: 44,
-    justifyContent: "center",
-    overflow: "hidden",
-    width: 44,
-  },
-
-  experienceIntroImage: {
-    height: 50,
-    width: 38,
   },
 
   experienceIntroTitle: {

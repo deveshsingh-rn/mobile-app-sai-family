@@ -9,7 +9,14 @@ import {
   type LucideIcon,
 } from "lucide-react-native";
 import React from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  type ImageSourcePropType,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { useAppSelector } from "@/store/hooks";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
@@ -25,6 +32,7 @@ export type ExperienceTopTabKey =
 type ExperienceTopTabsProps = {
   activeTab: ExperienceTopTabKey;
   onTabChange?: (tab: ExperienceTopTabKey) => void;
+  showCreateAction?: boolean;
 };
 
 type ExperienceNavigationAction = {
@@ -97,13 +105,51 @@ function ToolbarAction({
   );
 }
 
-function CreateProfileAction({
+function ProfileToolbarAction({
+  onPress,
+  profileImageUrl,
+}: {
+  onPress: () => void;
+  profileImageUrl?: string;
+}) {
+  return (
+    <Pressable
+      accessibilityLabel="Open devotee profile"
+      accessibilityRole="button"
+      hitSlop={6}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.iconButton,
+        pressed && styles.pressedIconButton,
+      ]}
+    >
+      {profileImageUrl ? (
+        <Image
+          accessibilityIgnoresInvertColors
+          resizeMode="cover"
+          source={{ uri: profileImageUrl }}
+          style={styles.profileToolbarImage}
+        />
+      ) : (
+        <UserCircle2
+          color={EXPERIENCE_THEME.paragraph}
+          size={32}
+          strokeWidth={2.15}
+        />
+      )}
+    </Pressable>
+  );
+}
+
+export function ExperienceCreatePostButton({
   active,
+  imageSource,
   name,
   onPress,
   profileImageUrl,
 }: {
   active: boolean;
+  imageSource?: ImageSourcePropType;
   name?: string;
   onPress: () => void;
   profileImageUrl?: string;
@@ -130,10 +176,11 @@ function CreateProfileAction({
         style={styles.createRing}
       >
         <View style={styles.createAvatarInset}>
-          {profileImageUrl ? (
+          {imageSource || profileImageUrl ? (
             <Image
+              accessibilityIgnoresInvertColors
               resizeMode="cover"
-              source={{ uri: profileImageUrl }}
+              source={imageSource ?? { uri: profileImageUrl! }}
               style={styles.createAvatar}
             />
           ) : (
@@ -153,6 +200,7 @@ function CreateProfileAction({
 export function ExperienceTopTabs({
   activeTab,
   onTabChange,
+  showCreateAction = true,
 }: ExperienceTopTabsProps) {
   const router = useRouter();
   const account = useAppSelector(selectDevoteeAccount);
@@ -206,25 +254,35 @@ export function ExperienceTopTabs({
           </Pressable>
         ) : null}
 
-        <CreateProfileAction
-          active={activeTab === CREATE_POST_ACTION.key}
-          name={account?.name}
-          onPress={() => handleActionPress(CREATE_POST_ACTION)}
-          profileImageUrl={profileImageUrl}
-        />
+        {showCreateAction ? (
+          <ExperienceCreatePostButton
+            active={activeTab === CREATE_POST_ACTION.key}
+            name={account?.name}
+            onPress={() => handleActionPress(CREATE_POST_ACTION)}
+            profileImageUrl={profileImageUrl}
+          />
+        ) : null}
 
       </View>
 
       <View style={styles.actions}>
-        {EXPERIENCE_ACTIONS.map((action) => (
-          <ToolbarAction
-            active={activeTab === action.key}
-            Icon={action.Icon}
-            key={action.key}
-            label={action.label}
-            onPress={() => handleActionPress(action)}
-          />
-        ))}
+        {EXPERIENCE_ACTIONS.map((action) =>
+          action.key === "profile" ? (
+            <ProfileToolbarAction
+              key={action.key}
+              onPress={() => handleActionPress(action)}
+              profileImageUrl={profileImageUrl}
+            />
+          ) : (
+            <ToolbarAction
+              active={activeTab === action.key}
+              Icon={action.Icon}
+              key={action.key}
+              label={action.label}
+              onPress={() => handleActionPress(action)}
+            />
+          )
+        )}
       </View>
     </View>
   );
@@ -265,6 +323,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "relative",
     width: 44,
+  },
+  profileToolbarImage: {
+    backgroundColor: EXPERIENCE_THEME.border,
+    borderColor: EXPERIENCE_THEME.heading,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    height: 36,
+    width: 36,
   },
   createButton: {
     alignItems: "center",
