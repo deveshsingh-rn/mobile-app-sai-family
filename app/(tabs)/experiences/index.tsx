@@ -8,6 +8,7 @@ import React, {
 import {
   Animated,
   Easing,
+  Image,
   ImageBackground,
   Pressable,
   RefreshControl,
@@ -25,7 +26,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   Mic2,
-  Sparkles,
   Type,
 } from "lucide-react-native";
 
@@ -645,10 +645,12 @@ export default function HomeScreen() {
             >
               <View style={styles.experienceIntroTitleRow}>
                 <View style={styles.experienceIntroIcon}>
-                  <Sparkles
-                    color={EXPERIENCE_THEME.heading}
-                    size={27}
-                    strokeWidth={2.3}
+                  <Image
+                    accessibilityIgnoresInvertColors
+                    aria-hidden
+                    resizeMode="contain"
+                    source={require("@/assets/images/saibaba1.png")}
+                    style={styles.experienceIntroImage}
                   />
                 </View>
                 <Text style={styles.experienceIntroTitle}>
@@ -752,11 +754,17 @@ const styles = StyleSheet.create({
 
   experienceIntroIcon: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#000000",
     borderRadius: 22,
     height: 44,
     justifyContent: "center",
+    overflow: "hidden",
     width: 44,
+  },
+
+  experienceIntroImage: {
+    height: 50,
+    width: 38,
   },
 
   experienceIntroTitle: {
@@ -769,9 +777,9 @@ const styles = StyleSheet.create({
   },
 
   experienceIntroText: {
-    color: EXPERIENCE_THEME.paragraph,
+    color: EXPERIENCE_THEME.heading,
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "800",
     lineHeight: 25,
     marginTop: 5,
   },
