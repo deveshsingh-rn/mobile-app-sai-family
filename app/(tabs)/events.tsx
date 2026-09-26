@@ -25,9 +25,10 @@ import {
   Bookmark,
   Calendar,
   CalendarCheck,
-  CalendarDays,
   ChevronDown,
+  ChevronRight,
   Clock3,
+  FilePenLine,
   HandHeart,
   Heart,
   LocateFixed,
@@ -47,8 +48,10 @@ import {
   cancelEventRsvpRequest,
   fetchCommunityCalendarsRequest,
   fetchEventBookmarksRequest,
+  fetchEventDraftsRequest,
   fetchEventsHomeRequest,
   fetchEventsRequest,
+  fetchMyEventsRequest,
   fetchNearbyEventsRequest,
   rsvpEventRequest,
   shareEventRequest,
@@ -59,11 +62,14 @@ import {
   selectCommunityCalendarsLoading,
   selectEventBookmarks,
   selectEventBookmarksPagination,
+  selectEventDraftsById,
+  selectEventDraftsLoading,
   selectEventsError,
   selectEventsFeed,
   selectEventsHome,
   selectEventsHomeLoading,
   selectEventsLoading,
+  selectMyEvents,
   selectIsEventBookmarkPending,
   selectIsEventRsvpPending,
   selectIsEventSharePending,
@@ -72,6 +78,7 @@ import {
 } from "@/store/events/selectors";
 import {
   CommunityCalendar,
+  EventDraft,
   EventHomeResult,
   EventType,
   SaiEvent,
@@ -205,6 +212,9 @@ function EventsScreen() {
   const communityCalendarsLoading = useAppSelector(selectCommunityCalendarsLoading);
   const eventBookmarks = useAppSelector(selectEventBookmarks);
   const eventBookmarksPagination = useAppSelector(selectEventBookmarksPagination);
+  const myEvents = useAppSelector(selectMyEvents);
+  const draftsById = useAppSelector(selectEventDraftsById);
+  const draftsLoading = useAppSelector(selectEventDraftsLoading);
   const loading = useAppSelector(selectEventsLoading);
   const error = useAppSelector(selectEventsError);
 
@@ -262,6 +272,8 @@ function EventsScreen() {
     dispatch(fetchEventsRequest(fetchParams));
     dispatch(fetchEventsHomeRequest({limit: 5}));
     dispatch(fetchEventBookmarksRequest({limit: 20, offset: 0}));
+    dispatch(fetchMyEventsRequest({limit: 20, offset: 0}));
+    dispatch(fetchEventDraftsRequest({limit: 20, offset: 0, status: "active"}));
     fetchNearbyFromLocation();
     dispatch(fetchCommunityCalendarsRequest());
   }, [dispatch, fetchNearbyFromLocation, fetchParams]);
@@ -271,6 +283,8 @@ function EventsScreen() {
     dispatch(fetchEventsRequest(fetchParams));
     dispatch(fetchEventsHomeRequest({limit: 5}));
     dispatch(fetchEventBookmarksRequest({limit: 20, offset: 0}));
+    dispatch(fetchMyEventsRequest({limit: 20, offset: 0}));
+    dispatch(fetchEventDraftsRequest({limit: 20, offset: 0, status: "active"}));
     fetchNearbyFromLocation();
     dispatch(fetchCommunityCalendarsRequest());
     setTimeout(() => setRefreshing(false), 700);
@@ -439,6 +453,10 @@ function EventsScreen() {
     account?.profileImageUrl ||
     account?.profile?.profileImageUrl;
   const profileInitial = account?.name?.trim().charAt(0).toUpperCase() || "S";
+  const eventDrafts = useMemo(
+    () => Object.values(draftsById).filter((draft) => !draft.publishedAt),
+    [draftsById]
+  );
 
   return (
     <View style={styles.container}>
@@ -490,23 +508,6 @@ function EventsScreen() {
         </Pressable>
 
         <View style={styles.eventToolbarActions}>
-          <Pressable
-            accessibilityLabel="My events"
-            accessibilityRole="button"
-            hitSlop={6}
-            onPress={() => router.push("/events/my-events")}
-            style={({ pressed }) => [
-              styles.eventToolbarIconButton,
-              pressed && styles.toolbarButtonPressed,
-            ]}
-          >
-            <CalendarDays
-              color={EXPERIENCE_THEME.paragraph}
-              size={30}
-              strokeWidth={2.15}
-            />
-          </Pressable>
-
           <Pressable
             accessibilityLabel="Saved events"
             accessibilityRole="button"
@@ -670,6 +671,12 @@ function EventsScreen() {
             </Text>
           </View>
         </View>
+
+        <MyEventsOverview
+          drafts={eventDrafts}
+          events={myEvents}
+          loading={loading || draftsLoading}
+        />
 
         {sections.map((section) => (
           <EventSection
@@ -860,6 +867,169 @@ function NearbyEventCard({
         </View>
       </View>
     </Pressable>
+  );
+}
+
+type MyEventOverviewItem = {
+  date?: string;
+  id: string;
+  kind: "draft" | "published";
+  location: string;
+  sortTime: number;
+  title: string;
+};
+
+function MyEventsOverview({
+  drafts,
+  events,
+  loading,
+}: {
+  drafts: EventDraft[];
+  events: SaiEvent[];
+  loading: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const items = useMemo<MyEventOverviewItem[]>(
+    () => [
+      ...drafts.map((draft) => ({
+        date: draft.startAt,
+        id: draft.id,
+        kind: "draft" as const,
+        location:
+          draft.venueName || draft.city || draft.address || "Location not added",
+        sortTime: new Date(draft.updatedAt || draft.createdAt || 0).getTime(),
+        title: draft.title || "Untitled event",
+      })),
+      ...events.map((event) => ({
+        date: event.startAt,
+        id: event.id,
+        kind: "published" as const,
+        location:
+          event.venueName || event.city || event.address || "Location pending",
+        sortTime: new Date(event.updatedAt || event.createdAt || event.startAt).getTime(),
+        title: event.title,
+      })),
+    ].sort((first, second) => second.sortTime - first.sortTime),
+    [drafts, events]
+  );
+  const visibleItems = expanded ? items : items.slice(0, 2);
+
+  return (
+    <View style={styles.myEventsSection}>
+      <View style={styles.myEventsHeader}>
+        <View style={styles.myEventsHeadingCopy}>
+          <Text style={styles.myEventsTitle}>My Events</Text>
+          <Text style={styles.myEventsSubtitle}>
+            {items.length
+              ? `${events.length} published · ${drafts.length} drafts`
+              : "Your created events and drafts"}
+          </Text>
+        </View>
+        <View style={styles.myEventsCountBadge}>
+          <Text style={styles.myEventsCountText}>{items.length}</Text>
+        </View>
+      </View>
+
+      {loading && !items.length ? (
+        <View style={styles.myEventsLoading}>
+          <ActivityIndicator color={EXPERIENCE_THEME.heading} />
+          <Text style={styles.myEventsLoadingText}>Loading your events...</Text>
+        </View>
+      ) : null}
+
+      {!loading && !items.length ? (
+        <Pressable
+          onPress={() => router.push("/events/create")}
+          style={styles.myEventsEmpty}
+        >
+          <CalendarCheck color={EXPERIENCE_THEME.heading} size={23} />
+          <View style={styles.myEventsEmptyCopy}>
+            <Text style={styles.myEventsEmptyTitle}>Create your first event</Text>
+            <Text style={styles.myEventsEmptyText}>
+              Your drafts and published events will appear here.
+            </Text>
+          </View>
+          <ChevronRight color={EXPERIENCE_THEME.heading} size={20} />
+        </Pressable>
+      ) : null}
+
+      {visibleItems.map((item, index) => {
+        const isDraft = item.kind === "draft";
+        const Icon = isDraft ? FilePenLine : CalendarCheck;
+
+        return (
+          <Pressable
+            accessibilityLabel={`${isDraft ? "Continue draft" : "Open event"} ${item.title}`}
+            accessibilityRole="button"
+            key={`${item.kind}-${item.id}`}
+            onPress={() =>
+              isDraft
+                ? router.push({
+                    pathname: "/events/create",
+                    params: {draft: item.id},
+                  } as any)
+                : router.push(`/events/${item.id}` as any)
+            }
+            style={({pressed}) => [
+              styles.myEventRow,
+              index < visibleItems.length - 1 && styles.myEventRowDivider,
+              pressed && styles.myEventRowPressed,
+            ]}
+          >
+            <View style={[
+              styles.myEventRowIcon,
+              isDraft && styles.myEventRowIconDraft,
+            ]}>
+              <Icon
+                color={isDraft ? "#C2410C" : EXPERIENCE_THEME.heading}
+                size={21}
+                strokeWidth={2.25}
+              />
+            </View>
+            <View style={styles.myEventRowCopy}>
+              <View style={styles.myEventRowTitleLine}>
+                <Text numberOfLines={1} style={styles.myEventRowTitle}>
+                  {item.title}
+                </Text>
+                <View style={[
+                  styles.myEventStatus,
+                  isDraft && styles.myEventStatusDraft,
+                ]}>
+                  <Text style={[
+                    styles.myEventStatusText,
+                    isDraft && styles.myEventStatusTextDraft,
+                  ]}>
+                    {isDraft ? "Draft" : "Published"}
+                  </Text>
+                </View>
+              </View>
+              <Text numberOfLines={1} style={styles.myEventRowMeta}>
+                {item.date ? formatDate(item.date) : "Date not selected"} · {item.location}
+              </Text>
+            </View>
+            <ChevronRight color="#A8A29E" size={20} />
+          </Pressable>
+        );
+      })}
+
+      {items.length > visibleItems.length ? (
+        <Pressable
+          onPress={() => setExpanded(true)}
+          style={styles.myEventsMoreButton}
+        >
+          <Text style={styles.myEventsMoreText}>
+            Show all {items.length} events
+          </Text>
+        </Pressable>
+      ) : expanded && items.length > 2 ? (
+        <Pressable
+          onPress={() => setExpanded(false)}
+          style={styles.myEventsMoreButton}
+        >
+          <Text style={styles.myEventsMoreText}>Show less</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -1552,6 +1722,170 @@ function SuggestedCommunities({
 export default EventsScreen;
 
 const styles = StyleSheet.create({
+  myEventRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    minHeight: 74,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  myEventRowCopy: {
+    flex: 1,
+    marginHorizontal: 11,
+  },
+  myEventRowDivider: {
+    borderBottomColor: EXPERIENCE_THEME.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  myEventRowIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 46,
+    justifyContent: "center",
+    width: 46,
+  },
+  myEventRowIconDraft: {
+    backgroundColor: "#FFFBEB",
+  },
+  myEventRowMeta: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+    marginTop: 5,
+  },
+  myEventRowPressed: {
+    backgroundColor: "#FFF4E8",
+  },
+  myEventRowTitle: {
+    color: EXPERIENCE_THEME.heading,
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "800",
+    lineHeight: 21,
+    marginRight: 8,
+  },
+  myEventRowTitleLine: {
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  myEventStatus: {
+    backgroundColor: "#ECFDF3",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  myEventStatusDraft: {
+    backgroundColor: "#FFF4E8",
+  },
+  myEventStatusText: {
+    color: "#027A48",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  myEventStatusTextDraft: {
+    color: "#C2410C",
+  },
+  myEventsEmpty: {
+    alignItems: "center",
+    backgroundColor: "#FFF8EC",
+    flexDirection: "row",
+    minHeight: 82,
+    paddingHorizontal: 14,
+  },
+  myEventsCountBadge: {
+    alignItems: "center",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
+    borderRadius: 15,
+    borderWidth: 1,
+    height: 30,
+    justifyContent: "center",
+    minWidth: 30,
+    paddingHorizontal: 8,
+  },
+  myEventsCountText: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  myEventsEmptyCopy: {
+    flex: 1,
+    marginHorizontal: 12,
+  },
+  myEventsEmptyText: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+    marginTop: 3,
+  },
+  myEventsEmptyTitle: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  myEventsHeader: {
+    alignItems: "center",
+    borderBottomColor: EXPERIENCE_THEME.border,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    minHeight: 68,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  myEventsHeadingCopy: {
+    flex: 1,
+  },
+  myEventsLoading: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    minHeight: 74,
+    paddingHorizontal: 16,
+  },
+  myEventsLoadingText: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  myEventsMoreButton: {
+    alignItems: "center",
+    borderTopColor: EXPERIENCE_THEME.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    minHeight: 48,
+    justifyContent: "center",
+  },
+  myEventsMoreText: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  myEventsSection: {
+    backgroundColor: "#FFFFFF",
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginHorizontal: 16,
+    marginTop: 16,
+    overflow: "hidden",
+  },
+  myEventsSubtitle: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  myEventsTitle: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 20,
+    fontWeight: "900",
+    lineHeight: 25,
+  },
   eventsFeedHeading: {
     alignItems: "center",
     borderBottomColor: EXPERIENCE_THEME.border,
