@@ -62,22 +62,17 @@ import {
   X,
 } from "lucide-react-native";
 
-import {
-  createExperienceRequest,
-  fetchExperienceCategoriesRequest,
-} from "@/store/experiences/actions";
+import { createExperienceRequest } from "@/store/experiences/actions";
 
-import {
-  selectCreateExperienceLoading,
-  selectExperienceCategories,
-} from "@/store/experiences/selectors";
-import { CategoryChips } from "@/components/experiences";
+import { selectCreateExperienceLoading } from "@/store/experiences/selectors";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const ACCENT = "#C2410C";
 const ACCENT_DEEP = "#9A3412";
 const ACCENT_SOFT = "#FFF2E3";
 const SAFFRON_GRADIENT = ["#F97316", "#C2410C"] as const;
+// Category picking is hidden on this screen; every post goes to this category.
+const DEFAULT_CATEGORY = "miracles";
 
 type MediaType =
   | "image"
@@ -107,10 +102,6 @@ export default function PremiumPostScreen() {
     selectCreateExperienceLoading
   );
 
-  const categories = useSelector(
-    selectExperienceCategories
-  );
-
   const account = useSelector(
     (state: any) =>
       state.devoteeAccount?.account
@@ -126,9 +117,6 @@ export default function PremiumPostScreen() {
     useState<SelectedMedia | null>(
       null
     );
-
-  const [selectedCategory, setSelectedCategory] =
-    useState("miracles");
 
   const [isComposerFocused, setIsComposerFocused] =
     useState(false);
@@ -149,15 +137,6 @@ export default function PremiumPostScreen() {
     account?.profile?.profileImageUrl;
   const profileInitial = account?.name?.trim().charAt(0).toUpperCase() || "S";
 
-  const categoryOptions = useMemo(
-    () =>
-      categories.map((item: { category: string; label: string }) => ({
-        label: item.label,
-        value: item.category,
-      })),
-    [categories]
-  );
-
   const wordCount = useMemo(
     () => content.trim().split(/\s+/).filter(Boolean).length,
     [content]
@@ -170,16 +149,9 @@ export default function PremiumPostScreen() {
 
     return (
       (!hasContent && !selectedMedia) ||
-      !selectedCategory ||
       audioNeedsDescription
     );
-  }, [content, selectedMedia, selectedCategory]);
-
-  useEffect(() => {
-    dispatch(
-      fetchExperienceCategoriesRequest()
-    );
-  }, [dispatch]);
+  }, [content, selectedMedia]);
 
   const attachCurrentLocation = useCallback(async () => {
     setIsLocating(true);
@@ -474,7 +446,7 @@ export default function PremiumPostScreen() {
     dispatch(
       createExperienceRequest({
         content,
-        category: selectedCategory,
+        category: DEFAULT_CATEGORY,
         location,
         media: selectedMedia,
         userId,
@@ -485,11 +457,6 @@ export default function PremiumPostScreen() {
     setLocation("");
     setSelectedMedia(null);
     router.push("/experiences");
-  };
-
-  const handleCategoryChange = (value: string) => {
-    void Haptics.selectionAsync();
-    setSelectedCategory(value);
   };
 
   const dismissKeyboard = () => {
@@ -682,20 +649,6 @@ export default function PremiumPostScreen() {
               </Pressable>
             )}
           </View>
-        </View>
-
-        {/* Category */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionLabel}>Category</Text>
-          <Text style={styles.sectionHint}>Helps devotees discover your post</Text>
-        </View>
-        <View style={styles.categoryRail}>
-          <CategoryChips
-            activeValue={selectedCategory}
-            categories={categoryOptions}
-            onChange={handleCategoryChange}
-            showTagline
-          />
         </View>
 
         {/* Composer */}
@@ -1325,10 +1278,6 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
 
-  categoryRail: {
-    marginTop: 8,
-  },
-
   composerCard: {
     ...cardShadow,
     backgroundColor: "#FFFFFF",
@@ -1350,7 +1299,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "500",
     lineHeight: 26,
-    minHeight: 180,
+    minHeight: 240,
     paddingHorizontal: 16,
     paddingBottom: 8,
     paddingTop: 14,
