@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   Image,
@@ -6,37 +6,22 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 
 import {
   Bell,
   ChevronRight,
-  CheckCircle2,
-  KeyRound,
   Languages,
   LogOut,
-  Mail,
   Moon,
-  Send,
   ShieldCheck,
   Sparkles,
   Star,
 } from "lucide-react-native";
 
+import { removeDevoteeAccountStorage } from "@/services/devotee-account";
 import {
-  authUserToDevoteeAccount,
-  resendUserEmailVerification,
-  setupUserEmailPassword,
-  verifyUserEmail,
-} from "@/services/auth";
-import {
-  removeDevoteeAccountStorage,
-  saveDevoteeAccount,
-} from "@/services/devotee-account";
-import {
-  loadSavedDevoteeAccountRequest,
   logoutRequest,
 } from "@/store/devotee-account/actions";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
@@ -46,6 +31,7 @@ import {
 } from "@/store/hooks";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MorningSaiAlarmCard } from "@/components/profile/MorningSaiAlarmCard";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 type ProfileTab = "details" | "settings";
 
@@ -56,6 +42,7 @@ type DetailRowProps = {
 
 type SettingRowProps = {
   description: string;
+  grouped?: boolean;
   hideComingSoon?: boolean;
   icon: React.ReactNode;
   isDestructive?: boolean;
@@ -63,36 +50,8 @@ type SettingRowProps = {
   title: string;
 };
 
-const fallbackStats = [
-  {
-    label: "Seva Score",
-    value: "Soon",
-  },
-  {
-    label: "Events",
-    value: "0",
-  },
-  {
-    label: "Family ID",
-    value: "Active",
-  },
-];
-
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-type SecurityAction = "setup" | "verify" | "resend";
-
 export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("settings");
-  const [securityEmail, setSecurityEmail] = useState("");
-  const [securityPassword, setSecurityPassword] = useState("");
-  const [securityConfirmPassword, setSecurityConfirmPassword] =
-    useState("");
-  const [emailOtp, setEmailOtp] = useState("");
-  const [hasSentEmailOtp, setHasSentEmailOtp] = useState(false);
-  const [localEmailVerified, setLocalEmailVerified] = useState(false);
-  const [securityAction, setSecurityAction] =
-    useState<SecurityAction | null>(null);
   const dispatch = useAppDispatch();
   const account = useAppSelector(selectDevoteeAccount);
   const accountAny = account as any;
@@ -106,12 +65,6 @@ export default function ProfileScreen() {
       accountAny?.emailVerifiedAt ||
       accountAny?.verifiedEmailAt
   );
-  const hasEmailLoginReady = isEmailVerified || localEmailVerified;
-
-  useEffect(() => {
-    setSecurityEmail(account?.email || "");
-    setLocalEmailVerified(false);
-  }, [account?.email]);
 
   const initials = useMemo(() => {
     const name = account?.name || "Devotee";
@@ -123,6 +76,26 @@ export default function ProfileScreen() {
       .slice(0, 2)
       .toUpperCase();
   }, [account?.name]);
+
+  const profileStats = useMemo(
+    () => [
+      {
+        label: "Membership",
+        value: account?.memberId ? "Active" : "Pending",
+      },
+      {
+        label: "Email",
+        value: isEmailVerified ? "Verified" : "Pending",
+      },
+      {
+        label: "Language",
+        value: String(
+          account?.profile?.language || account?.language || "EN"
+        ).toUpperCase(),
+      },
+    ],
+    [account?.language, account?.memberId, account?.profile?.language, isEmailVerified]
+  );
 
   const handleLogout = () => {
     Alert.alert(
@@ -145,142 +118,6 @@ export default function ProfileScreen() {
     );
   };
 
-  const validateSecurityForm = () => {
-    const email = securityEmail.trim().toLowerCase();
-    const password = securityPassword.trim();
-
-    if (!emailPattern.test(email)) {
-      Alert.alert(
-        "Check Email",
-        "Please enter a valid email address before continuing."
-      );
-      return false;
-    }
-
-    if (password.length < 8) {
-      Alert.alert(
-        "Password Too Short",
-        "Please create a password with at least 8 characters."
-      );
-      return false;
-    }
-
-    if (password !== securityConfirmPassword.trim()) {
-      Alert.alert(
-        "Password Not Matching",
-        "Please confirm the same password in both fields."
-      );
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSetupEmailPassword = async () => {
-    if (!validateSecurityForm()) {
-      return;
-    }
-
-    try {
-      setSecurityAction("setup");
-      await setupUserEmailPassword(
-        securityEmail,
-        securityPassword.trim()
-      );
-      setHasSentEmailOtp(true);
-      Alert.alert(
-        "Code Sent",
-        "We sent a verification code to your email. Enter it here to finish email login setup."
-      );
-    } catch (error) {
-      Alert.alert(
-        "Setup Failed",
-        error instanceof Error
-          ? error.message
-          : "Unable to setup email login."
-      );
-    } finally {
-      setSecurityAction(null);
-    }
-  };
-
-  const handleVerifyEmail = async () => {
-    const email = securityEmail.trim().toLowerCase();
-
-    if (!emailPattern.test(email)) {
-      Alert.alert("Check Email", "Please enter a valid email address.");
-      return;
-    }
-
-    if (emailOtp.trim().length < 4) {
-      Alert.alert(
-        "Enter Code",
-        "Please enter the verification code sent to your email."
-      );
-      return;
-    }
-
-    try {
-      setSecurityAction("verify");
-      const response = await verifyUserEmail(email, emailOtp);
-
-      if (response.user) {
-        await saveDevoteeAccount(
-          authUserToDevoteeAccount(response.user)
-        );
-        dispatch(loadSavedDevoteeAccountRequest());
-      }
-
-      setEmailOtp("");
-      setHasSentEmailOtp(false);
-      setLocalEmailVerified(true);
-      setSecurityPassword("");
-      setSecurityConfirmPassword("");
-
-      Alert.alert(
-        "Email Verified",
-        "Your email login is ready. You can now login with email and password."
-      );
-    } catch (error) {
-      Alert.alert(
-        "Verification Failed",
-        error instanceof Error
-          ? error.message
-          : "Unable to verify email."
-      );
-    } finally {
-      setSecurityAction(null);
-    }
-  };
-
-  const handleResendEmailVerification = async () => {
-    const email = securityEmail.trim().toLowerCase();
-
-    if (!emailPattern.test(email)) {
-      Alert.alert("Check Email", "Please enter a valid email address.");
-      return;
-    }
-
-    try {
-      setSecurityAction("resend");
-      await resendUserEmailVerification(email);
-      setHasSentEmailOtp(true);
-      Alert.alert(
-        "Code Sent Again",
-        "Please check your inbox for the latest verification code."
-      );
-    } catch (error) {
-      Alert.alert(
-        "Unable To Resend",
-        error instanceof Error
-          ? error.message
-          : "Unable to resend verification code."
-      );
-    } finally {
-      setSecurityAction(null);
-    }
-  };
-
   return (<SafeAreaView style={styles.container}>
     <ScrollView
       contentContainerStyle={styles.content}
@@ -289,13 +126,13 @@ export default function ProfileScreen() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.eyebrow}>Sai Family</Text>
-          <Text style={styles.title}>Profile</Text>
-          <Text style={styles.subtitle}>Your space for a calmer daily practice.</Text>
+          <Text style={styles.eyebrow}>SAI FAMILY</Text>
+          <Text style={styles.title}>Your Profile</Text>
+          <Text style={styles.subtitle}>Your account, preferences and daily practice</Text>
         </View>
 
         <View style={styles.headerBadge}>
-          <ShieldCheck color="#3E5F52" size={20} />
+          <ShieldCheck color={EXPERIENCE_THEME.heading} size={21} />
         </View>
       </View>
 
@@ -331,7 +168,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.statGrid}>
-          {fallbackStats.map((item) => (
+          {profileStats.map((item) => (
             <View key={item.label} style={styles.statBox}>
               <Text style={styles.statValue}>{item.value}</Text>
               <Text style={styles.statLabel}>{item.label}</Text>
@@ -344,32 +181,20 @@ export default function ProfileScreen() {
        
         <SegmentButton
           isActive={activeTab === "settings"}
-          label="App Settings"
+          label="Settings"
           onPress={() => setActiveTab("settings")}
         />
          <SegmentButton
           isActive={activeTab === "details"}
-          label="Profile Detail"
+          label="My Details"
           onPress={() => setActiveTab("details")}
         />
       </View>
 
       {activeTab === "details" ? (
         <View style={styles.section}>
-          <View style={styles.scoreBox}>
-            <View style={styles.scoreIcon}>
-              <Star size={20} color="#F97316" fill="#FDBA74" />
-            </View>
-            <View style={styles.scoreTextWrap}>
-              <Text style={styles.scoreTitle}>Devotion Score</Text>
-              <Text style={styles.scoreDescription}>
-                Future feature for seva, activity, and participation points.
-              </Text>
-            </View>
-            <ChevronRight color="#A8A29E" size={18} />
-          </View>
-
-          {/* <View style={styles.detailCard}>
+          <Text style={styles.sectionLabel}>Personal information</Text>
+          <View style={styles.detailCard}>
             <DetailRow label="Mobile" value={account?.mobileNumber} />
             <DetailRow label="Email" value={account?.email} />
             <DetailRow
@@ -406,7 +231,23 @@ export default function ProfileScreen() {
                 account?.language
               )?.toUpperCase()}
             />
-          </View> */}
+          </View>
+
+          <Text style={styles.sectionLabel}>Coming later</Text>
+          <View style={styles.scoreBox}>
+            <View style={styles.scoreIcon}>
+              <Star size={20} color="#F97316" fill="#FDBA74" />
+            </View>
+            <View style={styles.scoreTextWrap}>
+              <Text style={styles.scoreTitle}>Devotion Score</Text>
+              <Text style={styles.scoreDescription}>
+                Future feature for seva, activity, and participation points.
+              </Text>
+            </View>
+            <View style={styles.comingSoon}>
+              <Text style={styles.comingSoonText}>Soon</Text>
+            </View>
+          </View>
         </View>
       ) : (
         <View style={styles.section}>
@@ -580,32 +421,35 @@ export default function ProfileScreen() {
             )} */}
           {/* </View> */}
           <Text style={styles.sectionLabel}>Account & app</Text>
+          <View style={styles.settingsGroup}>
+            <SettingRow
+              description="Prayer, event and family update alerts."
+              grouped
+              icon={<Bell size={21} color={EXPERIENCE_THEME.heading} />}
+              title="Notifications"
+            />
+            <SettingRow
+              description="Light, dark and system appearance."
+              grouped
+              icon={<Moon size={21} color={EXPERIENCE_THEME.heading} />}
+              title="Appearance"
+            />
+            <SettingRow
+              description="Your preferred app language."
+              grouped
+              icon={<Languages size={21} color={EXPERIENCE_THEME.heading} />}
+              title="Language"
+            />
+          </View>
+
+          <Text style={styles.sectionLabel}>Account access</Text>
           <SettingRow
-            description="Log out of your devotee account."
+            description="Safely sign out of this device."
             hideComingSoon
             icon={<LogOut size={21} color="#DC2626" />}
             isDestructive
             onPress={handleLogout}
             title="Log Out"
-          />
-
-          <SettingRow
-            description="Manage prayer, event, and family update alerts."
-            icon={<Bell size={21} color="#1F2937" />}
-            onPress={() => console.log("Open Notifications Setting")}
-            title="Notifications"
-          />
-          <SettingRow
-            description="Choose light, dark, or system theme."
-            icon={<Moon size={21} color="#1F2937" />}
-            onPress={() => console.log("Open Appearance Setting")}
-            title="Appearance"
-          />
-          <SettingRow
-            description="Choose your preferred app language."
-            icon={<Languages size={21} color="#1F2937" />}
-            onPress={() => console.log("Open Language Setting")}
-            title="Language"
           />
          
         </View>
@@ -655,6 +499,7 @@ function DetailRow({ label, value }: DetailRowProps) {
 
 function SettingRow({
   description,
+  grouped,
   hideComingSoon,
   icon,
   isDestructive,
@@ -663,10 +508,13 @@ function SettingRow({
 }: SettingRowProps) {
   return (
     <Pressable
+      accessibilityRole={onPress ? "button" : "text"}
+      disabled={!onPress}
       onPress={onPress}
       style={({ pressed }) => [
         styles.settingRow,
-        pressed && styles.rowPressed,
+        grouped && styles.settingRowGrouped,
+        pressed && onPress && styles.rowPressed,
       ]}
     >
       <View
@@ -693,90 +541,92 @@ function SettingRow({
           <Text style={styles.comingSoonText}>Soon</Text>
         </View>
       )}
-      <ChevronRight
-        color={isDestructive ? "#DC2626" : "#A8A29E"}
-        size={18}
-      />
+      {onPress ? (
+        <ChevronRight
+          color={isDestructive ? "#DC2626" : "#A8A29E"}
+          size={18}
+        />
+      ) : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   avatar: {
-    borderColor: "#FFFFFF",
-    borderRadius: 38,
+    borderColor: "#F4C98D",
+    borderRadius: 42,
     borderWidth: 3,
-    height: 76,
-    width: 76,
+    height: 84,
+    width: 84,
   },
   avatarFallback: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
-    borderRadius: 38,
-    borderWidth: 1,
-    height: 76,
+    backgroundColor: "#FFF1D9",
+    borderColor: "#F4C98D",
+    borderRadius: 42,
+    borderWidth: 2,
+    height: 84,
     justifyContent: "center",
-    width: 76,
+    width: 84,
   },
   avatarInitials: {
-    color: "#C2410C",
-    fontSize: 24,
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 26,
     fontWeight: "900",
   },
   comingSoon: {
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
+    backgroundColor: "#FFF4E8",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 5,
   },
   comingSoonText: {
-    color: "#C2410C",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 11,
     fontWeight: "900",
   },
   container: {
-    backgroundColor: "#F7F5F0",
+    backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
   },
   content: {
     paddingBottom: 120,
     paddingHorizontal: 16,
-    // paddingTop: 58,
+    paddingTop: 6,
   },
   detailCard: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
-    borderRadius: 14,
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 16,
     borderWidth: 1,
     overflow: "hidden",
   },
   detailLabel: {
-    color: "#F97316",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12,
     fontWeight: "900",
     textTransform: "uppercase",
   },
   detailRow: {
-    borderBottomColor: "#F1E4CE",
-    borderBottomWidth: 1,
+    borderBottomColor: EXPERIENCE_THEME.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 5,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 15,
   },
   detailValue: {
-    color: "#1F2937",
-    fontSize: 15,
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 16,
     fontWeight: "700",
-    lineHeight: 21,
+    lineHeight: 23,
   },
   disabledButton: {
     opacity: 0.62,
   },
   eyebrow: {
-    color: "#F97316",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12,
     fontWeight: "900",
   },
@@ -787,23 +637,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 18,
+    marginTop: 4,
   },
   headerBadge: {
     alignItems: "center",
-    backgroundColor: "#EAF2ED",
-    borderColor: "#C9DED2",
-    borderRadius: 12,
+    backgroundColor: "#FFF1D9",
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 14,
     borderWidth: 1,
-    height: 42,
+    height: 46,
     justifyContent: "center",
-    width: 42,
+    width: 46,
   },
   heroCard: {
-    backgroundColor: "#23463B",
-    borderRadius: 18,
-    marginBottom: 16,
-    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 18,
+    padding: 18,
+    shadowColor: EXPERIENCE_THEME.heading,
+    shadowOffset: { height: 6, width: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 3,
   },
   heroTop: {
     alignItems: "center",
@@ -811,21 +669,21 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   location: {
-    color: "#D6D3D1",
-    fontSize: 13,
-    fontWeight: "700",
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 14,
+    fontWeight: "600",
     marginTop: 5,
   },
   memberId: {
-    color: "#F8C66D",
+    color: "#A34A0A",
     fontSize: 13,
     fontWeight: "900",
     marginTop: 4,
   },
   name: {
-    color: "#FFFFFF",
+    color: EXPERIENCE_THEME.heading,
     flex: 1,
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: "900",
   },
   nameRow: {
@@ -900,16 +758,16 @@ const styles = StyleSheet.create({
   },
   scoreBox: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
-    borderRadius: 14,
+    backgroundColor: "#FFF4E8",
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
     gap: 12,
     padding: 15,
   },
   scoreDescription: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     fontWeight: "700",
     lineHeight: 19,
@@ -918,7 +776,7 @@ const styles = StyleSheet.create({
   scoreIcon: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#FED7AA",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 22,
     borderWidth: 1,
     height: 44,
@@ -929,25 +787,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scoreTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 16,
     fontWeight: "900",
   },
   section: {
-    gap: 14,
+    gap: 15,
   },
   sectionLabel: {
-    color: "#6D766F",
-    fontSize: 11,
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 12,
     fontWeight: "900",
-    letterSpacing: 1.2,
+    letterSpacing: 0,
     marginLeft: 2,
     textTransform: "uppercase",
   },
   segment: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
-    borderRadius: 14,
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 15,
     borderWidth: 1,
     flexDirection: "row",
     gap: 6,
@@ -958,15 +816,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     flex: 1,
-    height: 42,
+    height: 46,
     justifyContent: "center",
   },
   segmentButtonActive: {
-    backgroundColor: "#3E5F52",
+    backgroundColor: EXPERIENCE_THEME.heading,
   },
   segmentText: {
-    color: "#6B7280",
-    fontSize: 13,
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 14,
     fontWeight: "900",
   },
   segmentTextActive: {
@@ -975,8 +833,15 @@ const styles = StyleSheet.create({
   settingCopy: {
     flex: 1,
   },
+  settingsGroup: {
+    backgroundColor: "#FFFFFF",
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
   settingDescription: {
-    color: "#6B7280",
+    color: EXPERIENCE_THEME.paragraph,
     fontSize: 13,
     fontWeight: "700",
     lineHeight: 19,
@@ -984,9 +849,9 @@ const styles = StyleSheet.create({
   },
   settingIcon: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
-    borderRadius: 12,
+    backgroundColor: "#FFF4E8",
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 13,
     borderWidth: 1,
     height: 44,
     justifyContent: "center",
@@ -999,15 +864,22 @@ const styles = StyleSheet.create({
   settingRow: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7D7BE",
-    borderRadius: 14,
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
     gap: 12,
+    minHeight: 76,
     padding: 14,
   },
+  settingRowGrouped: {
+    borderBottomColor: EXPERIENCE_THEME.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderRadius: 0,
+    borderWidth: 0,
+  },
   settingTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 16,
     fontWeight: "900",
   },
@@ -1082,11 +954,13 @@ const styles = StyleSheet.create({
   },
   statBox: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "#FFF7ED",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 12,
     borderWidth: 1,
     flex: 1,
+    minHeight: 66,
+    paddingHorizontal: 5,
     paddingVertical: 10,
   },
   statGrid: {
@@ -1095,27 +969,27 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   statLabel: {
-    color: "#D6D3D1",
-    fontSize: 11,
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 10,
     fontWeight: "800",
     marginTop: 3,
   },
   statValue: {
-    color: "#FFFFFF",
-    fontSize: 15,
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 14,
     fontWeight: "900",
   },
   summaryText: {
     flex: 1,
   },
   title: {
-    color: "#1F2937",
-    fontSize: 34,
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 30,
     fontWeight: "900",
   },
   subtitle: {
-    color: "#747B75",
-    fontSize: 13,
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 14,
     fontWeight: "600",
     marginTop: 2,
   },
@@ -1138,7 +1012,7 @@ const styles = StyleSheet.create({
   },
   verifiedBadge: {
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
+    backgroundColor: "#FFF1D9",
     borderRadius: 999,
     height: 24,
     justifyContent: "center",

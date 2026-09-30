@@ -21,6 +21,7 @@ import {
   saveMorningSaiAlarmTime,
   type MorningSaiAlarmSettings,
 } from "@/services/morning-sai-alarm";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 type Props = { devoteeName?: string };
 
@@ -113,7 +114,7 @@ export function MorningSaiAlarmCard({ devoteeName }: Props) {
   if (!settings) {
     return (
       <View style={[styles.card, styles.loadingCard]}>
-        <ActivityIndicator color="#557568" />
+        <ActivityIndicator color={EXPERIENCE_THEME.heading} />
       </View>
     );
   }
@@ -122,7 +123,7 @@ export function MorningSaiAlarmCard({ devoteeName }: Props) {
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <View style={styles.iconBox}>
-          <AlarmClock color="#557568" size={23} />
+          <AlarmClock color={EXPERIENCE_THEME.heading} size={23} />
         </View>
         <View style={styles.headerCopy}>
           <Text style={styles.title}>Morning with Sai</Text>
@@ -131,13 +132,13 @@ export function MorningSaiAlarmCard({ devoteeName }: Props) {
           </Text>
         </View>
         {saving ? (
-          <ActivityIndicator color="#557568" size="small" />
+          <ActivityIndicator color={EXPERIENCE_THEME.heading} size="small" />
         ) : (
           <Switch
             accessibilityLabel="Morning Sai alarm"
             onValueChange={toggleAlarm}
-            trackColor={{ false: "#D6DAD7", true: "#AFC8BC" }}
-            thumbColor={settings.enabled ? "#557568" : "#FFFFFF"}
+            trackColor={{ false: "#DED7CD", true: "#E7B778" }}
+            thumbColor={settings.enabled ? EXPERIENCE_THEME.heading : "#FFFFFF"}
             value={settings.enabled}
           />
         )}
@@ -149,7 +150,7 @@ export function MorningSaiAlarmCard({ devoteeName }: Props) {
         onPress={() => setShowPicker((visible) => !visible)}
         style={({ pressed }) => [styles.timeRow, pressed && styles.pressed]}
       >
-        <Clock3 color="#557568" size={19} />
+        <Clock3 color={EXPERIENCE_THEME.heading} size={19} />
         <Text style={styles.timeLabel}>Every morning</Text>
         <Text style={styles.timeValue}>
           {formatTime(settings.hour, settings.minute)}
@@ -184,7 +185,7 @@ export function MorningSaiAlarmCard({ devoteeName }: Props) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FFFFFF",
-    borderColor: "#DDE4DF",
+    borderColor: EXPERIENCE_THEME.border,
     borderRadius: 16,
     borderWidth: 1,
     marginBottom: 12,
@@ -195,31 +196,33 @@ const styles = StyleSheet.create({
   headerRow: { alignItems: "center", flexDirection: "row" },
   iconBox: {
     alignItems: "center",
-    backgroundColor: "#EEF5F1",
+    backgroundColor: "#FFF1D9",
     borderRadius: 13,
     height: 46,
     justifyContent: "center",
     width: 46,
   },
   headerCopy: { flex: 1, marginHorizontal: 12 },
-  title: { color: "#1F2924", fontSize: 16, fontWeight: "800" },
-  description: { color: "#6F7772", fontSize: 12, lineHeight: 17, marginTop: 3 },
+  title: { color: EXPERIENCE_THEME.heading, fontSize: 17, fontWeight: "800" },
+  description: { color: EXPERIENCE_THEME.paragraph, fontSize: 13, lineHeight: 18, marginTop: 3 },
   timeRow: {
     alignItems: "center",
-    backgroundColor: "#F6F8F7",
+    backgroundColor: "#FFF8EF",
+    borderColor: EXPERIENCE_THEME.border,
+    borderWidth: 1,
     borderRadius: 13,
     flexDirection: "row",
     marginTop: 15,
     minHeight: 50,
     paddingHorizontal: 13,
   },
-  timeLabel: { color: "#525B56", flex: 1, fontSize: 13, fontWeight: "700", marginLeft: 9 },
-  timeValue: { color: "#3E5F52", fontSize: 15, fontWeight: "900" },
+  timeLabel: { color: EXPERIENCE_THEME.paragraph, flex: 1, fontSize: 14, fontWeight: "700", marginLeft: 9 },
+  timeValue: { color: EXPERIENCE_THEME.heading, fontSize: 16, fontWeight: "900" },
   pressed: { opacity: 0.7 },
   pickerWrap: { marginTop: 6 },
   doneButton: { alignSelf: "flex-end", paddingHorizontal: 10, paddingVertical: 8 },
-  doneText: { color: "#47685B", fontSize: 14, fontWeight: "800" },
-  preview: { borderTopColor: "#E8ECE9", borderTopWidth: 1, marginTop: 14, paddingTop: 13 },
-  previewLabel: { color: "#7A827D", fontSize: 9, fontWeight: "900", letterSpacing: 0.8 },
-  previewText: { color: "#3E4742", fontSize: 12, lineHeight: 18, marginTop: 5 },
+  doneText: { color: EXPERIENCE_THEME.heading, fontSize: 14, fontWeight: "800" },
+  preview: { borderTopColor: EXPERIENCE_THEME.border, borderTopWidth: 1, marginTop: 14, paddingTop: 13 },
+  previewLabel: { color: "#A34A0A", fontSize: 10, fontWeight: "900", letterSpacing: 0.8 },
+  previewText: { color: EXPERIENCE_THEME.paragraph, fontSize: 13, lineHeight: 19, marginTop: 5 },
 });

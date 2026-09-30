@@ -2,14 +2,13 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useState,
+  useRef,
 } from "react";
 
 import {
   FlatList,
-  Keyboard,
   KeyboardAvoidingView,
-  Modal,
+  type LayoutChangeEvent,
   Platform,
   Pressable,
   StyleSheet,
@@ -22,7 +21,7 @@ import {
   useLocalSearchParams,
 } from "expo-router";
 
-import { ArrowLeft, MessageCircle, X } from "lucide-react-native";
+import { ArrowLeft, MessageCircle } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -55,7 +54,8 @@ import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 export default function ExperienceDetailScreen() {
   const insets = useSafeAreaInsets();
-  const [commentsVisible, setCommentsVisible] = useState(false);
+  const listRef = useRef<FlatList>(null);
+  const commentsOffsetRef = useRef(0);
   const { id } = useLocalSearchParams<{
     id?: string;
   }>();
@@ -93,9 +93,15 @@ export default function ExperienceDetailScreen() {
     account?.profile?.profileImageUrl ||
     null;
 
-  const closeComments = useCallback(() => {
-    Keyboard.dismiss();
-    setCommentsVisible(false);
+  const scrollToComments = useCallback(() => {
+    listRef.current?.scrollToOffset({
+      animated: true,
+      offset: commentsOffsetRef.current,
+    });
+  }, []);
+
+  const captureCommentsOffset = useCallback((event: LayoutChangeEvent) => {
+    commentsOffsetRef.current = event.nativeEvent.layout.y;
   }, []);
 
   useEffect(() => {
@@ -192,31 +198,23 @@ export default function ExperienceDetailScreen() {
           disableNavigation
           onBookmark={handleBookmark}
           onLike={handleLike}
-          onComment={() => setCommentsVisible(true)}
+          onComment={scrollToComments}
           onRepost={handleRepost}
           onEdit={handleEdit}
           onDelete={handleDelete}
         />
 
-        <Pressable
-          accessibilityLabel={`Open ${comments.length} comments`}
-          accessibilityRole="button"
-          onPress={() => setCommentsVisible(true)}
-          style={({ pressed }) => [
-            styles.openCommentsButton,
-            pressed && styles.openCommentsPressed,
-          ]}
+        <View
+          onLayout={captureCommentsOffset}
+          style={styles.commentsHeader}
         >
-          <MessageCircle color={EXPERIENCE_THEME.paragraph} size={18} />
-          <Text style={styles.openCommentsText}>
-            {comments.length
-              ? `View all ${comments.length} comments`
-              : "Be the first to comment"}
-          </Text>
-        </Pressable>
+          <Text style={styles.commentsTitle}>Comments</Text>
+          <Text style={styles.commentsCount}>{comments.length}</Text>
+        </View>
       </View>
     );
   }, [
+    captureCommentsOffset,
     comments.length,
     detail,
     handleBookmark,
@@ -224,6 +222,7 @@ export default function ExperienceDetailScreen() {
     handleEdit,
     handleLike,
     handleRepost,
+    scrollToComments,
     userId,
   ]);
 
@@ -242,7 +241,10 @@ export default function ExperienceDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={styles.container}
+    >
       <View style={styles.topBar}>
         <Pressable
           accessibilityLabel="Go back"
@@ -268,14 +270,27 @@ export default function ExperienceDetailScreen() {
       </View>
 
       <FlatList
+        ref={listRef}
         contentContainerStyle={
           styles.content
         }
-        data={[]}
-        keyboardDismissMode="on-drag"
+        data={comments}
+        keyExtractor={(item) => item.id}
+        keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          <View style={styles.noCommentsBox}>
+            <View style={styles.emptyCommentIcon}>
+              <MessageCircle color={EXPERIENCE_THEME.heading} size={25} />
+            </View>
+            <Text style={styles.noCommentsTitle}>No comments yet</Text>
+            <Text style={styles.noCommentsText}>
+              Start a kind conversation with this devotee.
+            </Text>
+          </View>
+        }
         ListHeaderComponent={header}
-        renderItem={null}
+        renderItem={({ item }) => <CommentItem item={item} />}
         showsVerticalScrollIndicator={false}
       />
 
@@ -285,80 +300,20 @@ export default function ExperienceDetailScreen() {
         </Text>
       )}
 
-      <Modal
-        animationType="slide"
-        onRequestClose={closeComments}
-        presentationStyle="overFullScreen"
-        transparent
-        visible={commentsVisible}
+      <View
+        style={[
+          styles.commentBar,
+          { paddingBottom: Math.max(insets.bottom, 8) },
+        ]}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.modalRoot}
-        >
-          <Pressable
-            accessibilityLabel="Close comments"
-            onPress={closeComments}
-            style={styles.modalBackdrop}
-          />
-          <View
-            style={[
-              styles.commentSheet,
-              { paddingBottom: Math.max(insets.bottom, 8) },
-            ]}
-          >
-            <View style={styles.sheetHandle} />
-            <View style={styles.sheetHeader}>
-              <View style={styles.sheetTitleRow}>
-                <Text style={styles.sheetTitle}>Comments</Text>
-                <Text style={styles.sheetCount}>{comments.length}</Text>
-              </View>
-              <Pressable
-                accessibilityLabel="Close comments"
-                accessibilityRole="button"
-                hitSlop={8}
-                onPress={closeComments}
-                style={styles.closeButton}
-              >
-                <X color={EXPERIENCE_THEME.paragraph} size={21} />
-              </Pressable>
-            </View>
-
-            <FlatList
-              contentContainerStyle={[
-                styles.commentList,
-                comments.length === 0 && styles.emptyCommentList,
-              ]}
-              data={comments}
-              keyExtractor={(item) => item.id}
-              keyboardDismissMode="interactive"
-              keyboardShouldPersistTaps="handled"
-              ListEmptyComponent={
-                <View style={styles.noCommentsBox}>
-                  <View style={styles.emptyCommentIcon}>
-                    <MessageCircle color={EXPERIENCE_THEME.heading} size={25} />
-                  </View>
-                  <Text style={styles.noCommentsTitle}>No comments yet</Text>
-                  <Text style={styles.noCommentsText}>
-                    Start a kind conversation with this devotee.
-                  </Text>
-                </View>
-              }
-              renderItem={({ item }) => <CommentItem item={item} />}
-              showsVerticalScrollIndicator={false}
-            />
-
-            {!!error && <Text style={styles.errorText}>{error}</Text>}
-            <CommentInput
-              authorName={accountName}
-              loading={addingComment}
-              onSubmit={handleComment}
-              profileImageUrl={accountProfileImageUrl}
-            />
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-    </View>
+        <CommentInput
+          authorName={accountName}
+          loading={addingComment}
+          onSubmit={handleComment}
+          profileImageUrl={accountProfileImageUrl}
+        />
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -402,93 +357,39 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    paddingBottom: 40,
+    paddingBottom: 24,
     paddingTop: 16,
   },
 
-  openCommentsButton: {
+  commentsHeader: {
     alignItems: "center",
     borderTopColor: EXPERIENCE_THEME.border,
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     marginHorizontal: 16,
-    minHeight: 50,
-    paddingHorizontal: 18,
+    marginTop: 4,
+    paddingBottom: 6,
+    paddingTop: 16,
   },
-  openCommentsPressed: { opacity: 0.58 },
-  openCommentsText: {
-    color: EXPERIENCE_THEME.paragraph,
-    fontSize: 14,
-    fontWeight: "600",
-    marginLeft: 9,
+  commentsTitle: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 17,
+    fontWeight: "900",
   },
-  modalRoot: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(17,24,39,0.44)",
-  },
-  commentSheet: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    height: "78%",
-    overflow: "hidden",
-    shadowColor: "#111827",
-    shadowOffset: { height: -8, width: 0 },
-    shadowOpacity: 0.16,
-    shadowRadius: 24,
-  },
-  sheetHandle: {
-    alignSelf: "center",
-    backgroundColor: "#D1D5DB",
-    borderRadius: 3,
-    height: 5,
-    marginTop: 8,
-    width: 42,
-  },
-  sheetHeader: {
-    alignItems: "center",
-    borderBottomColor: EXPERIENCE_THEME.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    minHeight: 56,
-    paddingHorizontal: 16,
-  },
-  sheetTitleRow: { alignItems: "center", flexDirection: "row" },
-  sheetTitle: { color: EXPERIENCE_THEME.heading, fontSize: 17, fontWeight: "900" },
-  sheetCount: {
+  commentsCount: {
     color: EXPERIENCE_THEME.heading,
     fontSize: 13,
     fontWeight: "800",
     marginLeft: 7,
   },
-  closeButton: {
-    alignItems: "center",
+  commentBar: {
     backgroundColor: EXPERIENCE_THEME.background,
-    borderColor: EXPERIENCE_THEME.border,
-    borderWidth: 1,
-    borderRadius: 16,
-    height: 34,
-    justifyContent: "center",
-    width: 34,
-  },
-  commentList: {
-    paddingBottom: 14,
-    paddingTop: 8,
-  },
-  emptyCommentList: {
-    flexGrow: 1,
-    justifyContent: "center",
   },
 
   noCommentsBox: {
     alignItems: "center",
     paddingHorizontal: 28,
-    paddingVertical: 36,
+    paddingVertical: 28,
   },
   emptyCommentIcon: {
     alignItems: "center",
