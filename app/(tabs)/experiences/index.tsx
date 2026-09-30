@@ -21,7 +21,6 @@ import {
 import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   Mic2,
@@ -66,7 +65,6 @@ const SAI_BABA_WELCOME_IMAGE =
 
 export default function HomeScreen() {
   const dispatch = useAppDispatch();
-  const insets = useSafeAreaInsets();
   const { width: screenWidth } =
     useWindowDimensions();
 
@@ -499,6 +497,11 @@ export default function HomeScreen() {
       <View style={styles.fixedTop}>
         <ExperienceTopTabs activeTab="feed" showCreateAction={false} />
 
+        <PillarGlassDock
+          activeRouteName="experiences"
+          style={styles.fixedPillarDock}
+        />
+
         {isHeaderIntroMounted && (
           <Animated.View
             pointerEvents={
@@ -632,10 +635,6 @@ export default function HomeScreen() {
               </ImageBackground>
             </Pressable>
 
-            <PillarGlassDock
-              activeRouteName="experiences"
-              style={styles.inlinePillarDock}
-            />
           </Animated.View>
         )}
 
@@ -699,17 +698,6 @@ export default function HomeScreen() {
         scrollEventThrottle={16}
       />
 
-      {!isHeaderIntroMounted ? (
-        <View
-          pointerEvents="box-none"
-          style={[
-            styles.floatingPillarDock,
-            { bottom: Math.max(insets.bottom, 8) + 8 },
-          ]}
-        >
-          <PillarGlassDock activeRouteName="experiences" />
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -727,17 +715,9 @@ const styles = StyleSheet.create({
     paddingTop: 54,
   },
 
-  inlinePillarDock: {
+  fixedPillarDock: {
     alignSelf: "center",
     marginBottom: 12,
-  },
-
-  floatingPillarDock: {
-    alignItems: "center",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    zIndex: 50,
   },
 
   experienceIntro: {

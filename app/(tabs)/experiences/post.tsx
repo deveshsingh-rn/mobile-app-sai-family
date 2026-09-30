@@ -42,6 +42,7 @@ import {
 
 import {
   ArrowLeft,
+  CheckCircle2,
   ChevronRight,
   CircleStop,
   FileAudio,
@@ -65,6 +66,7 @@ import {
 import {
   selectCreateExperienceLoading,
   selectExperienceCategories,
+  selectExperiencesError,
 } from "@/store/experiences/selectors";
 import { CategoryChips } from "@/components/experiences";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
@@ -88,6 +90,8 @@ const formatRecordingDuration = (durationMillis: number) => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
+const MAX_EXPERIENCE_LENGTH = 2000;
+
 export default function PremiumPostScreen() {
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
@@ -95,6 +99,7 @@ export default function PremiumPostScreen() {
   const creating = useSelector(
     selectCreateExperienceLoading
   );
+  const createError = useSelector(selectExperiencesError);
 
   const categories = useSelector(
     selectExperienceCategories
@@ -125,9 +130,11 @@ export default function PremiumPostScreen() {
   const [isLocating, setIsLocating] = useState(true);
   const [isDictating, setIsDictating] = useState(false);
   const [voiceMenuVisible, setVoiceMenuVisible] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const contentBeforeDictationRef = useRef("");
   const composerScrollRef = useRef<ScrollView>(null);
   const inputOffsetRef = useRef(0);
+  const wasCreatingRef = useRef(false);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const audioRecorderState = useAudioRecorderState(audioRecorder, 250);
@@ -143,6 +150,12 @@ export default function PremiumPostScreen() {
       audioNeedsDescription
     );
   }, [content, selectedMedia, selectedCategory]);
+
+  const profileImageUrl =
+    account?.profileImage?.uri ||
+    account?.profileImageUrl ||
+    account?.profile?.profileImageUrl;
+  const profileInitial = account?.name?.trim().charAt(0).toUpperCase() || "S";
 
   useEffect(() => {
     dispatch(
@@ -247,6 +260,10 @@ export default function PremiumPostScreen() {
       await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
+      Alert.alert(
+        "Photo access required",
+        "Allow photo access in Settings to add an image to your experience."
+      );
       return;
     }
 
@@ -257,7 +274,7 @@ export default function PremiumPostScreen() {
             ImagePicker
               .MediaTypeOptions.Images,
 
-          quality: 1,
+          quality: 0.86,
           allowsEditing: true,
         }
       );
@@ -281,6 +298,10 @@ export default function PremiumPostScreen() {
       await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
+      Alert.alert(
+        "Video access required",
+        "Allow photo library access in Settings to add a video to your experience."
+      );
       return;
     }
 
@@ -431,21 +452,50 @@ export default function PremiumPostScreen() {
       account?.id ||
       account?.authorId;
 
+    setSubmitted(true);
     dispatch(
       createExperienceRequest({
-        content,
+        content: content.trim(),
         category: selectedCategory,
         location,
         media: selectedMedia,
         userId,
       })
     );
+  };
+
+  useEffect(() => {
+    if (!submitted) {
+      wasCreatingRef.current = creating;
+      return;
+    }
+
+    if (creating) {
+      wasCreatingRef.current = true;
+      return;
+    }
+
+    if (!wasCreatingRef.current) {
+      return;
+    }
+
+    wasCreatingRef.current = false;
+
+    if (createError) {
+      setSubmitted(false);
+      Alert.alert(
+        "Could not publish",
+        createError || "Your experience was not published. Please try again."
+      );
+      return;
+    }
 
     setContent("");
     setLocation("");
     setSelectedMedia(null);
-    router.push("/experiences");
-  };
+    setSubmitted(false);
+    router.replace("/(tabs)/experiences" as never);
+  }, [createError, creating, submitted]);
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
@@ -479,13 +529,33 @@ export default function PremiumPostScreen() {
     return () => subscription.remove();
   }, [isComposerFocused, revealComposerInput]);
 
-  const handleBack = () => {
+  const leaveComposer = () => {
     if (router.canGoBack()) {
       router.back();
       return;
     }
 
     router.replace("/(tabs)/experiences" as never);
+  };
+
+  const handleBack = () => {
+    if (creating) {
+      return;
+    }
+
+    if (!content.trim() && !selectedMedia) {
+      leaveComposer();
+      return;
+    }
+
+    Alert.alert(
+      "Discard this experience?",
+      "Your writing and attachment will be removed.",
+      [
+        { text: "Keep editing", style: "cancel" },
+        { text: "Discard", style: "destructive", onPress: leaveComposer },
+      ]
+    );
   };
 
   return (
@@ -502,6 +572,7 @@ export default function PremiumPostScreen() {
         <Pressable
           accessibilityLabel="Back to experiences"
           accessibilityRole="button"
+          disabled={creating}
           hitSlop={6}
           onPress={handleBack}
           style={({ pressed }) => [
@@ -513,8 +584,8 @@ export default function PremiumPostScreen() {
         </Pressable>
 
         <View style={styles.headerCopy}>
-          <Text style={styles.headerTitle}>Create</Text>
-          <Text style={styles.headerSubtitle}>New experience</Text>
+          <Text style={styles.headerTitle}>Share Experience</Text>
+          <Text style={styles.headerSubtitle}>With Sai Family</Text>
         </View>
 
         <Pressable
@@ -533,7 +604,7 @@ export default function PremiumPostScreen() {
           ) : (
             <>
               <Send color="#FFFFFF" size={17} strokeWidth={2.3} />
-              <Text style={styles.publishText}>Publish</Text>
+              <Text style={styles.publishText}>Post</Text>
             </>
           )}
         </Pressable>
@@ -558,10 +629,34 @@ export default function PremiumPostScreen() {
         }
       >
         <View style={styles.composerSurface}>
+          <View style={styles.authorRow}>
+            {profileImageUrl ? (
+              <Image
+                accessibilityLabel={`${account?.name || "Sai Devotee"} profile photo`}
+                source={{ uri: profileImageUrl }}
+                style={styles.authorAvatar}
+              />
+            ) : (
+              <View style={[styles.authorAvatar, styles.authorAvatarFallback]}>
+                <Text style={styles.authorAvatarInitial}>{profileInitial}</Text>
+              </View>
+            )}
+
+            <View style={styles.authorCopy}>
+              <Text numberOfLines={1} style={styles.authorName}>
+                {account?.name || "Sai Devotee"}
+              </Text>
+              <View style={styles.audienceRow}>
+                <CheckCircle2 color="#A34A0A" size={14} strokeWidth={2.2} />
+                <Text style={styles.audienceText}>Sharing with Sai Family</Text>
+              </View>
+            </View>
+          </View>
+
           <View style={styles.categorySection}>
             <View style={styles.categoryHeading}>
               <View style={styles.categoryMetaRow}>
-                <Text style={styles.categoryTitle}>Choose category</Text>
+                <Text style={styles.categoryTitle}>Experience category</Text>
                 {isLocating ? (
                   <View style={styles.locationPill}>
                     <ActivityIndicator color="#A34A0A" size="small" />
@@ -578,7 +673,7 @@ export default function PremiumPostScreen() {
                   </View>
                 ) : null}
               </View>
-              <Text style={styles.categoryHint}>Helps devotees discover your post</Text>
+              <Text style={styles.categoryHint}>Choose the closest match</Text>
             </View>
             <View style={styles.categoryRail}>
               <CategoryChips
@@ -594,129 +689,125 @@ export default function PremiumPostScreen() {
             </View>
           </View>
 
-          <View style={styles.composerHeading}>
-            <View>
-              <Text style={styles.sectionLabel}>Share your experience</Text>
-              <Text style={styles.composerHint}>
-                Write from the heart. You can also use voice.
+          <View style={styles.composerCard}>
+            <View style={styles.composerHeading}>
+              <View style={styles.composerHeadingCopy}>
+                <Text style={styles.sectionLabel}>Your Sai experience</Text>
+                <Text style={styles.composerHint}>
+                  Share the moment in your own words
+                </Text>
+              </View>
+              {isDictating ? (
+                <View style={styles.listeningBadge}>
+                  <View style={styles.listeningDot} />
+                  <Text style={styles.listeningText}>Listening</Text>
+                </View>
+              ) : null}
+            </View>
+
+            <TextInput
+              accessibilityLabel="Write your Sai experience"
+              maxLength={MAX_EXPERIENCE_LENGTH}
+              multiline
+              onBlur={() => setIsComposerFocused(false)}
+              onChangeText={setContent}
+              onFocus={revealComposerInput}
+              onLayout={captureInputOffset}
+              onSubmitEditing={dismissKeyboard}
+              placeholder="What happened? How did Sai guide or bless you?"
+              placeholderTextColor="#9A8979"
+              returnKeyType="done"
+              style={[styles.input, isComposerFocused && styles.inputFocused]}
+              submitBehavior="blurAndSubmit"
+              textAlignVertical="top"
+              value={content}
+            />
+
+            <View style={styles.composerFooter}>
+              {content.length > 0 ? (
+                <Pressable
+                  accessibilityLabel="Clear written experience"
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => setContent("")}
+                  style={({ pressed }) => [
+                    styles.clearTextButton,
+                    pressed && styles.actionButtonPressed,
+                  ]}
+                >
+                  <Text style={styles.clearTextLabel}>Clear</Text>
+                </Pressable>
+              ) : (
+                <View />
+              )}
+              <Text style={styles.characterCount}>
+                {content.length}/{MAX_EXPERIENCE_LENGTH}
               </Text>
             </View>
-            {isDictating ? (
-              <View style={styles.listeningBadge}>
-                <View style={styles.listeningDot} />
-                <Text style={styles.listeningText}>Listening</Text>
+
+            {/* ───────────────── MEDIA PREVIEW ───────────────── */}
+
+            {selectedMedia ? (
+              <View style={styles.mediaContainer}>
+                <Pressable
+                  accessibilityLabel="Remove attachment"
+                  accessibilityRole="button"
+                  onPress={() => setSelectedMedia(null)}
+                  style={styles.closeButton}
+                >
+                  <X size={18} color="#fff" strokeWidth={2.5} />
+                </Pressable>
+
+                {selectedMedia.type === "image" ? (
+                  <Image
+                    source={{ uri: selectedMedia.uri }}
+                    style={styles.media}
+                  />
+                ) : null}
+
+                {selectedMedia.type === "video" ? (
+                  <View style={styles.videoPreview}>
+                    <Video color="#7C2D12" size={38} strokeWidth={1.8} />
+                    <Text style={styles.videoPreviewTitle}>Video ready to share</Text>
+                    <Text numberOfLines={1} style={styles.videoPreviewName}>
+                      {selectedMedia.name || "Selected video"}
+                    </Text>
+
+                    <View style={styles.playButton}>
+                      <Play
+                        size={20}
+                        color="#fff"
+                        fill="#fff"
+                      />
+                    </View>
+                  </View>
+                ) : null}
+
+                {selectedMedia.type === "audio" ? (
+                  <View style={styles.audioSelection}>
+                    <View style={styles.audioCard}>
+                      <View style={styles.audioIconBubble}>
+                        <FileAudio size={24} color="#9A3412" />
+                      </View>
+
+                      <View style={styles.audioInfo}>
+                        <Text style={styles.audioTitle}>Audio ready to share</Text>
+
+                        <Text numberOfLines={1} style={styles.audioName}>
+                          {selectedMedia.name || "Recorded experience"}
+                        </Text>
+                      </View>
+                    </View>
+                    {!content.trim() ? (
+                      <Text style={styles.audioRequirement}>
+                        Add a short description above to publish this audio.
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
             ) : null}
           </View>
-
-          <TextInput
-            value={content}
-            onChangeText={setContent}
-            multiline
-            onBlur={() =>
-              setIsComposerFocused(false)
-            }
-            onFocus={revealComposerInput}
-            onLayout={captureInputOffset}
-            onSubmitEditing={dismissKeyboard}
-            returnKeyType="done"
-            submitBehavior="blurAndSubmit"
-            textAlignVertical="top"
-            placeholder="What would you like to share with the Sai Family?"
-            placeholderTextColor="#b78c56"
-            style={[styles.input, isComposerFocused && styles.inputFocused]}
-          />
-
-          {/* ───────────────── MEDIA PREVIEW ───────────────── */}
-
-          {selectedMedia && (
-            <View
-              style={
-                styles.mediaContainer
-              }
-            >
-              <Pressable
-                onPress={() =>
-                  setSelectedMedia(
-                    null
-                  )
-                }
-                style={
-                  styles.closeButton
-                }
-              >
-                <X
-                  size={16}
-                  color="#fff"
-                />
-              </Pressable>
-
-              {selectedMedia.type ===
-                "image" && (
-                <Image
-                  source={{
-                    uri:
-                      selectedMedia.uri,
-                  }}
-                  style={styles.media}
-                />
-              )}
-
-              {selectedMedia.type ===
-                "video" && (
-                <View>
-                  <Image
-                    source={{
-                      uri:
-                        selectedMedia.uri,
-                    }}
-                    style={styles.media}
-                  />
-
-                  <View
-                    style={
-                      styles.playButton
-                    }
-                  >
-                    <Play
-                      size={24}
-                      color="#fff"
-                      fill="#fff"
-                    />
-                  </View>
-                </View>
-              )}
-
-              {selectedMedia.type ===
-                "audio" && (
-                <View style={styles.audioSelection}>
-                  <View style={styles.audioCard}>
-                    <FileAudio
-                      size={24}
-                      color="#a66d11"
-                    />
-
-                    <View style={styles.audioInfo}>
-                      <Text style={styles.audioTitle}>
-                        Audio selected
-                      </Text>
-
-                      <Text numberOfLines={1} style={styles.audioName}>
-                        {selectedMedia.name}
-                      </Text>
-                    </View>
-                  </View>
-                  {!content.trim() ? (
-                    <Text style={styles.audioRequirement}>
-                      Add a short description above to publish this audio.
-                    </Text>
-                  ) : null}
-                </View>
-              )}
-            </View>
-          )}
-
-          
         </View>
       </ScrollView>
 
@@ -734,35 +825,43 @@ export default function PremiumPostScreen() {
       >
         <View style={styles.actions}>
           <ActionButton
-            label="Image"
+            active={selectedMedia?.type === "image"}
+            label="Photo"
             icon={
               <ImageIcon
                 size={20}
-                color="#292524"
+                color={selectedMedia?.type === "image" ? "#FFFFFF" : "#7C2D12"}
               />
             }
             onPress={pickImage}
           />
 
           <ActionButton
+            active={selectedMedia?.type === "video"}
             label="Video"
             icon={
               <Video
                 size={20}
-                color="#292524"
+                color={selectedMedia?.type === "video" ? "#FFFFFF" : "#7C2D12"}
               />
             }
             onPress={pickVideo}
           />
 
           <ActionButton
-            active={isDictating || audioRecorderState.isRecording}
+            active={
+              selectedMedia?.type === "audio" ||
+              isDictating ||
+              audioRecorderState.isRecording
+            }
             label="Audio"
             icon={
               <Mic
                 size={20}
                 color={
-                  isDictating || audioRecorderState.isRecording
+                  selectedMedia?.type === "audio" ||
+                  isDictating ||
+                  audioRecorderState.isRecording
                     ? "#FFFFFF"
                     : "#292524"
                 }
@@ -942,8 +1041,9 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     color: EXPERIENCE_THEME.heading,
-    fontSize: 17,
-    fontWeight: "800",
+    fontSize: 19,
+    fontWeight: "900",
+    letterSpacing: 0,
   },
 
   headerSubtitle: {
@@ -973,13 +1073,13 @@ const styles = StyleSheet.create({
 
   publishButton: {
     alignItems: "center",
-    backgroundColor: "#292524",
+    backgroundColor: EXPERIENCE_THEME.heading,
     borderRadius: 12,
     flexDirection: "row",
     gap: 7,
     justifyContent: "center",
     minHeight: 42,
-    minWidth: 104,
+    minWidth: 88,
     paddingHorizontal: 14,
   },
 
@@ -995,7 +1095,7 @@ const styles = StyleSheet.create({
 
   bodyContent: {
     flexGrow: 1,
-    paddingBottom: 24,
+    paddingBottom: 28,
   },
 
   composerSurface: {
@@ -1004,20 +1104,84 @@ const styles = StyleSheet.create({
     minHeight: 460,
     paddingBottom: 20,
     paddingHorizontal: 18,
+    paddingTop: 16,
+  },
+
+  authorRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    minHeight: 58,
+  },
+
+  authorAvatar: {
+    borderColor: "#E9C998",
+    borderRadius: 25,
+    borderWidth: 1,
+    height: 50,
+    width: 50,
+  },
+
+  authorAvatarFallback: {
+    alignItems: "center",
+    backgroundColor: "#F8E6CB",
+    justifyContent: "center",
+  },
+
+  authorAvatarInitial: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 19,
+    fontWeight: "900",
+  },
+
+  authorCopy: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  authorName: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 17,
+    fontWeight: "900",
+  },
+
+  audienceRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 5,
+    marginTop: 4,
+  },
+
+  audienceText: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  composerCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 15,
+    shadowColor: "#7C2D12",
+    shadowOffset: { height: 4, width: 0 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
   },
 
   input: {
-    backgroundColor: "#FFFFFF",
-    borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 14,
+    backgroundColor: "#FFFCF7",
+    borderColor: "#EAD5B7",
+    borderRadius: 12,
     borderWidth: 1,
     marginTop: 12,
-    minHeight: 190,
+    minHeight: 176,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 13,
     color: EXPERIENCE_THEME.paragraph,
     fontSize: 17,
-    lineHeight: 26,
+    lineHeight: 27,
     fontWeight: "500",
   },
 
@@ -1030,6 +1194,34 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
 
+  composerFooter: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    minHeight: 34,
+    paddingHorizontal: 3,
+    paddingTop: 6,
+  },
+
+  clearTextButton: {
+    justifyContent: "center",
+    minHeight: 32,
+    paddingHorizontal: 4,
+  },
+
+  clearTextLabel: {
+    color: "#A33A16",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  characterCount: {
+    color: "#8C7A6C",
+    fontSize: 12,
+    fontVariant: ["tabular-nums"],
+    fontWeight: "600",
+  },
+
   sectionLabel: {
     color: EXPERIENCE_THEME.heading,
     fontSize: 16,
@@ -1039,9 +1231,9 @@ const styles = StyleSheet.create({
   categorySection: {
     borderBottomColor: EXPERIENCE_THEME.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    marginBottom: 20,
+    marginBottom: 16,
     marginHorizontal: -18,
-    paddingTop: 16,
+    marginTop: 12,
   },
 
   categoryHeading: {
@@ -1071,14 +1263,19 @@ const styles = StyleSheet.create({
   },
 
   categoryRail: {
-    marginTop: 5,
-    paddingBottom: 4,
+    marginTop: 4,
+    paddingBottom: 8,
   },
 
   composerHeading: {
-    alignItems: "flex-end",
+    alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+
+  composerHeadingCopy: {
+    flex: 1,
+    paddingRight: 10,
   },
 
   composerHint: {
@@ -1115,15 +1312,15 @@ const styles = StyleSheet.create({
 
   mediaContainer: {
     borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    marginTop: 16,
+    marginTop: 10,
     overflow: "hidden",
   },
 
   media: {
     width: "100%",
-    aspectRatio: 4 / 3,
+    aspectRatio: 16 / 10,
     height: undefined,
   },
 
@@ -1133,9 +1330,9 @@ const styles = StyleSheet.create({
     right: 14,
     zIndex: 10,
 
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
 
     alignItems: "center",
     justifyContent: "center",
@@ -1146,15 +1343,12 @@ const styles = StyleSheet.create({
 
   playButton: {
     position: "absolute",
-    top: "50%",
-    left: "50%",
+    bottom: 14,
+    right: 14,
 
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-
-    marginLeft: -30,
-    marginTop: -30,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
 
     alignItems: "center",
     justifyContent: "center",
@@ -1163,15 +1357,42 @@ const styles = StyleSheet.create({
       "rgba(0,0,0,0.55)",
   },
 
+  videoPreview: {
+    alignItems: "center",
+    aspectRatio: 16 / 8,
+    backgroundColor: "#FFF4E8",
+    justifyContent: "center",
+    paddingHorizontal: 54,
+  },
+
+  videoPreviewTitle: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 16,
+    fontWeight: "800",
+    marginTop: 8,
+  },
+
+  videoPreviewName: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 12,
+    marginTop: 4,
+    maxWidth: "100%",
+  },
+
   audioCard: {
     flexDirection: "row",
     alignItems: "center",
-
-    borderRadius: 16,
-
-    padding: 18,
-
+    padding: 14,
     backgroundColor: "#FFF7ED",
+  },
+
+  audioIconBubble: {
+    alignItems: "center",
+    backgroundColor: "#FCE4C6",
+    borderRadius: 13,
+    height: 48,
+    justifyContent: "center",
+    width: 48,
   },
 
   audioSelection: {
@@ -1229,7 +1450,7 @@ const styles = StyleSheet.create({
 
   toolbar: {
     alignItems: "center",
-    backgroundColor: EXPERIENCE_THEME.background,
+    backgroundColor: "#FFFDF9",
     borderTopColor: EXPERIENCE_THEME.border,
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
@@ -1249,7 +1470,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 13,
+    borderRadius: 14,
     borderWidth: 1,
     flex: 1,
     flexDirection: "row",
@@ -1259,8 +1480,8 @@ const styles = StyleSheet.create({
   },
 
   activeActionButton: {
-    backgroundColor: "#292524",
-    borderColor: "#292524",
+    backgroundColor: EXPERIENCE_THEME.heading,
+    borderColor: EXPERIENCE_THEME.heading,
   },
 
   actionButtonPressed: {

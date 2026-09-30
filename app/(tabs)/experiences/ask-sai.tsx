@@ -3409,7 +3409,7 @@ export default function AskSaiScreen() {
               <Pressable
                 disabled={isSubmitting}
                 key={item}
-                onPress={() => submitQuestion(item)}
+                // onPress={() => submitQuestion(item)}
                 style={({ pressed }) => [
                   styles.suggestion,
                   pressed && styles.pressed,
