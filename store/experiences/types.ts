@@ -12,6 +12,9 @@ export interface ExperienceCategory {
 
 export interface Experience {
   id: string;
+  feedItemId?: string;
+  feedActivityType?: "original" | "repost";
+  feedCreatedAt?: string;
   content: string;
   category: string;
   location?: string;
@@ -34,6 +37,14 @@ export interface Experience {
   likedByMe?: boolean;
   repostedByMe?: boolean;
   bookmarkedByMe?: boolean;
+
+  repostedAt?: string;
+  repostedBy?: {
+    id: string;
+    name: string | null;
+    handle?: string | null;
+    profileImageUrl?: string | null;
+  } | null;
 
   mediaAttachments: ExperienceMedia[];
 }

@@ -9,6 +9,8 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Easing,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -28,9 +30,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useDispatch, useSelector } from "react-redux";
 
+import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as Location from "expo-location";
+import { LinearGradient } from "expo-linear-gradient";
 import { ExpoSpeechRecognitionModule } from "expo-speech-recognition";
 import {
   RecordingPresets,
@@ -44,13 +48,14 @@ import {
   ArrowLeft,
   ChevronRight,
   CircleStop,
-  FileAudio,
   Image as ImageIcon,
   Languages,
   MapPin,
   Mic,
+  Music2,
   Play,
   Radio,
+  RotateCw,
   Send,
   Upload,
   Video,
@@ -68,6 +73,12 @@ import {
 } from "@/store/experiences/selectors";
 import { CategoryChips } from "@/components/experiences";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
+
+const ACCENT = "#C2410C";
+const ACCENT_DEEP = "#9A3412";
+const ACCENT_SOFT = "#FFF2E3";
+const SAFFRON_GRADIENT = ["#F97316", "#C2410C"] as const;
+
 type MediaType =
   | "image"
   | "video"
@@ -131,6 +142,26 @@ export default function PremiumPostScreen() {
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const audioRecorderState = useAudioRecorderState(audioRecorder, 250);
+
+  const profileImageUrl =
+    account?.profileImage?.uri ||
+    account?.profileImageUrl ||
+    account?.profile?.profileImageUrl;
+  const profileInitial = account?.name?.trim().charAt(0).toUpperCase() || "S";
+
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((item: { category: string; label: string }) => ({
+        label: item.label,
+        value: item.category,
+      })),
+    [categories]
+  );
+
+  const wordCount = useMemo(
+    () => content.trim().split(/\s+/).filter(Boolean).length,
+    [content]
+  );
 
   const isDisabled = useMemo(() => {
     const hasContent = Boolean(content.trim());
@@ -362,6 +393,11 @@ export default function PremiumPostScreen() {
     }
   };
 
+  const stopDictation = () => {
+    ExpoSpeechRecognitionModule.stop();
+    setIsDictating(false);
+  };
+
   const startAudioRecording = async () => {
     try {
       const permission = await requestRecordingPermissionsAsync();
@@ -380,6 +416,7 @@ export default function PremiumPostScreen() {
       });
       await audioRecorder.prepareToRecordAsync();
       audioRecorder.record();
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error) {
       Alert.alert(
         "Recording unavailable",
@@ -403,6 +440,7 @@ export default function PremiumPostScreen() {
 
       await setAudioModeAsync({ allowsRecording: false });
       setVoiceMenuVisible(false);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       Alert.alert(
         "Could not save recording",
@@ -431,6 +469,8 @@ export default function PremiumPostScreen() {
       account?.id ||
       account?.authorId;
 
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
     dispatch(
       createExperienceRequest({
         content,
@@ -445,6 +485,11 @@ export default function PremiumPostScreen() {
     setLocation("");
     setSelectedMedia(null);
     router.push("/experiences");
+  };
+
+  const handleCategoryChange = (value: string) => {
+    void Haptics.selectionAsync();
+    setSelectedCategory(value);
   };
 
   const dismissKeyboard = () => {
@@ -488,6 +533,9 @@ export default function PremiumPostScreen() {
     router.replace("/(tabs)/experiences" as never);
   };
 
+  const publishDisabled = isDisabled || creating;
+  const voiceActive = isDictating || audioRecorderState.isRecording;
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -498,6 +546,8 @@ export default function PremiumPostScreen() {
       }
       keyboardVerticalOffset={0}
     >
+      {/* ───────────────── HEADER ───────────────── */}
+
       <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
         <Pressable
           accessibilityLabel="Back to experiences"
@@ -506,36 +556,48 @@ export default function PremiumPostScreen() {
           onPress={handleBack}
           style={({ pressed }) => [
             styles.headerIconButton,
-            pressed && styles.headerButtonPressed,
+            pressed && styles.pressed,
           ]}
         >
-          <ArrowLeft color="#292524" size={24} strokeWidth={2.2} />
+          <ArrowLeft color={EXPERIENCE_THEME.heading} size={22} strokeWidth={2.3} />
         </Pressable>
 
         <View style={styles.headerCopy}>
-          <Text style={styles.headerTitle}>Create</Text>
-          <Text style={styles.headerSubtitle}>New experience</Text>
+          <Text style={styles.headerTitle}>New Experience</Text>
+          <Text style={styles.headerSubtitle}>Share with the Sai Family</Text>
         </View>
 
         <Pressable
           accessibilityLabel="Publish experience"
           accessibilityRole="button"
-          disabled={isDisabled || creating}
+          accessibilityState={{ disabled: publishDisabled }}
+          disabled={publishDisabled}
           onPress={handlePost}
           style={({ pressed }) => [
-            styles.publishButton,
-            (isDisabled || creating) && styles.disabledButton,
-            pressed && !isDisabled && styles.headerButtonPressed,
+            styles.publishButtonWrap,
+            publishDisabled && styles.disabledButton,
+            pressed && styles.pressed,
           ]}
         >
-          {creating ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <>
-              <Send color="#FFFFFF" size={17} strokeWidth={2.3} />
-              <Text style={styles.publishText}>Publish</Text>
-            </>
-          )}
+          <LinearGradient
+            colors={
+              publishDisabled
+                ? ["#D6C4AE", "#C9B59C"]
+                : SAFFRON_GRADIENT
+            }
+            end={{ x: 1, y: 1 }}
+            start={{ x: 0, y: 0 }}
+            style={styles.publishButton}
+          >
+            {creating ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <>
+                <Text style={styles.publishText}>Publish</Text>
+                <Send color="#FFFFFF" size={15} strokeWidth={2.5} />
+              </>
+            )}
+          </LinearGradient>
         </Pressable>
       </View>
 
@@ -544,9 +606,11 @@ export default function PremiumPostScreen() {
       <ScrollView
         ref={composerScrollRef}
         style={styles.body}
-        contentContainerStyle={
-          styles.bodyContent
-        }
+        contentContainerStyle={[
+          styles.bodyContent,
+          // The custom tab bar floats over the screen, so keep content clear of it.
+          { paddingBottom: 76 + Math.max(insets.bottom, 8) + 24 },
+        ]}
         keyboardDismissMode={
           Platform.OS === "ios"
             ? "interactive"
@@ -557,58 +621,93 @@ export default function PremiumPostScreen() {
           false
         }
       >
-        <View style={styles.composerSurface}>
-          <View style={styles.categorySection}>
-            <View style={styles.categoryHeading}>
-              <View style={styles.categoryMetaRow}>
-                <Text style={styles.categoryTitle}>Choose category</Text>
-                {isLocating ? (
-                  <View style={styles.locationPill}>
-                    <ActivityIndicator color="#A34A0A" size="small" />
-                    <Text numberOfLines={1} style={styles.locationText}>
-                      Finding location
-                    </Text>
-                  </View>
-                ) : location ? (
-                  <View style={styles.locationPill}>
-                    <MapPin color="#A34A0A" size={13} strokeWidth={2.2} />
-                    <Text numberOfLines={1} style={styles.locationText}>
-                      {location}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-              <Text style={styles.categoryHint}>Helps devotees discover your post</Text>
-            </View>
-            <View style={styles.categoryRail}>
-              <CategoryChips
-                activeValue={selectedCategory}
-                categories={categories.map(
-                  (item: { category: string; label: string }) => ({
-                    label: item.label,
-                    value: item.category,
-                  })
-                )}
-                onChange={setSelectedCategory}
-              />
-            </View>
-          </View>
+        {/* Author + location */}
+        <View style={styles.authorRow}>
+          {profileImageUrl ? (
+            <Image
+              accessibilityLabel={`${account?.name || "Devotee"} profile photo`}
+              source={{ uri: profileImageUrl }}
+              style={styles.avatar}
+            />
+          ) : (
+            <LinearGradient
+              colors={SAFFRON_GRADIENT}
+              end={{ x: 1, y: 1 }}
+              start={{ x: 0, y: 0 }}
+              style={styles.avatar}
+            >
+              <Text style={styles.avatarInitial}>{profileInitial}</Text>
+            </LinearGradient>
+          )}
 
-          <View style={styles.composerHeading}>
-            <View>
-              <Text style={styles.sectionLabel}>Share your experience</Text>
-              <Text style={styles.composerHint}>
-                Write from the heart. You can also use voice.
-              </Text>
-            </View>
-            {isDictating ? (
-              <View style={styles.listeningBadge}>
-                <View style={styles.listeningDot} />
-                <Text style={styles.listeningText}>Listening</Text>
-              </View>
-            ) : null}
-          </View>
+          <View style={styles.authorCopy}>
+            <Text numberOfLines={1} style={styles.authorName}>
+              {account?.name || "Sai Devotee"}
+            </Text>
 
+            {isLocating ? (
+              <View style={styles.locationRow}>
+                <ActivityIndicator color={ACCENT} size="small" style={styles.locationSpinner} />
+                <Text numberOfLines={1} style={styles.locationMuted}>
+                  Finding your location…
+                </Text>
+              </View>
+            ) : location ? (
+              <View style={styles.locationRow}>
+                <MapPin color={ACCENT} size={13} strokeWidth={2.4} />
+                <Text numberOfLines={1} style={styles.locationText}>
+                  {location}
+                </Text>
+                <Pressable
+                  accessibilityLabel="Remove location"
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  onPress={() => setLocation("")}
+                  style={styles.locationClear}
+                >
+                  <X color={EXPERIENCE_THEME.paragraph} size={12} strokeWidth={2.6} />
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable
+                accessibilityLabel="Add current location"
+                accessibilityRole="button"
+                hitSlop={6}
+                onPress={() => void attachCurrentLocation()}
+                style={({ pressed }) => [styles.locationRow, pressed && styles.pressed]}
+              >
+                <MapPin color={EXPERIENCE_THEME.paragraph} size={13} strokeWidth={2.2} />
+                <Text style={styles.locationAdd}>Add location</Text>
+                <RotateCw color={EXPERIENCE_THEME.paragraph} size={11} strokeWidth={2.4} />
+              </Pressable>
+            )}
+          </View>
+        </View>
+
+        {/* Category */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionLabel}>Category</Text>
+          <Text style={styles.sectionHint}>Helps devotees discover your post</Text>
+        </View>
+        <View style={styles.categoryRail}>
+          <CategoryChips
+            activeValue={selectedCategory}
+            categories={categoryOptions}
+            onChange={handleCategoryChange}
+            showTagline
+          />
+        </View>
+
+        {/* Composer */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionLabel}>Your experience</Text>
+          <Text style={styles.sectionHint}>Write from the heart, or use your voice</Text>
+        </View>
+
+        <View
+          onLayout={captureInputOffset}
+          style={[styles.composerCard, isComposerFocused && styles.composerCardFocused]}
+        >
           <TextInput
             value={content}
             onChangeText={setContent}
@@ -617,161 +716,167 @@ export default function PremiumPostScreen() {
               setIsComposerFocused(false)
             }
             onFocus={revealComposerInput}
-            onLayout={captureInputOffset}
             onSubmitEditing={dismissKeyboard}
             returnKeyType="done"
             submitBehavior="blurAndSubmit"
             textAlignVertical="top"
             placeholder="What would you like to share with the Sai Family?"
-            placeholderTextColor="#b78c56"
-            style={[styles.input, isComposerFocused && styles.inputFocused]}
+            placeholderTextColor="#B8A48C"
+            selectionColor={ACCENT}
+            style={styles.input}
           />
 
-          {/* ───────────────── MEDIA PREVIEW ───────────────── */}
-
-          {selectedMedia && (
-            <View
-              style={
-                styles.mediaContainer
-              }
-            >
+          <View style={styles.composerFooter}>
+            {isDictating ? (
               <Pressable
-                onPress={() =>
-                  setSelectedMedia(
-                    null
-                  )
-                }
-                style={
-                  styles.closeButton
-                }
+                accessibilityLabel="Stop voice typing"
+                accessibilityRole="button"
+                onPress={stopDictation}
+                style={({ pressed }) => [styles.listeningBadge, pressed && styles.pressed]}
               >
-                <X
-                  size={16}
-                  color="#fff"
-                />
+                <PulseDot />
+                <Text style={styles.listeningText}>Listening… tap to stop</Text>
               </Pressable>
+            ) : (
+              <Pressable
+                accessibilityLabel="Type with your voice"
+                accessibilityRole="button"
+                onPress={startEnglishDictation}
+                style={({ pressed }) => [styles.dictateButton, pressed && styles.pressed]}
+              >
+                <Mic color={ACCENT_DEEP} size={15} strokeWidth={2.4} />
+                <Text style={styles.dictateText}>Speak</Text>
+              </Pressable>
+            )}
 
-              {selectedMedia.type ===
-                "image" && (
+            <Text style={styles.wordCount}>
+              {wordCount} {wordCount === 1 ? "word" : "words"}
+            </Text>
+          </View>
+        </View>
+
+        {/* ───────────────── ATTACHMENTS ───────────────── */}
+
+        <View style={styles.attachSection}>
+          <Text style={styles.toolbarLabel}>Add to your post</Text>
+          <View style={styles.actions}>
+            <ActionButton
+              label="Photo"
+              icon={<ImageIcon size={18} color="#15803D" strokeWidth={2.3} />}
+              iconBackground="#DCFCE7"
+              onPress={pickImage}
+            />
+
+            <ActionButton
+              label="Video"
+              icon={<Video size={18} color="#1D4ED8" strokeWidth={2.3} />}
+              iconBackground="#DBEAFE"
+              onPress={pickVideo}
+            />
+
+            <ActionButton
+              active={voiceActive}
+              label="Voice"
+              icon={
+                <Mic
+                  size={18}
+                  color={voiceActive ? "#FFFFFF" : ACCENT_DEEP}
+                  strokeWidth={2.3}
+                />
+              }
+              iconBackground={ACCENT_SOFT}
+              onPress={() => setVoiceMenuVisible(true)}
+            />
+          </View>
+        </View>
+
+        {/* ───────────────── MEDIA PREVIEW ───────────────── */}
+
+        {selectedMedia && (
+          <View style={styles.mediaContainer}>
+            {selectedMedia.type === "image" && (
+              <Image
+                source={{ uri: selectedMedia.uri }}
+                style={styles.media}
+              />
+            )}
+
+            {selectedMedia.type === "video" && (
+              <View style={styles.videoFrame}>
                 <Image
-                  source={{
-                    uri:
-                      selectedMedia.uri,
-                  }}
+                  source={{ uri: selectedMedia.uri }}
                   style={styles.media}
                 />
-              )}
+                <View style={styles.playButton}>
+                  <Play size={24} color="#fff" fill="#fff" />
+                </View>
+              </View>
+            )}
 
-              {selectedMedia.type ===
-                "video" && (
-                <View>
-                  <Image
-                    source={{
-                      uri:
-                        selectedMedia.uri,
-                    }}
-                    style={styles.media}
-                  />
-
-                  <View
-                    style={
-                      styles.playButton
-                    }
+            {selectedMedia.type === "audio" && (
+              <View>
+                <View style={styles.audioCard}>
+                  <LinearGradient
+                    colors={SAFFRON_GRADIENT}
+                    end={{ x: 1, y: 1 }}
+                    start={{ x: 0, y: 0 }}
+                    style={styles.audioIcon}
                   >
-                    <Play
-                      size={24}
-                      color="#fff"
-                      fill="#fff"
-                    />
+                    <Music2 color="#FFFFFF" size={22} strokeWidth={2.3} />
+                  </LinearGradient>
+
+                  <View style={styles.audioInfo}>
+                    <Text style={styles.audioTitle}>Audio attached</Text>
+                    <Text numberOfLines={1} style={styles.audioName}>
+                      {selectedMedia.name}
+                    </Text>
                   </View>
                 </View>
-              )}
-
-              {selectedMedia.type ===
-                "audio" && (
-                <View style={styles.audioSelection}>
-                  <View style={styles.audioCard}>
-                    <FileAudio
-                      size={24}
-                      color="#a66d11"
-                    />
-
-                    <View style={styles.audioInfo}>
-                      <Text style={styles.audioTitle}>
-                        Audio selected
-                      </Text>
-
-                      <Text numberOfLines={1} style={styles.audioName}>
-                        {selectedMedia.name}
-                      </Text>
-                    </View>
-                  </View>
-                  {!content.trim() ? (
-                    <Text style={styles.audioRequirement}>
+                {!content.trim() ? (
+                  <View style={styles.audioRequirement}>
+                    <Text style={styles.audioRequirementText}>
                       Add a short description above to publish this audio.
                     </Text>
-                  ) : null}
-                </View>
-              )}
-            </View>
-          )}
+                  </View>
+                ) : null}
+              </View>
+            )}
 
-          
-        </View>
+            {selectedMedia.type !== "audio" ? (
+              <View style={styles.mediaBadge}>
+                {selectedMedia.type === "image" ? (
+                  <ImageIcon color="#FFFFFF" size={12} strokeWidth={2.4} />
+                ) : (
+                  <Video color="#FFFFFF" size={12} strokeWidth={2.4} />
+                )}
+                <Text style={styles.mediaBadgeText}>
+                  {selectedMedia.type === "image" ? "Photo" : "Video"}
+                </Text>
+              </View>
+            ) : null}
+
+            <Pressable
+              accessibilityLabel="Remove attachment"
+              accessibilityRole="button"
+              hitSlop={6}
+              onPress={() => setSelectedMedia(null)}
+              style={({ pressed }) => [
+                styles.closeButton,
+                selectedMedia.type === "audio" && styles.closeButtonLight,
+                pressed && styles.pressed,
+              ]}
+            >
+              <X
+                size={16}
+                color={selectedMedia.type === "audio" ? EXPERIENCE_THEME.paragraph : "#fff"}
+                strokeWidth={2.6}
+              />
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
 
-      {/* ───────────────── TOOLBAR ───────────────── */}
-
-      <View
-        style={[
-          styles.toolbar,
-          {
-            paddingBottom: isComposerFocused
-              ? 10
-              : Math.max(insets.bottom, 12),
-          },
-        ]}
-      >
-        <View style={styles.actions}>
-          <ActionButton
-            label="Image"
-            icon={
-              <ImageIcon
-                size={20}
-                color="#292524"
-              />
-            }
-            onPress={pickImage}
-          />
-
-          <ActionButton
-            label="Video"
-            icon={
-              <Video
-                size={20}
-                color="#292524"
-              />
-            }
-            onPress={pickVideo}
-          />
-
-          <ActionButton
-            active={isDictating || audioRecorderState.isRecording}
-            label="Audio"
-            icon={
-              <Mic
-                size={20}
-                color={
-                  isDictating || audioRecorderState.isRecording
-                    ? "#FFFFFF"
-                    : "#292524"
-                }
-              />
-            }
-            onPress={() => setVoiceMenuVisible(true)}
-          />
-        </View>
-      </View>
+      {/* ───────────────── VOICE SHEET ───────────────── */}
 
       <Modal
         animationType="fade"
@@ -780,6 +885,7 @@ export default function PremiumPostScreen() {
             setVoiceMenuVisible(false);
           }
         }}
+        statusBarTranslucent
         transparent
         visible={voiceMenuVisible}
       >
@@ -789,18 +895,21 @@ export default function PremiumPostScreen() {
             onPress={() => setVoiceMenuVisible(false)}
             style={StyleSheet.absoluteFill}
           />
-          <View style={styles.voiceSheet}>
+          <View
+            style={[
+              styles.voiceSheet,
+              { paddingBottom: Math.max(insets.bottom, 16) + 8 },
+            ]}
+          >
             <View style={styles.sheetHandle} />
 
             {audioRecorderState.isRecording ? (
               <View style={styles.recordingPanel}>
-                <View style={styles.recordingIcon}>
-                  <Radio color="#FFFFFF" size={28} strokeWidth={2.2} />
-                </View>
-                <Text style={styles.sheetTitle}>Recording your experience</Text>
+                <RecordingPulse />
                 <Text style={styles.recordingTimer}>
                   {formatRecordingDuration(audioRecorderState.durationMillis)}
                 </Text>
+                <Text style={styles.sheetTitleCentered}>Recording your experience</Text>
                 <Text style={styles.sheetDescription}>
                   Speak clearly. Tap stop when your message is complete.
                 </Text>
@@ -808,9 +917,12 @@ export default function PremiumPostScreen() {
                   accessibilityLabel="Stop and save audio recording"
                   accessibilityRole="button"
                   onPress={stopAudioRecording}
-                  style={styles.stopRecordingButton}
+                  style={({ pressed }) => [
+                    styles.stopRecordingButton,
+                    pressed && styles.pressed,
+                  ]}
                 >
-                  <CircleStop color="#FFFFFF" size={21} strokeWidth={2.4} />
+                  <CircleStop color="#FFFFFF" size={20} strokeWidth={2.4} />
                   <Text style={styles.stopRecordingText}>Stop and save</Text>
                 </Pressable>
               </View>
@@ -825,27 +937,30 @@ export default function PremiumPostScreen() {
                     accessibilityLabel="Close voice options"
                     accessibilityRole="button"
                     onPress={() => setVoiceMenuVisible(false)}
-                    style={styles.sheetCloseButton}
+                    style={({ pressed }) => [
+                      styles.sheetCloseButton,
+                      pressed && styles.pressed,
+                    ]}
                   >
-                    <X color="#57534E" size={21} />
+                    <X color="#57534E" size={19} />
                   </Pressable>
                 </View>
 
                 <VoiceOption
-                  description="Speak in English and add it to your written post."
-                  icon={<Languages color="#9A3412" size={23} />}
+                  description="Speak in English and it's written into your post."
+                  icon={<Languages color={ACCENT_DEEP} size={22} />}
                   onPress={startEnglishDictation}
                   title="Type with your voice"
                 />
                 <VoiceOption
                   description="Record and publish your voice as an audio experience."
-                  icon={<Radio color="#9A3412" size={23} />}
+                  icon={<Radio color={ACCENT_DEEP} size={22} />}
                   onPress={startAudioRecording}
                   title="Record audio now"
                 />
                 <VoiceOption
                   description="Choose an existing audio file from this device."
-                  icon={<Upload color="#9A3412" size={23} />}
+                  icon={<Upload color={ACCENT_DEEP} size={22} />}
                   onPress={chooseAudioFile}
                   title="Upload audio file"
                 />
@@ -858,16 +973,89 @@ export default function PremiumPostScreen() {
   );
 }
 
+// ───────────────── ANIMATED INDICATORS ─────────────────
+
+function useLoopingValue(duration: number) {
+  const value = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(value, {
+        duration,
+        easing: Easing.out(Easing.ease),
+        toValue: 1,
+        useNativeDriver: true,
+      })
+    );
+    loop.start();
+
+    return () => loop.stop();
+  }, [duration, value]);
+
+  return value;
+}
+
+function PulseDot() {
+  const progress = useLoopingValue(1200);
+
+  return (
+    <View style={styles.pulseDotWrap}>
+      <Animated.View
+        style={[
+          styles.pulseDotHalo,
+          {
+            opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0] }),
+            transform: [
+              { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 2.4] }) },
+            ],
+          },
+        ]}
+      />
+      <View style={styles.pulseDot} />
+    </View>
+  );
+}
+
+function RecordingPulse() {
+  const progress = useLoopingValue(1600);
+
+  return (
+    <View style={styles.recordingPulseWrap}>
+      <Animated.View
+        style={[
+          styles.recordingHalo,
+          {
+            opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] }),
+            transform: [
+              { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.8] }) },
+            ],
+          },
+        ]}
+      />
+      <LinearGradient
+        colors={SAFFRON_GRADIENT}
+        end={{ x: 1, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        style={styles.recordingIcon}
+      >
+        <Mic color="#FFFFFF" size={30} strokeWidth={2.2} />
+      </LinearGradient>
+    </View>
+  );
+}
+
 // ───────────────── ACTION BUTTON ─────────────────
 
 function ActionButton({
   active = false,
   icon,
+  iconBackground,
   label,
   onPress,
 }: {
   active?: boolean;
   icon: React.ReactNode;
+  iconBackground: string;
   label: string;
   onPress: () => void;
 }) {
@@ -879,10 +1067,17 @@ function ActionButton({
       style={({ pressed }) => [
         styles.actionButton,
         active && styles.activeActionButton,
-        pressed && styles.actionButtonPressed,
+        pressed && styles.pressed,
       ]}
     >
-      {icon}
+      <View
+        style={[
+          styles.actionIcon,
+          { backgroundColor: active ? "rgba(255,255,255,0.18)" : iconBackground },
+        ]}
+      >
+        {icon}
+      </View>
       <Text style={[styles.actionLabel, active && styles.activeActionLabel]}>
         {label}
       </Text>
@@ -923,11 +1118,26 @@ function VoiceOption({
 
 // ───────────────── STYLES ─────────────────
 
+const cardShadow = {
+  elevation: 2,
+  shadowColor: "#7C2D12",
+  shadowOffset: { height: 4, width: 0 },
+  shadowOpacity: 0.06,
+  shadowRadius: 12,
+};
+
 const styles = StyleSheet.create({
   container: {
     backgroundColor: EXPERIENCE_THEME.background,
     flex: 1,
   },
+
+  pressed: {
+    opacity: 0.72,
+    transform: [{ scale: 0.97 }],
+  },
+
+  // Header
 
   header: {
     alignItems: "center",
@@ -940,10 +1150,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
 
+  headerIconButton: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: "center",
+    width: 42,
+  },
+
+  headerCopy: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
   headerTitle: {
     color: EXPERIENCE_THEME.heading,
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "800",
+    letterSpacing: -0.2,
   },
 
   headerSubtitle: {
@@ -951,43 +1178,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     marginTop: 1,
+    opacity: 0.8,
   },
 
-  headerCopy: {
-    flex: 1,
-    marginLeft: 10,
-  },
-
-  headerIconButton: {
-    alignItems: "center",
-    borderRadius: 12,
-    height: 44,
-    justifyContent: "center",
-    width: 44,
-  },
-
-  headerButtonPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.98 }],
+  publishButtonWrap: {
+    borderRadius: 999,
+    shadowColor: ACCENT,
+    shadowOffset: { height: 4, width: 0 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    elevation: 4,
   },
 
   publishButton: {
     alignItems: "center",
-    backgroundColor: "#292524",
-    borderRadius: 12,
+    borderRadius: 999,
     flexDirection: "row",
     gap: 7,
     justifyContent: "center",
     minHeight: 42,
-    minWidth: 104,
-    paddingHorizontal: 14,
+    minWidth: 108,
+    paddingHorizontal: 18,
   },
 
   publishText: {
     color: "#FFFFFF",
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: "800",
+    letterSpacing: 0.2,
   },
+
+  disabledButton: {
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+
+  // Body
 
   body: {
     flex: 1,
@@ -995,97 +1221,173 @@ const styles = StyleSheet.create({
 
   bodyContent: {
     flexGrow: 1,
-    paddingBottom: 24,
   },
 
-  composerSurface: {
-    backgroundColor: EXPERIENCE_THEME.background,
-    flex: 1,
-    minHeight: 460,
-    paddingBottom: 20,
+  authorRow: {
+    alignItems: "center",
+    flexDirection: "row",
     paddingHorizontal: 18,
+    paddingTop: 18,
   },
 
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginTop: 12,
-    minHeight: 190,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: EXPERIENCE_THEME.paragraph,
-    fontSize: 17,
-    lineHeight: 26,
-    fontWeight: "500",
+  avatar: {
+    alignItems: "center",
+    borderColor: "#FFFFFF",
+    borderRadius: 24,
+    borderWidth: 2,
+    height: 48,
+    justifyContent: "center",
+    overflow: "hidden",
+    width: 48,
   },
 
-  inputFocused: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#C2410C",
-    shadowColor: "#9A3412",
-    shadowOffset: { height: 2, width: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+  avatarInitial: {
+    color: "#FFFFFF",
+    fontSize: 19,
+    fontWeight: "800",
   },
 
-  sectionLabel: {
+  authorCopy: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  authorName: {
     color: EXPERIENCE_THEME.heading,
     fontSize: 16,
     fontWeight: "800",
   },
 
-  categorySection: {
-    borderBottomColor: EXPERIENCE_THEME.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    marginBottom: 20,
-    marginHorizontal: -18,
-    paddingTop: 16,
-  },
-
-  categoryHeading: {
-    paddingHorizontal: 18,
-  },
-
-  categoryMetaRow: {
+  locationRow: {
     alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "#FFFFFF",
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 999,
+    borderWidth: 1,
     flexDirection: "row",
-    gap: 10,
-    justifyContent: "space-between",
-    minHeight: 34,
+    gap: 5,
+    marginTop: 5,
+    maxWidth: "100%",
+    minHeight: 26,
+    paddingHorizontal: 9,
   },
 
-  categoryTitle: {
-    color: EXPERIENCE_THEME.heading,
-    fontSize: 15,
-    fontWeight: "800",
-    // borderWidth: 1,
+  locationSpinner: {
+    transform: [{ scale: 0.7 }],
   },
 
-  categoryHint: {
+  locationText: {
+    color: ACCENT_DEEP,
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  locationMuted: {
     color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
     fontWeight: "600",
+  },
+
+  locationAdd: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  locationClear: {
+    alignItems: "center",
+    backgroundColor: "#F5EBDD",
+    borderRadius: 8,
+    height: 16,
+    justifyContent: "center",
+    marginLeft: 2,
+    width: 16,
+  },
+
+  sectionHeader: {
+    paddingHorizontal: 18,
+    paddingTop: 22,
+  },
+
+  sectionLabel: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 15,
+    fontWeight: "800",
+  },
+
+  sectionHint: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 12.5,
+    fontWeight: "500",
     marginTop: 2,
+    opacity: 0.8,
   },
 
   categoryRail: {
-    marginTop: 5,
-    paddingBottom: 4,
+    marginTop: 8,
   },
 
-  composerHeading: {
-    alignItems: "flex-end",
+  composerCard: {
+    ...cardShadow,
+    backgroundColor: "#FFFFFF",
+    borderColor: EXPERIENCE_THEME.border,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginHorizontal: 16,
+    marginTop: 10,
+  },
+
+  composerCardFocused: {
+    borderColor: ACCENT,
+    shadowColor: ACCENT,
+    shadowOpacity: 0.14,
+  },
+
+  input: {
+    color: "#2B2420",
+    fontSize: 17,
+    fontWeight: "500",
+    lineHeight: 26,
+    minHeight: 180,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    paddingTop: 14,
+  },
+
+  composerFooter: {
+    alignItems: "center",
+    borderTopColor: "#F5EBDD",
+    borderTopWidth: 1,
     flexDirection: "row",
     justifyContent: "space-between",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
 
-  composerHint: {
-    color: EXPERIENCE_THEME.paragraph,
+  dictateButton: {
+    alignItems: "center",
+    backgroundColor: ACCENT_SOFT,
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 6,
+    minHeight: 32,
+    paddingHorizontal: 12,
+  },
+
+  dictateText: {
+    color: ACCENT_DEEP,
     fontSize: 13,
+    fontWeight: "800",
+  },
+
+  wordCount: {
+    color: "#A8977F",
+    fontSize: 12,
+    fontVariant: ["tabular-nums"],
     fontWeight: "600",
-    marginTop: 4,
+    paddingRight: 6,
   },
 
   listeningBadge: {
@@ -1095,182 +1397,217 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
-    gap: 6,
+    gap: 8,
     minHeight: 32,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
   },
 
-  listeningDot: {
+  listeningText: {
+    color: "#047857",
+    fontSize: 12.5,
+    fontWeight: "800",
+  },
+
+  pulseDotWrap: {
+    alignItems: "center",
+    height: 10,
+    justifyContent: "center",
+    width: 10,
+  },
+
+  pulseDotHalo: {
+    backgroundColor: "#10B981",
+    borderRadius: 5,
+    height: 10,
+    position: "absolute",
+    width: 10,
+  },
+
+  pulseDot: {
     backgroundColor: "#059669",
     borderRadius: 4,
     height: 8,
     width: 8,
   },
 
-  listeningText: {
-    color: "#047857",
-    fontSize: 12,
-    fontWeight: "800",
-  },
+  // Media
 
   mediaContainer: {
+    ...cardShadow,
+    backgroundColor: "#FFFFFF",
     borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 14,
+    borderRadius: 20,
     borderWidth: 1,
-    marginTop: 16,
+    marginHorizontal: 16,
+    marginTop: 14,
     overflow: "hidden",
   },
 
   media: {
-    width: "100%",
     aspectRatio: 4 / 3,
+    backgroundColor: "#1C1917",
     height: undefined,
+    width: "100%",
   },
 
-  closeButton: {
-    position: "absolute",
-    top: 14,
-    right: 14,
-    zIndex: 10,
-
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-
-    alignItems: "center",
-    justifyContent: "center",
-
-    backgroundColor:
-      "rgba(0,0,0,0.6)",
+  videoFrame: {
+    backgroundColor: "#1C1917",
   },
 
   playButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderColor: "rgba(255,255,255,0.7)",
+    borderRadius: 32,
+    borderWidth: 2,
+    height: 64,
+    justifyContent: "center",
+    left: "50%",
+    marginLeft: -32,
+    marginTop: -32,
+    paddingLeft: 3,
     position: "absolute",
     top: "50%",
-    left: "50%",
+    width: 64,
+  },
 
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-
-    marginLeft: -30,
-    marginTop: -30,
-
+  mediaBadge: {
     alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 5,
+    left: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    position: "absolute",
+    top: 12,
+  },
 
-    backgroundColor:
-      "rgba(0,0,0,0.55)",
+  mediaBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 11.5,
+    fontWeight: "800",
+  },
+
+  closeButton: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 16,
+    height: 32,
+    justifyContent: "center",
+    position: "absolute",
+    right: 12,
+    top: 12,
+    width: 32,
+    zIndex: 10,
+  },
+
+  closeButtonLight: {
+    backgroundColor: "#F5EBDD",
+    top: 20,
   },
 
   audioCard: {
-    flexDirection: "row",
     alignItems: "center",
-
-    borderRadius: 16,
-
-    padding: 18,
-
-    backgroundColor: "#FFF7ED",
+    backgroundColor: "#FFFBF5",
+    flexDirection: "row",
+    padding: 16,
+    paddingRight: 56,
   },
 
-  audioSelection: {
-    backgroundColor: "#FFF7ED",
+  audioIcon: {
+    alignItems: "center",
+    borderRadius: 16,
+    height: 48,
+    justifyContent: "center",
+    width: 48,
   },
 
   audioInfo: {
-    marginLeft: 14,
     flex: 1,
+    marginLeft: 14,
   },
 
   audioTitle: {
     color: EXPERIENCE_THEME.heading,
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: 15.5,
+    fontWeight: "800",
   },
 
   audioName: {
-    marginTop: 4,
     color: EXPERIENCE_THEME.paragraph,
-    fontSize: 14,
+    fontSize: 13,
+    marginTop: 3,
   },
 
   audioRequirement: {
-    borderTopColor: EXPERIENCE_THEME.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    backgroundColor: "#FEF3F2",
+    borderTopColor: "#FECDCA",
+    borderTopWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+
+  audioRequirementText: {
     color: "#B42318",
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: "700",
     lineHeight: 18,
-    paddingBottom: 11,
-    paddingHorizontal: 14,
-    paddingTop: 9,
   },
 
-  locationPill: {
-    alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderRadius: 999,
-    flex: 1,
-    flexDirection: "row",
-    gap: 5,
-    justifyContent: "flex-end",
-    maxWidth: "62%",
-    minHeight: 32,
-    paddingHorizontal: 9,
-  },
+  // Attachments
 
-  locationText: {
-    color: "#9A3412",
-    flexShrink: 1,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  toolbar: {
-    alignItems: "center",
-    backgroundColor: EXPERIENCE_THEME.background,
-    borderTopColor: EXPERIENCE_THEME.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    minHeight: 76,
+  attachSection: {
     paddingHorizontal: 16,
-    paddingTop: 10,
+    paddingTop: 16,
+  },
+
+  toolbarLabel: {
+    color: "#A8977F",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    marginBottom: 8,
+    marginLeft: 2,
+    textTransform: "uppercase",
   },
 
   actions: {
-    alignItems: "center",
-    flex: 1,
     flexDirection: "row",
     gap: 8,
   },
 
   actionButton: {
+    ...cardShadow,
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 13,
+    borderRadius: 14,
     borderWidth: 1,
     flex: 1,
     flexDirection: "row",
     gap: 8,
-    height: 48,
+    height: 50,
     justifyContent: "center",
   },
 
   activeActionButton: {
-    backgroundColor: "#292524",
-    borderColor: "#292524",
+    backgroundColor: ACCENT,
+    borderColor: ACCENT,
   },
 
-  actionButtonPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.97 }],
+  actionIcon: {
+    alignItems: "center",
+    borderRadius: 10,
+    height: 30,
+    justifyContent: "center",
+    width: 30,
   },
 
   actionLabel: {
     color: EXPERIENCE_THEME.paragraph,
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: "800",
   },
 
@@ -1278,42 +1615,37 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 
-  disabledButton: {
-    opacity: 0.5,
-  },
+  // Voice sheet
 
   modalBackdrop: {
-    backgroundColor: "rgba(28,25,23,0.42)",
+    backgroundColor: "rgba(28,25,23,0.48)",
     flex: 1,
     justifyContent: "flex-end",
-    padding: 12,
   },
 
   voiceSheet: {
     backgroundColor: EXPERIENCE_THEME.background,
-    borderColor: "rgba(255,255,255,0.8)",
-    borderRadius: 22,
-    borderWidth: 1,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     gap: 10,
-    paddingBottom: Platform.OS === "ios" ? 28 : 18,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingTop: 10,
   },
 
   sheetHandle: {
     alignSelf: "center",
-    backgroundColor: "#D6D3D1",
+    backgroundColor: "#D6C8B6",
     borderRadius: 2,
     height: 4,
-    marginBottom: 6,
-    width: 38,
+    marginBottom: 8,
+    width: 40,
   },
 
   sheetHeader: {
     alignItems: "flex-start",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 4,
+    marginBottom: 6,
   },
 
   sheetHeadingCopy: {
@@ -1322,9 +1654,10 @@ const styles = StyleSheet.create({
   },
 
   sheetEyebrow: {
-    color: "#C2410C",
+    color: ACCENT,
     fontSize: 11,
     fontWeight: "800",
+    letterSpacing: 1,
   },
 
   sheetTitle: {
@@ -1335,28 +1668,37 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
+  sheetTitleCentered: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 18,
+    fontWeight: "800",
+    marginTop: 6,
+    textAlign: "center",
+  },
+
   sheetDescription: {
     color: EXPERIENCE_THEME.paragraph,
     fontSize: 14,
     lineHeight: 21,
-    marginTop: 8,
+    marginTop: 6,
     textAlign: "center",
   },
 
   sheetCloseButton: {
     alignItems: "center",
-    backgroundColor: "#F5F0E8",
-    borderRadius: 12,
-    height: 40,
+    backgroundColor: "#F5EBDD",
+    borderRadius: 20,
+    height: 38,
     justifyContent: "center",
-    width: 40,
+    width: 38,
   },
 
   voiceOption: {
+    ...cardShadow,
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 15,
+    borderRadius: 18,
     borderWidth: 1,
     flexDirection: "row",
     minHeight: 76,
@@ -1365,13 +1707,13 @@ const styles = StyleSheet.create({
 
   voiceOptionPressed: {
     backgroundColor: "#FFF7ED",
-    opacity: 0.76,
+    transform: [{ scale: 0.985 }],
   },
 
   voiceOptionIcon: {
     alignItems: "center",
-    backgroundColor: "#FFF2E3",
-    borderRadius: 13,
+    backgroundColor: ACCENT_SOFT,
+    borderRadius: 14,
     height: 48,
     justifyContent: "center",
     width: 48,
@@ -1384,7 +1726,7 @@ const styles = StyleSheet.create({
 
   voiceOptionTitle: {
     color: EXPERIENCE_THEME.heading,
-    fontSize: 16,
+    fontSize: 15.5,
     fontWeight: "800",
   },
 
@@ -1397,37 +1739,53 @@ const styles = StyleSheet.create({
 
   recordingPanel: {
     alignItems: "center",
+    paddingBottom: 6,
     paddingHorizontal: 16,
-    paddingVertical: 18,
+    paddingTop: 18,
+  },
+
+  recordingPulseWrap: {
+    alignItems: "center",
+    height: 96,
+    justifyContent: "center",
+    width: 96,
+  },
+
+  recordingHalo: {
+    backgroundColor: "#F97316",
+    borderRadius: 40,
+    height: 80,
+    position: "absolute",
+    width: 80,
   },
 
   recordingIcon: {
     alignItems: "center",
-    backgroundColor: "#C2410C",
-    borderRadius: 32,
-    height: 64,
+    borderRadius: 36,
+    height: 72,
     justifyContent: "center",
-    marginBottom: 12,
-    width: 64,
+    width: 72,
   },
 
   recordingTimer: {
-    color: "#C2410C",
-    fontSize: 34,
+    color: ACCENT,
+    fontSize: 40,
     fontVariant: ["tabular-nums"],
     fontWeight: "800",
+    letterSpacing: 1,
     marginTop: 10,
   },
 
   stopRecordingButton: {
     alignItems: "center",
+    alignSelf: "stretch",
     backgroundColor: "#292524",
-    borderRadius: 14,
+    borderRadius: 16,
     flexDirection: "row",
     gap: 9,
     justifyContent: "center",
-    marginTop: 20,
-    minHeight: 50,
+    marginTop: 22,
+    minHeight: 54,
     paddingHorizontal: 22,
   },
 

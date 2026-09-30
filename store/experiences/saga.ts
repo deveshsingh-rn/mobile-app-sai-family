@@ -29,6 +29,7 @@ import {
   fetchBookmarkedExperiencesFailure,
   fetchBookmarkedExperiencesSuccess,
   fetchExperiencesFailure,
+  fetchExperiencesRequest,
   fetchExperiencesSuccess,
   fetchExperienceCategoriesFailure,
   fetchExperienceCategoriesSuccess,
@@ -545,6 +546,10 @@ function* handleToggleRepost(
           response.experience?.repostedByMe
       )
     );
+
+    // Reposts are feed activities, not only counters. Refresh the first page so
+    // the full reposted card appears (or disappears after undoing a repost).
+    yield put(fetchExperiencesRequest({ limit: 20, offset: 0 }));
   } catch {
     // Keep the current UI when the backend rejects the request.
   }

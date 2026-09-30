@@ -394,7 +394,9 @@ export default function HomeScreen() {
       if (viewableItems.length > 0) {
         // Get the first item that meets the 70% visibility threshold
         const activeItem = viewableItems[0];
-        setActiveViewableId(activeItem.item.id);
+        setActiveViewableId(
+          activeItem.item.feedItemId || activeItem.item.id
+        );
       }
     },
     []
@@ -405,7 +407,8 @@ export default function HomeScreen() {
   const renderItem = useCallback(({
     item,
   }: { item: any }) => {
-    const isActive = activeViewableId === item.id;
+    const isActive =
+      activeViewableId === (item.feedItemId || item.id);
 
     return (
       <ExperienceCard
@@ -665,7 +668,7 @@ export default function HomeScreen() {
         extraData={activeViewableId}
         renderItem={renderItem}
         keyExtractor={(item) =>
-          item.id
+          item.feedItemId || item.id
         }
         contentContainerStyle={
           styles.content

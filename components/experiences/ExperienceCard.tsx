@@ -318,6 +318,9 @@ export function ExperienceCard({
   const createdLabel = formatCreatedAt(
     item.createdAt
   );
+  const isRepostActivity = item.feedActivityType === "repost";
+  const reposterName = item.repostedBy?.name || "A Sai devotee";
+
   return (
     <Pressable
       onPress={handleOpenDetail}
@@ -332,6 +335,15 @@ export function ExperienceCard({
           hideBorder && styles.cardNoBorder,
         ]}
       >
+        {isRepostActivity ? (
+          <View style={styles.repostContext}>
+            <Repeat2 color="#15803D" size={15} strokeWidth={2.4} />
+            <Text numberOfLines={1} style={styles.repostContextText}>
+              {reposterName} reposted
+            </Text>
+          </View>
+        ) : null}
+
         <View style={styles.socialRow}>
           {item.authorProfileImageUrl ? (
             <Image
@@ -717,6 +729,21 @@ const styles = StyleSheet.create({
 
   pressed: {
     opacity: 0.94,
+  },
+
+  repostContext: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 7,
+    marginBottom: 8,
+    paddingLeft: 4,
+  },
+
+  repostContextText: {
+    color: "#166534",
+    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: "800",
   },
 
   socialRow: {
