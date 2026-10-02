@@ -3404,7 +3404,7 @@ export default function AskSaiScreen() {
           ) : null}
 
           <View style={styles.suggestionsBlock}>
-            <Text style={styles.sectionTitle}>Helpful starts</Text>
+            <Text style={styles.sectionTitle}>Helpful Starts</Text>
             {SUGGESTED_QUESTIONS.map((item) => (
               <Pressable
                 disabled={isSubmitting}
@@ -3598,7 +3598,7 @@ const styles = StyleSheet.create({
     // lineHeight: 9,
   },
   heroText: {
-    color: EXPERIENCE_THEME.paragraph,
+    color: EXPERIENCE_THEME.heading,
     fontSize: 11,
     fontWeight: "600",
     lineHeight: 16,
@@ -3707,7 +3707,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   languageSubtitle: {
-    color: EXPERIENCE_THEME.paragraph,
+    color: EXPERIENCE_THEME.heading,
     fontSize: 10,
     fontWeight: "500",
     lineHeight: 17,

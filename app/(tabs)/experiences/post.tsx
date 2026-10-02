@@ -22,7 +22,6 @@ import {
   Text,
   TextInput,
   View,
-  Modal,
 } from "react-native";
 
 import { router } from "expo-router";
@@ -32,7 +31,6 @@ import { useDispatch, useSelector } from "react-redux";
 
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import * as DocumentPicker from "expo-document-picker";
 import * as Location from "expo-location";
 import { LinearGradient } from "expo-linear-gradient";
 import { ExpoSpeechRecognitionModule } from "expo-speech-recognition";
@@ -46,18 +44,14 @@ import {
 
 import {
   ArrowLeft,
-  ChevronRight,
   CircleStop,
   Image as ImageIcon,
-  Languages,
   MapPin,
   Mic,
   Music2,
   Play,
-  Radio,
   RotateCw,
   Send,
-  Upload,
   Video,
   X,
 } from "lucide-react-native";
@@ -123,7 +117,6 @@ export default function PremiumPostScreen() {
 
   const [isLocating, setIsLocating] = useState(true);
   const [isDictating, setIsDictating] = useState(false);
-  const [voiceMenuVisible, setVoiceMenuVisible] = useState(false);
   const contentBeforeDictationRef = useRef("");
   const composerScrollRef = useRef<ScrollView>(null);
   const inputOffsetRef = useRef(0);
@@ -308,28 +301,6 @@ export default function PremiumPostScreen() {
     }
   };
 
-  // ───────────────── AUDIO ─────────────────
-
-  const pickAudio = async () => {
-    const result =
-      await DocumentPicker.getDocumentAsync(
-        {
-          type: "audio/*",
-        }
-      );
-
-    if (!result.canceled) {
-      const asset = result.assets[0];
-
-      setSelectedMedia({
-        uri: asset.uri,
-        type: "audio",
-        name: asset.name,
-        mimeType: asset.mimeType || undefined,
-      });
-    }
-  };
-
   // ───────────────── VOICE INPUT ─────────────────
 
   const startEnglishDictation = async () => {
@@ -346,7 +317,6 @@ export default function PremiumPostScreen() {
       }
 
       contentBeforeDictationRef.current = content.trim();
-      setVoiceMenuVisible(false);
       setIsDictating(true);
       ExpoSpeechRecognitionModule.start({
         continuous: false,
@@ -411,7 +381,6 @@ export default function PremiumPostScreen() {
       }
 
       await setAudioModeAsync({ allowsRecording: false });
-      setVoiceMenuVisible(false);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       Alert.alert(
@@ -421,9 +390,17 @@ export default function PremiumPostScreen() {
     }
   };
 
-  const chooseAudioFile = async () => {
-    await pickAudio();
-    setVoiceMenuVisible(false);
+  const toggleAudioRecording = () => {
+    if (audioRecorderState.isRecording) {
+      void stopAudioRecording();
+      return;
+    }
+
+    if (isDictating) {
+      stopDictation();
+    }
+
+    void startAudioRecording();
   };
 
   // ───────────────── POST ─────────────────
@@ -501,7 +478,7 @@ export default function PremiumPostScreen() {
   };
 
   const publishDisabled = isDisabled || creating;
-  const voiceActive = isDictating || audioRecorderState.isRecording;
+  const isRecording = audioRecorderState.isRecording;
 
   return (
     <KeyboardAvoidingView
@@ -728,19 +705,41 @@ export default function PremiumPostScreen() {
             />
 
             <ActionButton
-              active={voiceActive}
-              label="Voice"
+              active={isRecording}
+              label={isRecording ? "Stop" : "Voice"}
               icon={
-                <Mic
-                  size={18}
-                  color={voiceActive ? "#FFFFFF" : ACCENT_DEEP}
-                  strokeWidth={2.3}
-                />
+                isRecording ? (
+                  <CircleStop size={18} color="#FFFFFF" strokeWidth={2.3} />
+                ) : (
+                  <Mic size={18} color={ACCENT_DEEP} strokeWidth={2.3} />
+                )
               }
               iconBackground={ACCENT_SOFT}
-              onPress={() => setVoiceMenuVisible(true)}
+              onPress={toggleAudioRecording}
             />
           </View>
+
+          {isRecording ? (
+            <View style={styles.recordingBar}>
+              <PulseDot color="#DC2626" />
+              <Text style={styles.recordingLabel}>Recording</Text>
+              <Text style={styles.recordingTimer}>
+                {formatRecordingDuration(audioRecorderState.durationMillis)}
+              </Text>
+              <Pressable
+                accessibilityLabel="Stop and save audio recording"
+                accessibilityRole="button"
+                onPress={() => void stopAudioRecording()}
+                style={({ pressed }) => [
+                  styles.stopRecordingButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <CircleStop color="#FFFFFF" size={15} strokeWidth={2.5} />
+                <Text style={styles.stopRecordingText}>Stop & save</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
 
         {/* ───────────────── MEDIA PREVIEW ───────────────── */}
@@ -828,100 +827,6 @@ export default function PremiumPostScreen() {
           </View>
         )}
       </ScrollView>
-
-      {/* ───────────────── VOICE SHEET ───────────────── */}
-
-      <Modal
-        animationType="fade"
-        onRequestClose={() => {
-          if (!audioRecorderState.isRecording) {
-            setVoiceMenuVisible(false);
-          }
-        }}
-        statusBarTranslucent
-        transparent
-        visible={voiceMenuVisible}
-      >
-        <View style={styles.modalBackdrop}>
-          <Pressable
-            disabled={audioRecorderState.isRecording}
-            onPress={() => setVoiceMenuVisible(false)}
-            style={StyleSheet.absoluteFill}
-          />
-          <View
-            style={[
-              styles.voiceSheet,
-              { paddingBottom: Math.max(insets.bottom, 16) + 8 },
-            ]}
-          >
-            <View style={styles.sheetHandle} />
-
-            {audioRecorderState.isRecording ? (
-              <View style={styles.recordingPanel}>
-                <RecordingPulse />
-                <Text style={styles.recordingTimer}>
-                  {formatRecordingDuration(audioRecorderState.durationMillis)}
-                </Text>
-                <Text style={styles.sheetTitleCentered}>Recording your experience</Text>
-                <Text style={styles.sheetDescription}>
-                  Speak clearly. Tap stop when your message is complete.
-                </Text>
-                <Pressable
-                  accessibilityLabel="Stop and save audio recording"
-                  accessibilityRole="button"
-                  onPress={stopAudioRecording}
-                  style={({ pressed }) => [
-                    styles.stopRecordingButton,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <CircleStop color="#FFFFFF" size={20} strokeWidth={2.4} />
-                  <Text style={styles.stopRecordingText}>Stop and save</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <>
-                <View style={styles.sheetHeader}>
-                  <View style={styles.sheetHeadingCopy}>
-                    <Text style={styles.sheetEyebrow}>VOICE TOOLS</Text>
-                    <Text style={styles.sheetTitle}>How would you like to share?</Text>
-                  </View>
-                  <Pressable
-                    accessibilityLabel="Close voice options"
-                    accessibilityRole="button"
-                    onPress={() => setVoiceMenuVisible(false)}
-                    style={({ pressed }) => [
-                      styles.sheetCloseButton,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <X color="#57534E" size={19} />
-                  </Pressable>
-                </View>
-
-                <VoiceOption
-                  description="Speak in English and it's written into your post."
-                  icon={<Languages color={ACCENT_DEEP} size={22} />}
-                  onPress={startEnglishDictation}
-                  title="Type with your voice"
-                />
-                <VoiceOption
-                  description="Record and publish your voice as an audio experience."
-                  icon={<Radio color={ACCENT_DEEP} size={22} />}
-                  onPress={startAudioRecording}
-                  title="Record audio now"
-                />
-                <VoiceOption
-                  description="Choose an existing audio file from this device."
-                  icon={<Upload color={ACCENT_DEEP} size={22} />}
-                  onPress={chooseAudioFile}
-                  title="Upload audio file"
-                />
-              </>
-            )}
-          </View>
-        </View>
-      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -948,7 +853,7 @@ function useLoopingValue(duration: number) {
   return value;
 }
 
-function PulseDot() {
+function PulseDot({ color = "#059669" }: { color?: string }) {
   const progress = useLoopingValue(1200);
 
   return (
@@ -957,6 +862,7 @@ function PulseDot() {
         style={[
           styles.pulseDotHalo,
           {
+            backgroundColor: color,
             opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0] }),
             transform: [
               { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 2.4] }) },
@@ -964,35 +870,7 @@ function PulseDot() {
           },
         ]}
       />
-      <View style={styles.pulseDot} />
-    </View>
-  );
-}
-
-function RecordingPulse() {
-  const progress = useLoopingValue(1600);
-
-  return (
-    <View style={styles.recordingPulseWrap}>
-      <Animated.View
-        style={[
-          styles.recordingHalo,
-          {
-            opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] }),
-            transform: [
-              { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.8] }) },
-            ],
-          },
-        ]}
-      />
-      <LinearGradient
-        colors={SAFFRON_GRADIENT}
-        end={{ x: 1, y: 1 }}
-        start={{ x: 0, y: 0 }}
-        style={styles.recordingIcon}
-      >
-        <Mic color="#FFFFFF" size={30} strokeWidth={2.2} />
-      </LinearGradient>
+      <View style={[styles.pulseDot, { backgroundColor: color }]} />
     </View>
   );
 }
@@ -1034,37 +912,6 @@ function ActionButton({
       <Text style={[styles.actionLabel, active && styles.activeActionLabel]}>
         {label}
       </Text>
-    </Pressable>
-  );
-}
-
-function VoiceOption({
-  description,
-  icon,
-  onPress,
-  title,
-}: {
-  description: string;
-  icon: React.ReactNode;
-  onPress: () => void;
-  title: string;
-}) {
-  return (
-    <Pressable
-      accessibilityLabel={title}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.voiceOption,
-        pressed && styles.voiceOptionPressed,
-      ]}
-    >
-      <View style={styles.voiceOptionIcon}>{icon}</View>
-      <View style={styles.voiceOptionCopy}>
-        <Text style={styles.voiceOptionTitle}>{title}</Text>
-        <Text style={styles.voiceOptionDescription}>{description}</Text>
-      </View>
-      <ChevronRight color="#A8A29E" size={20} />
     </Pressable>
   );
 }
@@ -1564,183 +1411,49 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
 
-  // Voice sheet
+  // Recording
 
-  modalBackdrop: {
-    backgroundColor: "rgba(28,25,23,0.48)",
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-
-  voiceSheet: {
-    backgroundColor: EXPERIENCE_THEME.background,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    gap: 10,
-    paddingHorizontal: 18,
-    paddingTop: 10,
-  },
-
-  sheetHandle: {
-    alignSelf: "center",
-    backgroundColor: "#D6C8B6",
-    borderRadius: 2,
-    height: 4,
-    marginBottom: 8,
-    width: 40,
-  },
-
-  sheetHeader: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-
-  sheetHeadingCopy: {
-    flex: 1,
-    paddingRight: 12,
-  },
-
-  sheetEyebrow: {
-    color: ACCENT,
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1,
-  },
-
-  sheetTitle: {
-    color: EXPERIENCE_THEME.heading,
-    fontSize: 20,
-    fontWeight: "800",
-    lineHeight: 26,
-    marginTop: 3,
-  },
-
-  sheetTitleCentered: {
-    color: EXPERIENCE_THEME.heading,
-    fontSize: 18,
-    fontWeight: "800",
-    marginTop: 6,
-    textAlign: "center",
-  },
-
-  sheetDescription: {
-    color: EXPERIENCE_THEME.paragraph,
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 6,
-    textAlign: "center",
-  },
-
-  sheetCloseButton: {
+  recordingBar: {
     alignItems: "center",
-    backgroundColor: "#F5EBDD",
-    borderRadius: 20,
-    height: 38,
-    justifyContent: "center",
-    width: 38,
-  },
-
-  voiceOption: {
-    ...cardShadow,
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 18,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: "row",
-    minHeight: 76,
-    padding: 12,
+    gap: 8,
+    marginTop: 10,
+    minHeight: 50,
+    paddingLeft: 14,
+    paddingRight: 6,
   },
 
-  voiceOptionPressed: {
-    backgroundColor: "#FFF7ED",
-    transform: [{ scale: 0.985 }],
-  },
-
-  voiceOptionIcon: {
-    alignItems: "center",
-    backgroundColor: ACCENT_SOFT,
-    borderRadius: 14,
-    height: 48,
-    justifyContent: "center",
-    width: 48,
-  },
-
-  voiceOptionCopy: {
-    flex: 1,
-    marginHorizontal: 12,
-  },
-
-  voiceOptionTitle: {
-    color: EXPERIENCE_THEME.heading,
-    fontSize: 15.5,
+  recordingLabel: {
+    color: "#B91C1C",
+    fontSize: 13.5,
     fontWeight: "800",
-  },
-
-  voiceOptionDescription: {
-    color: EXPERIENCE_THEME.paragraph,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 3,
-  },
-
-  recordingPanel: {
-    alignItems: "center",
-    paddingBottom: 6,
-    paddingHorizontal: 16,
-    paddingTop: 18,
-  },
-
-  recordingPulseWrap: {
-    alignItems: "center",
-    height: 96,
-    justifyContent: "center",
-    width: 96,
-  },
-
-  recordingHalo: {
-    backgroundColor: "#F97316",
-    borderRadius: 40,
-    height: 80,
-    position: "absolute",
-    width: 80,
-  },
-
-  recordingIcon: {
-    alignItems: "center",
-    borderRadius: 36,
-    height: 72,
-    justifyContent: "center",
-    width: 72,
   },
 
   recordingTimer: {
-    color: ACCENT,
-    fontSize: 40,
+    color: "#B91C1C",
+    flex: 1,
+    fontSize: 15,
     fontVariant: ["tabular-nums"],
     fontWeight: "800",
-    letterSpacing: 1,
-    marginTop: 10,
   },
 
   stopRecordingButton: {
     alignItems: "center",
-    alignSelf: "stretch",
     backgroundColor: "#292524",
-    borderRadius: 16,
+    borderRadius: 10,
     flexDirection: "row",
-    gap: 9,
-    justifyContent: "center",
-    marginTop: 22,
-    minHeight: 54,
-    paddingHorizontal: 22,
+    gap: 6,
+    minHeight: 38,
+    paddingHorizontal: 12,
   },
 
   stopRecordingText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "800",
   },
 });
