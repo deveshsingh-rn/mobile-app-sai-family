@@ -224,7 +224,7 @@ export function PillarGlassDock({
   });
 
   const handleNavigate = (tab: PillarTab) => {
-    if (onNavigate && tab.name !== "naam-jap") {
+    if (onNavigate) {
       onNavigate(tab.name);
       return;
     }
@@ -297,7 +297,7 @@ export function PillarGlassDock({
   );
 }
 
-export default function CustomTabBar({ navigation, state }: any) {
+export default function CustomTabBar({ state }: any) {
   const insets = useSafeAreaInsets();
   const activeRoute = state.routes[state.index];
   const nestedState = activeRoute?.state;
@@ -330,7 +330,15 @@ export default function CustomTabBar({ navigation, state }: any) {
       >
         <PillarGlassDock
           activeRouteName={activeRoute?.name ?? "experiences"}
-          onNavigate={(routeName) => navigation.navigate(routeName)}
+          onNavigate={(routeName) => {
+            const destination = TABS.find(
+              (tab) => tab.name === routeName
+            );
+
+            if (destination) {
+              router.replace(destination.href as never);
+            }
+          }}
         />
       </View>
     </View>
