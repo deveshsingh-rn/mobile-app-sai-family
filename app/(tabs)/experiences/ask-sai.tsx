@@ -2989,7 +2989,7 @@ export default function AskSaiScreen() {
           contentContainerStyle={[
             styles.content,
             {
-              paddingBottom: insets.bottom + 18,
+              paddingBottom: 94 + Math.max(insets.bottom, 8),
               paddingTop: insets.top + 12,
             },
           ]}

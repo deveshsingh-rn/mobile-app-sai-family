@@ -307,8 +307,7 @@ export default function CustomTabBar({ navigation, state }: any) {
     activeRoute?.name === "experiences" &&
     (!nestedRouteName ||
       nestedRouteName === "index" ||
-      nestedRouteName === "[id]" ||
-      nestedRouteName === "ask-sai");
+      nestedRouteName === "[id]");
 
   // Experiences owns its dock so it can move from inline to floating on scroll.
   if (experienceOwnsDock) {
