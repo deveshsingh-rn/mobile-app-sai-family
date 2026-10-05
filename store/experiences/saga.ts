@@ -373,6 +373,15 @@ function* handleCreateExperience(
         flattened
       )
     );
+
+    // Reconcile the optimistic item with the canonical feed activity returned
+    // by the backend, including author, media-processing, and activity fields.
+    yield put(
+      fetchExperiencesRequest({
+        limit: 10,
+        offset: 0,
+      })
+    );
   } catch (error: any) {
     const message =
       error.response?.data?.error
