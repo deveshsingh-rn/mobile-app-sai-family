@@ -70,12 +70,6 @@ import { voiceLatencySnapshot, type VoiceTiming } from "@/utils/voice-latency";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { useAppSelector } from "@/store/hooks";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
-import {
-  emptyVoiceActivity,
-  hasFinishedSpeaking,
-  recordAudioActivity,
-  recordTranscriptActivity,
-} from "@/utils/voice-silence";
 import type {
   SaiAudioStreamChunkEvent,
   SaiAudioStreamErrorEvent,
@@ -133,7 +127,6 @@ const VOICE_PROVIDER: "elevenlabs" | "mock" =
 const VOICE_DEBUG_ENABLED =
   __DEV__ || FULL_DUPLEX_VOICE_ENABLED;
 const SAI_RAM_CYCLE_MS = 1800;
-const VOICE_SILENCE_SUBMIT_MS = 2000;
 
 const logVoiceDebug = (message: string, payload?: Record<string, unknown>) => {
   if (!VOICE_DEBUG_ENABLED) {
@@ -540,12 +533,7 @@ export default function AskSaiScreen() {
   const voiceSocketRef =
     useRef<ReturnType<typeof createDevoteeAiVoiceSocket> | null>(null);
   const handleVoiceQuestionRef = useRef<(() => Promise<void>) | null>(null);
-  const submitVoiceModalRef = useRef<(() => Promise<void>) | null>(null);
   const voiceModalOpenRef = useRef(false);
-  const autoSubmitInProgressRef = useRef(false);
-  const voiceActivityRef = useRef(emptyVoiceActivity());
-  const lastActivityTranscriptRef = useRef("");
-  const fallbackSilenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMicCaptureReadyRef = useRef(false);
   const voiceCaptureStopRef = useRef<(() => Promise<void>) | null>(null);
   const voiceSessionRef = useRef<DevoteeAiVoiceSession | null>(null);
@@ -1175,13 +1163,7 @@ export default function AskSaiScreen() {
 
     pendingVoiceStartRef.current = null;
     isMicCaptureReadyRef.current = false;
-    if (fallbackSilenceTimerRef.current) {
-      clearTimeout(fallbackSilenceTimerRef.current);
-      fallbackSilenceTimerRef.current = null;
-    }
     voiceModalOpenRef.current = false;
-    autoSubmitInProgressRef.current = false;
-    voiceActivityRef.current = emptyVoiceActivity();
     setVoiceInputLevel(0);
     void stopWaitingTone();
 
@@ -1452,8 +1434,6 @@ export default function AskSaiScreen() {
               const rms = Math.sqrt(energy / Math.max(sampleCount, 1));
               setVoiceInputLevel(Math.min(1, rms / 9000));
 
-              const now = Date.now();
-              voiceActivityRef.current = recordAudioActivity(voiceActivityRef.current, rms, now);
             } catch {
               // The visualizer must never interrupt microphone streaming.
             }
@@ -1622,10 +1602,6 @@ export default function AskSaiScreen() {
           break;
 
         case "transcript_partial":
-          if (event.text !== lastActivityTranscriptRef.current) {
-            lastActivityTranscriptRef.current = event.text;
-            voiceActivityRef.current = recordTranscriptActivity(voiceActivityRef.current, Date.now());
-          }
           if (!voiceTimingRef.current.firstTranscriptAt) {
             voiceTimingRef.current.firstTranscriptAt = Date.now();
             logVoiceDebug("First transcript received", {
@@ -2129,27 +2105,9 @@ export default function AskSaiScreen() {
             setVoiceError("");
             setVoicePartialTranscript(event.isFinal ? "" : transcript);
 
-            if (voiceModalOpenRef.current && !voiceSocketRef.current) {
-              if (fallbackSilenceTimerRef.current) {
-                clearTimeout(fallbackSilenceTimerRef.current);
-              }
-              fallbackSilenceTimerRef.current = setTimeout(() => {
-                fallbackSilenceTimerRef.current = null;
-                if (!voiceModalOpenRef.current || autoSubmitInProgressRef.current) {
-                  return;
-                }
-                autoSubmitInProgressRef.current = true;
-                logVoiceDebug("Auto-submitting after transcript silence");
-                void submitVoiceModalRef.current?.();
-              }, VOICE_SILENCE_SUBMIT_MS);
-            }
-
             if (event.isFinal) {
-              isMicCaptureReadyRef.current = false;
-              setIsListening(false);
               setVoiceFinalTranscript(transcript);
               voiceFinalTranscriptRef.current = transcript;
-              setVoiceConnectionState("idle");
             }
           }
         );
@@ -2308,7 +2266,6 @@ export default function AskSaiScreen() {
 
       const activeTurnId = activeVoiceTurnIdRef.current;
       voiceTimingRef.current.submitRequestedAt = Date.now();
-      voiceTimingRef.current.lastSpeechAt = voiceActivityRef.current.lastSoundAt || undefined;
       logVoiceLatency("submit_requested", activeTurnId);
 
       try {
@@ -2762,9 +2719,6 @@ export default function AskSaiScreen() {
       return;
     }
 
-    voiceActivityRef.current = emptyVoiceActivity();
-    lastActivityTranscriptRef.current = "";
-    autoSubmitInProgressRef.current = false;
     voiceModalOpenRef.current = true;
     setIsVoiceCaptureStarting(false);
     setIsVoiceModalVisible(true);
@@ -2780,9 +2734,6 @@ export default function AskSaiScreen() {
       return;
     }
 
-    voiceActivityRef.current = emptyVoiceActivity();
-    lastActivityTranscriptRef.current = "";
-    autoSubmitInProgressRef.current = false;
     setVoiceError("");
     setIsVoiceCaptureStarting(true);
 
@@ -2809,7 +2760,6 @@ export default function AskSaiScreen() {
 
   const submitVoiceModal = useCallback(async () => {
     if (isSubmitting) {
-      autoSubmitInProgressRef.current = false;
       return;
     }
 
@@ -2847,10 +2797,9 @@ export default function AskSaiScreen() {
         await stopWaitingTone();
       }
     } else {
-      autoSubmitInProgressRef.current = false;
       Alert.alert(
         "Speak your question",
-        "Please speak a little more. Your question will send when you pause."
+        "Please speak a little more, then tap End & Send."
       );
     }
   }, [
@@ -2865,33 +2814,8 @@ export default function AskSaiScreen() {
     voicePartialTranscript,
   ]);
 
-  useEffect(() => {
-    submitVoiceModalRef.current = submitVoiceModal;
-  }, [submitVoiceModal]);
-
-  useEffect(() => {
-    if (!isVoiceModalVisible) return;
-    const timer = setInterval(() => {
-      if (!voiceModalOpenRef.current || !isMicCaptureReadyRef.current ||
-          !voiceSocketRef.current || autoSubmitInProgressRef.current) return;
-      const now = Date.now();
-      if (!hasFinishedSpeaking(voiceActivityRef.current, now)) return;
-      autoSubmitInProgressRef.current = true;
-      logVoiceDebug("Auto-submitting after voice silence", {
-        lastSoundAgoMs: now - voiceActivityRef.current.lastSoundAt,
-        turnId: activeVoiceTurnIdRef.current,
-      });
-      void submitVoiceModalRef.current?.();
-    }, 100);
-    return () => clearInterval(timer);
-  }, [isVoiceModalVisible]);
-
   const closeVoiceModal = useCallback(async () => {
     voiceModalOpenRef.current = false;
-    if (fallbackSilenceTimerRef.current) {
-      clearTimeout(fallbackSilenceTimerRef.current);
-      fallbackSilenceTimerRef.current = null;
-    }
     setIsVoiceModalVisible(false);
     await stopWaitingTone();
     closeVoiceSession();
