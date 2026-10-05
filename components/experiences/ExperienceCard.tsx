@@ -409,17 +409,17 @@ export function ExperienceCard({
 
             {(item.category || item.location) && (
               <View style={styles.contextRow}>
-                {!!item.category && (
-                  <View style={styles.categoryBadge}>
-                    <Text numberOfLines={1} style={styles.categoryText}>
+                {/* {!!item.category && (
+                  <View style={styles.categoryBadge}> */}
+                    {/* <Text numberOfLines={1} style={styles.categoryText}>
                       {String(item.category)}
-                    </Text>
-                  </View>
-                )}
+                    </Text> */}
+                  {/* </View>
+                )} */}
 
                 {!!item.location && (
                   <View style={styles.locationRow}>
-                    <MapPin color={EXPERIENCE_THEME.paragraph} size={12} />
+                    <MapPin color={EXPERIENCE_THEME.heading} size={12} />
                     <Text numberOfLines={1} style={styles.locationText}>
                       {item.location}
                     </Text>
@@ -801,7 +801,7 @@ const styles = StyleSheet.create({
   },
 
   dateText: {
-    color: EXPERIENCE_THEME.paragraph,
+    color: EXPERIENCE_THEME.heading,
     fontSize: 11,
     fontWeight: "500",
   },
@@ -870,10 +870,10 @@ const styles = StyleSheet.create({
   },
 
   locationText: {
-    color: EXPERIENCE_THEME.paragraph,
+    color: EXPERIENCE_THEME.heading,
     flex: 1,
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 
   audioAttachment: {
