@@ -178,7 +178,7 @@ export function AskSaiVoiceCaptureModal({
               ? "Speak naturally. Pause for 2 seconds or tap End & Send when you finish."
               : error || (isStarting
                 ? "Please read the instructions while we securely connect your microphone."
-                : "Tap Start Listening, then share your question. Nothing is recorded before you tap Start.")}
+                : "    Tap Start, then Share your Question. Tap End To Send the Question.")}
           </Text>
 
           <View style={styles.actions}>
