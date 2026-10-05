@@ -3404,7 +3404,7 @@ export default function AskSaiScreen() {
           ) : null}
 
           <View style={styles.suggestionsBlock}>
-            <Text style={styles.sectionTitle}>Helpful Starts</Text>
+            <Text style={styles.sectionTitle}>Questions You Can Ask</Text>
             {SUGGESTED_QUESTIONS.map((item) => (
               <Pressable
                 disabled={isSubmitting}
