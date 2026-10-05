@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Mic } from "lucide-react-native";
+import { Mic, Square } from "lucide-react-native";
 import { MotiView } from "moti";
 import {
   ActivityIndicator,
@@ -41,22 +41,28 @@ const WAVE_PATHS = [
 ];
 
 type AskSaiVoiceCaptureModalProps = {
+  canStart: boolean;
   error?: string;
   hasCapturedTranscript: boolean;
   isListening: boolean;
   isStarting: boolean;
   level: number;
   onCancel: () => void;
+  onEnd: () => void;
+  onStart: () => void;
   visible: boolean;
 };
 
 export function AskSaiVoiceCaptureModal({
+  canStart,
   error,
   hasCapturedTranscript,
   isListening,
   isStarting,
   level,
   onCancel,
+  onEnd,
+  onStart,
   visible,
 }: AskSaiVoiceCaptureModalProps) {
   const rotation = useRef(new Animated.Value(0)).current;
@@ -144,7 +150,7 @@ export function AskSaiVoiceCaptureModal({
             </Animated.View>
             <MotiView
               animate={{
-                backgroundColor: isListening ? EXPERIENCE_THEME.heading : "#8C7A6C",
+                backgroundColor: isListening ? "#15803D" : "#8C7A6C",
                 scale: isListening ? 1 + level * 0.08 : 1,
               }}
               style={styles.micCircle}
@@ -160,41 +166,67 @@ export function AskSaiVoiceCaptureModal({
 
           <Text accessibilityLiveRegion="polite" style={styles.title}>
             {isListening
-              ? "Speak Now"
+              ? "Listening to You"
               : error
-                ? "Could not start listening"
-                : hasCapturedTranscript
-                  ? "Getting Ready to Listen"
-                : "Getting Ready to Listen"}
+                ? "Voice is unavailable"
+                : isStarting
+                  ? "Preparing Voice Connection"
+                  : "Ready When You Are"}
           </Text>
           <Text style={styles.subtitle}>
             {isListening
-              ? "Pause for 2 seconds When You have finished Speaking, your Question will be Sent Automatically."
-              : error || (hasCapturedTranscript
-                ? ""
-                : "Start Speaking When the Ring Lights Up.")}
+              ? "Speak naturally. Pause for 2 seconds or tap End & Send when you finish."
+              : error || (isStarting
+                ? "Please read the instructions while we securely connect your microphone."
+                : "Tap Start Listening, then share your question. Nothing is recorded before you tap Start.")}
           </Text>
-
-          {/* {hasCapturedTranscript ? ( */}
-            {/* // <Text style={styles.capturedHint}> */}
-             {/* <Text > */}
-              {/* Your words are appearing on the Ask Sai screen. */}
-            {/* </Text> */}
-          {/* ) : null}x */}
 
           <View style={styles.actions}>
             <Pressable
+              accessibilityLabel="Start listening"
               accessibilityRole="button"
-              accessibilityLabel="Cancel voice question"
-              onPress={onCancel}
+              disabled={!canStart || isListening || isStarting}
+              onPress={onStart}
               style={({ pressed }) => [
-                styles.secondaryButton,
+                styles.startButton,
+                (!canStart || isListening || isStarting) && styles.disabledButton,
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.secondaryText}>Cancel</Text>
+              {isStarting ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Mic color="#FFFFFF" size={19} strokeWidth={2.3} />
+              )}
+              <Text style={styles.startButtonText}>
+                {isListening ? "Listening" : isStarting ? "Connecting" : "Start Listening"}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              accessibilityLabel="End listening and send question"
+              accessibilityRole="button"
+              disabled={!isListening && !hasCapturedTranscript}
+              onPress={onEnd}
+              style={({ pressed }) => [
+                styles.endButton,
+                (!isListening && !hasCapturedTranscript) && styles.disabledButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Square color={EXPERIENCE_THEME.heading} fill={EXPERIENCE_THEME.heading} size={16} />
+              <Text style={styles.endButtonText}>End &amp; Send</Text>
             </Pressable>
           </View>
+
+          <Pressable
+            accessibilityLabel="Cancel voice question"
+            accessibilityRole="button"
+            onPress={onCancel}
+            style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.cancelText}>Cancel</Text>
+          </Pressable>
         </MotiView>
       </View>
     </Modal>
@@ -264,35 +296,58 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     textAlign: "center",
   },
-  capturedHint: {
-    backgroundColor: "#FFF0D8",
-    borderRadius: 6,
-    color: EXPERIENCE_THEME.heading,
-    fontSize: 13,
-    fontWeight: "800",
-    lineHeight: 18,
-    marginTop: 14,
-    paddingHorizontal: 11,
-    paddingVertical: 8,
-    textAlign: "center",
-  },
   actions: {
     alignSelf: "stretch",
+    flexDirection: "row",
     gap: 10,
     marginTop: 8,
   },
-  secondaryButton: {
+  startButton: {
     alignItems: "center",
-    borderColor: EXPERIENCE_THEME.border,
+    backgroundColor: EXPERIENCE_THEME.heading,
     borderRadius: 8,
-    borderWidth: 1,
+    flex: 1,
+    flexDirection: "row",
+    gap: 7,
     height: 52,
     justifyContent: "center",
   },
-  secondaryText: {
-    color: EXPERIENCE_THEME.paragraph,
-    fontSize: 15,
+  startButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
     fontWeight: "800",
+  },
+  endButton: {
+    alignItems: "center",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: "row",
+    gap: 7,
+    height: 52,
+    justifyContent: "center",
+  },
+  endButtonText: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  disabledButton: {
+    opacity: 0.42,
+  },
+  cancelButton: {
+    alignItems: "center",
+    alignSelf: "stretch",
+    height: 42,
+    justifyContent: "center",
+    marginTop: 6,
+  },
+  cancelText: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 14,
+    fontWeight: "700",
   },
   pressed: {
     opacity: 0.76,

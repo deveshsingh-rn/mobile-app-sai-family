@@ -618,6 +618,7 @@ export default function AskSaiScreen() {
   const [authMessage, setAuthMessage] = useState("");
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isVoiceCaptureStarting, setIsVoiceCaptureStarting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isVoiceModalVisible, setIsVoiceModalVisible] = useState(false);
@@ -1212,6 +1213,7 @@ export default function AskSaiScreen() {
     setActiveVoiceTurnId(null);
     setVoiceSession(null);
     setIsListening(false);
+    setIsVoiceCaptureStarting(false);
     setVoiceConnectionState("idle");
     setVoicePartialTranscript("");
     void cleanupBackendVoiceSessions("local-close");
@@ -1602,8 +1604,11 @@ export default function AskSaiScreen() {
                   : undefined,
               turnId: event.turnId,
             });
+            if (voiceConnectedTimeoutRef.current) {
+              clearTimeout(voiceConnectedTimeoutRef.current);
+              voiceConnectedTimeoutRef.current = null;
+            }
             setVoiceConnectionState("connected");
-            void startConnectedVoiceStreaming();
           } else if (event.state === "speaking") {
             setVoiceConnectionState((current) => current === "speaking" ? current : "thinking");
           } else if (
@@ -1977,7 +1982,6 @@ export default function AskSaiScreen() {
       selectedLanguage.locale,
       speakText,
       startWaitingTone,
-      startConnectedVoiceStreaming,
       stopVoiceCapture,
       stopSpeech,
       stopWaitingTone,
@@ -2391,11 +2395,8 @@ export default function AskSaiScreen() {
 
         if (!audioStream.isSaiAudioStreamAvailable()) {
           logVoiceDebug("Native audio module unavailable; falling back to speech recognition");
-          setVoiceError(
-            "Live voice streaming needs a fresh development build. Using speech recognition fallback for now."
-          );
-
-          await startSpeechRecognitionFallback();
+          setVoiceError("");
+          setVoiceConnectionState("connected");
           return;
         }
 
@@ -2765,12 +2766,46 @@ export default function AskSaiScreen() {
     lastActivityTranscriptRef.current = "";
     autoSubmitInProgressRef.current = false;
     voiceModalOpenRef.current = true;
+    setIsVoiceCaptureStarting(false);
     setIsVoiceModalVisible(true);
 
-    if (!isVoiceControlActive) {
+    if (FULL_DUPLEX_VOICE_ENABLED && !isVoiceControlActive) {
+      setVoiceConnectionState("connecting");
       void handleVoiceQuestion();
     }
   }, [handleVoiceQuestion, isSpeaking, isSubmitting, isVoiceControlActive]);
+
+  const startVoiceModalCapture = useCallback(async () => {
+    if (isListening || isVoiceCaptureStarting) {
+      return;
+    }
+
+    voiceActivityRef.current = emptyVoiceActivity();
+    lastActivityTranscriptRef.current = "";
+    autoSubmitInProgressRef.current = false;
+    setVoiceError("");
+    setIsVoiceCaptureStarting(true);
+
+    try {
+      if (
+        FULL_DUPLEX_VOICE_ENABLED &&
+        pendingVoiceStartRef.current &&
+        voiceConnectionStateRef.current === "connected"
+      ) {
+        await startConnectedVoiceStreaming();
+        return;
+      }
+
+      await startSpeechRecognitionFallback();
+    } finally {
+      setIsVoiceCaptureStarting(false);
+    }
+  }, [
+    isListening,
+    isVoiceCaptureStarting,
+    startConnectedVoiceStreaming,
+    startSpeechRecognitionFallback,
+  ]);
 
   const submitVoiceModal = useCallback(async () => {
     if (isSubmitting) {
@@ -2940,8 +2975,7 @@ export default function AskSaiScreen() {
   );
   const hasCapturedTranscript = (
     voicePartialTranscript ||
-    voiceFinalTranscript ||
-    question
+    voiceFinalTranscript
   ).trim().length >= 3;
   const isVoiceThinking =
     voiceConnectionState === "thinking" ||
@@ -2949,8 +2983,12 @@ export default function AskSaiScreen() {
     voicePlaybackStage === "buffering" ||
     (isWaitingToneActive && !isSpeaking);
   const isVoiceStarting =
-    voiceConnectionState === "connecting" ||
-    (voiceConnectionState === "connected" && !isListening);
+    voiceConnectionState === "connecting" || isVoiceCaptureStarting;
+  const canStartVoiceCapture =
+    !isListening &&
+    !isVoiceStarting &&
+    !voiceError &&
+    (!FULL_DUPLEX_VOICE_ENABLED || voiceConnectionState === "connected");
   const previousConversationTurns = useMemo(() => {
     const latestConversationMessage = messages[messages.length - 1];
     const hasCurrentAnswerInMessages =
@@ -3433,12 +3471,15 @@ export default function AskSaiScreen() {
       </LinearGradient>
 
       <AskSaiVoiceCaptureModal
+        canStart={canStartVoiceCapture}
         error={voiceError}
         hasCapturedTranscript={hasCapturedTranscript}
         isListening={isListening}
         isStarting={isVoiceStarting}
         level={voiceInputLevel}
         onCancel={closeVoiceModal}
+        onEnd={() => void submitVoiceModal()}
+        onStart={() => void startVoiceModalCapture()}
         visible={isVoiceModalVisible}
       />
     </KeyboardAvoidingView>
