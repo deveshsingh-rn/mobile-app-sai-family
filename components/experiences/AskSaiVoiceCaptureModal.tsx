@@ -183,7 +183,7 @@ export function AskSaiVoiceCaptureModal({
 
           <View style={styles.actions}>
             <Pressable
-              accessibilityLabel="Start listening"
+              accessibilityLabel="Start"
               accessibilityRole="button"
               disabled={!canStart || isListening || isStarting}
               onPress={onStart}
@@ -199,7 +199,7 @@ export function AskSaiVoiceCaptureModal({
                 <Mic color="#FFFFFF" size={19} strokeWidth={2.3} />
               )}
               <Text style={styles.startButtonText}>
-                {isListening ? "Listening" : isStarting ? "Connecting" : "Start Listening"}
+                {isListening ? "Listening" : isStarting ? "Connecting" : "Start"}
               </Text>
             </Pressable>
 
@@ -215,7 +215,7 @@ export function AskSaiVoiceCaptureModal({
               ]}
             >
               <Square color={EXPERIENCE_THEME.heading} fill={EXPERIENCE_THEME.heading} size={16} />
-              <Text style={styles.endButtonText}>End &amp; Send</Text>
+              <Text style={styles.endButtonText}>End</Text>
             </Pressable>
           </View>
 
