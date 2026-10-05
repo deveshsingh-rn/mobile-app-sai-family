@@ -21,6 +21,7 @@ import {
 import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   Mic2,
@@ -32,7 +33,7 @@ import {
   ExperienceCardSkeleton,
   ExperienceCreatePostButton,
   ExperienceListFooterSkeleton,
-  ExperienceTopTabs,
+  ExperienceProfileMenu,
 } from "@/components/experiences";
 
 import {
@@ -67,6 +68,7 @@ const SAI_BABA_WELCOME_IMAGE =
 
 export default function HomeScreen() {
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
   const { width: screenWidth } =
     useWindowDimensions();
 
@@ -500,13 +502,19 @@ export default function HomeScreen() {
     <View style={styles.container}>
       {/* HEADER */}
 
-      <View style={styles.fixedTop}>
-        <ExperienceTopTabs activeTab="feed" showCreateAction={false} />
-
-        <PillarGlassDock
-          activeRouteName="experiences"
-          style={styles.fixedPillarDock}
-        />
+      <View
+        style={[
+          styles.fixedTop,
+          { paddingTop: Math.max(insets.top + 4, 12) },
+        ]}
+      >
+        <View style={styles.pillarHeaderRow}>
+          <PillarGlassDock
+            activeRouteName="experiences"
+            style={styles.fixedPillarDock}
+          />
+          <ExperienceProfileMenu />
+        </View>
 
         {isHeaderIntroMounted && (
           <Animated.View
@@ -718,12 +726,19 @@ const styles = StyleSheet.create({
     backgroundColor: EXPERIENCE_THEME.background,
     borderBottomWidth: 1,
     borderBottomColor: EXPERIENCE_THEME.border,
-    paddingTop: 54,
   },
 
   fixedPillarDock: {
-    alignSelf: "center",
-    marginBottom: 12,
+    flex: 1,
+    width: "auto",
+  },
+
+  pillarHeaderRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    paddingBottom: 10,
+    paddingHorizontal: 8,
   },
 
   experienceIntro: {
