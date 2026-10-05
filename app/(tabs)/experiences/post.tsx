@@ -630,8 +630,8 @@ export default function PremiumPostScreen() {
 
         {/* Composer */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionLabel}>Your experience</Text>
-          <Text style={styles.sectionHint}>Write from the heart, or use your voice</Text>
+          <Text style={styles.sectionLabel}>Your Experience</Text>
+          <Text style={styles.sectionHint}>Write something to published your experience</Text>
         </View>
 
         <View
@@ -1118,7 +1118,7 @@ const styles = StyleSheet.create({
   },
 
   sectionHint: {
-    color: EXPERIENCE_THEME.paragraph,
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12.5,
     fontWeight: "500",
     marginTop: 2,
