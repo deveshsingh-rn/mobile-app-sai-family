@@ -149,6 +149,7 @@ import {
   Experience,
   ExperienceCategory,
   ExperienceComment,
+  ExperienceFeedPagination,
   DELETE_EXPERIENCE_SUCCESS,
   DELETE_EXPERIENCE_FAILURE,
   DELETE_EXPERIENCE_REQUEST,
@@ -173,7 +174,10 @@ export const fetchExperiencesRequest = (
   } as const);
 
 export const fetchExperiencesSuccess = (
-  payload: Experience[]
+  payload: {
+    pagination: ExperienceFeedPagination;
+    results: Experience[];
+  }
 ) =>
   ({
     type: FETCH_EXPERIENCES_SUCCESS,

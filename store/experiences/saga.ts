@@ -156,15 +156,31 @@ function* handleFetchExperiences(
       action.payload
     );
 
-    const flattened =
-      response.experiences.map(
-        flattenExperience
-      );
+    const flattened = (response.experiences || []).map(
+      flattenExperience
+    );
+    const offset = Number(action.payload.offset || 0);
+    const limit = Number(action.payload.limit || 20);
+    const nextOffset =
+      response.pagination?.nextOffset ??
+      (flattened.length >= limit
+        ? offset + flattened.length
+        : null);
 
     yield put(
-      fetchExperiencesSuccess(
-        flattened
-      )
+      fetchExperiencesSuccess({
+        pagination: {
+          hasMore: nextOffset !== null,
+          limit: Number(response.pagination?.limit || limit),
+          nextOffset,
+          offset: Number(response.pagination?.offset ?? offset),
+          total:
+            response.pagination?.total !== undefined
+              ? Number(response.pagination.total)
+              : undefined,
+        },
+        results: flattened,
+      })
     );
   } catch (error: any) {
     const message =

@@ -6,6 +6,14 @@ export const selectExperiencesLoading = (
   state: any
 ) => state.experiences.loading;
 
+export const selectExperiencesLoadingMore = (
+  state: any
+) => state.experiences.feedLoadingMore;
+
+export const selectExperiencesPagination = (
+  state: any
+) => state.experiences.feedPagination;
+
 export const selectCreateExperienceLoading =
   (state: any) =>
     state.experiences.creating;

@@ -64,6 +64,14 @@ export interface ExperienceComment {
   authorProfileImageUrl?: string | null;
 }
 
+export interface ExperienceFeedPagination {
+  hasMore: boolean;
+  limit: number;
+  nextOffset: number | null;
+  offset: number;
+  total?: number;
+}
+
 export type ExperienceUploadStatus = {
   id: string;
   mediaAttachments: ExperienceMedia[];
@@ -96,6 +104,8 @@ export interface ExperiencesState {
   comments: ExperienceComment[];
   detail: Experience | null;
   feed: Experience[];
+  feedLoadingMore: boolean;
+  feedPagination: ExperienceFeedPagination;
   searchError: string | null;
   searchHasMore: boolean;
   searchLoading: boolean;
@@ -232,7 +242,10 @@ export interface FetchExperiencesRequestAction {
 export interface FetchExperiencesSuccessAction {
   type: typeof FETCH_EXPERIENCES_SUCCESS;
 
-  payload: Experience[];
+  payload: {
+    pagination: ExperienceFeedPagination;
+    results: Experience[];
+  };
 }
 
 export interface FetchExperiencesFailureAction {

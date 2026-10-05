@@ -51,6 +51,8 @@ import {
 import {
   selectExperiencesFeed,
   selectExperiencesLoading,
+  selectExperiencesLoadingMore,
+  selectExperiencesPagination,
 } from "@/store/experiences/selectors";
 
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
@@ -80,14 +82,16 @@ export default function HomeScreen() {
     selectDevoteeAccount
   );
 
-  const [offset, setOffset] =
-    useState(0);
-
   const [refreshing, setRefreshing] =
     useState(false);
 
-  const [loadingMore, setLoadingMore] =
-    useState(false);
+  const loadingMore = useAppSelector(
+    selectExperiencesLoadingMore
+  );
+  const pagination = useAppSelector(
+    selectExperiencesPagination
+  );
+  const loadMoreInFlightRef = useRef(false);
 
   const [activeViewableId, setActiveViewableId] = useState<string | null>(null);
   const [isHeaderIntroMounted, setIsHeaderIntroMounted] =
@@ -161,19 +165,19 @@ export default function HomeScreen() {
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
 
-    setOffset(0);
-
     dispatch(
       fetchExperiencesRequest({
         limit: LIMIT,
         offset: 0,
       })
     );
-
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 800);
   }, [dispatch]);
+
+  useEffect(() => {
+    if (refreshing && !loading) {
+      setRefreshing(false);
+    }
+  }, [loading, refreshing]);
 
   // ───────────────── PAGINATION ─────────────────
 
@@ -182,35 +186,34 @@ export default function HomeScreen() {
       if (
         loading ||
         loadingMore ||
-        feed.length < LIMIT
+        loadMoreInFlightRef.current ||
+        !pagination.hasMore ||
+        pagination.nextOffset === null
       ) {
         return;
       }
 
-      setLoadingMore(true);
-
-      const nextOffset =
-        offset + LIMIT;
+      loadMoreInFlightRef.current = true;
 
       dispatch(
         fetchExperiencesRequest({
           limit: LIMIT,
-          offset: nextOffset,
+          offset: pagination.nextOffset,
         })
       );
-
-      setOffset(nextOffset);
-
-      setTimeout(() => {
-        setLoadingMore(false);
-      }, 700);
     }, [
       loading,
       loadingMore,
-      feed.length,
-      offset,
+      pagination.hasMore,
+      pagination.nextOffset,
       dispatch,
     ]);
+
+  useEffect(() => {
+    if (!loadingMore) {
+      loadMoreInFlightRef.current = false;
+    }
+  }, [loadingMore]);
 
   const animateHeaderIntro = useCallback(
     (visible: boolean) => {

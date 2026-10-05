@@ -42,6 +42,13 @@ const initialState: ExperiencesState = {
   comments: [],
   detail: null,
   feed: [],
+  feedLoadingMore: false,
+  feedPagination: {
+    hasMore: true,
+    limit: 20,
+    nextOffset: 0,
+    offset: 0,
+  },
   searchError: null,
   searchHasMore: false,
   searchLoading: false,
@@ -59,21 +66,43 @@ export const experiencesReducer = (
     case FETCH_EXPERIENCES_REQUEST:
       return {
         ...state,
-        loading: true,
+        loading: !(action.payload.offset && action.payload.offset > 0),
+        feedLoadingMore: Boolean(
+          action.payload.offset && action.payload.offset > 0
+        ),
         error: null,
       };
 
-    case FETCH_EXPERIENCES_SUCCESS:
+    case FETCH_EXPERIENCES_SUCCESS: {
+      const isNextPage = action.payload.pagination.offset > 0;
+      const mergedFeed = isNextPage
+        ? [...state.feed, ...action.payload.results]
+        : action.payload.results;
+      const seenFeedItems = new Set<string>();
+
       return {
         ...state,
         loading: false,
-        feed: action.payload,
+        feedLoadingMore: false,
+        feed: mergedFeed.filter((item) => {
+          const key = item.feedItemId || item.id;
+
+          if (seenFeedItems.has(key)) {
+            return false;
+          }
+
+          seenFeedItems.add(key);
+          return true;
+        }),
+        feedPagination: action.payload.pagination,
       };
+    }
 
     case FETCH_EXPERIENCES_FAILURE:
       return {
         ...state,
         loading: false,
+        feedLoadingMore: false,
         error: action.payload,
       };
 
