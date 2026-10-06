@@ -49,7 +49,6 @@ import {
   LocateFixed,
   Plus,
   Repeat2,
-  Save,
   Search,
   X,
 } from "lucide-react-native";
@@ -268,15 +267,6 @@ const toDraftPayload = (form: EventFormState): EventDraftPayload => {
   };
 };
 
-const hasDraftContent = (form: EventFormState) =>
-  Boolean(
-    form.title.trim() ||
-      form.description.trim() ||
-      form.venueName.trim() ||
-      form.address.trim() ||
-      form.bannerUrl.trim()
-  );
-
 const isFormCompleteForAutosave = (form: EventFormState) => {
   if (
     !form.title.trim() ||
@@ -380,6 +370,7 @@ export default function EventFormScreen({
   const [publishDraftRequested, setPublishDraftRequested] = useState(false);
   const wasSaving = useRef(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAutosavedPayload = useRef<string | null>(null);
   const hydratedDraftId = useRef<string | null>(null);
 
   const eventId = Array.isArray(id) ? id[0] : id;
@@ -631,12 +622,19 @@ export default function EventFormScreen({
       return;
     }
 
+    const payload = toDraftPayload(form);
+    const payloadFingerprint = JSON.stringify(payload);
+
+    if (payloadFingerprint === lastAutosavedPayload.current) {
+      return;
+    }
+
     if (autosaveTimer.current) {
       clearTimeout(autosaveTimer.current);
     }
 
     autosaveTimer.current = setTimeout(() => {
-      const payload = toDraftPayload(form);
+      lastAutosavedPayload.current = payloadFingerprint;
 
       if (draftId) {
         dispatch(updateEventDraftRequest(draftId, payload));
@@ -885,21 +883,6 @@ export default function EventFormScreen({
     [selectionKind, setField]
   );
 
-  const handleSaveDraft = useCallback(() => {
-    if (!hasDraftContent(form)) {
-      Alert.alert("Draft", "Add a title, description, venue, or banner before saving a draft.");
-      return;
-    }
-
-    const payload = toDraftPayload(form);
-
-    if (draftId) {
-      dispatch(updateEventDraftRequest(draftId, payload));
-    } else {
-      dispatch(createEventDraftRequest(payload));
-    }
-  }, [dispatch, draftId, form]);
-
   const handlePublishDraft = useCallback(() => {
     if (!draftId) {
       Alert.alert("Draft", "Save this draft first, then publish it.");
@@ -955,6 +938,20 @@ export default function EventFormScreen({
     setSubmitted(true);
     dispatch(updateEventRequest({...payload, id: eventId}));
   }, [detail, dispatch, eventId, form, mode, sanghaGroupId]);
+
+  const handlePrimaryAction = useCallback(() => {
+    if (autosaveTimer.current) {
+      clearTimeout(autosaveTimer.current);
+      autosaveTimer.current = null;
+    }
+
+    if (mode === "create" && !isGroupEvent && draftId) {
+      handlePublishDraft();
+      return;
+    }
+
+    handleSubmit();
+  }, [draftId, handlePublishDraft, handleSubmit, isGroupEvent, mode]);
 
   const selectionOptions =
     selectionKind === "country"
@@ -1292,66 +1289,27 @@ export default function EventFormScreen({
           removeGuideline={removeGuideline}
           setGuidelineDraft={setGuidelineDraft}
         />
-        {/* {mode === "create" ? (
-          <View style={styles.autosaveInline}>
-            <View
-              style={[
-                styles.autosaveInlineDot,
-                draftSaving && styles.autosaveInlineDotActive,
-              ]}
-            />
-            <Text style={styles.autosaveInlineText}>
-              {draftSaving
-                ? "Saving draft..."
-                : draftId
-                  ? "Draft saved automatically"
-                  : isFormCompleteForAutosave(form)
-                    ? "Ready to autosave"
-                    : "Autosave starts after required details are complete"}
-            </Text>
-          </View>
-        ) : null} */}
-
         <View style={styles.actionSection}>
-          {/* {mode === "create" && !isGroupEvent ? (
-            <Pressable
-              disabled={draftSaving || publishingDraft || uploadingMedia}
-              onPress={handleSaveDraft}
-              style={({pressed}) => [
-                styles.draftButton,
-                pressed && styles.controlPressed,
-                (draftSaving || publishingDraft || uploadingMedia) && styles.disabled,
-              ]}
-            >
-              {draftSaving ? (
-                <ActivityIndicator color="#9A3412" />
-              ) : (
-                <Save color="#9A3412" size={17} strokeWidth={2.3} />
-              )}
-              <Text style={styles.draftText}>
-                {draftId ? "Update Draft" : "Save Draft"}
-              </Text>
-            </Pressable>
-          ) : null} */}
-
-          {mode === "create" && !isGroupEvent && draftId ? (
-            <PrimaryActionButton
-              disabled={draftSaving || publishingDraft || uploadingMedia}
-              label={
-                publishingDraft || draftPublishQueued
-                  ? "Publishing Draft..."
-                  : "Publish Saved Draft"
-              }
-              loading={Boolean(publishingDraft || draftPublishQueued)}
-              onPress={handlePublishDraft}
-            />
-          ) : null}
-
           <PrimaryActionButton
-            disabled={submitSaving || uploadingMedia || publishingDraft}
-            label={mode === "create" ? "Create Event" : "Save Changes"}
-            loading={submitSaving}
-            onPress={handleSubmit}
+            disabled={
+              submitSaving ||
+              draftSaving ||
+              uploadingMedia ||
+              publishingDraft ||
+              Boolean(draftPublishQueued)
+            }
+            label={
+              mode === "create" &&
+              (submitSaving || publishingDraft || draftPublishQueued)
+                ? "Creating Event..."
+                : mode === "create"
+                  ? "Create Event"
+                  : "Save Changes"
+            }
+            loading={Boolean(
+              submitSaving || publishingDraft || draftPublishQueued
+            )}
+            onPress={handlePrimaryAction}
           />
           <Pressable
             onPress={() => router.back()}
