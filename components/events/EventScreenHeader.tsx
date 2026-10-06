@@ -1,3 +1,4 @@
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import { ArrowLeft } from "lucide-react-native";
 import { MotiView } from "moti";
 import type { ReactNode } from "react";
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   title: {
-    color: "#292524",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 19,
     fontWeight: "900",
   },

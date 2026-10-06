@@ -624,7 +624,7 @@ export default function HomeScreen() {
                       <View style={styles.askSaiPromptRow}>
                         <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
                         <Text style={styles.askSaiPrompt}>
-                          Seek Guidance from Shri Sai Satcharitra
+                          Ask Guidance from Shri Sai Satcharitra
                         </Text>
                       </View>
                     </View>

@@ -101,6 +101,7 @@ import {
 } from "@/store/hooks";
 import { EventScreenHeader } from "@/components/events/EventScreenHeader";
 import { requestLocationPermissionWithSettingsFallback } from "@/services/location-permissions";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 type EventFormMode = "create" | "edit";
 
@@ -306,12 +307,12 @@ const parseDate = (value: string) => {
 
 const formatDate = (value: string) => {
   if (!value) {
-    return "Select date";
+    return "Select Date";
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "Select date";
+    return "Select Date";
   }
 
   return date.toLocaleDateString("en-IN", {
@@ -324,12 +325,12 @@ const formatDate = (value: string) => {
 
 const formatTime = (value: string) => {
   if (!value) {
-    return "Select time";
+    return "Select Time";
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return "Select time";
+    return "Select Time";
   }
 
   return date.toLocaleTimeString("en-IN", {
@@ -1047,8 +1048,8 @@ export default function EventFormScreen({
         <FormSection
           optional
           prominent
-          subtitle="A clear landscape photo helps devotees recognise your event"
-          title="Event cover photo"
+          subtitle="A Clear Landscape Photo Helps Devotees Recognise Your Event"
+          title="Event Cover Photo"
         >
           <Pressable
             onPress={handlePickBanner}
@@ -1095,7 +1096,7 @@ export default function EventFormScreen({
         <FormSection
           completed={form.title.trim().length >= 3}
           step="1"
-          subtitle="This is the first thing devotees will see"
+          subtitle="This is The First Thing Devotees will See"
           title="Name Your Gathering"
         >
           <View style={styles.inputWrap}>
@@ -1145,8 +1146,8 @@ export default function EventFormScreen({
         <FormSection
           completed={formProgress.items[1].complete}
           step="2"
-          subtitle="Choose the date and time for your sacred event"
-          title="Set the Schedule"
+          subtitle="Choose The Date and Time For Your Sacred Event"
+          title="Set The Schedule"
         >
           <DateField
             icon={<CalendarDays color="#9CA3AF" size={18} />}
@@ -1186,8 +1187,8 @@ export default function EventFormScreen({
         <FormSection
           completed={formProgress.items[2].complete}
           step="3"
-          subtitle="Where will the gathering take place?"
-          title="Add the Venue"
+          subtitle="Where Will The Gathering Take Place?"
+          title="Add The Venue"
         >
           <PolishedInput
             onChangeText={(value) => setField("venueName", value)}
@@ -1267,8 +1268,8 @@ export default function EventFormScreen({
         <FormSection
           completed={form.description.trim().length >= 10}
           step="4"
-          subtitle="Share what devotees can expect from this gathering"
-          title="Describe the experience"
+          subtitle="Share What Devotees Can Expect From This Gathering"
+          title="Describe The Experience"
         >
           <View style={styles.descriptionWrap}>
             <PolishedInput
@@ -1312,7 +1313,7 @@ export default function EventFormScreen({
         ) : null} */}
 
         <View style={styles.actionSection}>
-          {mode === "create" && !isGroupEvent ? (
+          {/* {mode === "create" && !isGroupEvent ? (
             <Pressable
               disabled={draftSaving || publishingDraft || uploadingMedia}
               onPress={handleSaveDraft}
@@ -1331,7 +1332,7 @@ export default function EventFormScreen({
                 {draftId ? "Update Draft" : "Save Draft"}
               </Text>
             </Pressable>
-          ) : null}
+          ) : null} */}
 
           {mode === "create" && !isGroupEvent && draftId ? (
             <PrimaryActionButton
@@ -1383,7 +1384,7 @@ export default function EventFormScreen({
               <View style={styles.datePickerTitleWrap}>
                 <Text style={styles.datePickerEyebrow}>EVENT SCHEDULE</Text>
                 <Text style={styles.datePickerTitle}>
-                  {pickerTarget?.mode === "date" ? "Select date" : "Select time"}
+                  {pickerTarget?.mode === "date" ? "Select Date" : "Select Time"}
                 </Text>
               </View>
               <Pressable
@@ -1621,7 +1622,7 @@ function RecurrenceSection({
         <View style={styles.recurrenceCopy}>
           <Text style={styles.recurrenceTitle}>Recurring Event</Text>
           <Text style={styles.recurrenceText}>
-            {enabled ? `Repeats ${frequency} for ${count || "1"} occurrence(s)` : "Make this a regular gathering"}
+            {enabled ? `Repeats ${frequency} for ${count || "1"} occurrence(s)` : "Make This a Regular Gathering"}
           </Text>
         </View>
         <View style={[styles.toggleTrack, enabled && styles.toggleTrackActive]}>
@@ -1674,7 +1675,7 @@ function GuidelinesSection({
   return (
     <FormSection
       optional
-      subtitle="These are saved as the event guidelines"
+      subtitle="These are Saved As The Event Guidelines"
       title="Guidelines for devotees"
     >
       {guidelines.map((item, index) => (
@@ -1875,7 +1876,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   bannerTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 14,
     fontWeight: "900",
   },
@@ -2668,13 +2669,13 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   sectionTitle: {
-    color: "#1C1917",
+    color: EXPERIENCE_THEME.heading,
     flexShrink: 1,
     fontSize: 18,
     fontWeight: "900",
   },
   sectionTitleProminent: {
-    color: "#1C1917",
+    color: EXPERIENCE_THEME.heading,
     flexShrink: 1,
     fontSize: 18,
     fontWeight: "900",
@@ -2729,7 +2730,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   recurrenceTitle: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 13,
     fontWeight: "900",
   },
@@ -2751,7 +2752,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   segmentText: {
-    color: "#1F2937",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12,
     fontWeight: "800",
   },

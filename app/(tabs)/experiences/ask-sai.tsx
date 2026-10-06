@@ -3018,7 +3018,7 @@ export default function AskSaiScreen() {
                   <View style={styles.heroPromptRow}>
                     <Text aria-hidden style={styles.heroPromptBullet}>•</Text>
                     <Text style={styles.heroImageSubtitle}>
-                      Seek Guidance from Shri Sai Satcharitra
+                      Ask Guidance from Shri Sai Satcharitra
                     </Text>
                   </View>
                 </View>
@@ -3366,7 +3366,7 @@ export default function AskSaiScreen() {
           ) : null}
 
           <View style={styles.suggestionsBlock}>
-            <Text style={styles.sectionTitle}>Questions You Can Ask</Text>
+            <Text style={styles.sectionTitle}>Ask Sai About...</Text>
             {SUGGESTED_QUESTIONS.map((item) => (
               <Pressable
                 disabled={isSubmitting}

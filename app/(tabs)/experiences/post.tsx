@@ -508,7 +508,7 @@ export default function PremiumPostScreen() {
 
         <View style={styles.headerCopy}>
           <Text style={styles.headerTitle}>New Experience</Text>
-          <Text style={styles.headerSubtitle}>Share with the Sai Family</Text>
+          <Text style={styles.headerSubtitle}>Share with Sai Family</Text>
         </View>
 
         <Pressable
@@ -631,7 +631,7 @@ export default function PremiumPostScreen() {
         {/* Composer */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionLabel}>Your Experience</Text>
-          <Text style={styles.sectionHint}>Write something to published your experience</Text>
+          <Text style={styles.sectionHint}>Write Something to Publish Your Experience</Text>
         </View>
 
         <View
@@ -974,7 +974,7 @@ const styles = StyleSheet.create({
   },
 
   headerSubtitle: {
-    color: EXPERIENCE_THEME.paragraph,
+    color: EXPERIENCE_THEME.heading,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 1,
