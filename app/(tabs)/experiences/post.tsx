@@ -58,10 +58,7 @@ import {
 
 import { createExperienceRequest } from "@/store/experiences/actions";
 
-import {
-  selectCreateExperienceLoading,
-  selectExperiencesError,
-} from "@/store/experiences/selectors";
+import { selectCreateExperienceLoading } from "@/store/experiences/selectors";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const ACCENT = "#C2410C";
@@ -98,7 +95,6 @@ export default function PremiumPostScreen() {
   const creating = useSelector(
     selectCreateExperienceLoading
   );
-  const createError = useSelector(selectExperiencesError);
 
   const account = useSelector(
     (state: any) =>
@@ -115,8 +111,6 @@ export default function PremiumPostScreen() {
     useState<SelectedMedia | null>(
       null
     );
-  const [publishRequested, setPublishRequested] = useState(false);
-  const createStartedRef = useRef(false);
 
   const [isComposerFocused, setIsComposerFocused] =
     useState(false);
@@ -417,7 +411,10 @@ export default function PremiumPostScreen() {
       account?.id ||
       account?.authorId;
 
-    setPublishRequested(true);
+    void Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success
+    );
+
     dispatch(
       createExperienceRequest({
         content,
@@ -427,41 +424,12 @@ export default function PremiumPostScreen() {
         userId,
       })
     );
-  };
-
-  useEffect(() => {
-    if (!publishRequested) {
-      return;
-    }
-
-    if (creating) {
-      createStartedRef.current = true;
-      return;
-    }
-
-    if (!createStartedRef.current) {
-      return;
-    }
-
-    createStartedRef.current = false;
-    setPublishRequested(false);
-
-    if (createError) {
-      Alert.alert(
-        "Could not publish",
-        createError
-      );
-      return;
-    }
 
     setContent("");
     setLocation("");
     setSelectedMedia(null);
-    void Haptics.notificationAsync(
-      Haptics.NotificationFeedbackType.Success
-    );
     router.replace("/(tabs)/experiences" as never);
-  }, [createError, creating, publishRequested]);
+  };
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
@@ -1470,7 +1438,7 @@ const styles = StyleSheet.create({
 
   stopRecordingButton: {
     alignItems: "center",
-    backgroundColor: "#292524",
+    backgroundColor:  EXPERIENCE_THEME.heading,
     borderRadius: 10,
     flexDirection: "row",
     gap: 6,

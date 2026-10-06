@@ -560,10 +560,10 @@ export function ExperienceCard({
                       <ActivityIndicator color="#C2410C" size="small" />
                       <View style={styles.videoStatusCopy}>
                         <Text style={styles.videoStatusTitle}>
-                          Preparing your video
+                          Uploading Your Video
                         </Text>
                         <Text style={styles.videoStatusText}>
-                          It will play after YouTube finishes processing.
+                          We will Notify you Once Uploaded
                         </Text>
                       </View>
                     </View>
