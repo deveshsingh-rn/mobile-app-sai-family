@@ -49,6 +49,7 @@ import {
   LocateFixed,
   Plus,
   Repeat2,
+  Save,
   Search,
   X,
 } from "lucide-react-native";
@@ -267,6 +268,15 @@ const toDraftPayload = (form: EventFormState): EventDraftPayload => {
   };
 };
 
+const hasDraftContent = (form: EventFormState) =>
+  Boolean(
+    form.title.trim() ||
+      form.description.trim() ||
+      form.venueName.trim() ||
+      form.address.trim() ||
+      form.bannerUrl.trim()
+  );
+
 const isFormCompleteForAutosave = (form: EventFormState) => {
   if (
     !form.title.trim() ||
@@ -368,7 +378,9 @@ export default function EventFormScreen({
   const [guidelineDraft, setGuidelineDraft] = useState("");
   const [draftPublishQueued, setDraftPublishQueued] = useState<string | null>(null);
   const [publishDraftRequested, setPublishDraftRequested] = useState(false);
+  const [manualDraftSaving, setManualDraftSaving] = useState(false);
   const wasSaving = useRef(false);
+  const manualDraftSaveObserved = useRef(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAutosavedPayload = useRef<string | null>(null);
   const hydratedDraftId = useRef<string | null>(null);
@@ -660,6 +672,31 @@ export default function EventFormScreen({
   ]);
 
   useEffect(() => {
+    if (!manualDraftSaving) {
+      return;
+    }
+
+    if (draftSaving) {
+      manualDraftSaveObserved.current = true;
+      return;
+    }
+
+    if (!manualDraftSaveObserved.current) {
+      return;
+    }
+
+    manualDraftSaveObserved.current = false;
+    setManualDraftSaving(false);
+
+    if (error) {
+      Alert.alert("Draft not saved", error);
+      return;
+    }
+
+    Alert.alert("Draft saved", "You can return and publish this event later.");
+  }, [draftSaving, error, manualDraftSaving]);
+
+  useEffect(() => {
     if (
       publishDraftRequested &&
       !publishingDraft &&
@@ -900,6 +937,32 @@ export default function EventFormScreen({
     dispatch(updateEventDraftRequest(draftId, toDraftPayload(form)));
     setDraftPublishQueued(draftId);
   }, [dispatch, draftId, form, sanghaGroupId]);
+
+  const handleSaveDraft = useCallback(() => {
+    if (!hasDraftContent(form)) {
+      Alert.alert(
+        "Save draft",
+        "Add an event name, description, venue, or banner before saving."
+      );
+      return;
+    }
+
+    if (autosaveTimer.current) {
+      clearTimeout(autosaveTimer.current);
+      autosaveTimer.current = null;
+    }
+
+    const payload = toDraftPayload(form);
+    lastAutosavedPayload.current = JSON.stringify(payload);
+    manualDraftSaveObserved.current = false;
+    setManualDraftSaving(true);
+
+    if (draftId) {
+      dispatch(updateEventDraftRequest(draftId, payload));
+    } else {
+      dispatch(createEventDraftRequest(payload));
+    }
+  }, [dispatch, draftId, form]);
 
   const handleSubmit = useCallback(() => {
     const payload = toPayload(form, sanghaGroupId);
@@ -1250,14 +1313,14 @@ export default function EventFormScreen({
             ) : (
               <LocateFixed color="#C2410C" size={17} />
             )}
-            <Text style={styles.currentLocationText}>Use my current location</Text>
+            <Text style={styles.currentLocationText}>Use My Current Location</Text>
           </Pressable>
           <View style={styles.twoColumns}>
             <SelectButton label="Country" onPress={() => setSelectionKind("country")} value={form.country} />
-            <SelectButton label="State" onPress={() => setSelectionKind("state")} value={form.state || "Choose state"} />
+            <SelectButton label="State" onPress={() => setSelectionKind("state")} value={form.state || "Choose State"} />
           </View>
           <View style={styles.twoColumns}>
-            <SelectButton label="City" onPress={() => setSelectionKind("city")} value={form.city || "Choose city"} />
+            <SelectButton label="City" onPress={() => setSelectionKind("city")} value={form.city || "Choose City"} />
             <SelectButton label="Timezone" onPress={() => setSelectionKind("timezone")} value={form.timezone} />
           </View>
         </FormSection>
@@ -1290,6 +1353,33 @@ export default function EventFormScreen({
           setGuidelineDraft={setGuidelineDraft}
         />
         <View style={styles.actionSection}>
+          {mode === "create" && !isGroupEvent ? (
+            <Pressable
+              accessibilityLabel="Save event as draft"
+              accessibilityRole="button"
+              disabled={draftSaving || publishingDraft || uploadingMedia}
+              onPress={handleSaveDraft}
+              style={({pressed}) => [
+                styles.draftButton,
+                pressed && styles.controlPressed,
+                (manualDraftSaving || publishingDraft || uploadingMedia) && styles.disabled,
+              ]}
+            >
+              {manualDraftSaving ? (
+                <ActivityIndicator color="#9A3412" size="small" />
+              ) : (
+                <Save color="#9A3412" size={18} strokeWidth={2.3} />
+              )}
+              <Text style={styles.draftText}>
+                {manualDraftSaving
+                  ? "Saving..."
+                  : draftId
+                    ? "Save Draft Changes"
+                    : "Save as Draft"}
+              </Text>
+            </Pressable>
+          ) : null}
+
           <PrimaryActionButton
             disabled={
               submitSaving ||
