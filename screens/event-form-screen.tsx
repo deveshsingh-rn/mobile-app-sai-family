@@ -1252,7 +1252,7 @@ export default function EventFormScreen({
         >
           <PolishedInput
             onChangeText={(value) => setField("venueName", value)}
-            placeholder="Venue name, e.g., Sai Mandir Hall"
+            placeholder="Venue Name, e.g., Sai Mandir Hall"
             placeholderTextColor="#9CA3AF"
             style={styles.input}
             value={form.venueName}
@@ -1294,7 +1294,7 @@ export default function EventFormScreen({
           <PolishedInput
             multiline
             onChangeText={(value) => setField("address", value)}
-            placeholder="Full address"
+            placeholder="Full Address"
             placeholderTextColor="#9CA3AF"
             style={[styles.input, styles.smallArea]}
             value={form.address}
@@ -1336,7 +1336,7 @@ export default function EventFormScreen({
               multiline
               maxLength={500}
               onChangeText={(value) => setField("description", value)}
-              placeholder="Describe the experience devotees will have..."
+              placeholder="Describe The Experience Devotees Will Have..."
               placeholderTextColor="#9CA3AF"
               style={[styles.input, styles.descriptionInput]}
               value={form.description}
@@ -1374,7 +1374,7 @@ export default function EventFormScreen({
                 {manualDraftSaving
                   ? "Saving..."
                   : draftId
-                    ? "Save Draft Changes"
+                    ? "Save Draft Event"
                     : "Save as Draft"}
               </Text>
             </Pressable>
@@ -1696,7 +1696,7 @@ function RecurrenceSection({
           <TextInput
             keyboardType="number-pad"
             onChangeText={setCount}
-            placeholder="Number of occurrences"
+            placeholder="Number of Occurrences"
             placeholderTextColor="#9CA3AF"
             style={styles.input}
             value={count}
@@ -1738,7 +1738,7 @@ function GuidelinesSection({
         <TextInput
           onChangeText={setGuidelineDraft}
           onSubmitEditing={addGuideline}
-          placeholder="e.g., Arrive 10 minutes early"
+          placeholder="E.g., Arrive 10 Minutes Early"
           placeholderTextColor="#9CA3AF"
           style={styles.addTagInput}
           value={guidelineDraft}
@@ -2473,7 +2473,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: "#1C1917",
     flex: 1,
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "600",
     minHeight: 54,
     paddingHorizontal: 14,
