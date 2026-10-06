@@ -457,6 +457,17 @@ export function ExperienceCard({
               media.type === "audio";
             const isVideo =
               media.type === "video";
+            const isVideoProcessing =
+              isVideo &&
+              item.uploadStatus === "processing";
+            const isVideoFailed =
+              isVideo &&
+              item.uploadStatus === "failed";
+            const isVideoPlayable =
+              isVideo &&
+              !isVideoProcessing &&
+              !isVideoFailed &&
+              Boolean(media.url);
             const mediaUri = isVideo
               ? media.thumbnailUrl
               : media.url;
@@ -477,10 +488,19 @@ export function ExperienceCard({
             return (
               <Pressable
                 accessibilityLabel={
-                  isVideo
+                  isVideoProcessing
+                    ? "Video is being prepared"
+                    : isVideoFailed
+                      ? "Video could not be published"
+                      : isVideo
                     ? "Open experience video"
                     : "Open experience photo"
                 }
+                accessibilityRole="button"
+                accessibilityState={{
+                  disabled: isVideoProcessing || isVideoFailed,
+                }}
+                disabled={isVideoProcessing || isVideoFailed}
                 style={[
                   styles.mediaContainer,
                   disableNavigation && styles.mediaContainerExpanded,
@@ -488,10 +508,7 @@ export function ExperienceCard({
                 onPress={(event) => {
                   event.stopPropagation();
 
-                  if (
-                    isVideo &&
-                    media.url
-                  ) {
+                  if (isVideoPlayable) {
                     void Linking.openURL(
                       media.url
                     );
@@ -519,7 +536,7 @@ export function ExperienceCard({
                   />
                 )}
 
-                {isVideo && (
+                {isVideoPlayable && (
                   <View
                     style={styles.playOverlay}
                   >
@@ -536,6 +553,38 @@ export function ExperienceCard({
                     </View>
                   </View>
                 )}
+
+                {isVideoProcessing ? (
+                  <View style={styles.videoStatusOverlay}>
+                    <View style={styles.videoStatusCard}>
+                      <ActivityIndicator color="#C2410C" size="small" />
+                      <View style={styles.videoStatusCopy}>
+                        <Text style={styles.videoStatusTitle}>
+                          Preparing your video
+                        </Text>
+                        <Text style={styles.videoStatusText}>
+                          It will play after YouTube finishes processing.
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                ) : null}
+
+                {isVideoFailed ? (
+                  <View style={styles.videoStatusOverlay}>
+                    <View style={styles.videoStatusCard}>
+                      <View style={styles.videoFailedDot} />
+                      <View style={styles.videoStatusCopy}>
+                        <Text style={styles.videoStatusTitle}>
+                          Video is unavailable
+                        </Text>
+                        <Text style={styles.videoStatusText}>
+                          YouTube publishing could not be completed.
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                ) : null}
               </Pressable>
             );
           })()}
@@ -1010,6 +1059,53 @@ const styles = StyleSheet.create({
     height: 48,
     justifyContent: "center",
     width: 48,
+  },
+
+  videoStatusOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    backgroundColor: "rgba(28, 25, 23, 0.48)",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+
+  videoStatusCard: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 248, 236, 0.96)",
+    borderColor: "rgba(255, 255, 255, 0.9)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    maxWidth: 310,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    width: "100%",
+  },
+
+  videoStatusCopy: {
+    flex: 1,
+  },
+
+  videoStatusTitle: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  videoStatusText: {
+    color: EXPERIENCE_THEME.paragraph,
+    fontSize: 11.5,
+    fontWeight: "600",
+    lineHeight: 16,
+    marginTop: 2,
+  },
+
+  videoFailedDot: {
+    backgroundColor: "#B91C1C",
+    borderRadius: 6,
+    height: 12,
+    width: 12,
   },
 
   actions: {

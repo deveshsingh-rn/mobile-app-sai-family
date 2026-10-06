@@ -58,7 +58,10 @@ import {
 
 import { createExperienceRequest } from "@/store/experiences/actions";
 
-import { selectCreateExperienceLoading } from "@/store/experiences/selectors";
+import {
+  selectCreateExperienceLoading,
+  selectExperiencesError,
+} from "@/store/experiences/selectors";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const ACCENT = "#C2410C";
@@ -95,6 +98,7 @@ export default function PremiumPostScreen() {
   const creating = useSelector(
     selectCreateExperienceLoading
   );
+  const createError = useSelector(selectExperiencesError);
 
   const account = useSelector(
     (state: any) =>
@@ -111,6 +115,8 @@ export default function PremiumPostScreen() {
     useState<SelectedMedia | null>(
       null
     );
+  const [publishRequested, setPublishRequested] = useState(false);
+  const createStartedRef = useRef(false);
 
   const [isComposerFocused, setIsComposerFocused] =
     useState(false);
@@ -136,15 +142,8 @@ export default function PremiumPostScreen() {
   );
 
   const isDisabled = useMemo(() => {
-    const hasContent = Boolean(content.trim());
-    const audioNeedsDescription =
-      selectedMedia?.type === "audio" && !hasContent;
-
-    return (
-      (!hasContent && !selectedMedia) ||
-      audioNeedsDescription
-    );
-  }, [content, selectedMedia]);
+    return !content.trim();
+  }, [content]);
 
   const attachCurrentLocation = useCallback(async () => {
     setIsLocating(true);
@@ -406,10 +405,10 @@ export default function PremiumPostScreen() {
   // ───────────────── POST ─────────────────
 
   const handlePost = () => {
-    if (selectedMedia?.type === "audio" && !content.trim()) {
+    if (!content.trim()) {
       Alert.alert(
-        "Add a description",
-        "Please write a short description before publishing an audio experience."
+        "Write your experience",
+        "Please add some text before publishing your experience."
       );
       return;
     }
@@ -418,8 +417,7 @@ export default function PremiumPostScreen() {
       account?.id ||
       account?.authorId;
 
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
+    setPublishRequested(true);
     dispatch(
       createExperienceRequest({
         content,
@@ -429,12 +427,41 @@ export default function PremiumPostScreen() {
         userId,
       })
     );
+  };
+
+  useEffect(() => {
+    if (!publishRequested) {
+      return;
+    }
+
+    if (creating) {
+      createStartedRef.current = true;
+      return;
+    }
+
+    if (!createStartedRef.current) {
+      return;
+    }
+
+    createStartedRef.current = false;
+    setPublishRequested(false);
+
+    if (createError) {
+      Alert.alert(
+        "Could not publish",
+        createError
+      );
+      return;
+    }
 
     setContent("");
     setLocation("");
     setSelectedMedia(null);
-    router.push("/experiences");
-  };
+    void Haptics.notificationAsync(
+      Haptics.NotificationFeedbackType.Success
+    );
+    router.replace("/(tabs)/experiences" as never);
+  }, [createError, creating, publishRequested]);
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
