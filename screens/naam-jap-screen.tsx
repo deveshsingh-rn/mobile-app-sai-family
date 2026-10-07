@@ -53,6 +53,14 @@ import {
   normalizeForToday,
   saveNaamJapData,
 } from "@/services/naam-jap-storage";
+import {
+  getMinimumMalaGoal,
+  getNaamJapMetrics,
+  incrementNaamJapData,
+  MAX_MALA_GOAL,
+  NAAM_PER_MALA,
+  undoNaamJapData,
+} from "@/utils/naam-jap-calculations";
 
 type NaamJapSheet = "more" | "names" | "target" | null;
 type FloatingNaamItem = { id: string; left: number; label: string };
@@ -80,7 +88,7 @@ export default function NaamJapScreen() {
 
     void loadNaamJapData().then((stored) => {
       if (mounted) {
-        const storedGoal = stored.targetMalas * 108;
+        const storedGoal = getNaamJapMetrics(stored).sessionGoalCount;
         dataRef.current = stored;
         hydratedRef.current = true;
         celebratedGoalRef.current =
@@ -145,18 +153,13 @@ export default function NaamJapScreen() {
     return () => clearInterval(interval);
   }, [hydrated]);
 
-  const roundCount =
-    data.sessionCount === 0
-      ? 0
-      : ((data.sessionCount - 1) % data.target) + 1;
-  const completedMalas = Math.floor(data.totalCount / 108);
-  const todayMalas = Math.floor(data.todayCount / 108);
+  const metrics = getNaamJapMetrics(data);
   const selectedName =
     data.jaapNames.find((item) => item.id === data.selectedNameId) ||
     data.jaapNames[0];
-  const targetNaamCount = data.targetMalas * 108;
-  const targetProgress = Math.min(1, data.sessionCount / targetNaamCount);
-  const goalReached = data.sessionCount >= targetNaamCount;
+  const targetNaamCount = metrics.sessionGoalCount;
+  const targetProgress = metrics.sessionProgress;
+  const goalReached = metrics.goalReached;
 
   useEffect(() => {
     if (!hydrated) return;
@@ -177,36 +180,27 @@ export default function NaamJapScreen() {
 
   const increment = useCallback(() => {
     setData((current) => {
-      const sessionGoal = current.targetMalas * 108;
-
-      if (current.sessionCount >= sessionGoal) {
-        return current;
-      }
-
-      const nextSessionCount = current.sessionCount + 1;
+      const next = incrementNaamJapData(current);
+      if (next === current) return current;
 
       if (current.hapticsEnabled) {
         const completedTarget =
-          nextSessionCount % current.target === 0 ||
-          nextSessionCount === sessionGoal;
+          next.sessionCount % NAAM_PER_MALA === 0 ||
+          getNaamJapMetrics(next).goalReached;
         void (completedTarget
           ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
           : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
       }
 
-      return {
-        ...current,
-        sessionCount: nextSessionCount,
-        todayCount: current.todayCount + 1,
-        totalCount: current.totalCount + 1,
-      };
+      dataRef.current = next;
+      return next;
     });
   }, []);
 
   const countNaam = useCallback(() => {
     if (
       dataRef.current.sessionCount >=
-      dataRef.current.targetMalas * 108
+      getNaamJapMetrics(dataRef.current).sessionGoalCount
     ) {
       return;
     }
@@ -357,18 +351,12 @@ export default function NaamJapScreen() {
 
   const undoLast = () => {
     setData((current) => {
-      if (current.sessionCount === 0) {
-        return current;
-      }
+      const next = undoNaamJapData(current);
+      if (next === current) return current;
 
       void Haptics.selectionAsync();
-
-      return {
-        ...current,
-        sessionCount: Math.max(0, current.sessionCount - 1),
-        todayCount: Math.max(0, current.todayCount - 1),
-        totalCount: Math.max(0, current.totalCount - 1),
-      };
+      dataRef.current = next;
+      return next;
     });
   };
 
@@ -380,7 +368,11 @@ export default function NaamJapScreen() {
         { style: "cancel", text: "Cancel" },
         {
           onPress: () =>
-            setData((current) => ({ ...current, sessionCount: 0 })),
+            setData((current) => {
+              const next = { ...current, sessionCount: 0 };
+              dataRef.current = next;
+              return next;
+            }),
           style: "destructive",
           text: "Reset session",
         },
@@ -501,15 +493,15 @@ export default function NaamJapScreen() {
               style={styles.malaCards}
               transition={{ delay: 110, duration: 440, type: "timing" }}
             >
-               <MalaStatCard
-                count={data.totalCount}
-                label="Lifetime Naam Jap"
-                malas={completedMalas}
-              />
               <MalaStatCard
                 count={data.todayCount}
                 label="Today’s Naam Jap"
-                malas={todayMalas}
+                malas={metrics.completedTodayMalas}
+              />
+              <MalaStatCard
+                count={data.totalCount}
+                label="Lifetime Naam Jap"
+                malas={metrics.completedLifetimeMalas}
               />
              
             </MotiView>
@@ -544,7 +536,7 @@ export default function NaamJapScreen() {
                 />
                 <View pointerEvents="none" style={styles.tapFieldGlow} />
                 <View pointerEvents="none" style={styles.tapFieldEdge} />
-                <LiveCounter round={roundCount} target={data.target} />
+                <LiveCounter round={metrics.currentMalaCount} />
                 {floatingNaams.map((item) => (
                   <FloatingNaam
                     item={item}
@@ -559,6 +551,9 @@ export default function NaamJapScreen() {
                 <SelectedNaamFocus
                   label={selectedName?.label || "Sai Ram"}
                   progress={targetProgress}
+                  sessionCount={data.sessionCount}
+                  sessionGoalCount={targetNaamCount}
+                  targetMalas={data.targetMalas}
                 />
                 {data.autoCountSeconds ? (
                   <View style={styles.autoBadge}>
@@ -662,10 +657,12 @@ export default function NaamJapScreen() {
               source={SAI_IMAGE}
               style={styles.celebrationImage}
             />
-            <Text style={styles.celebrationEyebrow}>108 NAAM COMPLETED</Text>
+            <Text style={styles.celebrationEyebrow}>
+              {targetNaamCount.toLocaleString("en-IN")} NAAM COMPLETED
+            </Text>
             <Text style={styles.celebrationTitle}>Sai’s blessings are with you</Text>
             <Text style={styles.celebrationMessage}>
-              My child, you have remembered Me 108 times.{"\n"}
+              My child, you have remembered Me {targetNaamCount.toLocaleString("en-IN")} times.{"\n"}
               May My blessings always be with you.{"\n"}
               Keep My Naam in your heart, and walk with faith.
             </Text>
@@ -683,7 +680,7 @@ export default function NaamJapScreen() {
   );
 }
 
-function LiveCounter({ round, target }: { round: number; target: number }) {
+function LiveCounter({ round }: { round: number }) {
   return (
     <MotiView
       key={round}
@@ -693,7 +690,7 @@ function LiveCounter({ round, target }: { round: number; target: number }) {
       transition={{ damping: 12, stiffness: 220, type: "spring" }}
     >
       <Text style={styles.liveCountValue}>{round}</Text>
-      <Text style={styles.liveCountTarget}> / {target}</Text>
+      <Text style={styles.liveCountTarget}> / {NAAM_PER_MALA}</Text>
     </MotiView>
   );
 }
@@ -701,9 +698,15 @@ function LiveCounter({ round, target }: { round: number; target: number }) {
 function SelectedNaamFocus({
   label,
   progress,
+  sessionCount,
+  sessionGoalCount,
+  targetMalas,
 }: {
   label: string;
   progress: number;
+  sessionCount: number;
+  sessionGoalCount: number;
+  targetMalas: number;
 }) {
   const percentage = Math.round(Math.min(1, Math.max(0, progress)) * 100);
 
@@ -735,7 +738,9 @@ function SelectedNaamFocus({
           transition={{ damping: 18, stiffness: 120, type: "spring" }}
         />
       </View>
-      <Text style={styles.selectedNaamProgressText}>{percentage}% of your goal</Text>
+      <Text style={styles.selectedNaamProgressText}>
+        {sessionCount.toLocaleString("en-IN")} / {sessionGoalCount.toLocaleString("en-IN")} Naam · {targetMalas.toLocaleString("en-IN")} Mala goal
+      </Text>
     </View>
   );
 }
@@ -791,7 +796,9 @@ function MalaStatCard({
       <Text style={styles.malaStatLabel}>{label}</Text>
       <View style={styles.malaStatValueRow}>
         <Text style={styles.malaStatValue}>{malas.toLocaleString("en-IN")}</Text>
-        <Text style={styles.malaStatUnit}>Mala</Text>
+        <Text style={styles.malaStatUnit}>
+          {malas === 1 ? "Mala" : "Malas"}
+        </Text>
       </View>
       <Text style={styles.malaStatCount}>
         {count.toLocaleString("en-IN")} Naam
@@ -831,10 +838,17 @@ function NaamJapBottomSheet({
 
   const stepTargetMalas = useCallback(
     (step: number) => {
-      setData((current) => ({
-        ...current,
-        targetMalas: Math.min(10000, Math.max(1, current.targetMalas + step)),
-      }));
+      setData((current) => {
+        const minimumGoal = getMinimumMalaGoal(current.sessionCount);
+
+        return {
+          ...current,
+          targetMalas: Math.min(
+            MAX_MALA_GOAL,
+            Math.max(minimumGoal, current.targetMalas + step)
+          ),
+        };
+      });
     },
     [setData]
   );
@@ -941,17 +955,17 @@ function NaamJapBottomSheet({
             <>
               <Text style={styles.sheetTitle}>Set your Mala Goal</Text>
               <Text style={styles.sheetDescription}>
-                One Mala contains 108 Naam. Choose a comfortable Goal for this session.
+                One Mala contains {NAAM_PER_MALA} Naam. Choose a comfortable Goal for this session.
               </Text>
               <View style={styles.targetStepper}>
                 <PressableScale
                   accessibilityLabel="Reduce mala goal"
-                  disabled={data.targetMalas <= 1}
+                  disabled={data.targetMalas <= getMinimumMalaGoal(data.sessionCount)}
                   onPress={() => stepTargetMalas(-1)}
                   scaleTo={0.88}
                   style={[
                     styles.stepperButton,
-                    data.targetMalas <= 1 && styles.disabled,
+                    data.targetMalas <= getMinimumMalaGoal(data.sessionCount) && styles.disabled,
                   ]}
                 >
                   <Minus color="#292524" size={25} />
@@ -969,19 +983,19 @@ function NaamJapBottomSheet({
                 </View>
                 <PressableScale
                   accessibilityLabel="Increase mala goal"
-                  disabled={data.targetMalas >= 10000}
+                  disabled={data.targetMalas >= MAX_MALA_GOAL}
                   onPress={() => stepTargetMalas(1)}
                   scaleTo={0.88}
                   style={[
                     styles.stepperButton,
-                    data.targetMalas >= 10000 && styles.disabled,
+                    data.targetMalas >= MAX_MALA_GOAL && styles.disabled,
                   ]}
                 >
                   <Plus color="#292524" size={25} />
                 </PressableScale>
               </View>
               <Text style={styles.targetSummary}>
-                {(data.targetMalas * 108).toLocaleString("en-IN")} Total Naam
+                {(data.targetMalas * NAAM_PER_MALA).toLocaleString("en-IN")} Total Naam
               </Text>
               <PressableScale
                 onPress={closeSheet}
@@ -1284,7 +1298,7 @@ const styles = StyleSheet.create({
   },
   malaStatLabel: {
     color: "#9A3412",
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
   },
   malaStatValueRow: {
@@ -1297,7 +1311,7 @@ const styles = StyleSheet.create({
   malaStatUnit: { color: "#A65B35", fontSize: 11, fontWeight: "700" },
   malaStatCount: {
     color: "#B96A40",
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "600",
     marginTop: 3,
   },
@@ -1426,9 +1440,11 @@ const styles = StyleSheet.create({
   },
   selectedNaamProgressText: {
     color: "#8B6753",
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "700",
+    lineHeight: 17,
     marginTop: 7,
+    textAlign: "center",
   },
   floatingNaam: {
     backgroundColor: "#536F63",

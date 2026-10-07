@@ -1,5 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import {
+  getMinimumMalaGoal,
+  MAX_MALA_GOAL,
+  NAAM_PER_MALA,
+} from "@/utils/naam-jap-calculations";
+
 const NAAM_JAP_STORAGE_KEY = "@sai-family/naam-jap/v1";
 
 export type NaamJapDailyCount = {
@@ -20,7 +26,6 @@ export type NaamJapData = {
   jaapNames: NaamJapName[];
   selectedNameId: string;
   sessionCount: number;
-  target: 27 | 54 | 108;
   targetMalas: number;
   todayCount: number;
   totalCount: number;
@@ -102,7 +107,6 @@ export const createDefaultNaamJapData = (): NaamJapData => ({
   jaapNames: [DEFAULT_NAME],
   selectedNameId: DEFAULT_NAME.id,
   sessionCount: 0,
-  target: 108,
   targetMalas: 1,
   todayCount: 0,
   totalCount: 0,
@@ -139,7 +143,9 @@ export async function loadNaamJapData(): Promise<NaamJapData> {
       return createDefaultNaamJapData();
     }
 
-    const parsed = JSON.parse(stored) as Partial<NaamJapData>;
+    const parsed = JSON.parse(stored) as Partial<NaamJapData> & {
+      target?: number;
+    };
     const defaults = createDefaultNaamJapData();
     const safeNames = sanitizeNames(parsed.jaapNames, defaults.jaapNames);
     const selectedNameId = safeNames.some(
@@ -147,9 +153,21 @@ export async function loadNaamJapData(): Promise<NaamJapData> {
     )
       ? String(parsed.selectedNameId)
       : safeNames[0].id;
+    const todayCount = toSafeCount(parsed.todayCount);
+    const totalCount = Math.max(toSafeCount(parsed.totalCount), todayCount);
+    const sessionCount = Math.min(
+      toSafeCount(parsed.sessionCount),
+      todayCount,
+      MAX_MALA_GOAL * NAAM_PER_MALA
+    );
+    const requestedTargetMalas =
+      typeof parsed.targetMalas === "number"
+        ? Math.min(
+            MAX_MALA_GOAL,
+            Math.max(1, Math.round(parsed.targetMalas))
+          )
+        : 1;
     const data: NaamJapData = {
-      ...defaults,
-      ...parsed,
       autoCountSeconds:
         typeof parsed.autoCountSeconds === "number" &&
         parsed.autoCountSeconds >= 1
@@ -163,19 +181,13 @@ export async function loadNaamJapData(): Promise<NaamJapData> {
       history: sanitizeHistory(parsed.history),
       jaapNames: safeNames,
       selectedNameId,
-      sessionCount: toSafeCount(parsed.sessionCount),
-      target: [27, 54, 108].includes(Number(parsed.target))
-        ? (Number(parsed.target) as NaamJapData["target"])
-        : 108,
-      targetMalas:
-        typeof parsed.targetMalas === "number"
-          ? Math.min(10000, Math.max(1, Math.round(parsed.targetMalas)))
-          : 1,
-      todayCount: toSafeCount(parsed.todayCount),
-      totalCount: Math.max(
-        toSafeCount(parsed.totalCount),
-        toSafeCount(parsed.todayCount)
+      sessionCount,
+      targetMalas: Math.min(
+        MAX_MALA_GOAL,
+        Math.max(requestedTargetMalas, getMinimumMalaGoal(sessionCount))
       ),
+      todayCount,
+      totalCount,
     };
 
     return normalizeForToday(data);
