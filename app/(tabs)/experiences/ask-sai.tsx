@@ -32,6 +32,7 @@ import { AskSaiVoiceCaptureModal } from "@/components/experiences/AskSaiVoiceCap
 
 import {
   ArrowLeft,
+  BookOpen,
   Mic,
   Mic2,
   Pause,
@@ -1873,6 +1874,7 @@ export default function AskSaiScreen() {
                   latencyMs: event.latency?.totalMs,
                   messageId: event.messageId,
                   model: voiceSession?.providers?.llm,
+                  sources: event.sources,
                 }
                 : null
             );
@@ -3275,6 +3277,35 @@ export default function AskSaiScreen() {
                 <Text style={styles.answerText}>{answer}</Text>
               </ScrollView>
 
+              {lastResponse?.sources?.length ? (
+                <View style={styles.sourceCard}>
+                  <View style={styles.sourceIcon}>
+                    <BookOpen color="#9A3412" size={17} strokeWidth={2.3} />
+                  </View>
+                  <View style={styles.sourceCopy}>
+                    <Text style={styles.sourceTitle}>
+                      Based on Shri Sai Satcharitra
+                    </Text>
+                    {lastResponse.sources.slice(0, 3).map((source, index) => {
+                      const pageLabel = source.sourcePageStart
+                        ? source.sourcePageEnd && source.sourcePageEnd !== source.sourcePageStart
+                          ? ` · PDF pages ${source.sourcePageStart}-${source.sourcePageEnd}`
+                          : ` · PDF page ${source.sourcePageStart}`
+                        : "";
+
+                      return (
+                        <Text
+                          key={`${source.chapter}-${source.sourcePageStart ?? index}`}
+                          style={styles.sourceText}
+                        >
+                          Chapter {source.chapter}{pageLabel}
+                        </Text>
+                      );
+                    })}
+                  </View>
+                </View>
+              ) : null}
+
               <View style={styles.metaRow}>
                 {/* {typeof lastResponse?.latencyMs === "number" ? (
                   <View style={styles.metaPill}>
@@ -4025,6 +4056,42 @@ const styles = StyleSheet.create({
   answerScrollContent: {
     paddingHorizontal: 14,
     paddingVertical: 13,
+  },
+  sourceCard: {
+    alignItems: "flex-start",
+    backgroundColor: "#FFF7ED",
+    borderColor: "#FED7AA",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+  },
+  sourceIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFEDD5",
+    borderRadius: 10,
+    height: 32,
+    justifyContent: "center",
+    width: 32,
+  },
+  sourceCopy: {
+    flex: 1,
+  },
+  sourceTitle: {
+    color: "#7C2D12",
+    fontSize: 13,
+    fontWeight: "900",
+    lineHeight: 18,
+  },
+  sourceText: {
+    color: "#6B4F3A",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 2,
   },
   metaRow: {
     flexDirection: "row",

@@ -33,6 +33,14 @@ export type AskDevoteeQuestionPayload = {
   voice?: boolean;
 };
 
+export type DevoteeAiSource = {
+  title: string;
+  chapter: string;
+  edition?: string;
+  sourcePageStart?: number;
+  sourcePageEnd?: number;
+};
+
 export type AskDevoteeQuestionResponse = {
   answer: string;
   cached?: boolean;
@@ -42,6 +50,7 @@ export type AskDevoteeQuestionResponse = {
   messageId?: string;
   model?: string | null;
   safetyNote?: string | null;
+  sources?: DevoteeAiSource[];
 };
 
 export type DevoteeAiConversation = {
@@ -208,6 +217,7 @@ export type DevoteeAiVoiceServerEvent =
       };
       messageId?: string;
       audioSegments?: number;
+      sources?: DevoteeAiSource[];
       turnId: string;
       type: "turn_complete";
     }
@@ -230,6 +240,7 @@ type BackendDevoteeAiResponse = {
   safetyNote?: string | null;
   text?: string;
   message?: string;
+  sources?: DevoteeAiSource[];
 };
 
 function getAiEndpoint() {
@@ -366,6 +377,7 @@ export async function askDevoteeQuestion(
       messageId: data.messageId,
       model: data.model,
       safetyNote: data.safetyNote,
+      sources: Array.isArray(data.sources) ? data.sources : [],
     };
   } catch (error) {
     throw new Error(getAiErrorMessage(error));
