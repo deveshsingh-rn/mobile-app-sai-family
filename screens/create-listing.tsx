@@ -1007,7 +1007,7 @@ const CreateListingScreen = () => {
             style={{
               backgroundColor: theme.accent,
               borderRadius: 100,
-              height: '100%',
+              height: '90%',
               width: `${(step / steps.length) * 100}%`,
             }}
           />
