@@ -509,11 +509,11 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.pillarHeaderRow}>
+          <ExperienceProfileMenu />
           <PillarGlassDock
             activeRouteName="experiences"
             style={styles.fixedPillarDock}
           />
-          <ExperienceProfileMenu />
         </View>
 
         {isHeaderIntroMounted && (

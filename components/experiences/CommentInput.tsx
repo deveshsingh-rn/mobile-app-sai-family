@@ -1,9 +1,11 @@
 import React, {
+  useRef,
   useState,
 } from "react";
 
 import {
   Image,
+  Keyboard,
   Pressable,
   StyleSheet,
   Text,
@@ -31,15 +33,17 @@ export default function CommentInput({
 }: Props) {
   const [comment, setComment] =
     useState("");
+  const inputRef = useRef<TextInput>(null);
 
   const handleSend = () => {
-    if (!comment.trim()) {
+    if (!comment.trim() || loading) {
       return;
     }
 
     onSubmit(comment.trim());
-
     setComment("");
+    inputRef.current?.blur();
+    Keyboard.dismiss();
   };
 
   return (
@@ -56,6 +60,7 @@ export default function CommentInput({
         )}
         <View style={styles.composer}>
           <TextInput
+            ref={inputRef}
             value={comment}
             onChangeText={setComment}
             blurOnSubmit={false}

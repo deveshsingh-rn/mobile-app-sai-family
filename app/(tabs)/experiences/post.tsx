@@ -1438,7 +1438,7 @@ const styles = StyleSheet.create({
 
   stopRecordingButton: {
     alignItems: "center",
-    backgroundColor:  EXPERIENCE_THEME.heading,
+    backgroundColor: EXPERIENCE_THEME.heading,
     borderRadius: 10,
     flexDirection: "row",
     gap: 6,
