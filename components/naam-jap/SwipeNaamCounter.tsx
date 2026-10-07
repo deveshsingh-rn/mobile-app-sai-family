@@ -1,4 +1,4 @@
-import { ChevronsRight } from "lucide-react-native";
+import { MoveUpRight } from "lucide-react-native";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -8,6 +8,8 @@ import {
   View,
 } from "react-native";
 
+import { getNaamJapSwipeDirection } from "@/utils/naam-jap-gesture";
+
 type Props = {
   disabled?: boolean;
   label: string;
@@ -15,7 +17,7 @@ type Props = {
 };
 
 export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
-  const translateX = useRef(new Animated.Value(0)).current;
+  const translation = useRef(new Animated.ValueXY()).current;
   const isCompletingRef = useRef(false);
   const countedThisGestureRef = useRef(false);
   const [trackWidth, setTrackWidth] = useState(0);
@@ -23,46 +25,52 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
   const maxTravel = Math.max(0, trackWidth - 64);
 
   const reset = useCallback(() => {
-    Animated.spring(translateX, {
+    Animated.spring(translation, {
       damping: 20,
       stiffness: 190,
-      toValue: 0,
+      toValue: { x: 0, y: 0 },
       useNativeDriver: true,
     }).start(() => setIsSwiping(false));
-  }, [translateX]);
+  }, [translation]);
 
-  const completeSwipe = useCallback(() => {
+  const completeSwipe = useCallback((direction: "right" | "up") => {
     if (isCompletingRef.current || countedThisGestureRef.current) return;
 
     isCompletingRef.current = true;
     countedThisGestureRef.current = true;
     onCount();
-    translateX.stopAnimation();
+    translation.stopAnimation();
     Animated.sequence([
-      Animated.timing(translateX, {
-        duration: 45,
-        toValue: maxTravel,
+      Animated.timing(translation, {
+        duration: 40,
+        toValue:
+          direction === "right"
+            ? { x: maxTravel, y: 0 }
+            : { x: 0, y: -48 },
         useNativeDriver: true,
       }),
-      Animated.timing(translateX, {
-        duration: 45,
-        toValue: 0,
+      Animated.timing(translation, {
+        duration: 40,
+        toValue: { x: 0, y: 0 },
         useNativeDriver: true,
       }),
     ]).start(() => {
         isCompletingRef.current = false;
         setIsSwiping(false);
     });
-  }, [maxTravel, onCount, translateX]);
+  }, [maxTravel, onCount, translation]);
 
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gesture) =>
-          !disabled &&
-          !isCompletingRef.current &&
-          gesture.dx > 5 &&
-          Math.abs(gesture.dx) > Math.abs(gesture.dy),
+        onMoveShouldSetPanResponder: (_, gesture) => {
+          const movingRight =
+            gesture.dx > 5 && Math.abs(gesture.dx) > Math.abs(gesture.dy);
+          const movingUp =
+            gesture.dy < -5 && Math.abs(gesture.dy) > Math.abs(gesture.dx);
+
+          return !disabled && !isCompletingRef.current && (movingRight || movingUp);
+        },
         onPanResponderGrant: () => {
           countedThisGestureRef.current = false;
           setIsSwiping(true);
@@ -70,32 +78,35 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
         onPanResponderMove: (_, gesture) => {
           if (isCompletingRef.current) return;
 
-          translateX.setValue(Math.min(maxTravel, Math.max(0, gesture.dx)));
+          const movingUp = Math.abs(gesture.dy) > Math.abs(gesture.dx);
+          translation.setValue(
+            movingUp
+              ? { x: 0, y: Math.max(-48, Math.min(0, gesture.dy)) }
+              : { x: Math.min(maxTravel, Math.max(0, gesture.dx)), y: 0 }
+          );
 
-          if (gesture.dx >= 14 || (gesture.dx >= 7 && gesture.vx > 0.3)) {
-            completeSwipe();
-          }
+          const direction = getNaamJapSwipeDirection(gesture);
+          if (direction) completeSwipe(direction);
         },
         onPanResponderRelease: (_, gesture) => {
           if (countedThisGestureRef.current || isCompletingRef.current) return;
 
-          if (maxTravel > 0 && gesture.dx >= 10) {
-            completeSwipe();
-          } else {
-            reset();
-          }
+          const direction = getNaamJapSwipeDirection(gesture, true);
+          if (direction && (direction === "up" || maxTravel > 0)) {
+            completeSwipe(direction);
+          } else reset();
         },
         onPanResponderTerminate: () => {
           if (!countedThisGestureRef.current) reset();
         },
       }),
-    [completeSwipe, disabled, maxTravel, reset, translateX]
+    [completeSwipe, disabled, maxTravel, reset, translation]
   );
 
   return (
     <View
       accessibilityActions={[{ label: `Count ${label}`, name: "activate" }]}
-      accessibilityHint="Swipe a little from left to right"
+      accessibilityHint="Swipe a little to the right or upward"
       accessibilityLabel={`Swipe to count ${label}`}
       accessibilityRole="adjustable"
       accessibilityState={{ disabled }}
@@ -112,23 +123,23 @@ export function SwipeNaamCounter({ disabled, label, onCount }: Props) {
     >
       <Animated.View
         pointerEvents="none"
-        style={[styles.swipeGlow, { transform: [{ translateX }] }]}
+        style={[styles.swipeGlow, { transform: translation.getTranslateTransform() }]}
       />
       <View pointerEvents="none" style={styles.copy}>
         <Text
           adjustsFontSizeToFit
-          minimumFontScale={0.72}
-          numberOfLines={2}
+          minimumFontScale={0.5}
+          numberOfLines={1}
           style={styles.naam}
         >
           {label}
         </Text>
         <Text style={styles.instruction}>
-          {disabled ? "Daily goal complete" : "Swipe Right to Count"}
+          {disabled ? "Daily goal complete" : "Swipe right or up to count"}
         </Text>
       </View>
       <View pointerEvents="none" style={styles.endButton}>
-        <ChevronsRight
+        <MoveUpRight
           color={disabled ? "#C8A58F" : "#9A3412"}
           size={25}
         />

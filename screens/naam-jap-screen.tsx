@@ -473,8 +473,8 @@ export default function NaamJapScreen() {
                   <Text style={styles.naamEyebrow}>YOUR JAAP</Text>
                   <Text
                     adjustsFontSizeToFit
-                    minimumFontScale={0.72}
-                    numberOfLines={2}
+                    minimumFontScale={0.4}
+                    numberOfLines={1}
                     style={styles.naamTitle}
                   >
                     {selectedName?.label || "Sai Ram"}
@@ -721,16 +721,17 @@ function SelectedNaamFocus({
       >
         <Text
           adjustsFontSizeToFit
-          minimumFontScale={0.48}
-          numberOfLines={3}
+          minimumFontScale={0.16}
+          numberOfLines={1}
           style={styles.selectedNaamText}
         >
           {label}
         </Text>
       </MotiView>
 
-      <Text style={styles.selectedNaamInstruction}>Tap the Naam to Count or Scroll</Text>
-      <Text style={styles.selectedNaamInstruction}>Below to the Right</Text>
+      <Text style={styles.selectedNaamInstruction}>
+        Tap here, or swipe right/up below
+      </Text>
       <View style={styles.selectedNaamProgressTrack}>
         <MotiView
           animate={{ width: `${percentage}%` }}
