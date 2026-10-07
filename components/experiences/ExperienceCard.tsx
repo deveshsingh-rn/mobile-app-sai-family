@@ -44,6 +44,10 @@ import {
   toggleLikeRequest,
 } from "@/store/experiences/actions";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
+import {
+  createExperiencePublicShareLink,
+  createExperienceShareMessage,
+} from "@/utils/experience-links";
 
 const formatCount = (value?: number) => {
   const count = Number(value) || 0;
@@ -237,8 +241,16 @@ export function ExperienceCard({
   };
 
   const handleShare = async () => {
+    const publicUrl = createExperiencePublicShareLink(item.id);
+
     await Share.share({
-      message: item.content,
+      message: createExperienceShareMessage({
+        authorName: item.authorName,
+        content: item.content,
+        experienceId: item.id,
+      }),
+      title: "Sai Family Experience",
+      url: publicUrl,
     });
   };
 
