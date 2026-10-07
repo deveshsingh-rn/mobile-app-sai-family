@@ -20,19 +20,19 @@ const MENU_ACTIONS = [
     href: "/(tabs)/profile",
     Icon: UserRound,
     label: "My Profile",
-    subtitle: "View and manage your devotee profile",
+    subtitle: "View and Manage Your Devotee Profile",
   },
   {
     href: "/(tabs)/experiences/search",
     Icon: Search,
     label: "Search",
-    subtitle: "Find experiences shared by devotees",
+    subtitle: "Find Experiences Shared By Devotees",
   },
   {
     href: "/(tabs)/experiences/bookmarks",
     Icon: Bookmark,
     label: "Saved Experiences",
-    subtitle: "Open posts you have bookmarked",
+    subtitle: "Open Posts You Have Bookmarkend",
   },
 ] as const;
 

@@ -704,9 +704,9 @@ export default function EventDetailRoute() {
       >
         <View style={styles.fixedTopRow}>
           <View style={styles.fixedCopy}>
-            <Text style={styles.fixedMeta}>{detail.rsvps || 0} devotees attending</Text>
+            <Text style={styles.fixedMeta}>{detail.rsvps || 0} Devotees Attending</Text>
             <Text style={styles.fixedTitle}>
-              {detail.rsvpedByMe ? "Your place is confirmed" : "Reserve your place"}
+              {detail.rsvpedByMe ? "Your Place is Confirmed" : "Reserve Your Place"}
             </Text>
           </View>
           <Pressable
@@ -728,7 +728,7 @@ export default function EventDetailRoute() {
             </Text>
           </Pressable>
         </View>
-        <Pressable
+        {/* <Pressable
           onPress={() =>
             Alert.alert(
               "Calendar",
@@ -739,7 +739,7 @@ export default function EventDetailRoute() {
         >
           <CalendarPlus color="#1F2937" size={15} />
           <Text style={styles.calendarText}>Add to Calendar</Text>
-        </Pressable>
+        </Pressable> */}
       </View>
     </View>
   );
@@ -1130,7 +1130,7 @@ function PhotosSection({
         <ActivityIndicator color="#1F2937" />
       ) : !photos.length ? (
         <Text style={styles.emptyComments}>
-          Event photos will appear here after the gathering.
+          Event Photos Will Appear Here After the Gathering.
         </Text>
       ) : (
         <View style={styles.photoGrid}>
@@ -1153,109 +1153,109 @@ function PhotosSection({
   );
 }
 
-function ReviewsSection({
-  addingReview,
-  onChangeRating,
-  onChangeReview,
-  onSubmitReview,
-  reviewContent,
-  reviewRating,
-  reviews,
-  reviewsLoading,
-  summary,
-}: {
-  addingReview: boolean;
-  onChangeRating: (value: number) => void;
-  onChangeReview: (value: string) => void;
-  onSubmitReview: () => void;
-  reviewContent: string;
-  reviewRating: number;
-  reviews: EventReview[];
-  reviewsLoading: boolean;
-  summary?: {
-    averageRating?: number;
-    count?: number;
-    total?: number;
-  } | null;
-}) {
-  return (
-    <Section>
-      <SectionTitle
-        action={
-          summary?.averageRating
-            ? `${summary.averageRating.toFixed(1)} avg`
-            : undefined
-        }
-        title="Reviews"
-      />
-      <View style={styles.reviewComposer}>
-        <View style={styles.ratingStars}>
-          {[1, 2, 3, 4, 5].map((rating) => (
-            <Pressable
-              key={rating}
-              onPress={() => onChangeRating(rating)}
-              style={styles.starButton}
-            >
-              <Star
-                color="#F97316"
-                fill={rating <= reviewRating ? "#F97316" : "transparent"}
-                size={21}
-              />
-            </Pressable>
-          ))}
-        </View>
-        <TextInput
-          multiline
-          onChangeText={onChangeReview}
-          placeholder="Share your experience after attending..."
-          placeholderTextColor="#9CA3AF"
-          style={styles.reviewInput}
-          value={reviewContent}
-        />
-        <Pressable
-          disabled={addingReview || !reviewContent.trim()}
-          onPress={onSubmitReview}
-          style={[
-            styles.reviewSubmit,
-            (addingReview || !reviewContent.trim()) && styles.disabled,
-          ]}
-        >
-          {addingReview ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <Star color="#FFFFFF" fill="#FFFFFF" size={15} />
-          )}
-          <Text style={styles.reviewSubmitText}>
-            {addingReview ? "Submitting" : "Submit Review"}
-          </Text>
-        </Pressable>
-      </View>
-      {reviewsLoading && !reviews.length ? (
-        <ActivityIndicator color="#1F2937" />
-      ) : !reviews.length ? (
-        <Text style={styles.emptyComments}>
-          No reviews yet. Reviews appear after attendees submit them.
-        </Text>
-      ) : (
-        reviews.map((review) => (
-          <View key={review.id} style={styles.reviewItem}>
-            <View style={styles.reviewTop}>
-              <Text style={styles.reviewName}>
-                {review.author?.name || "Devotee"}
-              </Text>
-              <Text style={styles.reviewRating}>
-                {review.rating}/5
-              </Text>
-            </View>
-            {!!review.content && (
-              <Text style={styles.reviewText}>{review.content}</Text>
-            )}
-          </View>
-        ))
-      )}
-    </Section>
-  );
-}
+// function ReviewsSection({
+//   addingReview,
+//   onChangeRating,
+//   onChangeReview,
+//   onSubmitReview,
+//   reviewContent,
+//   reviewRating,
+//   reviews,
+//   reviewsLoading,
+//   summary,
+// }: {
+//   addingReview: boolean;
+//   onChangeRating: (value: number) => void;
+//   onChangeReview: (value: string) => void;
+//   onSubmitReview: () => void;
+//   reviewContent: string;
+//   reviewRating: number;
+//   reviews: EventReview[];
+//   reviewsLoading: boolean;
+//   summary?: {
+//     averageRating?: number;
+//     count?: number;
+//     total?: number;
+//   } | null;
+// }) {
+//   return (
+//     <Section>
+//       <SectionTitle
+//         action={
+//           summary?.averageRating
+//             ? `${summary.averageRating.toFixed(1)} avg`
+//             : undefined
+//         }
+//         title="Reviews"
+//       />
+//       <View style={styles.reviewComposer}>
+//         <View style={styles.ratingStars}>
+//           {[1, 2, 3, 4, 5].map((rating) => (
+//             <Pressable
+//               key={rating}
+//               onPress={() => onChangeRating(rating)}
+//               style={styles.starButton}
+//             >
+//               <Star
+//                 color="#F97316"
+//                 fill={rating <= reviewRating ? "#F97316" : "transparent"}
+//                 size={21}
+//               />
+//             </Pressable>
+//           ))}
+//         </View>
+//         <TextInput
+//           multiline
+//           onChangeText={onChangeReview}
+//           placeholder="Share your experience after attending..."
+//           placeholderTextColor="#9CA3AF"
+//           style={styles.reviewInput}
+//           value={reviewContent}
+//         />
+//         <Pressable
+//           disabled={addingReview || !reviewContent.trim()}
+//           onPress={onSubmitReview}
+//           style={[
+//             styles.reviewSubmit,
+//             (addingReview || !reviewContent.trim()) && styles.disabled,
+//           ]}
+//         >
+//           {addingReview ? (
+//             <ActivityIndicator color="#FFFFFF" size="small" />
+//           ) : (
+//             <Star color="#FFFFFF" fill="#FFFFFF" size={15} />
+//           )}
+//           <Text style={styles.reviewSubmitText}>
+//             {addingReview ? "Submitting" : "Submit Review"}
+//           </Text>
+//         </Pressable>
+//       </View>
+//       {reviewsLoading && !reviews.length ? (
+//         <ActivityIndicator color="#1F2937" />
+//       ) : !reviews.length ? (
+//         <Text style={styles.emptyComments}>
+//           No reviews yet. Reviews appear after attendees submit them.
+//         </Text>
+//       ) : (
+//         reviews.map((review) => (
+//           <View key={review.id} style={styles.reviewItem}>
+//             <View style={styles.reviewTop}>
+//               <Text style={styles.reviewName}>
+//                 {review.author?.name || "Devotee"}
+//               </Text>
+//               <Text style={styles.reviewRating}>
+//                 {review.rating}/5
+//               </Text>
+//             </View>
+//             {!!review.content && (
+//               <Text style={styles.reviewText}>{review.content}</Text>
+//             )}
+//           </View>
+//         ))
+//       )}
+//     </Section>
+//   );
+// }
 
 function CommentsSection({
   addingComment,
@@ -1313,56 +1313,56 @@ function CommentsSection({
   );
 }
 
-function ShareReportSection({
-  canReport,
-  reportPending,
-  sharePending,
-  onReport,
-  onShare,
-}: {
-  canReport: boolean;
-  reportPending: boolean;
-  sharePending: boolean;
-  onReport: () => void;
-  onShare: () => void;
-}) {
-  return (
-    <Section style={styles.shareSection}>
-      <View style={styles.twoButtons}>
-        <Pressable
-          disabled={sharePending}
-          onPress={onShare}
-          style={[styles.secondarySmallButton, sharePending && styles.disabled]}
-        >
-          {sharePending ? (
-            <ActivityIndicator color="#1F2937" size="small" />
-          ) : (
-            <Share2 color="#1F2937" size={16} />
-          )}
-          <Text style={styles.secondarySmallText}>
-            {sharePending ? "Sharing" : "Share Event"}
-          </Text>
-        </Pressable>
-        {canReport && (
-          <Pressable
-            disabled={reportPending}
-            onPress={onReport}
-            style={[styles.secondarySmallButton, reportPending && styles.disabled]}
-          >
-            {reportPending ? (
-              <ActivityIndicator color="#1F2937" size="small" />
-            ) : (
-              <Flag color="#1F2937" size={16} />
-            )}
-            <Text style={styles.secondarySmallText}>
-              {reportPending ? "Submitting" : "Report"}
-            </Text>
-          </Pressable>
-        )}
-      </View>
-    </Section>
-  );
-}
+// function ShareReportSection({
+//   canReport,
+//   reportPending,
+//   sharePending,
+//   onReport,
+//   onShare,
+// }: {
+//   canReport: boolean;
+//   reportPending: boolean;
+//   sharePending: boolean;
+//   onReport: () => void;
+//   onShare: () => void;
+// }) {
+//   return (
+//     <Section style={styles.shareSection}>
+//       <View style={styles.twoButtons}>
+//         <Pressable
+//           disabled={sharePending}
+//           onPress={onShare}
+//           style={[styles.secondarySmallButton, sharePending && styles.disabled]}
+//         >
+//           {sharePending ? (
+//             <ActivityIndicator color="#1F2937" size="small" />
+//           ) : (
+//             <Share2 color="#1F2937" size={16} />
+//           )}
+//           <Text style={styles.secondarySmallText}>
+//             {sharePending ? "Sharing" : "Share Event"}
+//           </Text>
+//         </Pressable>
+//         {canReport && (
+//           <Pressable
+//             disabled={reportPending}
+//             onPress={onReport}
+//             style={[styles.secondarySmallButton, reportPending && styles.disabled]}
+//           >
+//             {reportPending ? (
+//               <ActivityIndicator color="#1F2937" size="small" />
+//             ) : (
+//               <Flag color="#1F2937" size={16} />
+//             )}
+//             <Text style={styles.secondarySmallText}>
+//               {reportPending ? "Submitting" : "Report"}
+//             </Text>
+//           </Pressable>
+//         )}
+//       </View>
+//     </Section>
+//   );
+// }
 
 const styles = StyleSheet.create({
   activeDot: {

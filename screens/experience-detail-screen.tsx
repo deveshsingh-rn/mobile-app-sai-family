@@ -283,7 +283,7 @@ export default function ExperienceDetailScreen() {
             <View style={styles.emptyCommentIcon}>
               <MessageCircle color={EXPERIENCE_THEME.heading} size={25} />
             </View>
-            <Text style={styles.noCommentsTitle}>No comments yet</Text>
+            <Text style={styles.noCommentsTitle}>No Comments Yet</Text>
             <Text style={styles.noCommentsText}>
               Start a kind conversation with this devotee.
             </Text>

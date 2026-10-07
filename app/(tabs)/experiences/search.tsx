@@ -290,10 +290,10 @@ export default function SearchExperiencesScreen() {
       return (
         <View style={styles.stateBox}>
           <Text style={styles.stateTitle}>
-            Search divine experiences
+            Search Divine Experiences
           </Text>
           <Text style={styles.stateText}>
-            Type at least 2 letters to find posts by content, category, or devotee.
+            Type at Least 2 Letters To Find Posts by Content, Category, or Devotee.
           </Text>
         </View>
       );
