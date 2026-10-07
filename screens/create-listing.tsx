@@ -925,7 +925,7 @@ const CreateListingScreen = () => {
   const renderHeader = () => (
     <View
       style={{
-        backgroundColor: theme.accent,
+        backgroundColor: theme.background,
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
         overflow: 'hidden',
@@ -958,14 +958,14 @@ const CreateListingScreen = () => {
           <Ionicons
             name={step === 1 ? 'close' : 'arrow-back'}
             size={23}
-            color="#FFFFFF"
+            color={theme.accent}
           />
         </TouchableOpacity>
 
         <View>
           <Text
             style={{
-              color: '#FFFFFF',
+              color: theme.accent,
               fontSize: 22,
               fontWeight: '900',
               letterSpacing: -0.2,
@@ -975,7 +975,7 @@ const CreateListingScreen = () => {
           </Text>
           <Text
             style={{
-              color: 'rgba(255,255,255,0.78)',
+              color: theme.muted,
               fontSize: 11,
               fontWeight: '800',
               marginTop: 4,
@@ -1002,7 +1002,7 @@ const CreateListingScreen = () => {
           }}>
           <View
             style={{
-              backgroundColor: '#FFFFFF',
+              backgroundColor: theme.accent,
               borderRadius: 100,
               height: '100%',
               width: `${(step / steps.length) * 100}%`,
@@ -1038,7 +1038,7 @@ const CreateListingScreen = () => {
                   alignItems: 'center',
                   backgroundColor:
                     step === index + 1
-                      ? '#FFFFFF'
+                      ? theme.accent
                       : 'rgba(255,255,255,0.2)',
                   borderRadius: 14,
                   height: 28,
@@ -1049,8 +1049,8 @@ const CreateListingScreen = () => {
                   style={{
                     color:
                       step === index + 1
-                        ? theme.accent
-                        : '#FFFFFF',
+                        ? '#FFFFFF'
+                        :  theme.accent,
                     fontSize: 12,
                     fontWeight: '900',
                   }}>
