@@ -128,7 +128,7 @@ export default function ProfileScreen() {
         <View>
           <Text style={styles.eyebrow}>SAI FAMILY</Text>
           <Text style={styles.title}>Your Profile</Text>
-          <Text style={styles.subtitle}>Your account, preferences and daily practice</Text>
+          <Text style={styles.subtitle}>Your Account, Preferences and Daily Practice</Text>
         </View>
 
         <View style={styles.headerBadge}>
@@ -156,25 +156,25 @@ export default function ProfileScreen() {
               </View>
             </View>
             <Text style={styles.memberId}>
-              {account?.memberId || "Create account to get your ID"}
+              {account?.memberId || "Create Account to Get Your ID"}
             </Text>
             <Text numberOfLines={1} style={styles.location}>
               {account?.location ||
                 account?.profile?.city ||
                 account?.city ||
-                "Sai Family member"}
+                "Sai Family Member"}
             </Text>
           </View>
         </View>
 
-        <View style={styles.statGrid}>
+        {/* <View style={styles.statGrid}>
           {profileStats.map((item) => (
             <View key={item.label} style={styles.statBox}>
               <Text style={styles.statValue}>{item.value}</Text>
               <Text style={styles.statLabel}>{item.label}</Text>
             </View>
           ))}
-        </View>
+        </View> */}
       </View>
 
       <View style={styles.segment}>
@@ -197,33 +197,7 @@ export default function ProfileScreen() {
           <View style={styles.detailCard}>
             <DetailRow label="Mobile" value={account?.mobileNumber} />
             <DetailRow label="Email" value={account?.email} />
-            <DetailRow
-              label="Occupation"
-              value={account?.profile?.occupation || account?.occupation}
-            />
-            <DetailRow
-              label="Address"
-              value={
-                account?.profile?.completeAddress ||
-                account?.completeAddress
-              }
-            />
-            <DetailRow
-              label="City"
-              value={account?.profile?.city || account?.city}
-            />
-            <DetailRow
-              label="State"
-              value={account?.profile?.state || account?.state}
-            />
-            <DetailRow
-              label="Country"
-              value={account?.profile?.country || account?.country}
-            />
-            <DetailRow
-              label="Pincode"
-              value={account?.profile?.pincode || account?.pincode}
-            />
+            
             <DetailRow
               label="Language"
               value={(
@@ -233,7 +207,7 @@ export default function ProfileScreen() {
             />
           </View>
 
-          <Text style={styles.sectionLabel}>Coming later</Text>
+          {/* <Text style={styles.sectionLabel}>Coming later</Text>
           <View style={styles.scoreBox}>
             <View style={styles.scoreIcon}>
               <Star size={20} color="#F97316" fill="#FDBA74" />
@@ -247,7 +221,7 @@ export default function ProfileScreen() {
             <View style={styles.comingSoon}>
               <Text style={styles.comingSoonText}>Soon</Text>
             </View>
-          </View>
+          </View> */}
         </View>
       ) : (
         <View style={styles.section}>
@@ -420,7 +394,7 @@ export default function ProfileScreen() {
               </View>
             )} */}
           {/* </View> */}
-          <Text style={styles.sectionLabel}>Account & app</Text>
+          {/* <Text style={styles.sectionLabel}>Account & app</Text>
           <View style={styles.settingsGroup}>
             <SettingRow
               description="Prayer, event and family update alerts."
@@ -440,7 +414,7 @@ export default function ProfileScreen() {
               icon={<Languages size={21} color={EXPERIENCE_THEME.heading} />}
               title="Language"
             />
-          </View>
+          </View> */}
 
           <Text style={styles.sectionLabel}>Account access</Text>
           <SettingRow

@@ -430,14 +430,14 @@ export default function NaamJapScreen() {
               from={{ opacity: 0, translateY: 12 }}
               transition={{ delay: 30, duration: 420, type: "timing" }}
             >
-               <View style={styles.headerMessage}>
+               {/* <View style={styles.headerMessage}>
         <Text style={styles.headerMessageLead}>
           Naam Jaap is your Spiritual Bank Balance.
         </Text>
         <Text style={styles.headerMessageText}>
           Keep Building it Every Day, Encash it in times of Need. Complete One Mala & Unlock Sai Blessings.
         </Text>
-      </View>
+      </View> */}
               <PressableScale
                 accessibilityHint="Opens your saved Naam list"
                 accessibilityRole="button"
@@ -714,7 +714,7 @@ function SelectedNaamFocus({
       </MotiView>
 
       <Text style={styles.selectedNaamInstruction}>
-        Tap here, or swipe right/up below
+        Tap here, Or Swipe Right/Up Below
       </Text>
       <View style={styles.selectedNaamProgressTrack}>
         <MotiView
@@ -725,7 +725,7 @@ function SelectedNaamFocus({
       </View>
       <Text style={styles.selectedNaamProgressText}>
         {sessionCount >= sessionGoalCount
-          ? `Goal complete · ${sessionCount.toLocaleString("en-IN")} Naam and continuing`
+          ? `Goal Complete · ${sessionCount.toLocaleString("en-IN")} Naam And Continuing`
           : `${sessionCount.toLocaleString("en-IN")} / ${sessionGoalCount.toLocaleString("en-IN")} Naam · ${targetMalas.toLocaleString("en-IN")} Mala goal`}
       </Text>
     </View>
@@ -869,18 +869,18 @@ function NaamJapBottomSheet({
 
           {activeSheet === "more" ? (
             <>
-              <Text style={styles.sheetTitle}>Counter options</Text>
+              <Text style={styles.sheetTitle}>Counter Options</Text>
               <Text style={styles.sheetDescription}>
-                Choose whether each Naam is counted by touch or on a gentle timer.
+                Choose Whether Each Naam is Counted by Touch or On a Gentle Timer.
               </Text>
               <View style={styles.sheetSettingRow}>
                 <View style={styles.sheetSettingIcon}>
                   <Clock3 color="#9A3412" size={21} />
                 </View>
                 <View style={styles.sheetSettingCopy}>
-                  <Text style={styles.sheetSettingTitle}>Automatic counter</Text>
+                  <Text style={styles.sheetSettingTitle}>Automatic Counter</Text>
                   <Text style={styles.sheetSettingText}>
-                    Count one Naam at your chosen interval
+                    Count One Naam At Your Chosen Interval
                   </Text>
                 </View>
                 <Switch
@@ -940,7 +940,7 @@ function NaamJapBottomSheet({
             <>
               <Text style={styles.sheetTitle}>Set your Mala Goal</Text>
               <Text style={styles.sheetDescription}>
-                One Mala contains {NAAM_PER_MALA} Naam. Choose a comfortable Goal for this session.
+                One Mala Contains {NAAM_PER_MALA} Naam. Choose a Comfortable Goal For This Session.
               </Text>
               <View style={styles.targetStepper}>
                 <PressableScale
@@ -987,7 +987,7 @@ function NaamJapBottomSheet({
                 scaleTo={0.97}
                 style={styles.sheetPrimaryButton}
               >
-                <Text style={styles.sheetPrimaryButtonText}>Save goal</Text>
+                <Text style={styles.sheetPrimaryButtonText}>Save Goal</Text>
               </PressableScale>
             </>
           ) : null}
@@ -996,7 +996,7 @@ function NaamJapBottomSheet({
             <>
               <Text style={styles.sheetTitle}>Choose your Naam</Text>
               <Text style={styles.sheetDescription}>
-                Select, add, rename, or remove the Naam used for your Jaap.
+                Select, Add, Rename, or Remove The Naam Used for Your Jaap.
               </Text>
               {editingNameId ? (
                 <View style={styles.editingBanner}>
@@ -1085,7 +1085,7 @@ function NaamJapBottomSheet({
                 style={styles.sheetPrimaryButton}
               >
                 <Text style={styles.sheetPrimaryButtonText}>
-                  {nameDraft.trim() ? "Save and use this Naam" : "Done"}
+                  {nameDraft.trim() ? "Save and Use This Naam" : "Done"}
                 </Text>
               </PressableScale>
             </>

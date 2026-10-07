@@ -132,24 +132,6 @@ function ownerMemberSince(
     : 'Community member';
 }
 
-function formatDisplayDate(value?: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-
-  if (!Number.isFinite(date.getTime())) {
-    return null;
-  }
-
-  return date.toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
 function formatStatus(value?: string | null) {
   if (!value) {
     return 'Not available';
@@ -402,6 +384,13 @@ const BusinessDetailsScreen = () => {
   const primaryLocation = [listing?.city, listing?.state]
     .filter(Boolean)
     .join(', ');
+  const hasServiceDetails = Boolean(
+    listing?.category?.description ||
+      subcategories.length ||
+      specialties.length ||
+      serviceAreas.length ||
+      tags.length
+  );
 
   const contactActions: ContactAction[] = [
     {
@@ -1300,47 +1289,13 @@ const BusinessDetailsScreen = () => {
               About this business
             </Text>
 
-            <View
-              style={{
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                marginTop: 14,
-              }}>
-              {(specialties.length
-                ? specialties
-                : [listing.categoryName || 'Community Service']
-              ).map((item) => (
-                <View
-                  key={item}
-                  style={{
-                    backgroundColor: '#FFF7ED',
-                    borderColor: '#FED7AA',
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    marginBottom: 10,
-                    marginRight: 10,
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                  }}>
-                  <Text
-                    style={{
-                      color: '#9A3412',
-                      fontSize: 15,
-                      fontWeight: '800',
-                    }}>
-                    {item}
-                  </Text>
-                </View>
-              ))}
-            </View>
-
             <Text
               style={{
                 color: '#4B5563',
                 fontSize: 16,
                 fontWeight: '600',
                 lineHeight: 26,
-                marginTop: 12,
+                marginTop: 14,
               }}>
               {expanded ||
               (listing.description || '').length <= 140
@@ -1440,68 +1395,6 @@ const BusinessDetailsScreen = () => {
           </View>
 
           {renderSection(
-            'Business Snapshot',
-            <View
-              style={{
-                backgroundColor: palette.card,
-                borderColor: palette.border,
-                borderRadius: 20,
-                borderWidth: 1,
-                paddingHorizontal: 16,
-                ...iosShadow,
-              }}>
-              {renderInfoRow(
-                'albums-outline',
-                'Category',
-                listing.categoryName ||
-                  listing.category?.name ||
-                  'Community listing'
-              )}
-              {renderInfoRow(
-                'ribbon-outline',
-                'Verification',
-                `${formatStatus(listing.verificationStatus)}${
-                  listing.verifiedAt
-                    ? ` · ${formatDisplayDate(listing.verifiedAt)}`
-                    : ''
-                }`
-              )}
-              {renderInfoRow(
-                'briefcase-outline',
-                'Experience',
-                listing.yearsOfExperience != null
-                  ? `${listing.yearsOfExperience} years`
-                  : null
-              )}
-              {renderInfoRow(
-                'home-outline',
-                'Home Service',
-                listing.homeServiceAvailable
-                  ? 'Available'
-                  : 'Not available'
-              )}
-              {renderInfoRow(
-                'time-outline',
-                'Response Time',
-                listing.responseTimeLabel ||
-                  'Usually responds soon'
-              )}
-              {renderInfoRow(
-                'calendar-outline',
-                'Published',
-                formatDisplayDate(listing.publishedAt)
-              )}
-              {listing.updatedAt
-                ? renderInfoRow(
-                    'refresh-outline',
-                    'Last Updated',
-                    formatDisplayDate(listing.updatedAt)
-                  )
-                : null}
-            </View>
-          )}
-
-          {renderSection(
             'Contact & Web',
             <View
               style={{
@@ -1512,38 +1405,38 @@ const BusinessDetailsScreen = () => {
                 paddingHorizontal: 16,
                 ...iosShadow,
               }}>
-              {renderInfoRow(
-                'call-outline',
-                'Phone',
-                listing.phoneNumber,
-                listing.phoneNumber
-                  ? () => handleContact('call')
-                  : undefined
-              )}
-              {renderInfoRow(
-                'logo-whatsapp',
-                'WhatsApp',
-                listing.whatsappNumber,
-                listing.whatsappNumber || listing.phoneNumber
-                  ? () => handleContact('whatsapp')
-                  : undefined
-              )}
-              {renderInfoRow(
-                'mail-outline',
-                'Email',
-                listing.email,
-                listing.email
-                  ? () => handleContact('in_app')
-                  : undefined
-              )}
-              {renderInfoRow(
-                'globe-outline',
-                'Website',
-                listing.websiteUrl,
-                listing.websiteUrl
-                  ? () => openExternalUrl(listing.websiteUrl || '')
-                  : undefined
-              )}
+              {listing.phoneNumber
+                ? renderInfoRow(
+                    'call-outline',
+                    'Phone',
+                    listing.phoneNumber,
+                    () => handleContact('call')
+                  )
+                : null}
+              {listing.whatsappNumber
+                ? renderInfoRow(
+                    'logo-whatsapp',
+                    'WhatsApp',
+                    listing.whatsappNumber,
+                    () => handleContact('whatsapp')
+                  )
+                : null}
+              {listing.email
+                ? renderInfoRow(
+                    'mail-outline',
+                    'Email',
+                    listing.email,
+                    () => handleContact('in_app')
+                  )
+                : null}
+              {listing.websiteUrl
+                ? renderInfoRow(
+                    'globe-outline',
+                    'Website',
+                    listing.websiteUrl,
+                    () => openExternalUrl(listing.websiteUrl || '')
+                  )
+                : null}
               {!contactSummary.length ? (
                 <Text
                   style={{
@@ -1576,10 +1469,6 @@ const BusinessDetailsScreen = () => {
                 joinLocation(listing),
                 handleOpenMap
               )}
-              {renderInfoRow('business-outline', 'City', listing.city)}
-              {renderInfoRow('map-outline', 'State', listing.state)}
-              {renderInfoRow('earth-outline', 'Country', listing.country)}
-              {renderInfoRow('mail-open-outline', 'Pincode', listing.pincode)}
             </View>,
             <TouchableOpacity
               activeOpacity={0.82}
@@ -1595,38 +1484,7 @@ const BusinessDetailsScreen = () => {
             </TouchableOpacity>
           )}
 
-          {renderSection(
-            'Services & Tags',
-            <View
-              style={{
-                backgroundColor: palette.card,
-                borderColor: palette.border,
-                borderRadius: 20,
-                borderWidth: 1,
-                padding: 16,
-                ...iosShadow,
-              }}>
-              {listing.category?.description ? (
-                <Text
-                  style={{
-                    color: '#6B7280',
-                    fontSize: 15,
-                    fontWeight: '600',
-                    lineHeight: 23,
-                  }}>
-                  {listing.category.description}
-                </Text>
-              ) : null}
-              {renderChipGroup(
-                'Subcategories',
-                subcategories,
-                listing.categoryName || undefined
-              )}
-              {renderChipGroup('Specialties', listing.specialties || [])}
-              {renderChipGroup('Service Areas', serviceAreas)}
-              {renderChipGroup('Tags', tags)}
-            </View>
-          )}
+         
 
           {openingHourRows.length > 0
             ? renderSection(
@@ -1660,9 +1518,9 @@ const BusinessDetailsScreen = () => {
               style={{
                 backgroundColor: palette.card,
                 borderColor: palette.border,
-                borderRadius: 30,
+                borderRadius: 20,
                 borderWidth: 1,
-                padding: 18,
+                padding: 16,
                 ...iosShadow,
               }}>
               <View
@@ -1784,96 +1642,6 @@ const BusinessDetailsScreen = () => {
                 </View>
               </View>
 
-              <View
-                style={{
-                  backgroundColor: '#F1F1F1',
-                  height: 1,
-                  marginVertical: 18,
-                }}
-              />
-
-              <View
-                style={{
-                  alignItems: 'center',
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                }}>
-                <Text
-                  style={{
-                    color: '#6B7280',
-                    fontSize: 17,
-                    fontWeight: '500',
-                  }}>
-                  Response time
-                </Text>
-
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: '#1F2937',
-                    flex: 1,
-                    fontSize: 17,
-                    fontWeight: '700',
-                    marginLeft: 16,
-                    textAlign: 'right',
-                  }}>
-                  {listing.responseTimeLabel ||
-                    'Usually responds soon'}
-                </Text>
-              </View>
-
-              <View
-                style={{
-                  backgroundColor: '#F1F1F1',
-                  height: 1,
-                  marginVertical: 18,
-                }}
-              />
-
-              <View
-                style={{
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
-                  justifyContent: 'space-between',
-                }}>
-                {[
-                  ['Views', listing.viewCount || 0],
-                  ['Enquiries', listing.enquiryCount || 0],
-                  ['Shares', listing.shareCount || 0],
-                  ['Bookmarks', listing.bookmarkCount || 0],
-                ].map(([label, value]) => (
-                  <View
-                    key={label}
-                    style={{
-                      alignItems: 'center',
-                      backgroundColor: '#F8FAFC',
-                      borderColor: '#E2E8F0',
-                      borderRadius: 16,
-                      borderWidth: 1,
-                      marginTop: 8,
-                      paddingVertical: 12,
-                      width: '48%',
-                    }}>
-                    <Text
-                      style={{
-                        color: '#111827',
-                        fontSize: 18,
-                        fontWeight: '900',
-                      }}>
-                      {value}
-                    </Text>
-                    <Text
-                      style={{
-                        color: '#6B7280',
-                        fontSize: 12,
-                        fontWeight: '800',
-                        marginTop: 3,
-                      }}>
-                      {label}
-                    </Text>
-                  </View>
-                ))}
-              </View>
             </View>
           </View>
 
