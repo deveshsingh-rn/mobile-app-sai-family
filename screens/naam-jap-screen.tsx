@@ -3,31 +3,22 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  BarChart3,
-  BookHeart,
   Check,
-  ChevronRight,
-  CircleEllipsis,
   Clock3,
   Edit3,
-  House,
   Minus,
   MoreHorizontal,
   Pencil,
   Plus,
   RotateCcw,
-  Share2,
   Sparkles,
   Trash2,
   Undo2,
-  Volume2,
 } from "lucide-react-native";
 import { MotiView } from "moti";
 import React, {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -41,7 +32,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Share,
   StyleSheet,
   Switch,
   Text,
@@ -50,8 +40,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { PillarGlassDock } from "@/components/CustomTabBar";
 import { NaamJapSkiaBackground } from "@/components/naam-jap/NaamJapSkiaBackground";
-import { NaamJapCumulativeChart } from "@/components/naam-jap/NaamJapCumulativeChart";
 import { PressableScale } from "@/components/naam-jap/PressableScale";
 import { SwipeNaamCounter } from "@/components/naam-jap/SwipeNaamCounter";
 import {
@@ -64,37 +54,13 @@ import {
   saveNaamJapData,
 } from "@/services/naam-jap-storage";
 
-type NaamJapTab = "home" | "insights" | "experience" | "more";
 type NaamJapSheet = "more" | "names" | "target" | null;
 type FloatingNaamItem = { id: string; left: number; label: string };
 
 const SAI_IMAGE = require("@/assets/images/saijii.jpg");
-const TARGETS: NaamJapData["target"][] = [27, 54, 108];
-
-const TAB_ITEMS = [
-
-  { Icon: House, key: "experience" as const, label: "Home" },
-
-  { Icon: BookHeart,key: "home"  as const, label: "Experience" },
-  { Icon: BarChart3, key: "insights" as const, label: "Insights" },
-  
-  { Icon: CircleEllipsis, key: "more" as const, label: "More" },
-];
-
-const getDateKeyOffset = (offset: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() + offset);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-};
-
 export default function NaamJapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<NaamJapTab>("home");
   const [data, setData] = useState<NaamJapData>(createDefaultNaamJapData);
   const [hydrated, setHydrated] = useState(false);
   const [activeSheet, setActiveSheet] = useState<NaamJapSheet>(null);
@@ -192,28 +158,6 @@ export default function NaamJapScreen() {
   const targetProgress = Math.min(1, data.sessionCount / targetNaamCount);
   const goalReached = data.sessionCount >= targetNaamCount;
 
-  const weeklyCounts = useMemo(() => {
-    const today = getLocalDateKey();
-
-    return Array.from({ length: 7 }, (_, index) => {
-      const date = getDateKeyOffset(-index);
-      const count =
-        date === today
-          ? data.todayCount
-          : data.history.find((item) => item.date === date)?.count || 0;
-      const dateValue = new Date(`${date}T12:00:00`);
-
-      return {
-        count,
-        date,
-        label: new Intl.DateTimeFormat("en-IN", { weekday: "short" })
-          .format(dateValue),
-      };
-    });
-  }, [data.history, data.todayCount]);
-
-  const maxWeeklyCount = Math.max(1, ...weeklyCounts.map((item) => item.count));
-
   useEffect(() => {
     if (!hydrated) return;
 
@@ -287,7 +231,6 @@ export default function NaamJapScreen() {
   useEffect(() => {
     if (
       !data.autoCountSeconds ||
-      activeTab !== "home" ||
       !isAppActive ||
       activeSheet !== null ||
       goalReached
@@ -300,26 +243,11 @@ export default function NaamJapScreen() {
     return () => clearInterval(interval);
   }, [
     activeSheet,
-    activeTab,
     countNaam,
     data.autoCountSeconds,
     goalReached,
     isAppActive,
   ]);
-
-  const switchTab = useCallback(
-    (tab: NaamJapTab) => {
-      void Haptics.selectionAsync();
-
-      if (tab === "experience") {
-        router.replace("/(tabs)/experiences" as never);
-        return;
-      }
-
-      setActiveTab(tab);
-    },
-    [router]
-  );
 
   const closeSheet = () => {
     setActiveSheet(null);
@@ -460,37 +388,6 @@ export default function NaamJapScreen() {
     );
   };
 
-  const resetToday = () => {
-    Alert.alert("Reset today’s count?", "This cannot be undone.", [
-      { style: "cancel", text: "Cancel" },
-      {
-        onPress: () =>
-          setData((current) => ({
-            ...current,
-            sessionCount: 0,
-            todayCount: 0,
-            totalCount: Math.max(0, current.totalCount - current.todayCount),
-          })),
-        style: "destructive",
-        text: "Reset today",
-      },
-    ]);
-  };
-
-  const shareProgress = async () => {
-    try {
-      await Share.share({
-        message: `Om Sai Ram. I completed ${data.todayCount} Sai Naam Jap today with Sai Ki Family.`,
-      });
-    } catch {
-      Alert.alert("Unable to share", "Please try again in a moment.");
-    }
-  };
-
-  const goBack = () => {
-    router.replace("/(tabs)/experiences" as never);
-  };
-
   if (!hydrated) {
     return (
       <View style={styles.loadingScreen}>
@@ -541,15 +438,11 @@ export default function NaamJapScreen() {
      
 
       <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          activeTab === "home" && styles.homeContent,
-        ]}
+        contentContainerStyle={[styles.content, styles.homeContent]}
         showsVerticalScrollIndicator={false}
         style={styles.pageScroll}
       >
-        {activeTab === "home" ? (
-          <>
+        <>
             <MotiView
               animate={{ opacity: 1, translateY: 0 }}
               from={{ opacity: 0, translateY: 12 }}
@@ -684,227 +577,45 @@ export default function NaamJapScreen() {
               <SmallAction disabled={data.sessionCount === 0} Icon={Undo2} label="Undo" onPress={undoLast} />
               <SmallAction disabled={data.sessionCount === 0} Icon={RotateCcw} label="Reset" onPress={resetSession} />
             </View>
-          </>
-        ) : null}
-
-        {activeTab === "insights" ? (
-          <>
-            <SectionIntro
-              eyebrow="YOUR PRACTICE"
-              text="A gentle view of your consistency. Every Naam matters."
-              title="Insights"
-            />
-            <View style={styles.metricGrid}>
-              <Metric label="Today" value={data.todayCount} />
-              <Metric label="Lifetime" value={data.totalCount} />
-              <Metric label="Completed malas" value={completedMalas} />
-              <Metric
-                label="Current target"
-                value={`${roundCount}/${data.target}`}
-              />
-            </View>
-            <View style={styles.chartSection}>
-              <Text style={styles.sectionTitle}>Last 7 days</Text>
-              <Text style={styles.chartHelper}>Today is shown first</Text>
-              <View style={styles.chart}>
-                {weeklyCounts.map((item) => (
-                  <View key={item.date} style={styles.chartColumn}>
-                    <Text style={styles.chartValue}>{item.count}</Text>
-                    <View style={styles.chartTrack}>
-                      <MotiView
-                        animate={{
-                          height: Math.max(
-                            item.count ? 12 : 2,
-                            (item.count / maxWeeklyCount) * 120
-                          ),
-                        }}
-                        style={styles.chartBar}
-                        transition={{ damping: 18, stiffness: 140, type: "spring" }}
-                      />
-                    </View>
-                    <Text style={styles.chartLabel}>{item.label}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-            <View style={[styles.chartSection, styles.cumulativeChartSection]}>
-              <Text style={styles.sectionTitle}>Cumulative Naam</Text>
-              <Text style={styles.chartHelper}>
-                Your running seven-day practice, newest day first
-              </Text>
-              <NaamJapCumulativeChart items={weeklyCounts} />
-            </View>
-          </>
-        ) : null}
-
-        {activeTab === "experience" ? (
-          <>
-            <SectionIntro
-              eyebrow="AFTER NAAM JAP"
-              text="Carry the calm from your practice into the Sai Family."
-              title="Share the feeling"
-            />
-            <View style={styles.reflectionBand}>
-              <Image source={SAI_IMAGE} style={styles.reflectionImage} />
-              <View style={styles.reflectionOverlay} />
-              <View style={styles.reflectionCopy}>
-                <Text style={styles.reflectionTitle}>
-                  How did Sai Naam touch you today?
-                </Text>
-                <Text style={styles.reflectionText}>
-                  Share a prayer, a feeling, or a small moment with other devotees.
-                </Text>
-              </View>
-            </View>
-            <PressableScale
-              onPress={() => router.push("/(tabs)/experiences/post" as never)}
-              scaleTo={0.97}
-              style={styles.primaryAction}
-            >
-              <BookHeart color="#FFFFFF" size={20} />
-              <Text style={styles.primaryActionText}>Share an experience</Text>
-              <ChevronRight color="#FFFFFF" size={20} />
-            </PressableScale>
-            <PressableScale
-              onPress={shareProgress}
-              scaleTo={0.97}
-              style={styles.outlineAction}
-            >
-              <Share2 color="#9A3412" size={19} />
-              <Text style={styles.outlineActionText}>Share today’s count</Text>
-            </PressableScale>
-          </>
-        ) : null}
-
-        {activeTab === "more" ? (
-          <>
-            <SectionIntro
-              eyebrow="PREFERENCES"
-              text="Choose a count that feels comfortable for your daily practice."
-              title="Practice settings"
-            />
-            <View style={styles.settingSection}>
-              <Text style={styles.settingLabel}>Count target</Text>
-              <View style={styles.targetControl}>
-                {TARGETS.map((target) => (
-                  <PressableScale
-                    containerStyle={styles.targetOptionContainer}
-                    key={target}
-                    onPress={() => {
-                      void Haptics.selectionAsync();
-                      setData((current) => ({ ...current, target }));
-                    }}
-                    scaleTo={0.94}
-                    style={[
-                      styles.targetOption,
-                      data.target === target && styles.activeTargetOption,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.targetText,
-                        data.target === target && styles.activeTargetText,
-                      ]}
-                    >
-                      {target}
-                    </Text>
-                    {data.target === target ? (
-                      <Check color="#FFFFFF" size={14} />
-                    ) : null}
-                  </PressableScale>
-                ))}
-              </View>
-            </View>
-            <View style={styles.settingRow}>
-              <View style={styles.settingIcon}>
-                <Volume2 color="#9A3412" size={20} />
-              </View>
-              <View style={styles.settingCopy}>
-                <Text style={styles.settingTitle}>Gentle haptic feedback</Text>
-                <Text style={styles.settingDescription}>
-                  Feel a light response with each Naam.
-                </Text>
-              </View>
-              <Switch
-                onValueChange={(hapticsEnabled) =>
-                  setData((current) => ({ ...current, hapticsEnabled }))
-                }
-                trackColor={{ false: "#D6D3D1", true: "#FDBA74" }}
-                thumbColor={data.hapticsEnabled ? "#C2410C" : "#FFFFFF"}
-                value={data.hapticsEnabled}
-              />
-            </View>
-            <PressableScale
-              onPress={resetToday}
-              scaleTo={0.97}
-              style={styles.dangerAction}
-            >
-              <RotateCcw color="#B42318" size={19} />
-              <Text style={styles.dangerActionText}>Reset today’s count</Text>
-            </PressableScale>
-          </>
-        ) : null}
+        </>
       </ScrollView>
 
-      {activeTab === "home" ? (
-        <BlurView
-          intensity={88}
-          style={[
-            styles.fixedSwipeDock,
-            { bottom: 64 + Math.max(insets.bottom, 6) },
-          ]}
-          tint="light"
-        >
-          <SwipeNaamCounter
-            disabled={goalReached}
-            label={selectedName?.label || "Sai Ram"}
-            onCount={countNaam}
-          />
-        </BlurView>
-      ) : null}
+      <BlurView
+        intensity={88}
+        style={[
+          styles.fixedSwipeDock,
+          { bottom: 74 + Math.max(insets.bottom, 8) },
+        ]}
+        tint="light"
+      >
+        <SwipeNaamCounter
+          disabled={goalReached}
+          label={selectedName?.label || "Sai Ram"}
+          onCount={countNaam}
+        />
+      </BlurView>
 
       <View
         style={[
           styles.bottomDock,
-          { paddingBottom: Math.max(insets.bottom, 6) },
+          { paddingBottom: Math.max(insets.bottom, 8) },
         ]}
       >
-        <View style={styles.bottomBar}>
-          {TAB_ITEMS.map(({ Icon, key, label }) => {
-            const active = activeTab === key;
+        <PillarGlassDock
+          activeRouteName="naam-jap"
+          onNavigate={(routeName) => {
+            const destinations: Record<string, string> = {
+              directory: "/(tabs)/directory",
+              events: "/(tabs)/events",
+              experiences: "/(tabs)/experiences",
+            };
+            const destination = destinations[routeName];
 
-            return (
-              <PressableScale
-                accessibilityLabel={label}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: active }}
-                containerStyle={styles.tabButtonContainer}
-                key={key}
-                onPress={() => switchTab(key)}
-                scaleTo={0.94}
-                style={styles.tabButton}
-              >
-                <View
-                  style={[styles.tabIcon, active && styles.activeTabIcon]}
-                >
-                  <Icon
-                    color={active ? "#47685B" : "#858B87"}
-                    size={22}
-                    strokeWidth={active ? 2.4 : 2}
-                  />
-                </View>
-                <Text
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.85}
-                  style={[styles.tabLabel, active && styles.activeTabLabel]}
-                >
-                  {label}
-                </Text>
-              </PressableScale>
-            );
-          })}
-        </View>
+            if (destination) {
+              router.replace(destination as never);
+            }
+          }}
+        />
       </View>
 
       <NaamJapBottomSheet
@@ -1386,38 +1097,6 @@ function NaamJapBottomSheet({
   );
 }
 
-function Metric({ label, value }: { label: string; value: number | string }) {
-  return (
-    <View style={styles.metric}>
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function SectionIntro({
-  eyebrow,
-  text,
-  title,
-}: {
-  eyebrow: string;
-  text: string;
-  title: string;
-}) {
-  return (
-    <MotiView
-      animate={{ opacity: 1, translateY: 0 }}
-      from={{ opacity: 0, translateY: 10 }}
-      style={styles.sectionIntro}
-      transition={{ duration: 380, type: "timing" }}
-    >
-      <Text style={styles.sectionEyebrow}>{eyebrow}</Text>
-      <Text style={styles.pageTitle}>{title}</Text>
-      <Text style={styles.pageDescription}>{text}</Text>
-    </MotiView>
-  );
-}
-
 function SmallAction({
   disabled,
   Icon,
@@ -1524,7 +1203,7 @@ const styles = StyleSheet.create({
   },
   malaBadgeText: { color: "#9A3412", fontSize: 13, fontWeight: "800", letterSpacing: 0.2 },
   content: { paddingBottom: 38, paddingTop: 14 },
-  homeContent: { paddingBottom: 132 },
+  homeContent: { paddingBottom: 220 },
   naamHeading: {
     alignItems: "center",
     backgroundColor: "#FFF4E8",
@@ -1847,48 +1526,6 @@ const styles = StyleSheet.create({
   smallActionText: { color: "#9A3412", fontSize: 13, fontWeight: "700" },
   disabled: { opacity: 0.4 },
   pressed: { opacity: 0.7 },
-  sectionIntro: { paddingHorizontal: 20, paddingTop: 24 ,marginBottom: 6},
-  sectionEyebrow: { color: "#C2410C", fontSize: 11, fontWeight: "900", letterSpacing: 0.8 },
-  pageTitle: { color: "#292524", fontSize: 28, fontWeight: "900", marginTop: 5 },
-  pageDescription: { color: "#78716C", fontSize: 14, lineHeight: 21, marginTop: 6 },
-  metricGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, padding: 18 },
-  metric: {
-    backgroundColor: "#FFF4E8",
-    borderColor: "#FED7AA",
-    borderCurve: "continuous",
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 15,
-    shadowColor: "#1C1917",
-    shadowOffset: { height: 4, width: 0 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    width: "48%",
-  },
-  metricValue: { color: "#9A3412", fontSize: 24, fontWeight: "900" },
-  metricLabel: { color: "#A65B35", fontSize: 12, fontWeight: "700", marginTop: 5 },
-  chartSection: {
-    backgroundColor: "#FFF4E8",
-    borderColor: "#FED7AA",
-    borderCurve: "continuous",
-    borderRadius: 20,
-    borderWidth: 1,
-    marginHorizontal: 18,
-    padding: 18,
-    shadowColor: "#1C1917",
-    shadowOffset: { height: 6, width: 0 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-  },
-  cumulativeChartSection: { marginTop: 12 },
-  sectionTitle: { color: "#9A3412", fontSize: 17, fontWeight: "900" },
-  chartHelper: { color: "#A65B35", fontSize: 11, marginTop: 4 },
-  chart: { alignItems: "flex-end", flexDirection: "row", gap: 8, height: 180, marginTop: 18 },
-  chartColumn: { alignItems: "center", flex: 1, height: "100%", justifyContent: "flex-end" },
-  chartValue: { color: "#78716C", fontSize: 9, marginBottom: 4 },
-  chartTrack: { backgroundColor: "#F2EDE6", borderRadius: 5, flex: 1, justifyContent: "flex-end", overflow: "hidden", width: 18 },
-  chartBar: { backgroundColor: "#C2410C", borderRadius: 5, minHeight: 2, width: "100%" },
-  chartLabel: { color: "#78716C", fontSize: 11, fontWeight: "700", marginTop: 6 },
   celebrationBackdrop: {
     alignItems: "center",
     backgroundColor: "rgba(28,25,23,0.58)",
@@ -1947,120 +1584,13 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   celebrationButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
-  reflectionBand: {
-    borderCurve: "continuous",
-    borderRadius: 24,
-    height: 290,
-    marginHorizontal: 18,
-    marginTop: 22,
-    overflow: "hidden",
-    position: "relative",
-  },
-  reflectionImage: { height: "100%", width: "100%" },
-  reflectionOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(28,25,23,0.48)" },
-  reflectionCopy: { bottom: 22, left: 20, position: "absolute", right: 20 },
-  reflectionTitle: { color: "#FFFFFF", fontSize: 24, fontWeight: "900", lineHeight: 30 },
-  reflectionText: { color: "#F5F5F4", fontSize: 14, lineHeight: 21, marginTop: 7 },
-  primaryAction: {
-    alignItems: "center",
-    backgroundColor: "#292524",
-    borderCurve: "continuous",
-    borderRadius: 16,
-    flexDirection: "row",
-    gap: 9,
-    marginHorizontal: 18,
-    marginTop: 18,
-    minHeight: 52,
-    paddingHorizontal: 16,
-    shadowColor: "#1C1917",
-    shadowOffset: { height: 6, width: 0 },
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
-  },
-  primaryActionText: { color: "#FFFFFF", flex: 1, fontSize: 15, fontWeight: "800" },
-  outlineAction: {
-    alignItems: "center",
-    borderColor: "#E7D7BE",
-    borderCurve: "continuous",
-    borderRadius: 16,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 9,
-    justifyContent: "center",
-    marginHorizontal: 18,
-    marginTop: 10,
-    minHeight: 50,
-  },
-  outlineActionText: { color: "#9A3412", fontSize: 14, fontWeight: "800" },
-  settingSection: {
-    backgroundColor: "#FFF4E8",
-    borderColor: "#FED7AA",
-    borderCurve: "continuous",
-    borderRadius: 20,
-    borderWidth: 1,
-    marginHorizontal: 18,
-    marginTop: 22,
-    padding: 18,
-    shadowColor: "#1C1917",
-    shadowOffset: { height: 6, width: 0 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-  },
-  settingLabel: { color: "#9A3412", fontSize: 15, fontWeight: "800" },
-  targetControl: { flexDirection: "row", gap: 8, marginTop: 12 },
-  targetOptionContainer: { flex: 1 },
-  targetOption: {
-    alignItems: "center",
-    backgroundColor: "#F5F5F4",
-    borderCurve: "continuous",
-    borderRadius: 12,
-    flex: 1,
-    flexDirection: "row",
-    gap: 6,
-    justifyContent: "center",
-    minHeight: 46,
-  },
-  activeTargetOption: { backgroundColor: "#C2410C" },
-  targetText: { color: "#57534E", fontSize: 15, fontWeight: "800" },
-  activeTargetText: { color: "#FFFFFF" },
-  settingRow: {
-    alignItems: "center",
-    backgroundColor: "#FFF4E8",
-    borderColor: "#FED7AA",
-    borderCurve: "continuous",
-    borderRadius: 20,
-    borderWidth: 1,
-    flexDirection: "row",
-    marginHorizontal: 18,
-    marginTop: 12,
-    padding: 18,
-    shadowColor: "#1C1917",
-    shadowOffset: { height: 4, width: 0 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-  },
-  settingIcon: { alignItems: "center", backgroundColor: "#FFF1DF", borderRadius: 12, height: 44, justifyContent: "center", width: 44 },
-  settingCopy: { flex: 1, marginLeft: 12 },
-  settingTitle: { color: "#9A3412", fontSize: 15, fontWeight: "800" },
-  settingDescription: { color: "#A65B35", fontSize: 12, lineHeight: 18, marginTop: 2 },
-  dangerAction: {
-    alignItems: "center",
-    backgroundColor: "#FFF1F0",
-    borderCurve: "continuous",
-    borderRadius: 16,
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "center",
-    margin: 18,
-    minHeight: 50,
-  },
-  dangerActionText: { color: "#B42318", fontSize: 14, fontWeight: "800" },
   bottomDock: {
-    backgroundColor: "rgba(255,255,255,0.98)",
-    borderTopColor: "#DDE3DF",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    flexShrink: 0,
-    width: "100%",
+    alignItems: "center",
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    zIndex: 20,
   },
   fixedSwipeDock: {
     backgroundColor: "rgba(248,250,248,0.94)",
@@ -2077,35 +1607,6 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     zIndex: 12,
   },
-  bottomBar: {
-    alignItems: "center",
-    flexDirection: "row",
-    height: 64,
-    paddingHorizontal: 8,
-  },
-  tabButton: {
-    alignItems: "center",
-    height: 64,
-    justifyContent: "center",
-    width: "100%",
-  },
-  tabButtonContainer: { flex: 1, height: 64, minWidth: 0 },
-  tabIcon: {
-    alignItems: "center",
-    borderCurve: "continuous",
-    borderRadius: 14,
-    height: 30,
-    justifyContent: "center",
-    width: 48,
-  },
-  activeTabIcon: { backgroundColor: "rgba(99,130,116,0.14)" },
-  tabLabel: {
-    color: "#858B87",
-    fontSize: 10,
-    fontWeight: "700",
-    marginTop: 1,
-  },
-  activeTabLabel: { color: "#47685B", fontWeight: "900" },
   modalRoot: { flex: 1, justifyContent: "flex-end" },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
