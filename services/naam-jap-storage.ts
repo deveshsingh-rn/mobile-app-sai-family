@@ -1,7 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import {
-  getMinimumMalaGoal,
   MAX_MALA_GOAL,
   NAAM_PER_MALA,
 } from "@/utils/naam-jap-calculations";
@@ -182,10 +181,7 @@ export async function loadNaamJapData(): Promise<NaamJapData> {
       jaapNames: safeNames,
       selectedNameId,
       sessionCount,
-      targetMalas: Math.min(
-        MAX_MALA_GOAL,
-        Math.max(requestedTargetMalas, getMinimumMalaGoal(sessionCount))
-      ),
+      targetMalas: requestedTargetMalas,
       todayCount,
       totalCount,
     };

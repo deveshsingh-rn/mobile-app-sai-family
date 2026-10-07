@@ -54,7 +54,6 @@ import {
   saveNaamJapData,
 } from "@/services/naam-jap-storage";
 import {
-  getMinimumMalaGoal,
   getNaamJapMetrics,
   incrementNaamJapData,
   MAX_MALA_GOAL,
@@ -159,7 +158,6 @@ export default function NaamJapScreen() {
     data.jaapNames[0];
   const targetNaamCount = metrics.sessionGoalCount;
   const targetProgress = metrics.sessionProgress;
-  const goalReached = metrics.goalReached;
 
   useEffect(() => {
     if (!hydrated) return;
@@ -170,7 +168,7 @@ export default function NaamJapScreen() {
     }
 
     if (
-      data.sessionCount === targetNaamCount &&
+      data.sessionCount >= targetNaamCount &&
       celebratedGoalRef.current !== targetNaamCount
     ) {
       celebratedGoalRef.current = targetNaamCount;
@@ -184,9 +182,10 @@ export default function NaamJapScreen() {
       if (next === current) return current;
 
       if (current.hapticsEnabled) {
+        const nextMetrics = getNaamJapMetrics(next);
         const completedTarget =
           next.sessionCount % NAAM_PER_MALA === 0 ||
-          getNaamJapMetrics(next).goalReached;
+          next.sessionCount === nextMetrics.sessionGoalCount;
         void (completedTarget
           ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
           : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
@@ -198,13 +197,6 @@ export default function NaamJapScreen() {
   }, []);
 
   const countNaam = useCallback(() => {
-    if (
-      dataRef.current.sessionCount >=
-      getNaamJapMetrics(dataRef.current).sessionGoalCount
-    ) {
-      return;
-    }
-
     const currentName =
       dataRef.current.jaapNames.find(
         (item) => item.id === dataRef.current.selectedNameId
@@ -226,8 +218,7 @@ export default function NaamJapScreen() {
     if (
       !data.autoCountSeconds ||
       !isAppActive ||
-      activeSheet !== null ||
-      goalReached
+      activeSheet !== null
     ) {
       return;
     }
@@ -239,7 +230,6 @@ export default function NaamJapScreen() {
     activeSheet,
     countNaam,
     data.autoCountSeconds,
-    goalReached,
     isAppActive,
   ]);
 
@@ -518,13 +508,10 @@ export default function NaamJapScreen() {
                 accessibilityHint="Tap the selected Naam to count once"
                 accessibilityLabel={`Tap to count ${selectedName?.label || "Sai Ram"}`}
                 accessibilityRole="button"
-                accessibilityState={{ disabled: goalReached }}
-                disabled={goalReached}
                 onPress={countNaam}
                 style={({ pressed }) => [
                   styles.tapField,
-                  pressed && !goalReached && styles.tapFieldPressed,
-                  goalReached && styles.tapFieldDisabled,
+                  pressed && styles.tapFieldPressed,
                 ]}
               >
                 <LinearGradient
@@ -559,9 +546,7 @@ export default function NaamJapScreen() {
                   <View style={styles.autoBadge}>
                     <Clock3 color="#166534" size={14} />
                     <Text style={styles.autoBadgeText}>
-                      {goalReached
-                        ? "Auto paused at goal"
-                        : `Auto every ${data.autoCountSeconds}s`}
+                      Auto every {data.autoCountSeconds}s
                     </Text>
                   </View>
                 ) : null}
@@ -584,7 +569,6 @@ export default function NaamJapScreen() {
         tint="light"
       >
         <SwipeNaamCounter
-          disabled={goalReached}
           label={selectedName?.label || "Sai Ram"}
           onCount={countNaam}
         />
@@ -740,7 +724,9 @@ function SelectedNaamFocus({
         />
       </View>
       <Text style={styles.selectedNaamProgressText}>
-        {sessionCount.toLocaleString("en-IN")} / {sessionGoalCount.toLocaleString("en-IN")} Naam · {targetMalas.toLocaleString("en-IN")} Mala goal
+        {sessionCount >= sessionGoalCount
+          ? `Goal complete · ${sessionCount.toLocaleString("en-IN")} Naam and continuing`
+          : `${sessionCount.toLocaleString("en-IN")} / ${sessionGoalCount.toLocaleString("en-IN")} Naam · ${targetMalas.toLocaleString("en-IN")} Mala goal`}
       </Text>
     </View>
   );
@@ -840,13 +826,11 @@ function NaamJapBottomSheet({
   const stepTargetMalas = useCallback(
     (step: number) => {
       setData((current) => {
-        const minimumGoal = getMinimumMalaGoal(current.sessionCount);
-
         return {
           ...current,
           targetMalas: Math.min(
             MAX_MALA_GOAL,
-            Math.max(minimumGoal, current.targetMalas + step)
+            Math.max(1, current.targetMalas + step)
           ),
         };
       });
@@ -961,12 +945,12 @@ function NaamJapBottomSheet({
               <View style={styles.targetStepper}>
                 <PressableScale
                   accessibilityLabel="Reduce mala goal"
-                  disabled={data.targetMalas <= getMinimumMalaGoal(data.sessionCount)}
+                  disabled={data.targetMalas <= 1}
                   onPress={() => stepTargetMalas(-1)}
                   scaleTo={0.88}
                   style={[
                     styles.stepperButton,
-                    data.targetMalas <= getMinimumMalaGoal(data.sessionCount) && styles.disabled,
+                    data.targetMalas <= 1 && styles.disabled,
                   ]}
                 >
                   <Minus color="#292524" size={25} />
@@ -1366,7 +1350,6 @@ const styles = StyleSheet.create({
     opacity: 0.94,
     transform: [{ scale: 0.992 }],
   },
-  tapFieldDisabled: { opacity: 0.82 },
   tapFieldGlow: {
     alignSelf: "center",
     backgroundColor: "rgba(255,255,255,0.16)",

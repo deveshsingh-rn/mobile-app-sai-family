@@ -49,8 +49,6 @@ export const getNaamJapMetrics = (
 export const incrementNaamJapData = <T extends NaamJapCountState>(
   data: T
 ): T => {
-  if (getNaamJapMetrics(data).goalReached) return data;
-
   return {
     ...data,
     sessionCount: data.sessionCount + 1,

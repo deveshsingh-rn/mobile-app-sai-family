@@ -30,7 +30,11 @@ test("uses 108 Naam consistently for every Mala boundary", () => {
     sessionGoalCount: 108,
     sessionProgress: 1,
   });
-  assert.equal(incrementNaamJapData(completed), completed);
+  const continued = incrementNaamJapData(completed);
+  assert.equal(continued.sessionCount, 109);
+  assert.equal(continued.todayCount, 109);
+  assert.equal(continued.totalCount, 109);
+  assert.equal(getNaamJapMetrics(continued).currentMalaCount, 1);
 });
 
 test("starts the next current-Mala count at one for multi-Mala goals", () => {
@@ -54,7 +58,7 @@ test("undo keeps session, today and lifetime counts aligned", () => {
   );
 });
 
-test("a Mala goal cannot be reduced below completed session progress", () => {
+test("reports the Mala containing the current session count", () => {
   assert.equal(getMinimumMalaGoal(0), 1);
   assert.equal(getMinimumMalaGoal(108), 1);
   assert.equal(getMinimumMalaGoal(109), 2);
