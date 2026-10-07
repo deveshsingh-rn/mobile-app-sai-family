@@ -760,38 +760,43 @@ export default function DirectoryScreen() {
           hitSlop={6}
           onPress={() => router.push('/directory/create-listing')}
           style={({ pressed }) => [
-            styles.createListingProfileButton,
+            styles.createListingAction,
             pressed && styles.toolbarButtonPressed,
           ]}>
-          <LinearGradient
-            colors={['#7C2D12', '#D97706']}
-            end={{ x: 1, y: 1 }}
-            start={{ x: 0, y: 0 }}
-            style={styles.createListingRing}>
-            <View style={styles.createListingAvatarInset}>
-              {profileImageUrl ? (
-                <Image
-                  accessibilityLabel={`${account?.name || 'Devotee'} profile photo`}
-                  resizeMode="cover"
-                  source={{ uri: profileImageUrl }}
-                  style={styles.createListingAvatar}
-                />
-              ) : (
-                <View
-                  style={[
-                    styles.createListingAvatar,
-                    styles.createListingAvatarFallback,
-                  ]}>
-                  <Text style={styles.createListingAvatarText}>
-                    {profileInitial}
-                  </Text>
-                </View>
-              )}
+          <View style={styles.createListingProfileButton}>
+            <LinearGradient
+              colors={['#7C2D12', '#D97706']}
+              end={{ x: 1, y: 1 }}
+              start={{ x: 0, y: 0 }}
+              style={styles.createListingRing}>
+              <View style={styles.createListingAvatarInset}>
+                {profileImageUrl ? (
+                  <Image
+                    accessibilityLabel={`${account?.name || 'Devotee'} profile photo`}
+                    resizeMode="cover"
+                    source={{ uri: profileImageUrl }}
+                    style={styles.createListingAvatar}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.createListingAvatar,
+                      styles.createListingAvatarFallback,
+                    ]}>
+                    <Text style={styles.createListingAvatarText}>
+                      {profileInitial}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </LinearGradient>
+            <View style={styles.createListingBadge}>
+              <Plus color="#FFFFFF" size={12} strokeWidth={3.4} />
             </View>
-          </LinearGradient>
-          <View style={styles.createListingBadge}>
-            <Plus color="#FFFFFF" size={12} strokeWidth={3.4} />
           </View>
+          <Text numberOfLines={2} style={styles.createListingActionLabel}>
+            Create your business listing
+          </Text>
         </Pressable>
 
         <Pressable
@@ -1337,6 +1342,24 @@ export default function DirectoryScreen() {
 }
 
 const styles = StyleSheet.create({
+  createListingAction: {
+    alignItems: 'center',
+    borderRadius: 12,
+    flexDirection: 'row',
+    flexShrink: 1,
+    gap: 10,
+    minHeight: 64,
+    paddingHorizontal: 4,
+    paddingRight: 10,
+  },
+  createListingActionLabel: {
+    color: '#7C2D12',
+    flexShrink: 1,
+    fontSize: 17,
+    fontWeight: '800',
+    lineHeight: 22,
+    maxWidth: 190,
+  },
   createListingAvatar: {
     backgroundColor: '#F1D9B5',
     borderRadius: 24,
