@@ -30,7 +30,10 @@ import { registerPushTokenRequest } from '@/store/notifications/actions';
 import { selectPushToken } from '@/store/notifications/selectors';
 import { markSanghaNotificationsReadRequest } from '@/store/sangha/actions';
 import { store } from '@/store';
-import { refreshMorningSaiAlarm } from '@/services/morning-sai-alarm';
+import {
+  playMorningSaiGuidanceVoice,
+  refreshMorningSaiAlarm,
+} from '@/services/morning-sai-alarm';
 import { getSanghaNotificationDestination } from '@/utils/sangha-notification-routing';
 
 export const unstable_settings = {
@@ -116,6 +119,10 @@ function AppLayoutContent() {
       const data = request.content.data || {};
 
       if (data.feature === 'morning-sai') {
+        if (data.deliveryMode === 'voice') {
+          const locale = data.locale === 'hi-IN' ? 'hi-IN' : 'en-IN';
+          void playMorningSaiGuidanceVoice(locale).catch(() => undefined);
+        }
         router.push('/(tabs)/experiences/ask-sai' as never);
         return;
       }
@@ -152,6 +159,24 @@ function AppLayoutContent() {
 
     return () => subscription.remove();
   }, [devoteeAccount, dispatch, router]);
+
+  useEffect(() => {
+    if (!devoteeAccount) return;
+
+    const subscription = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        const data = notification.request.content.data || {};
+        if (data.feature !== 'morning-sai' || data.deliveryMode !== 'voice') {
+          return;
+        }
+
+        const locale = data.locale === 'hi-IN' ? 'hi-IN' : 'en-IN';
+        void playMorningSaiGuidanceVoice(locale).catch(() => undefined);
+      }
+    );
+
+    return () => subscription.remove();
+  }, [devoteeAccount]);
 
   useEffect(() => {
     let screenName = "App";

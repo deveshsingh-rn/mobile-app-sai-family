@@ -2,6 +2,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
+import { apiClient } from "./api";
+import { playVoiceSegment } from "./voice-segment-playback";
+
 const STORAGE_KEY = "@sai-family/morning-sai-alarm/v1";
 const CHANNEL_ID = "morning-sai";
 const SCHEDULE_DAYS = 30;
@@ -20,15 +23,38 @@ export type MorningSaiAlarmSettings = {
   enabled: boolean;
   hour: number;
   minute: number;
+  deliveryMode: MorningSaiAlarmDeliveryMode;
+  locale: MorningSaiLocale;
   notificationIds: string[];
   scheduledForName?: string;
   scheduledThrough?: string;
+};
+
+export type MorningSaiAlarmDeliveryMode = "text" | "voice";
+export type MorningSaiLocale = "en-IN" | "hi-IN";
+
+export type MorningSaiGuidance = {
+  cached: boolean;
+  date: string;
+  devoteeName: string | null;
+  line1: string;
+  line2: string;
+  locale: MorningSaiLocale;
+};
+
+type MorningSaiVoiceResponse = {
+  audioBase64: string;
+  format: "mp3_44100_128";
+  guidance: MorningSaiGuidance;
+  mimeType: "audio/mpeg";
 };
 
 const DEFAULT_SETTINGS: MorningSaiAlarmSettings = {
   enabled: false,
   hour: 6,
   minute: 0,
+  deliveryMode: "text",
+  locale: "en-IN",
   notificationIds: [],
 };
 
@@ -50,6 +76,8 @@ export async function loadMorningSaiAlarmSettings(): Promise<MorningSaiAlarmSett
         typeof parsed.minute === "number" && parsed.minute >= 0 && parsed.minute <= 59
           ? Math.floor(parsed.minute)
           : DEFAULT_SETTINGS.minute,
+      deliveryMode: parsed.deliveryMode === "voice" ? "voice" : "text",
+      locale: parsed.locale === "hi-IN" ? "hi-IN" : "en-IN",
       notificationIds: Array.isArray(parsed.notificationIds)
         ? parsed.notificationIds.filter((id): id is string => typeof id === "string")
         : [],
@@ -65,6 +93,69 @@ export async function loadMorningSaiAlarmSettings(): Promise<MorningSaiAlarmSett
 
 async function saveSettings(settings: MorningSaiAlarmSettings) {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+}
+
+const toLocalTime = (hour: number, minute: number) =>
+  `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+
+async function syncBackendSettings(settings: MorningSaiAlarmSettings) {
+  await apiClient.put("/api/users/me/morning-guidance-settings", {
+    enabled: settings.enabled,
+    localTime: toLocalTime(settings.hour, settings.minute),
+    locale: settings.locale,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata",
+  });
+}
+
+export async function fetchMorningSaiGuidance(
+  locale: MorningSaiLocale = "en-IN"
+) {
+  const response = await apiClient.get<MorningSaiGuidance>(
+    "/api/ai/morning-guidance/today",
+    { params: { locale } }
+  );
+  return response.data;
+}
+
+let activeVoicePlayback: AbortController | undefined;
+
+export async function playMorningSaiGuidanceVoice(
+  locale: MorningSaiLocale = "en-IN",
+  onStarted: () => void = () => undefined
+) {
+  activeVoicePlayback?.abort();
+  const controller = new AbortController();
+  activeVoicePlayback = controller;
+
+  try {
+    const response = await apiClient.get<MorningSaiVoiceResponse>(
+      "/api/ai/morning-guidance/today/voice",
+      { params: { locale } }
+    );
+
+    if (!response.data.audioBase64) {
+      throw new Error("Morning voice message is unavailable.");
+    }
+
+    await playVoiceSegment(
+      {
+        data: response.data.audioBase64,
+        index: 0,
+        turnId: `morning-${response.data.guidance.date}`,
+      },
+      controller.signal,
+      onStarted
+    );
+
+    return response.data.guidance;
+  } finally {
+    if (activeVoicePlayback === controller) activeVoicePlayback = undefined;
+  }
+}
+
+export function stopMorningSaiGuidanceVoice() {
+  activeVoicePlayback?.abort();
+  activeVoicePlayback = undefined;
 }
 
 async function cancelNotifications(ids: string[]) {
@@ -117,18 +208,29 @@ async function scheduleUpcoming(
   await cancelNotifications(settings.notificationIds);
 
   const name = cleanName(devoteeName);
+  const liveGuidance = await fetchMorningSaiGuidance(settings.locale).catch(
+    () => null
+  );
   const notificationIds: string[] = [];
   let scheduledThrough: string | undefined;
 
   try {
     for (let index = 0; index < SCHEDULE_DAYS; index += 1) {
       const date = getNextDate(index, settings.hour, settings.minute);
-      const guidance = GUIDANCE[index % GUIDANCE.length];
+      const guidance =
+        index === 0 && liveGuidance
+          ? ([liveGuidance.line1, liveGuidance.line2] as const)
+          : GUIDANCE[index % GUIDANCE.length];
       scheduledThrough = date.toISOString();
       const id = await Notifications.scheduleNotificationAsync({
         content: {
           body: `${name}, ${guidance[0]}\n${guidance[1]}`,
-          data: { feature: "morning-sai", route: "/(tabs)/experiences/ask-sai" },
+          data: {
+            deliveryMode: settings.deliveryMode,
+            feature: "morning-sai",
+            locale: settings.locale,
+            route: "/(tabs)/experiences/ask-sai",
+          },
           sound: "default",
           title: "Sai Baba’s morning message",
         },
@@ -153,6 +255,7 @@ async function scheduleUpcoming(
     scheduledThrough,
   };
   await saveSettings(next);
+  await syncBackendSettings(next).catch(() => undefined);
   return next;
 }
 
@@ -180,6 +283,7 @@ export async function disableMorningSaiAlarm() {
     scheduledThrough: undefined,
   };
   await saveSettings(next);
+  await syncBackendSettings(next).catch(() => undefined);
   return next;
 }
 
@@ -191,6 +295,28 @@ export async function saveMorningSaiAlarmTime(hour: number, minute: number) {
     minute: Math.min(59, Math.max(0, Math.floor(minute))),
   };
   await saveSettings(next);
+  await syncBackendSettings(next).catch(() => undefined);
+  return next;
+}
+
+export async function saveMorningSaiAlarmPreferences(input: {
+  deliveryMode: MorningSaiAlarmDeliveryMode;
+  devoteeName: string;
+  locale?: MorningSaiLocale;
+}) {
+  const current = await loadMorningSaiAlarmSettings();
+  const next: MorningSaiAlarmSettings = {
+    ...current,
+    deliveryMode: input.deliveryMode,
+    locale: input.locale ?? current.locale,
+  };
+
+  if (current.enabled) {
+    return scheduleUpcoming(next, input.devoteeName, false);
+  }
+
+  await saveSettings(next);
+  await syncBackendSettings(next).catch(() => undefined);
   return next;
 }
 
