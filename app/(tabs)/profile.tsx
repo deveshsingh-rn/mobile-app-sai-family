@@ -418,7 +418,7 @@ export default function ProfileScreen() {
 
           <Text style={styles.sectionLabel}>Account access</Text>
           <SettingRow
-            description="Safely sign out of this device."
+            description="Safely Sign Out Of This Device."
             hideComingSoon
             icon={<LogOut size={21} color="#DC2626" />}
             isDestructive
