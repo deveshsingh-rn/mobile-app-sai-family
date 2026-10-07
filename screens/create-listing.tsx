@@ -2,6 +2,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -55,23 +56,16 @@ import type {
 import { validateDirectoryListingPayload } from '@/store/directory/validation';
 import { requestLocationPermissionWithSettingsFallback } from '@/services/location-permissions';
 
-const steps = [
-  'Basic',
-  'Contact',
-  'Location',
-  'Services',
-  'Media',
-  'Review',
-];
+const steps = ['Business', 'Contact', 'Review'];
 
 const theme = {
-  accent: '#F97316',
-  accentDark: '#C2410C',
-  background: '#F6F1E8',
-  border: '#E7DDCD',
-  card: '#FFFFFF',
-  muted: '#6B7280',
-  text: '#111827',
+  accent: '#7C2D12',
+  accentDark: '#5C1F0B',
+  background: '#FFF8EC',
+  border: '#F1D9B5',
+  card: '#FFFCF7',
+  muted: '#4B4037',
+  text: '#7C2D12',
 };
 
 const DIRECTORY_IMAGE_MAX_SIZE = 1600;
@@ -178,6 +172,7 @@ const optimizeDirectoryImage = async (
 
 const CreateListingScreen = () => {
   const dispatch = useAppDispatch();
+  const formScrollRef = useRef<ScrollView>(null);
   const { id } = useLocalSearchParams<{
     id?: string;
   }>();
@@ -494,7 +489,7 @@ const CreateListingScreen = () => {
       }
     }
 
-    if (targetStep >= 3) {
+    if (targetStep >= 2) {
       if (!payload.address || payload.address.length < 5) {
         nextErrors.address =
           'Address must be at least 5 characters.';
@@ -551,7 +546,7 @@ const CreateListingScreen = () => {
       }
     }
 
-    if (targetStep >= 4) {
+    if (targetStep >= 1) {
       const validation = validateDirectoryListingPayload(payload);
       [
         'yearsOfExperience',
@@ -581,6 +576,7 @@ const CreateListingScreen = () => {
 
     if (step < steps.length) {
       setStep(step + 1);
+      formScrollRef.current?.scrollTo({ animated: true, y: 0 });
       return;
     }
 
@@ -590,6 +586,7 @@ const CreateListingScreen = () => {
   const prevStep = () => {
     if (step > 1) {
       setStep(step - 1);
+      formScrollRef.current?.scrollTo({ animated: true, y: 0 });
       return;
     }
 
@@ -887,8 +884,8 @@ const CreateListingScreen = () => {
       <View
         style={{
           alignItems: 'center',
-          backgroundColor: '#FFF7ED',
-          borderColor: '#FED7AA',
+          backgroundColor: '#FFF4E8',
+          borderColor: theme.border,
           borderRadius: 24,
           borderWidth: 1,
           height: 72,
@@ -929,8 +926,8 @@ const CreateListingScreen = () => {
     <View
       style={{
         backgroundColor: theme.accent,
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
         overflow: 'hidden',
         paddingBottom: 34,
         paddingHorizontal: 22,
@@ -974,7 +971,7 @@ const CreateListingScreen = () => {
               letterSpacing: -0.2,
               textAlign: 'center',
             }}>
-            {isEditMode ? 'Edit Listing' : 'Create Listing here'}
+            {isEditMode ? 'Edit Business' : 'Create Business Listing'}
           </Text>
           <Text
             style={{
@@ -986,7 +983,7 @@ const CreateListingScreen = () => {
             }}>
             {isEditMode
               ? 'Update your community listing'
-              : 'Submit once when details are ready'}
+              : `Step ${step} of ${steps.length}`}
           </Text>
         </View>
       </View>
@@ -1026,6 +1023,10 @@ const CreateListingScreen = () => {
               onPress={() => {
                 if (index + 1 <= step) {
                   setStep(index + 1);
+                  formScrollRef.current?.scrollTo({
+                    animated: true,
+                    y: 0,
+                  });
                 }
               }}
               style={{
@@ -1091,7 +1092,7 @@ const CreateListingScreen = () => {
       }}>
       <Text
         style={{
-          color: '#4B5563',
+          color: theme.muted,
           fontSize: 12,
           fontWeight: '800',
           letterSpacing: 0.6,
@@ -1102,7 +1103,7 @@ const CreateListingScreen = () => {
 
       <View
         style={{
-          backgroundColor: '#FFFCF8',
+          backgroundColor: '#FFFFFF',
           borderColor: validationErrors[field]
             ? '#FCA5A5'
             : theme.border,
@@ -1122,7 +1123,7 @@ const CreateListingScreen = () => {
           returnKeyType={multiline ? 'default' : 'done'}
           blurOnSubmit={!multiline}
           style={{
-            color: '#111827',
+            color: '#2F2925',
             fontSize: 15,
             fontWeight: '600',
             lineHeight: multiline ? 22 : undefined,
@@ -1131,6 +1132,56 @@ const CreateListingScreen = () => {
         />
       </View>
       {renderError(field)}
+    </View>
+  );
+
+  const renderSectionHeading = (
+    icon: React.ReactNode,
+    title: string,
+    subtitle: string
+  ) => (
+    <View
+      style={{
+        alignItems: 'center',
+        borderTopColor: theme.border,
+        borderTopWidth: 1,
+        flexDirection: 'row',
+        marginTop: 30,
+        paddingTop: 24,
+      }}>
+      <View
+        style={{
+          alignItems: 'center',
+          backgroundColor: '#FFF4E8',
+          borderColor: theme.border,
+          borderRadius: 18,
+          borderWidth: 1,
+          height: 44,
+          justifyContent: 'center',
+          width: 44,
+        }}>
+        {icon}
+      </View>
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text
+          style={{
+            color: theme.text,
+            fontSize: 18,
+            fontWeight: '900',
+          }}>
+          {title}
+        </Text>
+        <Text
+          style={{
+            color: theme.muted,
+            fontSize: 13,
+            fontWeight: '600',
+            lineHeight: 19,
+            marginTop: 3,
+          }}>
+          {subtitle}
+        </Text>
+      </View>
     </View>
   );
 
@@ -1542,13 +1593,19 @@ const CreateListingScreen = () => {
     </>
   );
 
-  const renderDetails = () => (
+  const renderDetails = (compact = false) => (
     <>
-      {renderStepIntro(
-        <Feather name="briefcase" size={31} color="#2563EB" />,
-        'Services',
-        'Help devotees understand what you provide and where you can serve.'
-      )}
+      {compact
+        ? renderSectionHeading(
+            <Feather name="briefcase" size={22} color={theme.accent} />,
+            'Services & Reach',
+            'Tell devotees what you offer and where you serve.'
+          )
+        : renderStepIntro(
+            <Feather name="briefcase" size={31} color={theme.accent} />,
+            'Services',
+            'Help devotees understand what you provide and where you can serve.'
+          )}
 
       {renderInput(
         'YEARS OF EXPERIENCE',
@@ -1640,9 +1697,9 @@ const CreateListingScreen = () => {
   const renderContact = () => (
     <>
       {renderStepIntro(
-        <Ionicons name="call-outline" size={32} color="#16A34A" />,
-        'Contact Details',
-        'Add the best ways for devotees to reach your business.'
+        <Ionicons name="call-outline" size={32} color={theme.accent} />,
+        'Contact & Location',
+        'Add trusted contact details and an accurate business location.'
       )}
 
       {renderInput('PHONE NUMBER', '+91 9876543210', phone, setPhone, 'phoneNumber')}
@@ -1652,13 +1709,19 @@ const CreateListingScreen = () => {
     </>
   );
 
-  const renderLocation = () => (
+  const renderLocation = (compact = false) => (
     <>
-      {renderStepIntro(
-        <Ionicons name="location-outline" size={32} color="#EA580C" />,
-        'Location',
-        'Add accurate location details so nearby devotees can find you.'
-      )}
+      {compact
+        ? renderSectionHeading(
+            <Ionicons name="location-outline" size={23} color={theme.accent} />,
+            'Business Location',
+            'Help nearby devotees find your business easily.'
+          )
+        : renderStepIntro(
+            <Ionicons name="location-outline" size={32} color={theme.accent} />,
+            'Location',
+            'Add accurate location details so nearby devotees can find you.'
+          )}
 
       {renderInput('ADDRESS', 'Enter your business address', address, setAddress, 'address')}
       {renderInput('CITY', 'e.g. Delhi', city, setCity, 'city')}
@@ -1723,9 +1786,9 @@ const CreateListingScreen = () => {
   const renderMedia = () => (
     <>
       {renderStepIntro(
-        <Ionicons name="images-outline" size={32} color="#9333EA" />,
-        'Add Media',
-        'Upload photos that help devotees recognize your work and quality.'
+        <Ionicons name="images-outline" size={32} color={theme.accent} />,
+        'Photos & Review',
+        'Add helpful photos, then review your listing before submission.'
       )}
 
       <View
@@ -1890,20 +1953,30 @@ const CreateListingScreen = () => {
     </View>
   );
 
-  const renderReview = () => {
+  const renderReview = (compact = false) => {
     const payload = toPayload();
 
     return (
       <>
-        {renderStepIntro(
-          <Ionicons
-            name="shield-checkmark-outline"
-            size={33}
-            color="#0F766E"
-          />,
-          'Review Listing',
-          'Please check everything once. After submission, your listing may go for community review.'
-        )}
+        {compact
+          ? renderSectionHeading(
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={23}
+                color={theme.accent}
+              />,
+              'Final Check',
+              'Review your information before submitting.'
+            )
+          : renderStepIntro(
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={33}
+                color={theme.accent}
+              />,
+              'Review Listing',
+              'Please check everything once before submitting.'
+            )}
 
         <View
           style={{
@@ -1965,6 +2038,7 @@ const CreateListingScreen = () => {
           flex: 1,
         }}>
         <ScrollView
+          ref={formScrollRef}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
@@ -1990,12 +2064,24 @@ const CreateListingScreen = () => {
               shadowOpacity: 0.04,
               shadowRadius: 10,
             }}>
-            {step === 1 && renderIdentity()}
-            {step === 2 && renderContact()}
-            {step === 3 && renderLocation()}
-            {step === 4 && renderDetails()}
-            {step === 5 && renderMedia()}
-            {step === 6 && renderReview()}
+            {step === 1 ? (
+              <>
+                {renderIdentity()}
+                {renderDetails(true)}
+              </>
+            ) : null}
+            {step === 2 ? (
+              <>
+                {renderContact()}
+                {renderLocation(true)}
+              </>
+            ) : null}
+            {step === 3 ? (
+              <>
+                {renderMedia()}
+                {renderReview(true)}
+              </>
+            ) : null}
           </View>
 
           {error ? (
