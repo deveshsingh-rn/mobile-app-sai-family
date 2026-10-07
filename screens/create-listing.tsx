@@ -932,9 +932,9 @@ const CreateListingScreen = () => {
         borderBottomRightRadius: 24,
         borderBottomWidth: 1,
         overflow: 'hidden',
-        paddingBottom: 34,
-        paddingHorizontal: 22,
-        paddingTop: 16,
+        paddingBottom: 14,
+        paddingHorizontal: 16,
+        paddingTop: 6,
       }}>
       <View
         style={{
@@ -950,17 +950,17 @@ const CreateListingScreen = () => {
             alignItems: 'center',
             backgroundColor: '#FFF4E8',
             borderColor: theme.border,
-            borderRadius: 22,
+            borderRadius: 19,
             borderWidth: 1,
-            height: 44,
+            height: 38,
             justifyContent: 'center',
             left: 0,
             position: 'absolute',
-            width: 44,
+            width: 38,
           }}>
           <Ionicons
             name={step === 1 ? 'close' : 'arrow-back'}
-            size={23}
+            size={21}
             color={theme.accent}
           />
         </TouchableOpacity>
@@ -969,7 +969,7 @@ const CreateListingScreen = () => {
           <Text
             style={{
               color: theme.accent,
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: '900',
               letterSpacing: -0.2,
               textAlign: 'center',
@@ -979,7 +979,7 @@ const CreateListingScreen = () => {
           <Text
             style={{
               color: theme.muted,
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: '800',
               marginTop: 4,
               textAlign: 'center',
@@ -993,13 +993,13 @@ const CreateListingScreen = () => {
 
       <View
         style={{
-          marginTop: 28,
+          marginTop: 12,
         }}>
         <View
           style={{
             backgroundColor: theme.border,
             borderRadius: 100,
-            height: 12,
+            height: 6,
             justifyContent: 'center',
             overflow: 'hidden',
           }}>
@@ -1017,7 +1017,7 @@ const CreateListingScreen = () => {
           style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
-            marginTop: 16,
+            marginTop: 9,
           }}>
           {steps.map((item, index) => {
             const isActive = step === index + 1;
@@ -1046,23 +1046,23 @@ const CreateListingScreen = () => {
                       ? '#FFF4E8'
                       : '#FFFFFF',
                     borderColor: isActive ? theme.accent : theme.border,
-                    borderRadius: 14,
+                    borderRadius: 11,
                     borderWidth: 1,
-                    height: 28,
+                    height: 22,
                     justifyContent: 'center',
-                    width: 28,
+                    width: 22,
                   }}>
                   {isComplete ? (
                     <Ionicons
                       name="checkmark"
                       color={theme.accent}
-                      size={16}
+                      size={13}
                     />
                   ) : (
                     <Text
                       style={{
                         color: isActive ? '#FFFFFF' : theme.muted,
-                        fontSize: 12,
+                        fontSize: 10,
                         fontWeight: '900',
                       }}>
                       {index + 1}
@@ -1073,9 +1073,9 @@ const CreateListingScreen = () => {
                   numberOfLines={1}
                   style={{
                     color: isActive ? theme.accent : theme.muted,
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: isActive ? '900' : '700',
-                    marginTop: 7,
+                    marginTop: 4,
                   }}>
                   {item}
                 </Text>

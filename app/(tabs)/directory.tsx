@@ -270,18 +270,18 @@ function TrustPill({
         borderRadius: 999,
         borderWidth: 1,
         flexDirection: 'row',
-        marginRight: 8,
-        marginTop: 8,
-        paddingHorizontal: 10,
-        paddingVertical: 7,
+        marginRight: 6,
+        marginTop: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 5,
       }}>
-      <Ionicons name={icon} size={13} color={color} />
+      <Ionicons name={icon} size={12} color={color} />
       <Text
         style={{
           color,
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: '900',
-          marginLeft: 5,
+          marginLeft: 4,
         }}>
         {label}
       </Text>
@@ -461,23 +461,23 @@ function FeaturedBusinessCard({
       onPress={() => openListing(listing)}
       style={{
         backgroundColor: '#F8EFE3',
-        borderRadius: 30,
+        borderRadius: 20,
         borderColor: '#bcb4ac',
         borderWidth: 1,
-        marginRight: 18,
+        marginRight: 12,
         overflow: 'hidden',
-        padding: 22,
-        width: 420,
+        padding: 16,
+        width: 300,
       }}>
       <View
         style={{
           backgroundColor: '#F6E5C6',
           borderRadius: 90,
-          height: 160,
+          height: 120,
           position: 'absolute',
           right: -20,
           top: -30,
-          width: 180,
+          width: 140,
         }}
       />
 
@@ -486,26 +486,26 @@ function FeaturedBusinessCard({
           style={{
             alignItems: 'center',
             backgroundColor: '#FFF8ED',
-            borderRadius: 18,
+            borderRadius: 14,
             flexDirection: 'row',
-            paddingHorizontal: 14,
-            paddingVertical: 8,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
             position: 'absolute',
-            right: 22,
-            top: 24,
+            right: 14,
+            top: 15,
           }}>
           <Ionicons
             name="sparkles"
-            size={14}
+            size={12}
             color="#F97316"
           />
 
           <Text
             style={{
               color: '#111827',
-              fontSize: 14,
+              fontSize: 11,
               fontWeight: '700',
-              marginLeft: 6,
+              marginLeft: 4,
             }}>
             Verified
           </Text>
@@ -515,7 +515,7 @@ function FeaturedBusinessCard({
       <View
         style={{
           flexDirection: 'row',
-          paddingRight: verified ? 104 : 0,
+          paddingRight: verified ? 78 : 0,
         }}>
         {image ? (
           <Image
@@ -524,10 +524,10 @@ function FeaturedBusinessCard({
             }}
             style={{
               borderColor: '#FFFFFF',
-              borderRadius: 32,
-              borderWidth: 3,
-              height: 64,
-              width: 64,
+              borderRadius: 26,
+              borderWidth: 2,
+              height: 52,
+              width: 52,
             }}
           />
         ) : (
@@ -535,14 +535,14 @@ function FeaturedBusinessCard({
             style={{
               alignItems: 'center',
               backgroundColor: '#FFFFFF',
-              borderRadius: 32,
-              height: 64,
+              borderRadius: 26,
+              height: 52,
               justifyContent: 'center',
-              width: 64,
+              width: 52,
             }}>
             <MaterialCommunityIcons
               name="storefront"
-              size={30}
+              size={25}
               color="#F97316"
             />
           </View>
@@ -551,16 +551,15 @@ function FeaturedBusinessCard({
         <View
           style={{
             flex: 1,
-            marginLeft: 16,
-            marginTop: 2,
+            marginLeft: 12,
           }}>
           <Text
             numberOfLines={1}
             style={{
               color: '#111111',
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: '800',
-              lineHeight: 26,
+              lineHeight: 21,
             }}>
             {listing.businessName}
           </Text>
@@ -569,9 +568,9 @@ function FeaturedBusinessCard({
             numberOfLines={2}
             style={{
               color: '#6B7280',
-              fontSize: 16,
+              fontSize: 13,
               fontWeight: '600',
-              lineHeight: 22,
+              lineHeight: 18,
               marginTop: 2,
             }}>
             {listing.tagline ||
@@ -585,9 +584,9 @@ function FeaturedBusinessCard({
         numberOfLines={1}
         style={{
           color: '#9A3412',
-          fontSize: 13,
+          fontSize: 11,
           fontWeight: '900',
-          marginTop: 16,
+          marginTop: 12,
         }}>
         {listingMeta(listing) || 'Sai Directory listing'}
       </Text>
@@ -596,7 +595,7 @@ function FeaturedBusinessCard({
         style={{
           alignItems: 'center',
           flexDirection: 'row',
-          marginTop: 22,
+          marginTop: 14,
         }}>
         <View
           style={{
@@ -610,7 +609,7 @@ function FeaturedBusinessCard({
                   ? 'star'
                   : 'star-outline'
               }
-              size={16}
+              size={14}
               color="#FBBF24"
               style={{
                 marginRight: 2,
@@ -622,9 +621,9 @@ function FeaturedBusinessCard({
         <Text
           style={{
             color: '#111827',
-            fontSize: 18,
+            fontSize: 15,
             fontWeight: '800',
-            marginLeft: 10,
+            marginLeft: 7,
           }}>
           {(listing.averageRating || 0).toFixed(1)}
         </Text>
@@ -634,9 +633,9 @@ function FeaturedBusinessCard({
           style={{
             color: '#9CA3AF',
             flex: 1,
-            fontSize: 15,
+            fontSize: 11,
             fontWeight: '500',
-            marginLeft: 8,
+            marginLeft: 6,
         }}>
           ({listing.recommendationCount || 0} endorsements)
         </Text>
@@ -671,23 +670,23 @@ function FeaturedBusinessCard({
         style={{
           flexDirection: 'row',
           flexWrap: 'wrap',
-          marginTop: 12,
+          marginTop: 8,
         }}>
         {tags.slice(0, 2).map((tag) => (
           <View
             key={tag}
             style={{
               backgroundColor: '#FFFFFF',
-              borderRadius: 12,
-              marginRight: 12,
-              marginTop: 8,
-              paddingHorizontal: 16,
-              paddingVertical: 10,
+              borderRadius: 10,
+              marginRight: 8,
+              marginTop: 6,
+              paddingHorizontal: 10,
+              paddingVertical: 7,
             }}>
             <Text
               style={{
                 color: '#4B5563',
-                fontSize: 15,
+                fontSize: 12,
                 fontWeight: '500',
               }}>
               {tag}
@@ -795,7 +794,7 @@ export default function DirectoryScreen() {
             </View>
           </View>
           <Text numberOfLines={2} style={styles.createListingActionLabel}>
-            Create your business listing
+            Create Your Business Listing
           </Text>
         </Pressable>
 
