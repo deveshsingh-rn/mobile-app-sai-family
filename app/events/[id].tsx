@@ -660,14 +660,14 @@ export default function EventDetailRoute() {
         {!!detail.similarEvents?.length && (
           <SimilarEventsSection events={detail.similarEvents} />
         )}
-        {!!tags.length && <TagsSection tags={tags} />}
+        {/* {!!tags.length && <TagsSection tags={tags} />} */}
         <PhotosSection
           onUpload={handleUploadPhoto}
           photos={photos?.photos || []}
           photosLoading={photosLoading}
           uploadingPhotos={uploadingPhotos}
         />
-        <ReviewsSection
+        {/* <ReviewsSection
           addingReview={addingReview}
           onChangeReview={setReviewContent}
           onChangeRating={setReviewRating}
@@ -677,7 +677,7 @@ export default function EventDetailRoute() {
           reviews={reviews?.reviews || []}
           reviewsLoading={reviewsLoading}
           summary={reviews?.summary}
-        />
+        /> */}
         <CommentsSection
           addingComment={addingComment}
           comment={comment}
@@ -687,13 +687,13 @@ export default function EventDetailRoute() {
           onChangeComment={setComment}
           onSubmitComment={handleComment}
         />
-        <ShareReportSection
+        {/* <ShareReportSection
           canReport={Boolean(canEdit || detail.isOwner)}
           reportPending={reportPending}
           sharePending={sharePending}
           onReport={handleReport}
           onShare={handleShare}
-        />
+        /> */}
       </ScrollView>
 
       <View
