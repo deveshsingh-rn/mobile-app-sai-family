@@ -637,7 +637,7 @@ function FeaturedBusinessCard({
             fontWeight: '500',
             marginLeft: 6,
         }}>
-          ({listing.recommendationCount || 0} endorsements)
+          ({listing.recommendationCount || 0} Endorsements)
         </Text>
       </View>
 
@@ -650,12 +650,12 @@ function FeaturedBusinessCard({
         <TrustPill
           color="#F97316"
           icon="eye-outline"
-          label={`${compactNumber(listing.viewCount)} views`}
+          label={`${compactNumber(listing.viewCount)} Views`}
         />
         <TrustPill
           color="#2563EB"
           icon="chatbubble-ellipses-outline"
-          label={`${compactNumber(listing.enquiryCount)} enquiries`}
+          label={`${compactNumber(listing.enquiryCount)} Enquiries`}
         />
         {listing.homeServiceAvailable ? (
           <TrustPill

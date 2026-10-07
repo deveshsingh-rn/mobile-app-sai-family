@@ -1985,7 +1985,7 @@ const BusinessDetailsScreen = () => {
                 marginTop: 8,
                 textAlign: 'center',
               }}>
-              Help fellow devotees by sharing your experience
+              Help Fellow Devotees By Sharing Your Experience
             </Text>
 
             <TouchableOpacity

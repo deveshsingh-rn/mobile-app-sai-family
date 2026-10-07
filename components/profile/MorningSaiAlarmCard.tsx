@@ -126,9 +126,9 @@ export function MorningSaiAlarmCard({ devoteeName }: Props) {
           <AlarmClock color={EXPERIENCE_THEME.heading} size={23} />
         </View>
         <View style={styles.headerCopy}>
-          <Text style={styles.title}>Morning with Sai</Text>
+          <Text style={styles.title}>Morning With Sai</Text>
           <Text style={styles.description}>
-            Wake up to two personalized lines of daily guidance.
+            Wake Up to Two Personalized Lines of Daily Guidance.
           </Text>
         </View>
         {saving ? (
@@ -151,7 +151,7 @@ export function MorningSaiAlarmCard({ devoteeName }: Props) {
         style={({ pressed }) => [styles.timeRow, pressed && styles.pressed]}
       >
         <Clock3 color={EXPERIENCE_THEME.heading} size={19} />
-        <Text style={styles.timeLabel}>Every morning</Text>
+        <Text style={styles.timeLabel}>Every Morning</Text>
         <Text style={styles.timeValue}>
           {formatTime(settings.hour, settings.minute)}
         </Text>
@@ -176,7 +176,7 @@ export function MorningSaiAlarmCard({ devoteeName }: Props) {
       <View style={styles.preview}>
         <Text style={styles.previewLabel}>MESSAGE PREVIEW</Text>
         <Text style={styles.previewText}>{preview}</Text>
-        <Text style={styles.previewText}>Do one helpful act without expecting a return.</Text>
+        <Text style={styles.previewText}>Do One Helpful Act Without Expecting a Return.</Text>
       </View>
     </View>
   );

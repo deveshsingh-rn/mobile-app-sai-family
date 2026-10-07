@@ -755,7 +755,7 @@ const SearchScreen = () => {
                     marginTop: 10,
                     textAlign: 'center',
                   }}>
-                  No trusted listings found for "{query}".
+                  No Trusted Listings Found for "{query}".
                 </Text>
               </View>
             ) : null}

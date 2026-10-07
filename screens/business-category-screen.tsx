@@ -472,7 +472,7 @@ export default function BusinessCategoryScreen() {
               fontWeight: '700',
               marginTop: 2,
             }}>
-            {trustedCount} trusted listings
+            {trustedCount} Trusted Listings
           </Text>
         </View>
 
