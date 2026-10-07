@@ -1166,65 +1166,6 @@ export default function DirectoryScreen() {
             <EmptySection message="Featured businesses will appear here after listings are approved." />
           ) : null}
 
-          {trendingListings.length > 0 ? (
-            <View
-              style={{
-                marginTop: 34,
-              }}>
-              <View
-                style={{
-                  alignItems: 'center',
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  marginBottom: 18,
-                  paddingHorizontal: 24,
-                }}>
-                <Text
-                  style={{
-                    color: '#111111',
-                    fontSize: 22,
-                    fontWeight: '800',
-                    letterSpacing: -0.4,
-                  }}>
-                  Trending This Week
-                </Text>
-
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/directory/discovery-list',
-                      params: {
-                        mode: 'trending',
-                      },
-                    })
-                  }>
-                  <Text
-                    style={{
-                      color: '#F97316',
-                      fontSize: 15,
-                      fontWeight: '900',
-                    }}>
-                    See all
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{
-                  paddingLeft: 24,
-                }}>
-                {trendingListings.slice(0, 6).map((listing) => (
-                  <FeaturedBusinessCard
-                    key={`trending-${listing.id}`}
-                    listing={listing}
-                  />
-                ))}
-              </ScrollView>
-            </View>
-          ) : null}
 
           <View
             style={{
