@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -926,8 +927,10 @@ const CreateListingScreen = () => {
     <View
       style={{
         backgroundColor: theme.background,
+        borderBottomColor: theme.border,
         borderBottomLeftRadius: 24,
         borderBottomRightRadius: 24,
+        borderBottomWidth: 1,
         overflow: 'hidden',
         paddingBottom: 34,
         paddingHorizontal: 22,
@@ -945,8 +948,8 @@ const CreateListingScreen = () => {
           onPress={prevStep}
           style={{
             alignItems: 'center',
-            backgroundColor: 'rgba(255,255,255,0.2)',
-            borderColor: 'rgba(255,255,255,0.3)',
+            backgroundColor: '#FFF4E8',
+            borderColor: theme.border,
             borderRadius: 22,
             borderWidth: 1,
             height: 44,
@@ -994,7 +997,7 @@ const CreateListingScreen = () => {
         }}>
         <View
           style={{
-            backgroundColor: 'rgba(255,255,255,0.35)',
+            backgroundColor: theme.border,
             borderRadius: 100,
             height: 12,
             justifyContent: 'center',
@@ -1016,63 +1019,69 @@ const CreateListingScreen = () => {
             justifyContent: 'space-between',
             marginTop: 16,
           }}>
-          {steps.map((item, index) => (
-            <TouchableOpacity
-              key={item}
-              activeOpacity={0.8}
-              onPress={() => {
-                if (index + 1 <= step) {
-                  setStep(index + 1);
-                  formScrollRef.current?.scrollTo({
-                    animated: true,
-                    y: 0,
-                  });
-                }
-              }}
-              style={{
-                alignItems: 'center',
-                flex: 1,
-              }}>
-              <View
-                style={{
-                  alignItems: 'center',
-                  backgroundColor:
-                    step === index + 1
-                      ? theme.accent
-                      : 'rgba(255,255,255,0.2)',
-                  borderRadius: 14,
-                  height: 28,
-                  justifyContent: 'center',
-                  width: 28,
-                }}>
-                <Text
+          {steps.map((item, index) => {
+            const isActive = step === index + 1;
+            const isComplete = step > index + 1;
+
+            return (
+              <TouchableOpacity
+                key={item}
+                activeOpacity={0.8}
+                onPress={() => {
+                  if (index + 1 <= step) {
+                    setStep(index + 1);
+                    formScrollRef.current?.scrollTo({
+                      animated: true,
+                      y: 0,
+                    });
+                  }
+                }}
+                style={{ alignItems: 'center', flex: 1 }}>
+                <View
                   style={{
-                    color:
-                      step === index + 1
-                        ? '#FFFFFF'
-                        :  theme.accent,
-                    fontSize: 12,
-                    fontWeight: '900',
+                    alignItems: 'center',
+                    backgroundColor: isActive
+                      ? theme.accent
+                      : isComplete
+                      ? '#FFF4E8'
+                      : '#FFFFFF',
+                    borderColor: isActive ? theme.accent : theme.border,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    height: 28,
+                    justifyContent: 'center',
+                    width: 28,
                   }}>
-                  {index + 1}
+                  {isComplete ? (
+                    <Ionicons
+                      name="checkmark"
+                      color={theme.accent}
+                      size={16}
+                    />
+                  ) : (
+                    <Text
+                      style={{
+                        color: isActive ? '#FFFFFF' : theme.muted,
+                        fontSize: 12,
+                        fontWeight: '900',
+                      }}>
+                      {index + 1}
+                    </Text>
+                  )}
+                </View>
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: isActive ? theme.accent : theme.muted,
+                    fontSize: 12,
+                    fontWeight: isActive ? '900' : '700',
+                    marginTop: 7,
+                  }}>
+                  {item}
                 </Text>
-              </View>
-              <Text
-                numberOfLines={1}
-                style={{
-                  color:
-                    step === index + 1
-                      ? '#FFFFFF'
-                      : 'rgba(255,255,255,0.72)',
-                  fontSize: 11,
-                  fontWeight:
-                    step === index + 1 ? '900' : '700',
-                  marginTop: 7,
-                }}>
-                {item}
-              </Text>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
     </View>
@@ -1116,7 +1125,44 @@ const CreateListingScreen = () => {
         }}>
         <TextInput
           value={value}
-          onChangeText={setValue}
+          accessibilityLabel={label}
+          autoCapitalize={
+            field === 'email' || field === 'websiteUrl'
+              ? 'none'
+              : 'sentences'
+          }
+          autoCorrect={field !== 'email' && field !== 'websiteUrl'}
+          keyboardType={
+            field === 'email'
+              ? 'email-address'
+              : field === 'websiteUrl'
+              ? 'url'
+              : field === 'phoneNumber' || field === 'whatsappNumber'
+              ? 'phone-pad'
+              : field === 'pincode' || field === 'yearsOfExperience'
+              ? 'number-pad'
+              : 'default'
+          }
+          maxLength={
+            field === 'businessName'
+              ? 120
+              : field === 'tagline'
+              ? 160
+              : field === 'description'
+              ? 3000
+              : undefined
+          }
+          onChangeText={(nextValue) => {
+            setValue(nextValue);
+
+            if (validationErrors[field]) {
+              setValidationErrors((current) => {
+                const next = { ...current };
+                delete next[field];
+                return next;
+              });
+            }
+          }}
           placeholder={placeholder}
           placeholderTextColor="#C7CBD3"
           multiline={multiline}
@@ -1723,63 +1769,77 @@ const CreateListingScreen = () => {
             'Add accurate location details so nearby devotees can find you.'
           )}
 
-      {renderInput('ADDRESS', 'Enter your business address', address, setAddress, 'address')}
-      {renderInput('CITY', 'e.g. Delhi', city, setCity, 'city')}
-      {renderInput('STATE (OPTIONAL)', 'e.g. Maharashtra', stateName, setStateName, 'state')}
-      {renderInput('COUNTRY', 'India', country, setCountry, 'country')}
-      {renderInput('PINCODE (OPTIONAL)', 'e.g. 411001', pincode, setPincode, 'pincode')}
-
       <TouchableOpacity
         activeOpacity={0.88}
         disabled={loadingLocation}
         onPress={handleUseCurrentLocation}
         style={{
           alignItems: 'center',
-          backgroundColor: loadingLocation ? '#FED7AA' : '#FFF7ED',
-          borderColor: '#FDBA74',
-          borderRadius: 18,
+          backgroundColor: loadingLocation ? '#FDE7D3' : '#FFF4E8',
+          borderColor: theme.border,
+          borderRadius: 16,
           borderWidth: 1,
           flexDirection: 'row',
           justifyContent: 'center',
-          marginTop: 18,
-          minHeight: 54,
+          marginTop: 20,
+          minHeight: 56,
           paddingHorizontal: 16,
         }}>
         {loadingLocation ? (
           <ActivityIndicator color={theme.accent} size="small" />
         ) : (
-          <Ionicons
-            name="locate-outline"
-            size={21}
-            color={theme.accent}
-          />
+          <Ionicons name="locate-outline" size={22} color={theme.accent} />
         )}
-
-        <Text
-          style={{
-            color: theme.accentDark,
-            fontSize: 15,
-            fontWeight: '900',
-            marginLeft: 9,
-          }}>
-          {loadingLocation
-            ? 'Reading Location'
-            : 'Use Current Location'}
-        </Text>
+        <View style={{ marginLeft: 10 }}>
+          <Text
+            style={{
+              color: theme.accent,
+              fontSize: 15,
+              fontWeight: '900',
+              textAlign: 'center',
+            }}>
+            {loadingLocation ? 'Finding your location' : 'Use Current Location'}
+          </Text>
+          {!loadingLocation ? (
+            <Text
+              style={{
+                color: theme.muted,
+                fontSize: 11,
+                fontWeight: '600',
+                marginTop: 2,
+                textAlign: 'center',
+              }}>
+              We will fill the address for you
+            </Text>
+          ) : null}
+        </View>
       </TouchableOpacity>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          gap: 10,
-        }}>
-        <View style={{ flex: 1 }}>
-          {renderInput('LATITUDE', '18.5204', latitude, setLatitude, 'latitude')}
+      {renderInput('ADDRESS', 'Enter your business address', address, setAddress, 'address')}
+      {renderInput('CITY', 'e.g. Delhi', city, setCity, 'city')}
+      {renderInput('STATE (OPTIONAL)', 'e.g. Maharashtra', stateName, setStateName, 'state')}
+      {renderInput('COUNTRY', 'India', country, setCountry, 'country')}
+      {renderInput('PINCODE (OPTIONAL)', 'e.g. 411001', pincode, setPincode, 'pincode')}
+
+      {latitude && longitude ? (
+        <View
+          style={{
+            alignItems: 'center',
+            flexDirection: 'row',
+            marginTop: 12,
+          }}>
+          <Ionicons name="checkmark-circle" size={18} color="#15803D" />
+          <Text
+            style={{
+              color: '#166534',
+              fontSize: 12,
+              fontWeight: '700',
+              marginLeft: 7,
+            }}>
+            Map location saved securely
+          </Text>
         </View>
-        <View style={{ flex: 1 }}>
-          {renderInput('LONGITUDE', '73.8567', longitude, setLongitude, 'longitude')}
-        </View>
-      </View>
+      ) : null}
     </>
   );
 
@@ -2025,8 +2085,8 @@ const CreateListingScreen = () => {
         flex: 1,
       }}>
       <StatusBar
-        barStyle="light-content"
-        backgroundColor={theme.accent}
+        barStyle="dark-content"
+        backgroundColor={theme.background}
       />
 
       {renderHeader()}
@@ -2040,9 +2100,10 @@ const CreateListingScreen = () => {
         <ScrollView
           ref={formScrollRef}
           showsVerticalScrollIndicator={false}
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
-            paddingBottom: 30,
+            paddingBottom: 24,
             paddingHorizontal: 16,
             paddingTop: 18,
           }}>
@@ -2107,19 +2168,32 @@ const CreateListingScreen = () => {
             </View>
           ) : null}
 
+        </ScrollView>
+
+        <View
+          style={{
+            backgroundColor: theme.background,
+            borderTopColor: theme.border,
+            borderTopWidth: 1,
+            paddingBottom: 10,
+            paddingHorizontal: 16,
+            paddingTop: 10,
+          }}>
           <TouchableOpacity
             activeOpacity={0.9}
             disabled={busy}
-            onPress={nextStep}
+            onPress={() => {
+              Keyboard.dismiss();
+              nextStep();
+            }}
             style={{
               alignItems: 'center',
-              backgroundColor: busy ? '#FDBA74' : theme.accent,
-              borderRadius: 20,
+              backgroundColor: busy ? '#B97861' : theme.accent,
+              borderRadius: 16,
               elevation: 5,
               flexDirection: 'row',
-              height: 58,
+              minHeight: 58,
               justifyContent: 'center',
-              marginTop: 20,
               shadowColor: theme.accentDark,
               shadowOffset: {
                 height: 7,
@@ -2160,7 +2234,7 @@ const CreateListingScreen = () => {
               />
             ) : null}
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
 
       {renderCategoryPickerModal()}
