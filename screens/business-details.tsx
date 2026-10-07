@@ -36,9 +36,7 @@ import {
   recommendDirectoryListingRequest,
   reportDirectoryListingRequest,
   selectDirectoryDetail,
-  selectDirectoryDetailRecentReviews,
   selectDirectoryDetailSimilarListings,
-  selectDirectoryDetailReviewSummary,
   selectDirectoryError,
   selectDirectoryListingsLoading,
   selectIsDirectoryContactPending,
@@ -130,17 +128,6 @@ function ownerMemberSince(
   return Number.isFinite(year)
     ? `Member since ${year}`
     : 'Community member';
-}
-
-function formatStatus(value?: string | null) {
-  if (!value) {
-    return 'Not available';
-  }
-
-  return value
-    .split('_')
-    .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
-    .join(' ');
 }
 
 function joinLocation(listing: DirectoryListing) {
@@ -310,12 +297,6 @@ const BusinessDetailsScreen = () => {
   }>();
   const listingId = getParam(id);
   const listing = useAppSelector(selectDirectoryDetail);
-  const reviewSummary = useAppSelector(
-    selectDirectoryDetailReviewSummary
-  );
-  const recentReviews = useAppSelector(
-    selectDirectoryDetailRecentReviews
-  );
   const similarListings = useAppSelector(
     selectDirectoryDetailSimilarListings
   );
@@ -343,15 +324,6 @@ const BusinessDetailsScreen = () => {
 
   const banner = listingImage(listing);
   const logo = listingLogo(listing);
-  const specialties = useMemo(
-    () =>
-      (
-        listing?.specialties?.length
-          ? listing.specialties
-          : listing?.tags || []
-      ).slice(0, 8),
-    [listing]
-  );
   const gallery = useMemo(
     () =>
       (listing?.gallery || [])
@@ -359,9 +331,6 @@ const BusinessDetailsScreen = () => {
         .slice(0, 8),
     [listing]
   );
-  const subcategories = listing?.subcategories || [];
-  const tags = listing?.tags || [];
-  const serviceAreas = listing?.serviceAreas || [];
   const openingHourRows = getOpeningHourRows(listing?.openingHours);
   const contactSummary = [
     listing?.phoneNumber ? `Phone: ${listing.phoneNumber}` : null,
@@ -371,27 +340,11 @@ const BusinessDetailsScreen = () => {
     listing?.email ? `Email: ${listing.email}` : null,
     listing?.websiteUrl ? `Website: ${listing.websiteUrl}` : null,
   ].filter(Boolean);
-  const rating =
-    reviewSummary?.averageRating ??
-    listing?.averageRating ??
-    0;
-  const reviewCount =
-    reviewSummary?.reviewCount ??
-    listing?.reviewCount ??
-    0;
   const isVerified =
     listing?.verificationStatus === 'verified';
   const primaryLocation = [listing?.city, listing?.state]
     .filter(Boolean)
     .join(', ');
-  const hasServiceDetails = Boolean(
-    listing?.category?.description ||
-      subcategories.length ||
-      specialties.length ||
-      serviceAreas.length ||
-      tags.length
-  );
-
   const contactActions: ContactAction[] = [
     {
       available: Boolean(listing?.phoneNumber),
@@ -689,56 +642,6 @@ const BusinessDetailsScreen = () => {
 
     return content;
   };
-
-  const renderChipGroup = (
-    title: string,
-    values: string[],
-    fallback?: string
-  ) => (
-    <View
-      style={{
-        marginTop: 18,
-      }}>
-      <Text
-        style={{
-          color: '#111827',
-          fontSize: 14,
-          fontWeight: '900',
-        }}>
-        {title}
-      </Text>
-      <View
-        style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          marginTop: 12,
-        }}>
-        {(values.length ? values : fallback ? [fallback] : []).map((item) => (
-          <View
-            key={`${title}-${item}`}
-            style={{
-              backgroundColor: '#FFF9F0',
-              borderColor: palette.border,
-              borderRadius: 16,
-              borderWidth: 1,
-              marginBottom: 9,
-              marginRight: 9,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-            }}>
-            <Text
-              style={{
-                color: '#7C2D12',
-                fontSize: 14,
-                fontWeight: '800',
-              }}>
-              {item}
-            </Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
 
   return (
     <SafeAreaView
@@ -1169,7 +1072,7 @@ const BusinessDetailsScreen = () => {
                 height: 82,
                 justifyContent: 'center',
                 ...iosShadow,
-                width: '31%',
+                width: '48.5%',
               }}>
               <Ionicons
                 name={
@@ -1202,7 +1105,7 @@ const BusinessDetailsScreen = () => {
                 height: 82,
                 justifyContent: 'center',
                 ...iosShadow,
-                width: '31%',
+                width: '48.5%',
               }}>
               <MaterialCommunityIcons
                 name="hands-pray"
@@ -1221,52 +1124,6 @@ const BusinessDetailsScreen = () => {
               </Text>
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.86}
-              onPress={() =>
-                router.push({
-                  pathname: '/directory/business-review',
-                  params: {
-                    id: listing.id,
-                  },
-                })
-              }
-              style={{
-                alignItems: 'center',
-                backgroundColor: '#FFFBEB',
-                borderColor: '#FCE7A5',
-                borderRadius: 18,
-                borderWidth: 1,
-                height: 82,
-                justifyContent: 'center',
-                ...iosShadow,
-                width: '31%',
-              }}>
-              <Text
-                style={{
-                  color: '#D97706',
-                  fontSize: 28,
-                  fontWeight: '800',
-                }}>
-                {rating.toFixed(1)}
-                <Text
-                  style={{
-                    fontSize: 18,
-                  }}>
-                  ★
-                </Text>
-              </Text>
-
-              <Text
-                style={{
-                  color: '#B45309',
-                  fontSize: 14,
-                  fontWeight: '700',
-                  marginTop: 2,
-                }}>
-                {reviewCount} Reviews
-              </Text>
-            </TouchableOpacity>
           </View>
 
           <View
@@ -1761,206 +1618,6 @@ const BusinessDetailsScreen = () => {
               </ScrollView>
             </View>
           ) : null}
-
-          {renderSection(
-            'Reviews & Rating',
-	            <View
-	              style={{
-	                backgroundColor: palette.card,
-	                borderColor: palette.border,
-	                borderRadius: 28,
-	                borderWidth: 1,
-	                padding: 16,
-	                ...iosShadow,
-	              }}>
-              <View
-                style={{
-                  alignItems: 'center',
-                  flexDirection: 'row',
-                }}>
-                <View
-                  style={{
-                    alignItems: 'center',
-                    backgroundColor: '#FFFBEA',
-                    borderColor: '#FDE68A',
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    height: 72,
-                    justifyContent: 'center',
-                    width: 72,
-                  }}>
-                  <Text
-                    style={{
-                      color: '#D97706',
-                      fontSize: 25,
-                      fontWeight: '900',
-                    }}>
-                    {rating.toFixed(1)}
-                  </Text>
-                  <Text
-                    style={{
-                      color: '#B45309',
-                      fontSize: 11,
-                      fontWeight: '900',
-                    }}>
-                    STAR
-                  </Text>
-                </View>
-
-                <View
-                  style={{
-                    flex: 1,
-                    marginLeft: 14,
-                  }}>
-                  <Text
-                    style={{
-                      color: '#111827',
-                      fontSize: 17,
-                      fontWeight: '900',
-                    }}>
-                    {reviewCount} community reviews
-                  </Text>
-                  <Text
-                    style={{
-                      color: '#6B7280',
-                      fontSize: 13,
-                      fontWeight: '600',
-                      lineHeight: 20,
-                      marginTop: 4,
-                    }}>
-                    {reviewSummary?.canReview
-                      ? 'You can add your experience for this business.'
-                      : reviewSummary?.reviewGateReason
-                      ? `Review status: ${formatStatus(
-                          reviewSummary.reviewGateReason
-                        )}`
-                      : 'Reviews from devotees will appear here.'}
-                  </Text>
-                </View>
-              </View>
-
-              {reviewSummary?.distribution ? (
-                <View
-                  style={{
-                    marginTop: 18,
-                  }}>
-                  {[5, 4, 3, 2, 1].map((star) => {
-                    const count =
-                      reviewSummary.distribution?.[String(star)] || 0;
-                    const maxCount = Math.max(
-                      ...Object.values(
-                        reviewSummary.distribution || {}
-                      ),
-                      1
-                    );
-
-                    return (
-                      <View
-                        key={star}
-                        style={{
-                          alignItems: 'center',
-                          flexDirection: 'row',
-                          marginTop: 7,
-                        }}>
-                        <Text
-                          style={{
-                            color: '#6B7280',
-                            fontSize: 12,
-                            fontWeight: '900',
-                            width: 34,
-                          }}>
-                          {star}★
-                        </Text>
-                        <View
-                          style={{
-                            backgroundColor: '#F3F4F6',
-                            borderRadius: 100,
-                            flex: 1,
-                            height: 8,
-                            overflow: 'hidden',
-                          }}>
-                          <View
-                            style={{
-                              backgroundColor: '#F59E0B',
-                              height: '100%',
-                              width: `${(count / maxCount) * 100}%`,
-                            }}
-                          />
-                        </View>
-                        <Text
-                          style={{
-                            color: '#6B7280',
-                            fontSize: 12,
-                            fontWeight: '800',
-                            marginLeft: 8,
-                            width: 24,
-                          }}>
-                          {count}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              ) : null}
-
-              {recentReviews.length > 0 ? (
-                <View
-                  style={{
-                    marginTop: 18,
-                  }}>
-                  {recentReviews.slice(0, 3).map((review) => (
-                    <View
-                      key={review.id}
-                      style={{
-                        borderTopColor: '#F3F4F6',
-                        borderTopWidth: 1,
-                        paddingTop: 14,
-                        marginTop: 14,
-                      }}>
-                      <Text
-                        style={{
-                          color: '#111827',
-                          fontSize: 14,
-                          fontWeight: '900',
-                        }}>
-                        {review.reviewerName || 'Sai Devotee'} ·{' '}
-                        {review.rating}★
-                      </Text>
-                      <Text
-                        style={{
-                          color: '#4B5563',
-                          fontSize: 14,
-                          fontWeight: '600',
-                          lineHeight: 21,
-                          marginTop: 6,
-                        }}>
-                        {review.content}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-            </View>,
-            <TouchableOpacity
-              activeOpacity={0.82}
-              onPress={() =>
-                router.push({
-                  pathname: '/directory/business-review',
-                  params: {
-                    id: listing.id,
-                  },
-                })
-              }>
-              <Text
-                style={{
-                  color: '#F97316',
-                  fontSize: 14,
-                  fontWeight: '900',
-                }}>
-                Open
-              </Text>
-            </TouchableOpacity>
-          )}
 
           <View
             style={{
