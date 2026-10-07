@@ -55,20 +55,21 @@ import type {
 } from '@/store/directory/types';
 
 type ContactAction = {
+  available: boolean;
   channel: DirectoryContactPayload['channel'];
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
 };
 
 const palette = {
-  accent: '#F97316',
-  amberSoft: '#FFF7ED',
-  background: '#F4EFE7',
-  border: '#EFE2D0',
+  accent: '#7C2D12',
+  amberSoft: '#FFF4E8',
+  background: '#FFF8EC',
+  border: '#F1D9B5',
   card: '#FFFCF8',
   green: '#16A34A',
-  ink: '#111827',
-  muted: '#6B7280',
+  ink: '#7C2D12',
+  muted: '#4B4037',
 };
 
 const iosShadow = {
@@ -398,19 +399,27 @@ const BusinessDetailsScreen = () => {
     0;
   const isVerified =
     listing?.verificationStatus === 'verified';
+  const primaryLocation = [listing?.city, listing?.state]
+    .filter(Boolean)
+    .join(', ');
 
   const contactActions: ContactAction[] = [
     {
+      available: Boolean(listing?.phoneNumber),
       channel: 'call',
       icon: 'call',
       label: 'Call Now',
     },
     {
+      available: Boolean(
+        listing?.whatsappNumber || listing?.phoneNumber
+      ),
       channel: 'whatsapp',
       icon: 'logo-whatsapp',
       label: 'WhatsApp',
     },
     {
+      available: Boolean(listing?.email),
       channel: 'in_app',
       icon: 'mail-outline',
       label: 'Enquire',
@@ -607,7 +616,7 @@ const BusinessDetailsScreen = () => {
         <Text
           style={{
             color: palette.ink,
-            fontSize: 19,
+            fontSize: 18,
             fontWeight: '900',
           }}>
           {title}
@@ -636,9 +645,9 @@ const BusinessDetailsScreen = () => {
         <View
           style={{
             alignItems: 'center',
-            backgroundColor: '#FFF2E5',
-            borderColor: '#FED7AA',
-            borderRadius: 18,
+            backgroundColor: palette.amberSoft,
+            borderColor: palette.border,
+            borderRadius: 16,
             borderWidth: 1,
             height: 36,
             justifyContent: 'center',
@@ -653,7 +662,7 @@ const BusinessDetailsScreen = () => {
           }}>
           <Text
             style={{
-              color: '#6B7280',
+              color: palette.muted,
               fontSize: 11,
               fontWeight: '800',
               textTransform: 'uppercase',
@@ -720,13 +729,13 @@ const BusinessDetailsScreen = () => {
             key={`${title}-${item}`}
             style={{
               backgroundColor: '#FFF9F0',
-              borderColor: '#F4DDC3',
-              borderRadius: 22,
+              borderColor: palette.border,
+              borderRadius: 16,
               borderWidth: 1,
               marginBottom: 9,
               marginRight: 9,
-              paddingHorizontal: 14,
-              paddingVertical: 9,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
             }}>
             <Text
               style={{
@@ -751,7 +760,7 @@ const BusinessDetailsScreen = () => {
       <StatusBar
         translucent
         backgroundColor="transparent"
-        barStyle="dark-content"
+        barStyle="light-content"
       />
 
       <ScrollView
@@ -764,7 +773,7 @@ const BusinessDetailsScreen = () => {
             <Image
               source={{ uri: banner }}
               style={{
-                height: 360,
+                height: 280,
                 width: '100%',
               }}
               resizeMode="cover"
@@ -774,7 +783,7 @@ const BusinessDetailsScreen = () => {
               style={{
                 alignItems: 'center',
                 backgroundColor: '#F8EFE3',
-                height: 360,
+                height: 280,
                 justifyContent: 'center',
                 width: '100%',
               }}>
@@ -794,7 +803,7 @@ const BusinessDetailsScreen = () => {
             ]}
             locations={[0, 0.42, 1]}
             style={{
-              height: 360,
+              height: 280,
               position: 'absolute',
               width: '100%',
             }}
@@ -947,9 +956,9 @@ const BusinessDetailsScreen = () => {
               borderColor: 'rgba(255,255,255,0.78)',
               borderRadius: 28,
               borderWidth: 4,
-              bottom: -34,
+              bottom: -30,
               elevation: 4,
-              height: 86,
+              height: 76,
               justifyContent: 'center',
               left: 16,
               position: 'absolute',
@@ -960,15 +969,15 @@ const BusinessDetailsScreen = () => {
               },
               shadowOpacity: 0.08,
               shadowRadius: 10,
-              width: 86,
+              width: 76,
             }}>
             {logo ? (
               <Image
                 source={{ uri: logo }}
                 style={{
                   borderRadius: 22,
-                  height: 58,
-                  width: 58,
+                  height: 52,
+                  width: 52,
                 }}
               />
             ) : (
@@ -984,10 +993,10 @@ const BusinessDetailsScreen = () => {
         <View
           style={{
             backgroundColor: palette.background,
-            borderTopLeftRadius: 34,
-            borderTopRightRadius: 34,
-            marginTop: -26,
-            paddingTop: 58,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            marginTop: -18,
+            paddingTop: 50,
           }}>
           <View
             style={{
@@ -1005,7 +1014,7 @@ const BusinessDetailsScreen = () => {
 
             <Text
               style={{
-                color: '#6B7280',
+                color: palette.muted,
                 fontSize: 16,
                 fontWeight: '700',
                 lineHeight: 23,
@@ -1020,7 +1029,88 @@ const BusinessDetailsScreen = () => {
               style={{
                 flexDirection: 'row',
                 flexWrap: 'wrap',
-                marginTop: 14,
+                marginTop: 12,
+              }}>
+              {primaryLocation ? (
+                <View
+                  style={{
+                    alignItems: 'center',
+                    flexDirection: 'row',
+                    marginBottom: 6,
+                    marginRight: 16,
+                  }}>
+                  <Ionicons
+                    name="location-outline"
+                    size={16}
+                    color={palette.accent}
+                  />
+                  <Text
+                    style={{
+                      color: palette.muted,
+                      fontSize: 13,
+                      fontWeight: '700',
+                      marginLeft: 5,
+                    }}>
+                    {primaryLocation}
+                  </Text>
+                </View>
+              ) : null}
+
+              {listing.yearsOfExperience != null ? (
+                <View
+                  style={{
+                    alignItems: 'center',
+                    flexDirection: 'row',
+                    marginBottom: 6,
+                    marginRight: 16,
+                  }}>
+                  <Ionicons
+                    name="briefcase-outline"
+                    size={16}
+                    color={palette.accent}
+                  />
+                  <Text
+                    style={{
+                      color: palette.muted,
+                      fontSize: 13,
+                      fontWeight: '700',
+                      marginLeft: 5,
+                    }}>
+                    {listing.yearsOfExperience} years experience
+                  </Text>
+                </View>
+              ) : null}
+
+              {listing.homeServiceAvailable ? (
+                <View
+                  style={{
+                    alignItems: 'center',
+                    flexDirection: 'row',
+                    marginBottom: 6,
+                  }}>
+                  <Ionicons
+                    name="home-outline"
+                    size={16}
+                    color={palette.green}
+                  />
+                  <Text
+                    style={{
+                      color: '#166534',
+                      fontSize: 13,
+                      fontWeight: '700',
+                      marginLeft: 5,
+                    }}>
+                    Home service
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                marginTop: 8,
               }}>
               <View
                 style={{
@@ -1085,9 +1175,9 @@ const BusinessDetailsScreen = () => {
                 alignItems: 'center',
                 backgroundColor: palette.card,
                 borderColor: palette.border,
-                borderRadius: 22,
+                borderRadius: 18,
                 borderWidth: 1,
-                height: 88,
+                height: 82,
                 justifyContent: 'center',
                 ...iosShadow,
                 width: '31%',
@@ -1107,7 +1197,7 @@ const BusinessDetailsScreen = () => {
                   color: '#1F2937',
                   fontSize: 14,
                   fontWeight: '900',
-                  marginTop: 10,
+                  marginTop: 7,
                 }}>
                 {isVerified ? 'Sai Verified' : 'Listed'}
               </Text>
@@ -1116,11 +1206,11 @@ const BusinessDetailsScreen = () => {
             <View
               style={{
                 alignItems: 'center',
-                backgroundColor: '#EFF6FF',
-                borderColor: '#BFDBFE',
-                borderRadius: 22,
+                backgroundColor: '#FFF4E8',
+                borderColor: palette.border,
+                borderRadius: 18,
                 borderWidth: 1,
-                height: 88,
+                height: 82,
                 justifyContent: 'center',
                 ...iosShadow,
                 width: '31%',
@@ -1128,15 +1218,15 @@ const BusinessDetailsScreen = () => {
               <MaterialCommunityIcons
                 name="hands-pray"
                 size={25}
-                color="#2563EB"
+                color={palette.accent}
               />
 
               <Text
                 style={{
-                  color: '#2563EB',
+                  color: palette.accent,
                   fontSize: 14,
                   fontWeight: '800',
-                  marginTop: 10,
+                  marginTop: 7,
                 }}>
                 {listing.recommendationCount || 0} Endorsed
               </Text>
@@ -1156,9 +1246,9 @@ const BusinessDetailsScreen = () => {
                 alignItems: 'center',
                 backgroundColor: '#FFFBEB',
                 borderColor: '#FCE7A5',
-                borderRadius: 22,
+                borderRadius: 18,
                 borderWidth: 1,
-                height: 88,
+                height: 82,
                 justifyContent: 'center',
                 ...iosShadow,
                 width: '31%',
@@ -1194,7 +1284,7 @@ const BusinessDetailsScreen = () => {
             style={{
               backgroundColor: palette.card,
               borderColor: palette.border,
-              borderRadius: 28,
+              borderRadius: 20,
               borderWidth: 1,
               marginHorizontal: 16,
               marginTop: 24,
@@ -1225,12 +1315,12 @@ const BusinessDetailsScreen = () => {
                   style={{
                     backgroundColor: '#FFF7ED',
                     borderColor: '#FED7AA',
-                    borderRadius: 24,
+                    borderRadius: 16,
                     borderWidth: 1,
                     marginBottom: 10,
                     marginRight: 10,
-                    paddingHorizontal: 16,
-                    paddingVertical: 10,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
                   }}>
                   <Text
                     style={{
@@ -1268,7 +1358,7 @@ const BusinessDetailsScreen = () => {
                 onPress={() => setExpanded(!expanded)}>
                 <Text
                   style={{
-                    color: '#F97316',
+                    color: palette.accent,
                     fontSize: 16,
                     fontWeight: '700',
                     marginTop: 12,
@@ -1282,8 +1372,8 @@ const BusinessDetailsScreen = () => {
           <View
             style={{
               backgroundColor: '#FFFFFF',
-              borderColor: '#EFE2D0',
-              borderRadius: 28,
+              borderColor: palette.border,
+              borderRadius: 20,
               borderWidth: 1,
               flexDirection: 'row',
               justifyContent: 'space-between',
@@ -1296,7 +1386,7 @@ const BusinessDetailsScreen = () => {
               <TouchableOpacity
                 key={item.channel}
                 activeOpacity={0.85}
-                disabled={contactPending}
+                disabled={contactPending || !item.available}
                 onPress={() => handleContact(item.channel)}
                 style={{
                   alignItems: 'center',
@@ -1316,6 +1406,7 @@ const BusinessDetailsScreen = () => {
                   borderWidth: 1,
                   height: 72,
                   justifyContent: 'center',
+                  opacity: item.available ? 1 : 0.46,
                   width: '31%',
                 }}>
                 <Ionicons
@@ -1354,7 +1445,7 @@ const BusinessDetailsScreen = () => {
               style={{
                 backgroundColor: palette.card,
                 borderColor: palette.border,
-                borderRadius: 26,
+                borderRadius: 20,
                 borderWidth: 1,
                 paddingHorizontal: 16,
                 ...iosShadow,
@@ -1400,6 +1491,13 @@ const BusinessDetailsScreen = () => {
                 'Published',
                 formatDisplayDate(listing.publishedAt)
               )}
+              {listing.updatedAt
+                ? renderInfoRow(
+                    'refresh-outline',
+                    'Last Updated',
+                    formatDisplayDate(listing.updatedAt)
+                  )
+                : null}
             </View>
           )}
 
@@ -1409,7 +1507,7 @@ const BusinessDetailsScreen = () => {
               style={{
                 backgroundColor: palette.card,
                 borderColor: palette.border,
-                borderRadius: 26,
+                borderRadius: 20,
                 borderWidth: 1,
                 paddingHorizontal: 16,
                 ...iosShadow,
@@ -1467,7 +1565,7 @@ const BusinessDetailsScreen = () => {
               style={{
                 backgroundColor: palette.card,
                 borderColor: palette.border,
-                borderRadius: 26,
+                borderRadius: 20,
                 borderWidth: 1,
                 paddingHorizontal: 16,
                 ...iosShadow,
@@ -1482,16 +1580,6 @@ const BusinessDetailsScreen = () => {
               {renderInfoRow('map-outline', 'State', listing.state)}
               {renderInfoRow('earth-outline', 'Country', listing.country)}
               {renderInfoRow('mail-open-outline', 'Pincode', listing.pincode)}
-              {renderInfoRow(
-                'navigate-outline',
-                'Coordinates',
-                listing.latitude != null && listing.longitude != null
-                  ? `${listing.latitude}, ${listing.longitude}`
-                  : null,
-                listing.latitude != null && listing.longitude != null
-                  ? handleOpenMap
-                  : undefined
-              )}
             </View>,
             <TouchableOpacity
               activeOpacity={0.82}
@@ -1513,7 +1601,7 @@ const BusinessDetailsScreen = () => {
               style={{
                 backgroundColor: palette.card,
                 borderColor: palette.border,
-                borderRadius: 26,
+                borderRadius: 20,
                 borderWidth: 1,
                 padding: 16,
                 ...iosShadow,
@@ -1547,7 +1635,7 @@ const BusinessDetailsScreen = () => {
                   style={{
                     backgroundColor: palette.card,
                     borderColor: palette.border,
-                    borderRadius: 26,
+                    borderRadius: 20,
                     borderWidth: 1,
                     paddingHorizontal: 16,
                     ...iosShadow,
