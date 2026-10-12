@@ -378,6 +378,13 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.pillarHeaderRow}>
+          <ExperienceCreatePostButton
+            active={false}
+            imageSource={require("@/assets/images/saibaba1.png")}
+            name={account?.name}
+            onPress={openCreatePost}
+            size="large"
+          />
           <ExperienceProfileMenu />
         </View>
       </View>
@@ -495,13 +502,6 @@ export default function HomeScreen() {
 
             <View style={styles.experienceIntro}>
               <View style={styles.experienceIntroTitleRow}>
-                <ExperienceCreatePostButton
-                  active={false}
-                  imageSource={require("@/assets/images/saibaba1.png")}
-                  name={account?.name}
-                  onPress={openCreatePost}
-                  size="large"
-                />
                 <Text style={styles.experienceIntroTitle}>
                   Share your Sai Journey
                 </Text>
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
   pillarHeaderRow: {
     alignItems: "center",
     flexDirection: "row",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
     paddingBottom: 10,
     paddingHorizontal: 12,
   },
@@ -576,7 +576,6 @@ const styles = StyleSheet.create({
     fontSize: 21,
     fontWeight: "800",
     lineHeight: 28,
-    marginLeft: 14,
   },
 
   experienceIntroText: {
