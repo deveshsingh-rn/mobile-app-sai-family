@@ -675,7 +675,7 @@ export default function EventListScreen({
             size={17}
           />
           <Text style={styles.selectedDateText}>
-            {selectedDateEvents.length} event
+            {selectedDateEvents.length} Event
             {selectedDateEvents.length === 1
               ? ""
               : "s"}{" "}
@@ -698,7 +698,7 @@ export default function EventListScreen({
         >
           <Plus color="#FFFFFF" size={16} />
           <Text style={styles.createInlineText}>
-            Create event for this date
+            Create Event for This Date
           </Text>
         </Pressable>
       </View>
@@ -742,10 +742,10 @@ export default function EventListScreen({
         }
         subtitle={
           mode === "calendar"
-            ? "Browse gatherings by date"
+            ? "Browse Gatherings By Date"
             : mode === "my-events"
-              ? "Gatherings organized by you"
-              : "Your upcoming spiritual commitments"
+              ? "Gatherings Organized by You"
+              : "Your Upcoming Spiritual Commitments"
         }
         title={config.title}
       />
@@ -772,12 +772,12 @@ export default function EventListScreen({
               style={styles.loadMoreButton}
             >
               <Text style={styles.loadMoreText}>
-                Load more
+                Load More
               </Text>
             </Pressable>
           ) : config.data.length > 0 ? (
             <Text style={styles.endText}>
-              You are all caught up
+              You are All Caught Up
             </Text>
           ) : null
         }

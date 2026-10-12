@@ -751,9 +751,9 @@ export default function EventCalendarRoute() {
       <EventScreenHeader
         onBack={() => router.back()}
         onRightPress={() => router.push("/events/create" as any)}
-        rightAccessibilityLabel="Create event"
+        rightAccessibilityLabel="Create Event"
         rightIcon={<Plus color={palette.ink} size={21} />}
-        subtitle="Plan your spiritual gatherings"
+        subtitle="Plan Your Spiritual Gatherings"
         title="Events Calendar"
       />
 
@@ -784,7 +784,7 @@ export default function EventCalendarRoute() {
               <ChevronRight color={palette.ink} size={18} />
             </Pressable>
           </View>
-          <Text style={styles.monthHint}>Use arrows to navigate months</Text>
+          <Text style={styles.monthHint}>Use Arrows To Navigate Months</Text>
         </View>
 
         <ScrollView
@@ -881,7 +881,7 @@ export default function EventCalendarRoute() {
               {formatSelectedDate(selectedDate)}
             </Text>
             <Text style={styles.selectedHeaderSub}>
-              {selectedDateEvents.length} events scheduled
+              {selectedDateEvents.length} Events Scheduled
             </Text>
           </View>
           <Pressable
@@ -906,7 +906,7 @@ export default function EventCalendarRoute() {
             {!selectedDateEvents.length && (
               <EmptySmallCard
                 icon={<CalendarDays color={palette.primary} size={20} />}
-                text="No live events are scheduled for this date."
+                text="No Live Events are Scheduled for This Date."
               />
             )}
           </View>
@@ -925,7 +925,7 @@ export default function EventCalendarRoute() {
             {!upcomingEvents.length && (
               <EmptySmallCard
                 icon={<CalendarCheck color={palette.primary} size={20} />}
-                text="No upcoming events returned for this month yet."
+                text="No Upcoming Events Returned for This Month Yet."
               />
             )}
           </View>
@@ -958,7 +958,7 @@ export default function EventCalendarRoute() {
                   <Text style={styles.breakdownValue}>
                     {calendarSummary?.byType?.[type] ??
                       typeCounts[type] ??
-                      0} events
+                      0} Events
                   </Text>
                 </View>
               )
@@ -969,7 +969,7 @@ export default function EventCalendarRoute() {
         <View style={styles.sectionBand}>
           <SectionHeader
             action="Refresh"
-            eyebrow="Based on your interests"
+            eyebrow="Based On Your Interests"
             onActionPress={() =>
               dispatch(
                 fetchEventRecommendationsRequest({
@@ -977,7 +977,7 @@ export default function EventCalendarRoute() {
                 })
               )
             }
-            title="Recommended for You"
+            title="Recommended For You"
           />
           <View style={styles.cardStack}>
             {recommendationsLoading && (
@@ -991,7 +991,7 @@ export default function EventCalendarRoute() {
             {!recommendationsLoading && !recommendations.length && (
               <EmptySmallCard
                 icon={<Sparkles color={palette.primary} size={20} />}
-                text="Recommendations will appear after backend returns matching events."
+                text="Recommendations Will Appear After Backend Returns Matching Events."
               />
             )}
           </View>
@@ -1047,19 +1047,19 @@ export default function EventCalendarRoute() {
             <QuickAction
               icon={<Plus color={palette.ink} size={20} />}
               onPress={() => router.push("/events/create" as any)}
-              subtitle="Host your own event"
+              subtitle="Host Your Own Event"
               title="Create Event"
             />
             <QuickAction
               icon={<CalendarCheck color={palette.ink} size={20} />}
               onPress={() => router.push("/events/rsvps" as any)}
-              subtitle="Events you are attending"
+              subtitle="Events You Are Attending"
               title="My RSVPs"
             />
             <QuickAction
               icon={<Download color={palette.ink} size={20} />}
               onPress={handleExportCalendar}
-              subtitle={calendarExporting ? "Preparing file" : "Download ICS feed"}
+              subtitle={calendarExporting ? "Preparing File" : "Download ICS Feed"}
               title={calendarExporting ? "Exporting" : "Export"}
             />
             <QuickAction
@@ -1067,10 +1067,10 @@ export default function EventCalendarRoute() {
               onPress={() =>
                 Alert.alert(
                   "Calendar settings",
-                  "Reminder and feed preferences are available below."
+                  "Reminder and Feed Preferences are Available Below."
                 )
               }
-              subtitle="Reminder and feed rules"
+              subtitle="Reminder and Feed rules"
               title="Settings"
             />
           </View>
@@ -1086,7 +1086,7 @@ export default function EventCalendarRoute() {
                 <View style={styles.syncTextWrap}>
                   <Text style={styles.syncTitle}>ICS Calendar Feed</Text>
                   <Text style={styles.syncStatus}>
-                    {calendarExporting ? "Preparing export" : "Ready from backend"}
+                    {calendarExporting ? "Preparing export" : "Ready from Backend"}
                   </Text>
                 </View>
                 <Pressable
@@ -1146,8 +1146,8 @@ export default function EventCalendarRoute() {
                     calendarItem.country,
                   ]
                     .filter(Boolean)
-                    .join(", ") || "Community calendar"}
-                  {` - ${calendarItem.subscribers ?? 0} subscribers`}
+                    .join(", ") || "Community Calendar"}
+                  {` - ${calendarItem.subscribers ?? 0} Subscribers`}
                 </Text>
                 <Pressable
                   onPress={() =>

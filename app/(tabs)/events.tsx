@@ -1089,7 +1089,7 @@ function EventSection({
   background,
   count,
   emptyActionLabel,
-  emptyText = "No live events returned for this section.",
+  emptyText = "No Live Events Returned For This Section.",
   error,
   events,
   loading,
