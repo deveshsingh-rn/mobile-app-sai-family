@@ -453,28 +453,28 @@ function EventsScreen() {
       loading: loading || homeLoading,
       title: "Happening Today",
     },
-    // {
-    //   background: EXPERIENCE_THEME.background,
-    //   count:
-    //     nearbyLocationState === "unavailable"
-    //       ? "Location needed"
-    //       : nearbyLoading || nearbyLocationState === "requesting"
-    //         ? "Finding nearby events"
-    //         : `${nearbyLiveEvents.length} Events`,
-    //   emptyActionLabel:
-    //     nearbyLocationState === "unavailable"
-    //       ? "Enable location"
-    //       : "Check again",
-    //   emptyText:
-    //     nearbyLocationState === "unavailable"
-    //       ? "Allow location access to discover Sai Family events happening near you."
-    //       : "No events were found within 25 km of your current location.",
-    //   events: nearbyLiveEvents.slice(0, 4).map(toUiEvent),
-    //   loading:
-    //     nearbyLoading || nearbyLocationState === "requesting",
-    //   onEmptyAction: fetchNearbyFromLocation,
-    //   title: "Nearby Events",
-    // },
+    {
+      background: EXPERIENCE_THEME.background,
+      count:
+        nearbyLocationState === "unavailable"
+          ? "Location needed"
+          : nearbyLoading || nearbyLocationState === "requesting"
+            ? "Finding nearby events"
+            : `${nearbyLiveEvents.length} Events`,
+      emptyActionLabel:
+        nearbyLocationState === "unavailable"
+          ? "Enable location"
+          : "Check again",
+      emptyText:
+        nearbyLocationState === "unavailable"
+          ? "Allow location access to discover Sai Family events happening near you."
+          : "No events were found within 25 km of your current location.",
+      events: nearbyLiveEvents.slice(0, 4).map(toUiEvent),
+      loading:
+        nearbyLoading || nearbyLocationState === "requesting",
+      onEmptyAction: fetchNearbyFromLocation,
+      title: "Nearby Events",
+    },
     {
       background: EXPERIENCE_THEME.background,
       count: `${sectionCount("thisWeek", weekEvents)} Events`,
