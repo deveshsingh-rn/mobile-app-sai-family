@@ -53,6 +53,13 @@ export type AskDevoteeQuestionResponse = {
   sources?: DevoteeAiSource[];
 };
 
+export type DevoteeAiAnswerVoiceResponse = {
+  audioBase64: string;
+  cached?: boolean;
+  format: string;
+  mimeType: "audio/mpeg";
+};
+
 export type DevoteeAiConversation = {
   id: string;
   title: string;
@@ -481,6 +488,37 @@ export async function submitDevoteeAiFeedback(
     );
 
     return data.feedback;
+  } catch (error) {
+    throw new Error(getAiErrorMessage(error));
+  }
+}
+
+export async function fetchDevoteeAiAnswerVoice(
+  messageId: string,
+  locale: DevoteeAiSupportedLocale
+): Promise<DevoteeAiAnswerVoiceResponse> {
+  if (!messageId) {
+    throw new Error("AI answer id is required for voice playback.");
+  }
+
+  try {
+    await assertAiAuthSession();
+
+    const { data } = await apiClient.get<DevoteeAiAnswerVoiceResponse>(
+      `${AI_BASE_PATH}/devotee-messages/${messageId}/voice`,
+      {
+        params: {
+          locale: normalizeDevoteeAiLocale(locale),
+        },
+        timeout: 45000,
+      }
+    );
+
+    if (!data.audioBase64) {
+      throw new Error("Sai assistant voice response was empty.");
+    }
+
+    return data;
   } catch (error) {
     throw new Error(getAiErrorMessage(error));
   }

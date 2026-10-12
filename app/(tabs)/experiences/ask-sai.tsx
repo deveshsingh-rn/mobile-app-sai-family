@@ -57,6 +57,7 @@ import {
   DevoteeAiVoiceState,
   DevoteeAiSupportedLocale,
   endActiveDevoteeAiVoiceSessions,
+  fetchDevoteeAiAnswerVoice,
   fetchDevoteeAiConversationDetail,
   fetchDevoteeAiConversations,
   askDevoteeQuestion,
@@ -1345,6 +1346,47 @@ export default function AskSaiScreen() {
     stopVoicePlayback,
   ]);
 
+  const playStoredAnswerVoice = useCallback(
+    async (messageId: string) => {
+      setVoiceError("");
+      setVoicePlaybackStage("buffering");
+
+      try {
+        const voice = await fetchDevoteeAiAnswerVoice(
+          messageId,
+          selectedLanguage.locale
+        );
+        const turnId = `typed-${messageId}-${Date.now()}`;
+
+        voiceAudioChunkPartsRef.current = [voice.audioBase64];
+        voiceSegmentsRef.current = [];
+        voiceHadAudioChunksRef.current = true;
+        completedVoiceTurnIdRef.current = turnId;
+
+        const started = await playBufferedVoiceAudio(turnId);
+
+        if (!started) {
+          throw new Error("ElevenLabs audio playback did not start.");
+        }
+
+        trackProductEvent("Devotee Answer Spoken", {
+          cached: Boolean(voice.cached),
+          pillar: "experiences",
+          provider: "elevenlabs",
+          source: "typed_question",
+        });
+      } catch (error) {
+        setVoicePlaybackStage("failed");
+        setVoiceError(
+          error instanceof Error
+            ? error.message
+            : "The written reply is ready, but voice playback is unavailable."
+        );
+      }
+    },
+    [playBufferedVoiceAudio, selectedLanguage.locale]
+  );
+
   const startConnectedVoiceStreaming = useCallback(async () => {
     const pendingStart = pendingVoiceStartRef.current;
 
@@ -2034,7 +2076,11 @@ export default function AskSaiScreen() {
         void loadConversations();
 
         if (options?.speak) {
-          await speakText(personalizedAnswer);
+          if (response.messageId && VOICE_PROVIDER === "elevenlabs") {
+            void playStoredAnswerVoice(response.messageId);
+          } else {
+            await speakText(personalizedAnswer);
+          }
         }
 
         trackProductEvent("Devotee Question Asked", {
@@ -2072,6 +2118,7 @@ export default function AskSaiScreen() {
       devoteeName,
       loadConversations,
       question,
+      playStoredAnswerVoice,
       selectedLanguage.locale,
       speakText,
       stopSpeech,
@@ -3408,7 +3455,7 @@ export default function AskSaiScreen() {
                   Keyboard.dismiss();
                   setQuestion(item);
                   revealQuestionInput();
-                  void submitQuestion(item);
+                  void submitQuestion(item, { speak: true });
                 }}
                 style={({ pressed }) => [
                   styles.suggestion,
