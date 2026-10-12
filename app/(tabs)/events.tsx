@@ -124,6 +124,7 @@ type UiEvent = {
   attendees: string;
   bookmarked: boolean;
   date: string;
+  distance?: string;
   going: boolean;
   id: string;
   imageLabel: string;
@@ -165,6 +166,10 @@ const toUiEvent = (event: SaiEvent): UiEvent => ({
   attendees: `+${event.rsvps || 0} going`,
   bookmarked: Boolean(event.bookmarkedByMe),
   date: formatDate(event.startAt),
+  distance:
+    event.distanceKm != null && Number.isFinite(event.distanceKm)
+      ? `${event.distanceKm.toFixed(event.distanceKm < 10 ? 1 : 0)} km away`
+      : undefined,
   going: !!event.rsvpedByMe,
   id: event.id,
   imageLabel: event.type || "Event",
@@ -221,6 +226,9 @@ function EventsScreen() {
   const [selectedType, setSelectedType] = useState<EventType | "all">("all");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [refreshing, setRefreshing] = useState(false);
+  const [nearbyLocationState, setNearbyLocationState] = useState<
+    "idle" | "requesting" | "ready" | "unavailable"
+  >("idle");
 
   const fetchParams = useMemo(
     () => ({
@@ -235,6 +243,8 @@ function EventsScreen() {
   );
 
   const fetchNearbyFromLocation = useCallback(async () => {
+    setNearbyLocationState("requesting");
+
     try {
       const hasPermission =
         await requestLocationPermissionWithSettingsFallback({
@@ -245,6 +255,7 @@ function EventsScreen() {
         });
 
       if (!hasPermission) {
+        setNearbyLocationState("unavailable");
         return;
       }
 
@@ -263,7 +274,9 @@ function EventsScreen() {
               : selectedType,
         })
       );
+      setNearbyLocationState("ready");
     } catch {
+      setNearbyLocationState("unavailable");
       // Nearby is an enhancement; the screen falls back to upcoming events.
     }
   }, [dispatch, selectedType]);
@@ -423,21 +436,46 @@ function EventsScreen() {
 
   const sections = [
     {
-       background: EXPERIENCE_THEME.background,
+      background: EXPERIENCE_THEME.background,
       count: `${sectionCount("happeningToday", todayEvents)} Events`,
       events: todayEvents.slice(0, 4).map(toUiEvent),
+      loading: loading || homeLoading,
       title: "Happening Today",
     },
+    // {
+    //   background: EXPERIENCE_THEME.background,
+    //   count:
+    //     nearbyLocationState === "unavailable"
+    //       ? "Location needed"
+    //       : nearbyLoading || nearbyLocationState === "requesting"
+    //         ? "Finding nearby events"
+    //         : `${nearbyLiveEvents.length} Events`,
+    //   emptyActionLabel:
+    //     nearbyLocationState === "unavailable"
+    //       ? "Enable location"
+    //       : "Check again",
+    //   emptyText:
+    //     nearbyLocationState === "unavailable"
+    //       ? "Allow location access to discover Sai Family events happening near you."
+    //       : "No events were found within 25 km of your current location.",
+    //   events: nearbyLiveEvents.slice(0, 4).map(toUiEvent),
+    //   loading:
+    //     nearbyLoading || nearbyLocationState === "requesting",
+    //   onEmptyAction: fetchNearbyFromLocation,
+    //   title: "Nearby Events",
+    // },
     {
       background: EXPERIENCE_THEME.background,
       count: `${sectionCount("thisWeek", weekEvents)} Events`,
       events: weekEvents.slice(0, 4).map(toUiEvent),
+      loading: loading || homeLoading,
       title: "This Week",
     },
     {
       background: EXPERIENCE_THEME.background,
       count: `${sectionCount("thisMonth", monthEvents)} Events`,
       events: monthEvents.slice(0, 4).map(toUiEvent),
+      loading: loading || homeLoading,
       title: "This Month",
     },
     // {
@@ -683,10 +721,13 @@ function EventsScreen() {
             key={section.title}
             background={section.background}
             count={section.count}
+            emptyActionLabel={section.emptyActionLabel}
+            emptyText={section.emptyText}
             error={error}
             events={[...section.events]}
-            loading={loading || homeLoading}
+            loading={section.loading}
             onBookmark={handleBookmark}
+            onEmptyAction={section.onEmptyAction}
             onRsvp={handleRsvp}
             onShare={handleShare}
             title={section.title}
@@ -1036,22 +1077,28 @@ function MyEventsOverview({
 function EventSection({
   background,
   count,
+  emptyActionLabel,
+  emptyText = "No live events returned for this section.",
   error,
   events,
   loading,
   moreLabel,
   onBookmark,
+  onEmptyAction,
   onRsvp,
   onShare,
   title,
 }: {
   background: string;
   count: string;
+  emptyActionLabel?: string;
+  emptyText?: string;
   error?: string | null;
   events: UiEvent[];
   loading?: boolean;
   moreLabel?: string;
   onBookmark: (event: UiEvent) => void;
+  onEmptyAction?: () => void;
   onRsvp: (event: UiEvent) => void;
   onShare: (event: UiEvent) => void;
   title: string;
@@ -1085,8 +1132,23 @@ function EventSection({
         <View style={styles.emptySectionCard}>
           <Calendar color={EXPERIENCE_THEME.paragraph} size={18} />
           <Text style={styles.emptySectionText}>
-            No live events returned for this section.
+            {emptyText}
           </Text>
+          {onEmptyAction && emptyActionLabel ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={onEmptyAction}
+              style={({pressed}) => [
+                styles.emptySectionAction,
+                pressed && styles.toolbarButtonPressed,
+              ]}
+            >
+              <LocateFixed color="#FFFFFF" size={15} strokeWidth={2.5} />
+              <Text style={styles.emptySectionActionText}>
+                {emptyActionLabel}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       )}
 
@@ -1172,6 +1234,16 @@ function EventCard({
               <Users color="#FFFFFF" size={13} />
             </View>
             <Text style={styles.attendeeText}>{event.attendees}</Text>
+            {event.distance ? (
+              <View style={styles.eventDistanceBadge}>
+                <LocateFixed
+                  color={EXPERIENCE_THEME.heading}
+                  size={12}
+                  strokeWidth={2.4}
+                />
+                <Text style={styles.eventDistanceBadgeText}>{event.distance}</Text>
+              </View>
+            ) : null}
           </View>
         </View>
       </View>
@@ -2041,6 +2113,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
+  eventDistanceBadge: {
+    alignItems: "center",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  eventDistanceBadgeText: {
+    color: EXPERIENCE_THEME.heading,
+    fontSize: 11,
+    fontWeight: "800",
+  },
   avatar: {
     borderColor: "#FFFFFF",
     borderRadius: 12,
@@ -2348,6 +2436,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     padding: 14,
+  },
+  emptySectionAction: {
+    alignItems: "center",
+    backgroundColor: EXPERIENCE_THEME.heading,
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: 6,
+    minHeight: 38,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  emptySectionActionText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
   },
   emptySectionText: {
     color: EXPERIENCE_THEME.paragraph,
