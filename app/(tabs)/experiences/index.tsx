@@ -57,7 +57,6 @@ import {
 } from "@/store/experiences/selectors";
 
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
-import { PillarGlassDock } from "@/components/CustomTabBar";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const LIMIT = 10;
@@ -510,10 +509,6 @@ export default function HomeScreen() {
       >
         <View style={styles.pillarHeaderRow}>
           <ExperienceProfileMenu />
-          <PillarGlassDock
-            activeRouteName="experiences"
-            style={styles.fixedPillarDock}
-          />
         </View>
 
         {isHeaderIntroMounted && (
@@ -728,17 +723,12 @@ const styles = StyleSheet.create({
     borderBottomColor: EXPERIENCE_THEME.border,
   },
 
-  fixedPillarDock: {
-    flex: 1,
-    width: "auto",
-  },
-
   pillarHeaderRow: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 8,
+    justifyContent: "flex-start",
     paddingBottom: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
   },
 
   experienceIntro: {

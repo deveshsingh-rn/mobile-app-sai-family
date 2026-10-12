@@ -19,7 +19,6 @@ import {
 import {
   CalendarDays,
   House,
-  Users,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FamilySilhouetteIcon from "../assets/icons/family-silhouette-svgrepo-com.svg";
@@ -300,19 +299,6 @@ export function PillarGlassDock({
 export default function CustomTabBar({ state }: any) {
   const insets = useSafeAreaInsets();
   const activeRoute = state.routes[state.index];
-  const nestedState = activeRoute?.state;
-  const nestedRoute = nestedState?.routes?.[nestedState.index ?? 0];
-  const nestedRouteName = nestedRoute?.name;
-  const experienceOwnsDock =
-    activeRoute?.name === "experiences" &&
-    (!nestedRouteName ||
-      nestedRouteName === "index" ||
-      nestedRouteName === "[id]");
-
-  // Experiences owns its dock so it can move from inline to floating on scroll.
-  if (experienceOwnsDock) {
-    return null;
-  }
 
   return (
     <View
