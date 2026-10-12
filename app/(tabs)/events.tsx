@@ -1332,7 +1332,7 @@ function EventCard({
             />
           )}
           <Text style={[styles.rsvpButtonText, event.going && styles.rsvpButtonTextActive]}>
-            {rsvpPending ? "Updating" : event.going ? "Confirmed" : "Confirm"}
+            {rsvpPending ? "Updating" : event.going ? "Confirmed" : "Please Confirm"}
           </Text>
         </Pressable>
         <Pressable
