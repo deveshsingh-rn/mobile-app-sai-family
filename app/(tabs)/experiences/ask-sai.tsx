@@ -34,7 +34,6 @@ import {
   ArrowLeft,
   BookOpen,
   Mic,
-  Mic2,
   Pause,
   Send,
   ThumbsDown,
@@ -3400,15 +3399,24 @@ export default function AskSaiScreen() {
             <Text style={styles.sectionTitle}>Ask Sai About...</Text>
             {SUGGESTED_QUESTIONS.map((item) => (
               <Pressable
+                accessibilityHint="Fills the question box and asks Sai assistant"
+                accessibilityLabel={`Ask: ${item}`}
+                accessibilityRole="button"
                 disabled={isSubmitting}
                 key={item}
-                // onPress={() => submitQuestion(item)}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setQuestion(item);
+                  revealQuestionInput();
+                  void submitQuestion(item);
+                }}
                 style={({ pressed }) => [
                   styles.suggestion,
                   pressed && styles.pressed,
+                  isSubmitting && styles.suggestionDisabled,
                 ]}
               >
-                <Mic2 color="#B45309" size={17} strokeWidth={2.2} />
+                <Send color="#B45309" size={17} strokeWidth={2.2} />
                 <Text style={styles.suggestionText}>{item}</Text>
               </Pressable>
             ))}
@@ -3992,6 +4000,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
     lineHeight: 20,
+  },
+  suggestionDisabled: {
+    opacity: 0.55,
   },
   answerCard: {
     backgroundColor: "#FFFBEB",

@@ -135,6 +135,17 @@ type UiEvent = {
   urgency?: string;
 };
 
+type EventSectionConfig = {
+  background: string;
+  count: string;
+  emptyActionLabel?: string;
+  emptyText?: string;
+  events: UiEvent[];
+  loading: boolean;
+  onEmptyAction?: () => void;
+  title: string;
+};
+
 const formatDate = (value: string) => {
   const date = new Date(value);
 
@@ -434,7 +445,7 @@ function EventsScreen() {
     sectionEvents: SaiEvent[]
   ) => Math.max(sectionCountFromHome(home, key), sectionEvents.length);
 
-  const sections = [
+  const sections: EventSectionConfig[] = [
     {
       background: EXPERIENCE_THEME.background,
       count: `${sectionCount("happeningToday", todayEvents)} Events`,
