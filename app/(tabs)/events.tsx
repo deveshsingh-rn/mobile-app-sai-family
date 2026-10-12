@@ -174,7 +174,7 @@ const formatTime = (value: string) => {
 };
 
 const toUiEvent = (event: SaiEvent): UiEvent => ({
-  attendees: `+${event.rsvps || 0} going`,
+  attendees: `+${event.rsvps || 0} Going`,
   bookmarked: Boolean(event.bookmarkedByMe),
   date: formatDate(event.startAt),
   distance:
@@ -439,6 +439,53 @@ function EventsScreen() {
   const todayEvents = resolveSectionEvents("happeningToday");
   const weekEvents = resolveSectionEvents("thisWeek");
   const monthEvents = resolveSectionEvents("thisMonth");
+  const laterEvents = resolveSectionEvents("comingSoon");
+
+  const futureMonthSections = (() => {
+    const nextMonthStart = new Date();
+    nextMonthStart.setHours(0, 0, 0, 0);
+    nextMonthStart.setDate(1);
+    nextMonthStart.setMonth(nextMonthStart.getMonth() + 1);
+
+    const uniqueFutureEvents = new globalThis.Map<string, SaiEvent>();
+
+    [...laterEvents, ...events].forEach((event) => {
+      const startAt = new Date(event.startAt);
+
+      if (
+        !Number.isNaN(startAt.getTime()) &&
+        startAt >= nextMonthStart
+      ) {
+        uniqueFutureEvents.set(event.id, event);
+      }
+    });
+
+    const groupedEvents = new globalThis.Map<string, SaiEvent[]>();
+
+    [...uniqueFutureEvents.values()]
+      .sort(
+        (first, second) =>
+          new Date(first.startAt).getTime() -
+          new Date(second.startAt).getTime()
+      )
+      .forEach((event) => {
+        const startAt = new Date(event.startAt);
+        const monthKey = `${startAt.getFullYear()}-${String(
+          startAt.getMonth() + 1
+        ).padStart(2, "0")}`;
+        const currentEvents = groupedEvents.get(monthKey) || [];
+
+        groupedEvents.set(monthKey, [...currentEvents, event]);
+      });
+
+    return [...groupedEvents.entries()].map(([monthKey, monthEvents]) => ({
+      events: monthEvents,
+      title: new Date(`${monthKey}-01T00:00:00`).toLocaleDateString("en-IN", {
+        month: "long",
+        year: "numeric",
+      }),
+    }));
+  })();
 
   const sectionCount = (
     key: "happeningToday" | "thisWeek" | "thisMonth" | "comingSoon",
@@ -489,12 +536,13 @@ function EventsScreen() {
       loading: loading || homeLoading,
       title: "This Month",
     },
-    // {
-    //   background: EXPERIENCE_THEME.background,
-    //   count: `${sectionCount("comingSoon", laterEvents)} Events`,
-    //   events: laterEvents.slice(0, 4).map(toUiEvent),
-    //   title: "Coming Soon",
-    // },
+    ...futureMonthSections.map((section) => ({
+      background: EXPERIENCE_THEME.background,
+      count: `${section.events.length} Events`,
+      events: section.events.map(toUiEvent),
+      loading: loading || homeLoading,
+      title: section.title,
+    })),
   ];
 
   const profileImageUrl =
@@ -1501,7 +1549,7 @@ function TrendingThisWeek({
               {formatDate(event.startAt)} · {event.venueName || event.city || event.address}
             </Text>
           </View>
-          <Text style={styles.trendingValue}>{event.rsvps || 0} going</Text>
+          <Text style={styles.trendingValue}>{event.rsvps || 0} Going</Text>
         </Pressable>
       ))}
       {!trending.length && !loading && (

@@ -1814,7 +1814,7 @@ function GroupEventCard({
               {[formatTime(event.startAt), event.venueName || event.address || event.city].filter(Boolean).join(" · ")}
             </Text>
             <Text style={{ color: "#F97316", fontSize: 13, fontWeight: "800", marginTop: 7 }}>
-              {event.rsvpCount || event.attendeeCount || 0} going
+              {event.rsvpCount || event.attendeeCount || 0} Going
             </Text>
           </View>
           <TouchableOpacity

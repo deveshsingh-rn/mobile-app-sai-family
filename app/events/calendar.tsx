@@ -385,7 +385,7 @@ function SelectedEventCard({
           <View style={styles.inlineMeta}>
             <Users color="#9CA3AF" size={13} />
             <Text style={styles.inlineMetaText}>
-              {event.rsvps ?? 0} going
+              {event.rsvps ?? 0} Going
             </Text>
           </View>
           <TypePill type={type} />
