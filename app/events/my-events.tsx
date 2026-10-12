@@ -65,6 +65,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
+import { createEventGoogleMapsUrl } from "@/utils/event-location";
 import { EventScreenHeader } from "@/components/events/EventScreenHeader";
 import { EventListSkeleton } from "@/components/events/EventSkeletons";
 
@@ -589,12 +590,11 @@ function UrgentAlert({
   event: SaiEvent;
 }) {
   const openDirections = () => {
-    const destination =
-      event.latitude && event.longitude
-        ? `${event.latitude},${event.longitude}`
-        : encodeURIComponent(getEventLocation(event));
+    const mapsUrl = createEventGoogleMapsUrl(event);
 
-    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${destination}`);
+    if (mapsUrl) {
+      Linking.openURL(mapsUrl);
+    }
   };
 
   return (
@@ -767,12 +767,11 @@ function MyEventCard({
                 return;
               }
 
-              const destination =
-                event.source.latitude && event.source.longitude
-                  ? `${event.source.latitude},${event.source.longitude}`
-                  : encodeURIComponent(event.location);
+              const mapsUrl = createEventGoogleMapsUrl(event.source);
 
-              Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${destination}`);
+              if (mapsUrl) {
+                Linking.openURL(mapsUrl);
+              }
             }}
             style={styles.iconAction}
           >

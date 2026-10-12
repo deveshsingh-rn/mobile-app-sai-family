@@ -100,6 +100,7 @@ import type {
   SaiEvent,
 } from "@/store/events/types";
 import { createEventShareMessage } from "@/utils/event-links";
+import { createEventGoogleMapsUrl } from "@/utils/event-location";
 import {
   useAppDispatch,
   useAppSelector,
@@ -129,12 +130,11 @@ const getCityLine = (event: SaiEvent) =>
   [event.city, event.state, event.country].filter(Boolean).join(", ");
 
 const openEventMaps = (event: SaiEvent) => {
-  const destination =
-    event.latitude && event.longitude
-      ? `${event.latitude},${event.longitude}`
-      : encodeURIComponent(getEventLocation(event));
+  const mapsUrl = createEventGoogleMapsUrl(event);
 
-  Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${destination}`);
+  if (mapsUrl) {
+    Linking.openURL(mapsUrl);
+  }
 };
 
 type EventDetailWithExtras = SaiEvent & {
