@@ -300,6 +300,23 @@ const getInitialDate = () => {
   return date;
 };
 
+const DEFAULT_EVENT_DURATION_MS = 60 * 60 * 1000;
+
+const getEventDurationMs = (startAt: string, endAt: string) => {
+  const startTime = Date.parse(startAt);
+  const endTime = Date.parse(endAt);
+
+  if (
+    Number.isFinite(startTime) &&
+    Number.isFinite(endTime) &&
+    endTime >= startTime
+  ) {
+    return endTime - startTime;
+  }
+
+  return DEFAULT_EVENT_DURATION_MS;
+};
+
 const parseDate = (value: string) => {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? getInitialDate() : parsed;
@@ -812,29 +829,41 @@ export default function EventFormScreen({
       return;
     }
 
-    const current = parseDate(form[pickerTarget.field]);
-    const next = new Date(current);
+    setForm((currentForm) => {
+      const current = parseDate(currentForm[pickerTarget.field]);
+      const next = new Date(current);
 
-    if (pickerTarget.mode === "date") {
-      next.setFullYear(
-        pickerValue.getFullYear(),
-        pickerValue.getMonth(),
-        pickerValue.getDate()
-      );
-    } else {
-      next.setHours(pickerValue.getHours(), pickerValue.getMinutes(), 0, 0);
-    }
+      if (pickerTarget.mode === "date") {
+        next.setFullYear(
+          pickerValue.getFullYear(),
+          pickerValue.getMonth(),
+          pickerValue.getDate()
+        );
+      } else {
+        next.setHours(pickerValue.getHours(), pickerValue.getMinutes(), 0, 0);
+      }
 
-    setField(pickerTarget.field, next.toISOString());
+      if (pickerTarget.field === "startAt") {
+        const durationMs = getEventDurationMs(
+          currentForm.startAt,
+          currentForm.endAt
+        );
 
-    if (pickerTarget.field === "startAt" && !form.endAt) {
-      const end = new Date(next);
-      end.setHours(end.getHours() + 1);
-      setField("endAt", end.toISOString());
-    }
+        return {
+          ...currentForm,
+          endAt: new Date(next.getTime() + durationMs).toISOString(),
+          startAt: next.toISOString(),
+        };
+      }
+
+      return {
+        ...currentForm,
+        endAt: next.toISOString(),
+      };
+    });
 
     setPickerTarget(null);
-  }, [form, pickerTarget, pickerValue, setField]);
+  }, [pickerTarget, pickerValue]);
 
   const handleUseCurrentLocation = useCallback(async () => {
     const hasPermission =
