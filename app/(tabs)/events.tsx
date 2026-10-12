@@ -1285,7 +1285,7 @@ function EventCard({
             <Image
               accessibilityIgnoresInvertColors
               onError={() => setImageFailed(true)}
-              resizeMode="contain"
+              resizeMode="center"
               source={{uri: event.imageUrl!}}
               style={styles.thumbnailImage}
             />
@@ -3280,9 +3280,8 @@ const styles = StyleSheet.create({
     width: 80,
   },
   thumbnailImage: {
-    height: "200",
-    width: "300",
-    borderRadius: 2,
+    height: 300,
+    width: 300,
   },
   thumbnailText: {
     color: "#FFFFFF",
