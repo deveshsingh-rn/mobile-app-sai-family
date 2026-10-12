@@ -383,8 +383,11 @@ export default function HomeScreen() {
             imageSource={require("@/assets/images/saibaba1.png")}
             name={account?.name}
             onPress={openCreatePost}
-            size="large"
+            size="default"
           />
+          <Text numberOfLines={2} style={styles.topBarTitle}>
+            Share your Sai Journey
+          </Text>
           <ExperienceProfileMenu />
         </View>
       </View>
@@ -501,11 +504,6 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.experienceIntro}>
-              <View style={styles.experienceIntroTitleRow}>
-                <Text style={styles.experienceIntroTitle}>
-                  Share your Sai Journey
-                </Text>
-              </View>
               <Text style={styles.experienceIntroText}>
                 Share Sai Mandirs Worldwide, Miracles, Moments when Baba Blessed You. Receive Sai Blessings
               </Text>
@@ -555,6 +553,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
 
+  topBarTitle: {
+    color: EXPERIENCE_THEME.heading,
+    flex: 1,
+    fontSize: 18,
+    fontWeight: "800",
+    lineHeight: 22,
+    marginHorizontal: 12,
+    textAlign: "center",
+  },
+
   feedHeader: {
     backgroundColor: EXPERIENCE_THEME.background,
     paddingTop: 10,
@@ -563,19 +571,6 @@ const styles = StyleSheet.create({
   experienceIntro: {
     paddingBottom: 14,
     paddingHorizontal: 24,
-  },
-
-  experienceIntroTitleRow: {
-    alignItems: "center",
-    flexDirection: "row",
-  },
-
-  experienceIntroTitle: {
-    color: EXPERIENCE_THEME.heading,
-    flex: 1,
-    fontSize: 21,
-    fontWeight: "800",
-    lineHeight: 28,
   },
 
   experienceIntroText: {
