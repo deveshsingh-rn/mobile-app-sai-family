@@ -163,6 +163,14 @@ function getErrorMessage(error: any) {
   );
 }
 
+function isEventNotFoundError(error: any) {
+  return (
+    error?.response?.status === 404 &&
+    error?.response?.data?.error?.code ===
+      "EVENT_NOT_FOUND"
+  );
+}
+
 function normalizeEvent(event: any): SaiEvent {
   const source =
     event?.event || event;
@@ -918,6 +926,14 @@ function* fetchEventDetailWorker(
       )
     );
   } catch (error) {
+    if (isEventNotFoundError(error)) {
+      // A cancelled event can remain in an older cache, notification, or deep link.
+      // Prune it from every local event collection before showing recovery UI.
+      yield put(
+        deleteEventSuccess(action.payload.id)
+      );
+    }
+
     yield put(
       fetchEventDetailFailure(
         getErrorMessage(error)

@@ -53,6 +53,7 @@ type StoredAuthSession = {
 
 type RetriableAxiosRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
+  _suppressExpectedNotFoundLog?: boolean;
 };
 
 let refreshTokenPromise: Promise<string | null> | null = null;
@@ -232,7 +233,13 @@ apiClient.interceptors.response.use(
         isNetworkError: !error.response,
       };
 
-      if (!error.response) {
+      const isExpectedNotFound =
+        originalRequest?._suppressExpectedNotFoundLog === true &&
+        error.response?.status === 404;
+
+      if (isExpectedNotFound) {
+        // The calling feature owns this expected error and its recovery UI.
+      } else if (!error.response) {
         const platformHint =
           Platform.OS === 'android'
             ? 'Android emulator normally uses http://10.0.2.2:4000 for a local backend.'

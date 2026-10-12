@@ -495,9 +495,53 @@ export default function EventDetailRoute() {
   }
 
   if (!detail) {
+    const eventUnavailable =
+      error?.toLowerCase().includes("event was not found") ||
+      error?.toLowerCase().includes("event not found");
+
     return (
-      <View style={styles.loader}>
-        <Text style={styles.emptyText}>{error || "Event not found"}</Text>
+      <View
+        style={[
+          styles.unavailableScreen,
+          {
+            paddingBottom: Math.max(insets.bottom, 24),
+            paddingTop: insets.top + 24,
+          },
+        ]}
+      >
+        <View style={styles.unavailableIcon}>
+          <Calendar color="#9A3412" size={30} strokeWidth={2} />
+        </View>
+        <Text style={styles.unavailableTitle}>
+          {eventUnavailable
+            ? "Event is no longer available"
+            : "Could not load this event"}
+        </Text>
+        <Text style={styles.unavailableText}>
+          {eventUnavailable
+            ? "It may have been cancelled or removed by the organiser."
+            : error || "Please check your connection and try again."}
+        </Text>
+        {!eventUnavailable && eventId ? (
+          <Pressable
+            onPress={() => dispatch(fetchEventDetailRequest(eventId))}
+            style={({pressed}) => [
+              styles.unavailableSecondaryButton,
+              pressed && styles.unavailableButtonPressed,
+            ]}
+          >
+            <Text style={styles.unavailableSecondaryText}>Try Again</Text>
+          </Pressable>
+        ) : null}
+        <Pressable
+          onPress={() => router.replace("/(tabs)/events" as any)}
+          style={({pressed}) => [
+            styles.unavailablePrimaryButton,
+            pressed && styles.unavailableButtonPressed,
+          ]}
+        >
+          <Text style={styles.unavailablePrimaryText}>Back to Events</Text>
+        </Pressable>
       </View>
     );
   }
@@ -1612,12 +1656,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 10,
   },
-  emptyText: {
-    color: "#6B7280",
-    fontSize: 16,
-    fontWeight: "800",
-    textAlign: "center",
-  },
   eventHeader: {
     borderBottomWidth: 0,
     borderColor: "#E7E5E4",
@@ -1911,13 +1949,6 @@ const styles = StyleSheet.create({
     color: "#1F2937",
     fontSize: 12,
     fontWeight: "800",
-  },
-  loader: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    flex: 1,
-    justifyContent: "center",
-    padding: 24,
   },
   locationAddress: {
     color: "#6B7280",
@@ -2390,6 +2421,72 @@ const styles = StyleSheet.create({
     color: "#4B5563",
     fontSize: 12,
     fontWeight: "700",
+  },
+  unavailableButtonPressed: {
+    opacity: 0.76,
+    transform: [{scale: 0.98}],
+  },
+  unavailableIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFF4E8",
+    borderColor: "#FED7AA",
+    borderRadius: 28,
+    borderWidth: 1,
+    height: 56,
+    justifyContent: "center",
+    marginBottom: 18,
+    width: 56,
+  },
+  unavailablePrimaryButton: {
+    alignItems: "center",
+    backgroundColor: "#9A3412",
+    borderRadius: 14,
+    justifyContent: "center",
+    marginTop: 20,
+    minHeight: 50,
+    paddingHorizontal: 26,
+  },
+  unavailablePrimaryText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  unavailableScreen: {
+    alignItems: "center",
+    backgroundColor: "#FFF8EC",
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 30,
+  },
+  unavailableSecondaryButton: {
+    alignItems: "center",
+    borderColor: "#F1D9B5",
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: "center",
+    marginTop: 20,
+    minHeight: 48,
+    paddingHorizontal: 26,
+  },
+  unavailableSecondaryText: {
+    color: "#7C2D12",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  unavailableText: {
+    color: "#4B4037",
+    fontSize: 15,
+    fontWeight: "600",
+    lineHeight: 23,
+    maxWidth: 330,
+    textAlign: "center",
+  },
+  unavailableTitle: {
+    color: "#7C2D12",
+    fontSize: 22,
+    fontWeight: "900",
+    marginBottom: 8,
+    textAlign: "center",
   },
   twoButtons: {
     flexDirection: "row",

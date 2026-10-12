@@ -101,7 +101,10 @@ export async function apiFetchEventDetail(
   id: string
 ): Promise<{ event: SaiEvent }> {
   const { data } = await apiClient.get(
-    `/api/events/${id}`
+    `/api/events/${id}`,
+    {
+      _suppressExpectedNotFoundLog: true,
+    } as any
   );
 
   return data;
