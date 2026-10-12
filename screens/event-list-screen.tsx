@@ -208,9 +208,9 @@ function CompactEventCard({
 }) {
   const countLabel =
     mode === "my-events"
-      ? `${item.rsvps || 0} RSVPs · ${item.comments || 0} comments`
+      ? `${item.rsvps || 0} RSVPs · ${item.comments || 0} Comments`
       : item.rsvpedByMe
-        ? "You are going"
+        ? "You are Going"
         : item.type || "Event";
 
   return (
@@ -384,7 +384,7 @@ export default function EventListScreen({
     if (mode === "calendar") {
       return {
         data: selectedDateEvents,
-        empty: "No events on this date.",
+        empty: "No Events on This Date.",
         title: "Event Calendar",
       };
     }
@@ -392,14 +392,14 @@ export default function EventListScreen({
     if (mode === "my-events") {
       return {
         data: myEvents,
-        empty: "You have not created any events yet.",
+        empty: "You Have Not Created Any Events Yet.",
         title: "My Events",
       };
     }
 
     return {
       data: rsvps,
-      empty: "You have not RSVP'd to any events yet.",
+      empty: "You Have Not RSVP'd to Any Events Yet.",
       title: "My RSVPs",
     };
   }, [
