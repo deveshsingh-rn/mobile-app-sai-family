@@ -2,6 +2,9 @@
   "name": "@sai-family/mobile",
   "main": "index.js",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=20.19.4 <23"
+  },
   "scripts": {
     "start": "expo start",
     "start:dev-client": "expo start --dev-client --clear",
@@ -87,5 +90,12 @@
       ]
     }
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "postcss": "8.5.29"
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true,
+    "unrs-resolver@1.12.2": true
+  }
 }
