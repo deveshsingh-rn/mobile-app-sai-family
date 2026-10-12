@@ -106,6 +106,7 @@ import {
   useAppSelector,
 } from "@/store/hooks";
 import { EventDetailSkeleton } from "@/components/events/EventSkeletons";
+import { PillarGlassDock } from "@/components/CustomTabBar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const formatLongDate = (value?: string) => {
@@ -564,7 +565,7 @@ export default function EventDetailRoute() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: 132 + insets.bottom },
+          { paddingBottom: 218 + insets.bottom },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -744,7 +745,9 @@ export default function EventDetailRoute() {
       <View
         style={[
           styles.fixedCta,
-          { paddingBottom: Math.max(insets.bottom, 12) },
+          {
+            bottom: 74 + Math.max(insets.bottom, 8),
+          },
         ]}
       >
         <View style={styles.fixedTopRow}>
@@ -785,6 +788,31 @@ export default function EventDetailRoute() {
           <CalendarPlus color="#1F2937" size={15} />
           <Text style={styles.calendarText}>Add to Calendar</Text>
         </Pressable> */}
+      </View>
+
+      <View
+        pointerEvents="box-none"
+        style={[
+          styles.pillarDock,
+          { paddingBottom: Math.max(insets.bottom, 8) },
+        ]}
+      >
+        <PillarGlassDock
+          activeRouteName="events"
+          onNavigate={(routeName) => {
+            const destinations: Record<string, string> = {
+              directory: "/(tabs)/directory",
+              events: "/(tabs)/events",
+              experiences: "/(tabs)/experiences",
+              "naam-jap": "/naam-jap",
+            };
+            const destination = destinations[routeName];
+
+            if (destination) {
+              router.replace(destination as never);
+            }
+          }}
+        />
       </View>
     </View>
   );
@@ -1041,10 +1069,17 @@ function LocationSection({
   return (
     <Section>
       <SectionTitle title="Location" />
-      <View style={styles.mapPreview}>
-        <Map color="#9CA3AF" size={54} />
-        <MapPin color="#1F2937" size={36} style={styles.mapPin} />
-      </View>
+      <ImageBackground
+        imageStyle={styles.mapPreviewImage}
+        source={event.bannerUrl ? {uri: event.bannerUrl} : undefined}
+        style={styles.mapPreview}
+      >
+        {event.bannerUrl ? <View style={styles.mapPreviewShade} /> : null}
+        {!event.bannerUrl ? <Map color="#9CA3AF" size={54} /> : null}
+        <View style={styles.mapPinBadge}>
+          <MapPin color="#FFFFFF" size={24} strokeWidth={2.5} />
+        </View>
+      </ImageBackground>
       <Text style={styles.locationTitle}>{location}</Text>
       <Text style={styles.locationAddress}>{address || cityLine || "Address pending"}</Text>
       <View style={styles.twoButtons}>
@@ -1966,6 +2001,20 @@ const styles = StyleSheet.create({
   mapPin: {
     position: "absolute",
   },
+  mapPinBadge: {
+    alignItems: "center",
+    backgroundColor: "rgba(124,45,18,0.9)",
+    borderColor: "rgba(255,255,255,0.86)",
+    borderRadius: 25,
+    borderWidth: 2,
+    height: 50,
+    justifyContent: "center",
+    shadowColor: "#1C1917",
+    shadowOffset: {height: 5, width: 0},
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    width: 50,
+  },
   mapPreview: {
     alignItems: "center",
     backgroundColor: "#F6EFD9",
@@ -1973,6 +2022,14 @@ const styles = StyleSheet.create({
     height: 180,
     justifyContent: "center",
     overflow: "hidden",
+  },
+  mapPreviewImage: {
+    borderRadius: 16,
+    resizeMode: "cover",
+  },
+  mapPreviewShade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(28,25,23,0.2)",
   },
   organizerAvatar: {
     backgroundColor: "#FFF4E8",
@@ -2108,6 +2165,14 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "800",
+  },
+  pillarDock: {
+    alignItems: "center",
+    backgroundColor: "transparent",
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
   },
   quickCopy: {
     flex: 1,
