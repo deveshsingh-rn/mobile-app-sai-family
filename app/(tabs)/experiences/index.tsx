@@ -20,7 +20,7 @@ import {
 
 import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -60,8 +60,6 @@ import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const LIMIT = 10;
-const HEADER_SCROLL_THRESHOLD = 18;
-const HEADER_ANIMATION_MS = 150;
 const SAI_BABA_WELCOME_IMAGE =
   require("@/assets/images/hariom.png");
 
@@ -95,43 +93,11 @@ export default function HomeScreen() {
   const loadMoreInFlightRef = useRef(false);
 
   const [activeViewableId, setActiveViewableId] = useState<string | null>(null);
-  const [isHeaderIntroMounted, setIsHeaderIntroMounted] =
-    useState(true);
-  const [isHeaderIntroVisible, setIsHeaderIntroVisible] =
-    useState(true);
-
-  const headerIntroProgress = useRef(
-    new Animated.Value(1)
-  ).current;
   const askSaiBorderProgress = useRef(
     new Animated.Value(0)
   ).current;
-  const isHeaderIntroVisibleRef = useRef(true);
-  const lastScrollYRef = useRef(0);
-  const scrollDirectionRef = useRef<-1 | 0 | 1>(0);
-  const scrollDirectionStartYRef = useRef(0);
-  const hasReceivedInitialScrollRef = useRef(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      headerIntroProgress.stopAnimation();
-      headerIntroProgress.setValue(1);
-      isHeaderIntroVisibleRef.current = true;
-      setIsHeaderIntroMounted(true);
-      setIsHeaderIntroVisible(true);
-      lastScrollYRef.current = 0;
-      scrollDirectionRef.current = 0;
-      scrollDirectionStartYRef.current = 0;
-      hasReceivedInitialScrollRef.current = false;
-    }, [headerIntroProgress])
-  );
 
   useEffect(() => {
-    if (!isHeaderIntroMounted) {
-      askSaiBorderProgress.stopAnimation();
-      return;
-    }
-
     askSaiBorderProgress.setValue(0);
     const borderAnimation = Animated.loop(
       Animated.timing(askSaiBorderProgress, {
@@ -148,7 +114,7 @@ export default function HomeScreen() {
     return () => {
       borderAnimation.stop();
     };
-  }, [askSaiBorderProgress, isHeaderIntroMounted]);
+  }, [askSaiBorderProgress]);
 
   // ───────────────── INITIAL FETCH ─────────────────
 
@@ -215,102 +181,6 @@ export default function HomeScreen() {
       loadMoreInFlightRef.current = false;
     }
   }, [loadingMore]);
-
-  const animateHeaderIntro = useCallback(
-    (visible: boolean) => {
-      if (
-        isHeaderIntroVisibleRef.current ===
-        visible
-      ) {
-        return;
-      }
-
-      isHeaderIntroVisibleRef.current =
-        visible;
-      setIsHeaderIntroVisible(visible);
-      headerIntroProgress.stopAnimation();
-
-      if (visible) {
-        setIsHeaderIntroMounted(true);
-        headerIntroProgress.setValue(0);
-
-        Animated.timing(headerIntroProgress, {
-          duration: HEADER_ANIMATION_MS,
-          toValue: 1,
-          useNativeDriver: true,
-        }).start();
-        return;
-      }
-
-      Animated.timing(headerIntroProgress, {
-        duration: HEADER_ANIMATION_MS,
-        toValue: 0,
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (
-          finished &&
-          !isHeaderIntroVisibleRef.current
-        ) {
-          setIsHeaderIntroMounted(false);
-        }
-      });
-    },
-    [headerIntroProgress]
-  );
-
-  const handleFeedScroll =
-    useCallback(
-      (event: any) => {
-        const currentY = Math.max(
-          event.nativeEvent.contentOffset.y,
-          0
-        );
-
-        if (!hasReceivedInitialScrollRef.current) {
-          hasReceivedInitialScrollRef.current = true;
-          lastScrollYRef.current = currentY;
-          scrollDirectionStartYRef.current = currentY;
-          animateHeaderIntro(true);
-          return;
-        }
-
-        const diff =
-          currentY -
-          lastScrollYRef.current;
-
-        if (currentY < 20) {
-          animateHeaderIntro(true);
-          scrollDirectionRef.current = 0;
-          scrollDirectionStartYRef.current = currentY;
-        } else if (Math.abs(diff) > 0.5) {
-          const direction: -1 | 1 = diff > 0 ? 1 : -1;
-
-          if (scrollDirectionRef.current !== direction) {
-            scrollDirectionRef.current = direction;
-            scrollDirectionStartYRef.current = currentY;
-          }
-
-          const directionalDistance =
-            currentY - scrollDirectionStartYRef.current;
-
-          if (
-            direction === 1 &&
-            directionalDistance >= HEADER_SCROLL_THRESHOLD
-          ) {
-            animateHeaderIntro(false);
-          } else if (
-            direction === -1 &&
-            directionalDistance <= -HEADER_SCROLL_THRESHOLD
-          ) {
-            animateHeaderIntro(true);
-          }
-        }
-
-        lastScrollYRef.current =
-          currentY;
-      },
-      [animateHeaderIntro]
-    );
 
   // ───────────────── ACTIONS ─────────────────
 
@@ -510,165 +380,9 @@ export default function HomeScreen() {
         <View style={styles.pillarHeaderRow}>
           <ExperienceProfileMenu />
         </View>
-
-        {isHeaderIntroMounted && (
-          <Animated.View
-            pointerEvents={
-              isHeaderIntroVisible
-                ? "auto"
-                : "none"
-            }
-            style={[
-              styles.headerIntroContent,
-              {
-                opacity: headerIntroProgress,
-                transform: [
-                  {
-                    translateX:
-                        headerIntroProgress.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [
-                            screenWidth * 0.5,
-                            0,
-                          ],
-                        }),
-                  },
-                ],
-              },
-            ]}
-          >
-          
-
-            <Pressable
-              accessibilityHint="Opens the Ask Sai voice and text assistant"
-              accessibilityLabel="Ask Sai"
-              accessibilityRole="button"
-              onPress={openAskSai}
-              style={({ pressed }) => [
-                styles.askSaiGlowFrame,
-                {
-                  height: askSaiFrameHeight,
-                  width: askSaiFrameWidth,
-                },
-                pressed && styles.askSaiCardPressed,
-              ]}
-            >
-              <Animated.View
-                pointerEvents="none"
-                style={[
-                  styles.askSaiBorderLight,
-                  {
-                    height: askSaiGlowSize,
-                    marginLeft: -askSaiGlowSize / 2,
-                    marginTop: -askSaiGlowSize / 2,
-                    transform: [
-                      {
-                        rotate: askSaiBorderRotation,
-                      },
-                    ],
-                    width: askSaiGlowSize,
-                  },
-                ]}
-              >
-                <LinearGradient
-                  colors={[
-                    "#FFF7C2",
-                    "#a2ff00",
-                    "#fe4800",
-                    "#f3f1f0",
-                    "#FFF7C2",
-                  ]}
-                  end={{ x: 1, y: 1 }}
-                  start={{ x: 0, y: 0 }}
-                  style={StyleSheet.absoluteFill}
-                />
-              </Animated.View>
-
-              <ImageBackground
-                imageStyle={styles.askSaiImage}
-                resizeMode="cover"
-                source={SAI_BABA_WELCOME_IMAGE}
-                style={styles.askSaiCard}
-              >
-                <LinearGradient
-                  colors={[
-                    "rgba(24, 14, 6, 0.90)",
-                    "rgba(28, 16, 7, 0.72)",
-                    "rgba(32, 18, 8, 0.30)",
-                    "rgba(36, 20, 8, 0)",
-                    "rgba(36, 20, 8, 0)",
-                  ]}
-                  end={{ x: 1, y: 0.5 }}
-                  locations={[0, 0.34, 0.6, 0.72, 1]}
-                  pointerEvents="none"
-                  start={{ x: 0, y: 0.5 }}
-                  style={StyleSheet.absoluteFill}
-                />
-
-                <View style={styles.askSaiTopRow}>
-                 
-                </View>
-
-                <View style={styles.askSaiBottomRow}>
-                  <View style={styles.askSaiCopy}>
-                    <View style={styles.askSaiPromptList}>
-                      <View style={styles.askSaiPromptRow}>
-                        <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
-                        <Text style={styles.askSaiPrompt}>Speak or Write</Text>
-                      </View>
-                      <View style={styles.askSaiPromptRow}>
-                        <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
-                        <Text style={styles.askSaiPrompt}>
-                          Ask Guidance from Shri Sai Satcharitra
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                  <View style={styles.askSaiMicButton}>
-                    <Mic2
-                      color="#3A2108"
-                      size={26}
-                      strokeWidth={2.4}
-                    />
-                    
-                  </View>
-
-                  <View style={styles.askSaiMicButton}>
-                    <Type
-                      color="#3A2108"
-                      size={26}
-                      strokeWidth={2.4}
-                    />
-                  </View>
-                </View>
-              </ImageBackground>
-            </Pressable>
-
-          </Animated.View>
-        )}
-
       </View>
 
       {/* FEED */}
-        <View style={styles.experienceIntro}>
-              <View style={styles.experienceIntroTitleRow}>
-                  <ExperienceCreatePostButton
-                    active={false}
-                    imageSource={require("@/assets/images/saibaba1.png")}
-                    name={account?.name}
-                    onPress={openCreatePost}
-                    size="large"
-                  />
-                <Text style={styles.experienceIntroTitle}>
-                  Share your Sai Journey
-                </Text>
-              </View>
-
-              <Text style={styles.experienceIntroText}>
-                Share Sai Mandirs Worldwide, Miracles, Moments when Baba Blessed You. Receive Sai Blessings
-              </Text>
-            </View>
-
       <FlashList
         data={feed}
         extraData={activeViewableId}
@@ -686,7 +400,118 @@ export default function HomeScreen() {
           handleLoadMore
         }
         onEndReachedThreshold={0.4}
-        onScroll={handleFeedScroll}
+        ListHeaderComponent={
+          <View style={styles.feedHeader}>
+            <View style={styles.headerIntroContent}>
+              <Pressable
+                accessibilityHint="Opens the Ask Sai voice and text assistant"
+                accessibilityLabel="Ask Sai"
+                accessibilityRole="button"
+                onPress={openAskSai}
+                style={({ pressed }) => [
+                  styles.askSaiGlowFrame,
+                  {
+                    height: askSaiFrameHeight,
+                    width: askSaiFrameWidth,
+                  },
+                  pressed && styles.askSaiCardPressed,
+                ]}
+              >
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.askSaiBorderLight,
+                    {
+                      height: askSaiGlowSize,
+                      marginLeft: -askSaiGlowSize / 2,
+                      marginTop: -askSaiGlowSize / 2,
+                      transform: [{ rotate: askSaiBorderRotation }],
+                      width: askSaiGlowSize,
+                    },
+                  ]}
+                >
+                  <LinearGradient
+                    colors={[
+                      "#FFF7C2",
+                      "#a2ff00",
+                      "#fe4800",
+                      "#f3f1f0",
+                      "#FFF7C2",
+                    ]}
+                    end={{ x: 1, y: 1 }}
+                    start={{ x: 0, y: 0 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                </Animated.View>
+
+                <ImageBackground
+                  imageStyle={styles.askSaiImage}
+                  resizeMode="cover"
+                  source={SAI_BABA_WELCOME_IMAGE}
+                  style={styles.askSaiCard}
+                >
+                  <LinearGradient
+                    colors={[
+                      "rgba(24, 14, 6, 0.90)",
+                      "rgba(28, 16, 7, 0.72)",
+                      "rgba(32, 18, 8, 0.30)",
+                      "rgba(36, 20, 8, 0)",
+                      "rgba(36, 20, 8, 0)",
+                    ]}
+                    end={{ x: 1, y: 0.5 }}
+                    locations={[0, 0.34, 0.6, 0.72, 1]}
+                    pointerEvents="none"
+                    start={{ x: 0, y: 0.5 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+
+                  <View style={styles.askSaiTopRow} />
+
+                  <View style={styles.askSaiBottomRow}>
+                    <View style={styles.askSaiCopy}>
+                      <View style={styles.askSaiPromptList}>
+                        <View style={styles.askSaiPromptRow}>
+                          <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
+                          <Text style={styles.askSaiPrompt}>Speak or Write</Text>
+                        </View>
+                        <View style={styles.askSaiPromptRow}>
+                          <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
+                          <Text style={styles.askSaiPrompt}>
+                            Ask Guidance from Shri Sai Satcharitra
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    <View style={styles.askSaiMicButton}>
+                      <Mic2 color="#3A2108" size={26} strokeWidth={2.4} />
+                    </View>
+                    <View style={styles.askSaiMicButton}>
+                      <Type color="#3A2108" size={26} strokeWidth={2.4} />
+                    </View>
+                  </View>
+                </ImageBackground>
+              </Pressable>
+            </View>
+
+            <View style={styles.experienceIntro}>
+              <View style={styles.experienceIntroTitleRow}>
+                <ExperienceCreatePostButton
+                  active={false}
+                  imageSource={require("@/assets/images/saibaba1.png")}
+                  name={account?.name}
+                  onPress={openCreatePost}
+                  size="large"
+                />
+                <Text style={styles.experienceIntroTitle}>
+                  Share your Sai Journey
+                </Text>
+              </View>
+              <Text style={styles.experienceIntroText}>
+                Share Sai Mandirs Worldwide, Miracles, Moments when Baba Blessed You. Receive Sai Blessings
+              </Text>
+            </View>
+          </View>
+        }
         ListFooterComponent={
           renderFooter
         }
@@ -704,7 +529,6 @@ export default function HomeScreen() {
         }
         viewabilityConfig={viewabilityConfig}
         onViewableItemsChanged={onViewableItemsChanged}
-        scrollEventThrottle={16}
       />
 
     </View>
@@ -729,6 +553,11 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     paddingBottom: 10,
     paddingHorizontal: 12,
+  },
+
+  feedHeader: {
+    backgroundColor: EXPERIENCE_THEME.background,
+    paddingTop: 10,
   },
 
   experienceIntro: {
