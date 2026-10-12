@@ -193,7 +193,7 @@ export default function EventBookmarksRoute() {
               {bookmarks.length} saved event{bookmarks.length === 1 ? "" : "s"}
             </Text>
             <Text style={styles.heroText}>
-              {upcomingCount} upcoming · {totalRsvps} devotees attending
+              {upcomingCount} Upcoming · {totalRsvps} Devotees Attending
             </Text>
           </View>
         </View>
@@ -212,9 +212,9 @@ export default function EventBookmarksRoute() {
           {!loading && !bookmarks.length ? (
             <View style={styles.emptyCard}>
               <Bookmark color="#F97316" size={26} />
-              <Text style={styles.emptyTitle}>No saved events yet</Text>
+              <Text style={styles.emptyTitle}>No Saved Events Yet</Text>
               <Text style={styles.emptyText}>
-                Bookmark events from the Events hub or detail page and they will appear here.
+                Bookmark Events From The Events Hub or Detail Page and They will Appear Here.
               </Text>
               <Pressable
                 onPress={() => router.push("/(tabs)/events" as any)}
@@ -235,7 +235,7 @@ export default function EventBookmarksRoute() {
               {loading ? (
                 <ActivityIndicator color="#1F2937" size="small" />
               ) : null}
-              <Text style={styles.loadMoreText}>Load more saved events</Text>
+              <Text style={styles.loadMoreText}>Load More Saved Events</Text>
             </Pressable>
           ) : null}
         </View>
@@ -315,10 +315,10 @@ function SavedEventCard({
           <View style={styles.statPill}>
             <Users color="#1F2937" size={13} />
             <Text style={styles.statPillText}>
-              {event.rsvps || 0} going
+              {event.rsvps || 0} Going
             </Text>
           </View>
-          <Text style={styles.openText}>View details</Text>
+          <Text style={styles.openText}>View Details</Text>
         </View>
       </View>
     </Pressable>

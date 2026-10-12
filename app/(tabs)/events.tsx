@@ -832,8 +832,8 @@ function MapOverview({
             <Text style={styles.nearbyTitle}>Nearby Events</Text>
             <Text style={styles.nearbySubtitle}>
               {loading
-                ? "Loading nearby gatherings..."
-                : `${events.length} spiritual gatherings from backend`}
+                ? "Loading Nearby Gatherings..."
+                : `${events.length} Spiritual Gatherings from Backend`}
             </Text>
           </View>
           <Pressable>
@@ -852,7 +852,7 @@ function MapOverview({
           {!events.length && (
             <View style={styles.nearbyEmpty}>
               <Text style={styles.nearbyDescription}>
-                No nearby events returned yet.
+                No Nearby Events Returned Yet.
               </Text>
             </View>
           )}
@@ -914,7 +914,7 @@ function NearbyEventCard({
           </View>
           <View style={styles.nearbyMetaItem}>
             <Users color={EXPERIENCE_THEME.paragraph} size={12} />
-            <Text style={styles.nearbyMetaText}>{event.rsvps || 0} going</Text>
+            <Text style={styles.nearbyMetaText}>{event.rsvps || 0} Going</Text>
           </View>
         </View>
       </View>
@@ -973,7 +973,7 @@ function MyEventsOverview({
           <Text style={styles.myEventsTitle}>My Events</Text>
           <Text style={styles.myEventsSubtitle}>
             {items.length
-              ? `${events.length} published · ${drafts.length} drafts`
+              ? `${events.length} Published · ${drafts.length} Drafts`
               : "Your created events and drafts"}
           </Text>
         </View>
@@ -1056,7 +1056,7 @@ function MyEventsOverview({
                 </View>
               </View>
               <Text numberOfLines={1} style={styles.myEventRowMeta}>
-                {item.date ? formatDate(item.date) : "Date not selected"} · {item.location}
+                {item.date ? formatDate(item.date) : "Date not Selected"} · {item.location}
               </Text>
             </View>
             <ChevronRight color="#A8A29E" size={20} />
@@ -1070,7 +1070,7 @@ function MyEventsOverview({
           style={styles.myEventsMoreButton}
         >
           <Text style={styles.myEventsMoreText}>
-            Show all {items.length} events
+            Show All {items.length} Events
           </Text>
         </Pressable>
       ) : expanded && items.length > 2 ? (
@@ -1078,7 +1078,7 @@ function MyEventsOverview({
           onPress={() => setExpanded(false)}
           style={styles.myEventsMoreButton}
         >
-          <Text style={styles.myEventsMoreText}>Show less</Text>
+          <Text style={styles.myEventsMoreText}>Show Less</Text>
         </Pressable>
       ) : null}
     </View>
@@ -1274,12 +1274,12 @@ function EventCard({
         >
           {rsvpPending ? (
             <ActivityIndicator
-              color={event.going ? EXPERIENCE_THEME.paragraph : "#FFFFFF"}
+              color={event.going ? "#FFFFFF" : "#FFFFFF"}
               size="small"
             />
           ) : (
             <CalendarCheck
-              color={event.going ? EXPERIENCE_THEME.paragraph : "#FFFFFF"}
+              color={event.going ? "#FFFFFF" : "#FFFFFF"}
               size={16}
             />
           )}
@@ -2734,7 +2734,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   rsvpButtonActive: {
-    backgroundColor: "#5CE65C",
+    backgroundColor: EXPERIENCE_THEME.heading,
     borderColor: '#f9f8f6',
   },
   rsvpButtonText: {
@@ -2743,7 +2743,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   rsvpButtonTextActive: {
-    color: EXPERIENCE_THEME.paragraph,
+    color: "#FFFFFF",
   },
   productAction: {
     color: EXPERIENCE_THEME.paragraph,
