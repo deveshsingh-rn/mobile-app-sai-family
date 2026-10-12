@@ -145,6 +145,52 @@ function mapHomeEvents(
   };
 }
 
+function removeEventFromHome(
+  home: EventsState["home"],
+  eventId: string
+): EventsState["home"] {
+  if (!home) {
+    return home;
+  }
+
+  return {
+    ...home,
+    sections: home.sections
+      ? Object.fromEntries(
+          Object.entries(home.sections).map(([key, section]) => {
+            const events = (section.events || []).filter(
+              (event) => event.id !== eventId
+            );
+            const removedCount = (section.events || []).length - events.length;
+
+            return [
+              key,
+              {
+                ...section,
+                count:
+                  typeof section.count === "number"
+                    ? Math.max(0, section.count - removedCount)
+                    : section.count,
+                events,
+              },
+            ];
+          })
+        )
+      : home.sections,
+    trendingSections: home.trendingSections
+      ? Object.fromEntries(
+          Object.entries(home.trendingSections).map(([key, events]) => [
+            key,
+            (events || []).filter((event) => event.id !== eventId),
+          ])
+        )
+      : home.trendingSections,
+    trendingThisWeek: (home.trendingThisWeek || []).filter(
+      (event) => event.id !== eventId
+    ),
+  };
+}
+
 function getCheckInKey(eventId?: string, userId?: string) {
   return `${eventId || ""}:${userId || ""}`;
 }
@@ -161,8 +207,18 @@ export function eventsReducer(
         commentsLoading: true,
       };
 
-    case EVENTS_ACTIONS.FETCH_FEED_REQUEST:
     case EVENTS_ACTIONS.FETCH_DETAIL_REQUEST:
+      return {
+        ...state,
+        comments: [],
+        commentsError: null,
+        commentsPagination: null,
+        detail: null,
+        error: null,
+        loading: true,
+      };
+
+    case EVENTS_ACTIONS.FETCH_FEED_REQUEST:
     case EVENTS_ACTIONS.FETCH_MY_RSVPS_REQUEST:
     case EVENTS_ACTIONS.FETCH_MY_EVENTS_REQUEST:
     case EVENTS_ACTIONS.FETCH_CALENDAR_REQUEST:
@@ -638,26 +694,58 @@ export function eventsReducer(
         ),
       };
 
-    case EVENTS_ACTIONS.DELETE_SUCCESS:
+    case EVENTS_ACTIONS.DELETE_SUCCESS: {
+      const deletedId = action.payload?.id;
+      const wasCurrentDetail = state.detail?.id === deletedId;
+      const {
+        [deletedId]: _deletedAttendees,
+        ...remainingAttendees
+      } = state.attendeesByEventId;
+      const {
+        [deletedId]: _deletedPhotos,
+        ...remainingPhotos
+      } = state.photosByEventId;
+      const {
+        [deletedId]: _deletedReviews,
+        ...remainingReviews
+      } = state.reviewsByEventId;
+
       return {
         ...state,
-        detail:
-          state.detail?.id === action.payload?.id
-            ? null
-            : state.detail,
-        feed: state.feed.filter(
-          (event) =>
-            event.id !== action.payload?.id
+        attendeesByEventId: remainingAttendees,
+        calendar: state.calendar.filter((event) => event.id !== deletedId),
+        calendarDays: state.calendarDays.map((day) => ({
+          ...day,
+          events: day.events.filter((event) => event.id !== deletedId),
+        })),
+        comments: wasCurrentDetail ? [] : state.comments,
+        commentsPagination: wasCurrentDetail ? null : state.commentsPagination,
+        detail: wasCurrentDetail ? null : state.detail,
+        eventBookmarks: state.eventBookmarks.filter(
+          (event) => event.id !== deletedId
         ),
+        feed: state.feed.filter(
+          (event) => event.id !== deletedId
+        ),
+        home: removeEventFromHome(state.home, deletedId),
         myEvents: state.myEvents.filter(
-          (event) =>
-            event.id !== action.payload?.id
+          (event) => event.id !== deletedId
         ),
         myRsvps: state.myRsvps.filter(
-          (event) =>
-            event.id !== action.payload?.id
+          (event) => event.id !== deletedId
         ),
+        nearby: state.nearby.filter((event) => event.id !== deletedId),
+        photosByEventId: remainingPhotos,
+        publishedDraftEvent:
+          state.publishedDraftEvent?.id === deletedId
+            ? null
+            : state.publishedDraftEvent,
+        recommendations: state.recommendations.filter(
+          (event) => event.id !== deletedId
+        ),
+        reviewsByEventId: remainingReviews,
       };
+    }
 
     case EVENTS_ACTIONS.RSVP_SUCCESS:
     case EVENTS_ACTIONS.CANCEL_RSVP_SUCCESS: {

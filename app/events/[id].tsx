@@ -57,7 +57,6 @@ import {
   fetchEventCommentsRequest,
   fetchEventDetailRequest,
   fetchEventPhotosRequest,
-  fetchEventReviewsRequest,
   reportEventRequest,
   rsvpEventRequest,
   shareEventRequest,
@@ -252,30 +251,32 @@ export default function EventDetailRoute() {
   useEffect(() => {
     if (eventId) {
       dispatch(fetchEventDetailRequest(eventId));
-      dispatch(
-        fetchEventCommentsRequest(eventId, {
-          limit: 20,
-          offset: 0,
-        })
-      );
-      dispatch(
-        fetchEventReviewsRequest(eventId, {
-          limit: 20,
-          offset: 0,
-        })
-      );
-      dispatch(
-        fetchEventPhotosRequest(eventId, {
-          limit: 20,
-          offset: 0,
-        })
-      );
     }
   }, [dispatch, eventId]);
 
   useEffect(() => {
+    if (!eventId || detail?.id !== eventId) {
+      return;
+    }
+
+    dispatch(
+      fetchEventCommentsRequest(eventId, {
+        limit: 20,
+        offset: 0,
+      })
+    );
+    dispatch(
+      fetchEventPhotosRequest(eventId, {
+        limit: 20,
+        offset: 0,
+      })
+    );
+  }, [detail?.id, dispatch, eventId]);
+
+  useEffect(() => {
     if (
       eventId &&
+      detail?.id === eventId &&
       (detail?.permissions?.canManageAttendees || detail?.isOwner)
     ) {
       dispatch(
@@ -285,7 +286,7 @@ export default function EventDetailRoute() {
         })
       );
     }
-  }, [detail?.isOwner, detail?.permissions?.canManageAttendees, dispatch, eventId]);
+  }, [detail?.id, detail?.isOwner, detail?.permissions?.canManageAttendees, dispatch, eventId]);
 
   const handleRsvp = useCallback(() => {
     if (!eventId || !detail) {
@@ -657,9 +658,9 @@ export default function EventDetailRoute() {
           cityLine={cityLine}
         />
         {!!detail.faq?.length && <FaqSection faq={detail.faq} />}
-        {!!detail.similarEvents?.length && (
+        {/* {!!detail.similarEvents?.length && (
           <SimilarEventsSection events={detail.similarEvents} />
-        )}
+        )} */}
         {/* {!!tags.length && <TagsSection tags={tags} />} */}
         <PhotosSection
           onUpload={handleUploadPhoto}

@@ -157,6 +157,7 @@ const formatDate = (value: string) => {
     day: "numeric",
     month: "short",
     weekday: "short",
+    year: "numeric",
   });
 };
 
