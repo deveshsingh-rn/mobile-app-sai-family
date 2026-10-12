@@ -1904,7 +1904,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   myEventStatus: {
-    backgroundColor: "#ECFDF3",
+    backgroundColor: EXPERIENCE_THEME.background,
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -1913,7 +1913,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF4E8",
   },
   myEventStatusText: {
-    color: "#027A48",
+    color: EXPERIENCE_THEME.heading,
     fontSize: 10,
     fontWeight: "900",
   },
