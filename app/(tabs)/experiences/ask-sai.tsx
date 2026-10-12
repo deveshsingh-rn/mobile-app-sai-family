@@ -642,6 +642,11 @@ export default function AskSaiScreen() {
         return;
       }
 
+      setQuestion("");
+      setVoicePartialTranscript("");
+      setVoiceFinalTranscript("");
+      voiceFinalTranscriptRef.current = "";
+      setVoiceError("");
       setSelectedLanguageLocale(locale);
       void Haptics.selectionAsync();
       trackProductEvent("Ask Sai Language Selected", {
