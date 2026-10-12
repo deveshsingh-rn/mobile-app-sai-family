@@ -107,8 +107,8 @@ export type SaiEvent = {
   guidelines?: string[];
   id: string;
   isOwner?: boolean;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
   media?: EventMedia[];
   organizer?: EventOrganizer | null;
   ownerId?: string;
@@ -457,8 +457,8 @@ export type CreateEventPayload = {
   faq?: EventFaq[];
   guidelines?: string[];
   groupId?: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
   recurrence?: EventRecurrence;
   startAt: string;
   state?: string;

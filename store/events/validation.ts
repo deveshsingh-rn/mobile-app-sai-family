@@ -224,8 +224,8 @@ const validateSharedEventFields = (
   }
 
   if (
-    (required ||
-      payload.latitude !== undefined) &&
+    payload.latitude !== undefined &&
+    payload.latitude !== null &&
     (typeof payload.latitude !== "number" ||
       payload.latitude < -90 ||
       payload.latitude > 90)
@@ -235,8 +235,8 @@ const validateSharedEventFields = (
   }
 
   if (
-    (required ||
-      payload.longitude !== undefined) &&
+    payload.longitude !== undefined &&
+    payload.longitude !== null &&
     (typeof payload.longitude !== "number" ||
       payload.longitude < -180 ||
       payload.longitude > 180)
