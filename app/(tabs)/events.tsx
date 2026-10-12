@@ -128,6 +128,7 @@ type UiEvent = {
   going: boolean;
   id: string;
   imageLabel: string;
+  imageUrl?: string | null;
   location: string;
   sourceId?: string;
   time: string;
@@ -185,6 +186,7 @@ const toUiEvent = (event: SaiEvent): UiEvent => ({
   going: !!event.rsvpedByMe,
   id: event.id,
   imageLabel: event.type || "Event",
+  imageUrl: event.bannerUrl,
   location: event.venueName || event.city || event.address || "Location pending",
   sourceId: event.id,
   time: `${formatTime(event.startAt)} - ${formatTime(event.endAt)}`,
@@ -922,13 +924,31 @@ function NearbyEventCard({
 }: {
   event: SaiEvent;
 }) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [event.bannerUrl]);
+
+  const showBanner = Boolean(event.bannerUrl) && !imageFailed;
+
   return (
     <Pressable
       onPress={() => router.push(`/events/${event.id}` as any)}
       style={styles.nearbyCard}
     >
       <View style={styles.nearbyImage}>
-        <Text style={styles.nearbyImageText}>{eventTypeLabel(event.type)}</Text>
+        {showBanner ? (
+          <Image
+            accessibilityIgnoresInvertColors
+            onError={() => setImageFailed(true)}
+            resizeMode="cover"
+            source={{uri: event.bannerUrl!}}
+            style={styles.nearbyImageAsset}
+          />
+        ) : (
+          <Text style={styles.nearbyImageText}>{eventTypeLabel(event.type)}</Text>
+        )}
         <View style={styles.nearbyTypeBadge}>
           <Text style={styles.nearbyTypeText}>{eventTypeLabel(event.type)}</Text>
         </View>
@@ -1242,6 +1262,13 @@ function EventCard({
   const sharePending = useAppSelector((state) =>
     selectIsEventSharePending(state, event.sourceId)
   );
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [event.imageUrl]);
+
+  const showBanner = Boolean(event.imageUrl) && !imageFailed;
 
   return (
     <Pressable
@@ -1254,7 +1281,17 @@ function EventCard({
     >
       <View style={styles.cardTop}>
         <View style={styles.thumbnail}>
-          <Text style={styles.thumbnailText}>{event.imageLabel}</Text>
+          {showBanner ? (
+            <Image
+              accessibilityIgnoresInvertColors
+              onError={() => setImageFailed(true)}
+              resizeMode="cover"
+              source={{uri: event.imageUrl!}}
+              style={styles.thumbnailImage}
+            />
+          ) : (
+            <Text style={styles.thumbnailText}>{event.imageLabel}</Text>
+          )}
         </View>
 
         <View style={styles.cardContent}>
@@ -2992,6 +3029,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "relative",
   },
+  nearbyImageAsset: {
+    ...StyleSheet.absoluteFillObject,
+    height: "100%",
+    width: "100%",
+  },
   nearbyImageText: {
     color: EXPERIENCE_THEME.paragraph,
     fontSize: 12,
@@ -3236,6 +3278,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     paddingHorizontal: 8,
     width: 80,
+  },
+  thumbnailImage: {
+    height: "100%",
+    width: "100%",
   },
   thumbnailText: {
     color: "#FFFFFF",

@@ -624,11 +624,11 @@ export default function EventDetailRoute() {
 
         <Section style={styles.eventHeader}>
           <View style={styles.eventBadgeRow}>
-            {!!detail.type && (
+            {/* {!!detail.type && (
               <View style={styles.eventTypeBadge}>
                 <Text style={styles.eventTypeText}>{detail.type}</Text>
               </View>
-            )}
+            )} */}
             <View style={[styles.eventTimingBadge, eventCompleted && styles.eventTimingBadgePast]}>
               <View style={[styles.eventTimingDot, eventCompleted && styles.eventTimingDotPast]} />
               <Text style={[styles.eventTimingText, eventCompleted && styles.eventTimingTextPast]}>
