@@ -60,7 +60,7 @@ Actions:
 - Tap create event from the Events UI.
 - Fill required fields:
   - title min 3
-  - description min 10
+  - description min 3
   - start/end date where `endAt >= startAt`
   - address min 5
   - valid latitude/longitude

@@ -238,7 +238,7 @@ Headers: `x-user-id` required.
 Required:
 
 - `title` min 3
-- `description` min 10
+- `description` min 3
 - `startAt` valid ISO datetime
 - `endAt` valid ISO datetime
 - `address` min 5

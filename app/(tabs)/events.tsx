@@ -2094,7 +2094,7 @@ const styles = StyleSheet.create({
   },
   createEventActionLabel: {
     color: EXPERIENCE_THEME.heading,
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: "800",
     lineHeight: 22,
   },

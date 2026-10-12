@@ -183,10 +183,10 @@ const validateSharedEventFields = (
   if (
     (required ||
       payload.description !== undefined) &&
-    !hasText(payload.description, 10)
+    !hasText(payload.description, 3)
   ) {
     errors.description =
-      "Description must be at least 10 characters.";
+      "Description must be at least 3 characters.";
   }
 
   if (

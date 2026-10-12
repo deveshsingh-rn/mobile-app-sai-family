@@ -448,7 +448,7 @@ export default function EventFormScreen({
         label: "Venue",
       },
       {
-        complete: form.description.trim().length >= 10,
+        complete: form.description.trim().length >= 3,
         label: "Description",
       },
     ];
@@ -1341,7 +1341,7 @@ export default function EventFormScreen({
         </FormSection>
 
         <FormSection
-          completed={form.description.trim().length >= 10}
+          completed={form.description.trim().length >= 3}
           step="4"
           subtitle="Share What Devotees Can Expect From This Gathering"
           title="Describe The Experience"

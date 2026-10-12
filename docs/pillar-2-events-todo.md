@@ -52,7 +52,7 @@ Status: Completed
 Status: Completed
 
 - [x] Validate title min 3 characters
-- [x] Validate description min 10 characters
+- [x] Validate description min 3 characters
 - [x] Validate start and end date/time
 - [x] Validate `endAt >= startAt`
 - [x] Validate address min 5 characters
