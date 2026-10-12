@@ -46,7 +46,6 @@ import {
   ChevronRight,
   Clock3,
   ImagePlus,
-  LocateFixed,
   Plus,
   Repeat2,
   Save,
@@ -163,6 +162,14 @@ const TIMEZONE_OPTIONS = [
   "America/New_York",
   "America/Los_Angeles",
 ];
+
+const VENUE_LOCATION_FIELDS = new Set<keyof EventFormState>([
+  "address",
+  "city",
+  "country",
+  "state",
+  "venueName",
+]);
 
 const countryOptions = Country.getAllCountries();
 
@@ -387,7 +394,7 @@ export default function EventFormScreen({
   const [form, setForm] = useState<EventFormState>(initialForm);
   const [localBannerUri, setLocalBannerUri] = useState<string | null>(null);
   const [waitingForBannerUpload, setWaitingForBannerUpload] = useState(false);
-  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [resolvingVenue, setResolvingVenue] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<PickerTarget>(null);
   const [pickerValue, setPickerValue] = useState<Date>(getInitialDate);
   const [selectionKind, setSelectionKind] = useState<SelectionKind | null>(null);
@@ -412,8 +419,6 @@ export default function EventFormScreen({
   const formProgress = useMemo(() => {
     const startAt = new Date(form.startAt).getTime();
     const endAt = new Date(form.endAt).getTime();
-    const latitude = Number(form.latitude);
-    const longitude = Number(form.longitude);
     const items = [
       {
         complete: form.title.trim().length >= 3,
@@ -428,15 +433,8 @@ export default function EventFormScreen({
       },
       {
         complete:
-          form.address.trim().length >= 5 &&
-          form.latitude.trim().length > 0 &&
-          Number.isFinite(latitude) &&
-          latitude >= -90 &&
-          latitude <= 90 &&
-          form.longitude.trim().length > 0 &&
-          Number.isFinite(longitude) &&
-          longitude >= -180 &&
-          longitude <= 180,
+          form.venueName.trim().length >= 2 &&
+          form.address.trim().length >= 5,
         label: "Venue",
       },
       {
@@ -452,13 +450,22 @@ export default function EventFormScreen({
       percent: Math.round((completed / items.length) * 100),
       total: items.length,
     };
-  }, [form.address, form.description, form.endAt, form.latitude, form.longitude, form.startAt, form.title]);
+  }, [form.address, form.description, form.endAt, form.startAt, form.title, form.venueName]);
 
   const setField = useCallback((key: keyof EventFormState, value: string) => {
-    setForm((current) => ({
-      ...current,
-      [key]: value,
-    }));
+    setForm((current) => {
+      const next = {
+        ...current,
+        [key]: value,
+      };
+
+      if (VENUE_LOCATION_FIELDS.has(key)) {
+        next.latitude = "";
+        next.longitude = "";
+      }
+
+      return next;
+    });
   }, []);
 
   const selectedCountry =
@@ -865,52 +872,107 @@ export default function EventFormScreen({
     setPickerTarget(null);
   }, [pickerTarget, pickerValue]);
 
-  const handleUseCurrentLocation = useCallback(async () => {
+  const resolveVenueCoordinates = useCallback(async () => {
+    const latitude = Number(form.latitude);
+    const longitude = Number(form.longitude);
+    const hasStoredCoordinates =
+      form.latitude.trim().length > 0 &&
+      Number.isFinite(latitude) &&
+      latitude >= -90 &&
+      latitude <= 90 &&
+      form.longitude.trim().length > 0 &&
+      Number.isFinite(longitude) &&
+      longitude >= -180 &&
+      longitude <= 180;
+
+    if (hasStoredCoordinates) {
+      return form;
+    }
+
+    if (form.venueName.trim().length < 2) {
+      Alert.alert("Venue", "Please enter the venue name.");
+      return null;
+    }
+
+    if (form.address.trim().length < 5) {
+      Alert.alert("Venue", "Please enter the complete event address.");
+      return null;
+    }
+
     const hasPermission =
       await requestLocationPermissionWithSettingsFallback({
         message:
-          "Please allow location access to fill event coordinates.",
+          "Allow location access so Sai Family can verify the event address.",
         settingsMessage:
-          "Location access is turned off for Sai Family. Please enable it from Settings to fill event coordinates.",
+          "Location access is off. Enable it in Settings to verify the event address.",
       });
 
     if (!hasPermission) {
-      return;
+      return null;
     }
 
-    setLoadingLocation(true);
+    setResolvingVenue(true);
 
     try {
-      const current = await Location.getCurrentPositionAsync({});
-      const reverse = await Location.reverseGeocodeAsync({
-        latitude: current.coords.latitude,
-        longitude: current.coords.longitude,
-      });
-      const place = reverse[0];
+      const detailedAddress = [
+        form.venueName,
+        form.address,
+        form.city,
+        form.state,
+        form.country,
+      ]
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .join(", ");
+      const fallbackAddress = [
+        form.address,
+        form.city,
+        form.state,
+        form.country,
+      ]
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .join(", ");
+      const queries = Array.from(
+        new Set([detailedAddress, fallbackAddress])
+      );
+      let resolved: Location.LocationGeocodedLocation | undefined;
 
-      setField("latitude", current.coords.latitude.toFixed(6));
-      setField("longitude", current.coords.longitude.toFixed(6));
+      for (const query of queries) {
+        const matches = await Location.geocodeAsync(query);
+        resolved = matches[0];
 
-      if (place?.city) {
-        setField("city", place.city);
-      }
-      if (place?.region) {
-        setField("state", place.region);
-      }
-      if (place?.country) {
-        setField("country", place.country);
+        if (resolved) {
+          break;
+        }
       }
 
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (timezone) {
-        setField("timezone", timezone);
+      if (!resolved) {
+        Alert.alert(
+          "Address not found",
+          "Please check the venue name and enter a complete address with city, state, and country."
+        );
+        return null;
       }
+
+      const resolvedForm: EventFormState = {
+        ...form,
+        latitude: resolved.latitude.toFixed(7),
+        longitude: resolved.longitude.toFixed(7),
+      };
+
+      setForm(resolvedForm);
+      return resolvedForm;
     } catch {
-      Alert.alert("Location", "Could not read your current location. Please try again.");
+      Alert.alert(
+        "Address not verified",
+        "We could not verify this address right now. Check your connection and try again."
+      );
+      return null;
     } finally {
-      setLoadingLocation(false);
+      setResolvingVenue(false);
     }
-  }, [setField]);
+  }, [form]);
 
   const handleSelection = useCallback(
     (value: string) => {
@@ -919,6 +981,8 @@ export default function EventFormScreen({
           ...current,
           city: "",
           country: value,
+          latitude: "",
+          longitude: "",
           state: "",
         }));
         setSelectionKind(null);
@@ -929,6 +993,8 @@ export default function EventFormScreen({
         setForm((current) => ({
           ...current,
           city: "",
+          latitude: "",
+          longitude: "",
           state: value,
         }));
         setSelectionKind(null);
@@ -949,13 +1015,28 @@ export default function EventFormScreen({
     [selectionKind, setField]
   );
 
-  const handlePublishDraft = useCallback(() => {
+  const handlePublishDraft = useCallback(async () => {
     if (!draftId) {
       Alert.alert("Draft", "Save this draft first, then publish it.");
       return;
     }
 
-    const payload = toPayload(form, sanghaGroupId);
+    const initialValidation = validateCreateEventPayload(
+      toPayload(form, sanghaGroupId)
+    );
+
+    if (!initialValidation.isValid) {
+      Alert.alert("Event", getFirstValidationError(initialValidation));
+      return;
+    }
+
+    const resolvedForm = await resolveVenueCoordinates();
+
+    if (!resolvedForm) {
+      return;
+    }
+
+    const payload = toPayload(resolvedForm, sanghaGroupId);
     const validation = validateCreateEventPayload(payload);
 
     if (!validation.isValid) {
@@ -963,9 +1044,9 @@ export default function EventFormScreen({
       return;
     }
 
-    dispatch(updateEventDraftRequest(draftId, toDraftPayload(form)));
+    dispatch(updateEventDraftRequest(draftId, toDraftPayload(resolvedForm)));
     setDraftPublishQueued(draftId);
-  }, [dispatch, draftId, form, sanghaGroupId]);
+  }, [dispatch, draftId, form, resolveVenueCoordinates, sanghaGroupId]);
 
   const handleSaveDraft = useCallback(() => {
     if (!hasDraftContent(form)) {
@@ -993,8 +1074,23 @@ export default function EventFormScreen({
     }
   }, [dispatch, draftId, form]);
 
-  const handleSubmit = useCallback(() => {
-    const payload = toPayload(form, sanghaGroupId);
+  const handleSubmit = useCallback(async () => {
+    const initialValidation = validateCreateEventPayload(
+      toPayload(form, sanghaGroupId)
+    );
+
+    if (!initialValidation.isValid) {
+      Alert.alert("Event", getFirstValidationError(initialValidation));
+      return;
+    }
+
+    const resolvedForm = await resolveVenueCoordinates();
+
+    if (!resolvedForm) {
+      return;
+    }
+
+    const payload = toPayload(resolvedForm, sanghaGroupId);
 
     if (mode === "create") {
       const validation = validateCreateEventPayload(payload);
@@ -1029,7 +1125,7 @@ export default function EventFormScreen({
 
     setSubmitted(true);
     dispatch(updateEventRequest({...payload, id: eventId}));
-  }, [detail, dispatch, eventId, form, mode, sanghaGroupId]);
+  }, [detail, dispatch, eventId, form, mode, resolveVenueCoordinates, sanghaGroupId]);
 
   const handlePrimaryAction = useCallback(() => {
     if (autosaveTimer.current) {
@@ -1323,27 +1419,11 @@ export default function EventFormScreen({
           <PolishedInput
             multiline
             onChangeText={(value) => setField("address", value)}
-            placeholder="Full Address"
+            placeholder="Full address with area and landmark"
             placeholderTextColor="#9CA3AF"
             style={[styles.input, styles.smallArea]}
             value={form.address}
           />
-          <Pressable
-            disabled={loadingLocation}
-            onPress={handleUseCurrentLocation}
-            style={({pressed}) => [
-              styles.currentLocationButton,
-              pressed && styles.controlPressed,
-              loadingLocation && styles.disabled,
-            ]}
-          >
-            {loadingLocation ? (
-              <ActivityIndicator color="#C2410C" />
-            ) : (
-              <LocateFixed color="#C2410C" size={17} />
-            )}
-            <Text style={styles.currentLocationText}>Use My Current Location</Text>
-          </Pressable>
           <View style={styles.twoColumns}>
             <SelectButton label="Country" onPress={() => setSelectionKind("country")} value={form.country} />
             <SelectButton label="State" onPress={() => setSelectionKind("state")} value={form.state || "Choose State"} />
@@ -1415,10 +1495,13 @@ export default function EventFormScreen({
               draftSaving ||
               uploadingMedia ||
               publishingDraft ||
+              resolvingVenue ||
               Boolean(draftPublishQueued)
             }
             label={
-              mode === "create" &&
+              resolvingVenue
+                ? "Verifying Venue..."
+                : mode === "create" &&
               (submitSaving || publishingDraft || draftPublishQueued)
                 ? "Creating Event..."
                 : mode === "create"
@@ -1426,7 +1509,10 @@ export default function EventFormScreen({
                   : "Save Changes"
             }
             loading={Boolean(
-              submitSaving || publishingDraft || draftPublishQueued
+              submitSaving ||
+                publishingDraft ||
+                resolvingVenue ||
+                draftPublishQueued
             )}
             onPress={handlePrimaryAction}
           />
@@ -2117,23 +2203,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 14,
     top: 17,
-  },
-  currentLocationButton: {
-    alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    borderColor: "#FED7AA",
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "center",
-    marginBottom: 12,
-    minHeight: 48,
-  },
-  currentLocationText: {
-    color: "#9A3412",
-    fontSize: 14,
-    fontWeight: "800",
   },
   dashedButton: {
     alignItems: "center",
