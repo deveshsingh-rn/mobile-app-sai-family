@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.deveshrn.saifamily",
+      "bundleIdentifier": "com.vpilimited.saifamily",
+      "appleTeamId": "WD52FCQP6X",
       "infoPlist": {
         "NSSpeechRecognitionUsageDescription": "Allow Sai Family to recognize your speech for search.",
         "NSMicrophoneUsageDescription": "Allow Sai Family to use the microphone for voice search.",

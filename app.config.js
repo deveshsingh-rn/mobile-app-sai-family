@@ -6,17 +6,22 @@ const isMainDevelopmentVariant = APP_VARIANT === "main-development";
 const isDevelopmentBinary =
   isDevelopmentVariant || isMainDevelopmentVariant;
 
-const productionBundleId = "com.deveshrn.saifamily";
-const developmentBundleId = "com.deveshrn.saifamily.dev";
+const productionIosBundleId = "com.vpilimited.saifamily";
+const developmentIosBundleId = "com.deveshrn.saifamily.dev";
+const productionAndroidPackage = "com.deveshrn.saifamily";
+const developmentAndroidPackage = "com.deveshrn.saifamily.dev";
 const productionProjectId = "d751b428-eab5-47a0-8ed0-4782b79d0e40";
 const developmentProjectId = "9bac67f9-6593-4c9b-b54f-f9cec26f2dda";
 const productionOwner = "devesh-rn";
 const developmentOwner = "saifamilys-team";
 
 module.exports = ({ config }) => {
-  const bundleIdentifier = isDevelopmentVariant
-    ? developmentBundleId
-    : productionBundleId;
+  const iosBundleIdentifier = isDevelopmentVariant
+    ? developmentIosBundleId
+    : productionIosBundleId;
+  const androidPackage = isDevelopmentVariant
+    ? developmentAndroidPackage
+    : productionAndroidPackage;
   const owner = isDevelopmentVariant
     ? developmentOwner
     : productionOwner;
@@ -33,11 +38,11 @@ module.exports = ({ config }) => {
     owner,
     ios: {
       ...baseConfig.ios,
-      bundleIdentifier,
+      bundleIdentifier: iosBundleIdentifier,
     },
     android: {
       ...baseConfig.android,
-      package: bundleIdentifier,
+      package: androidPackage,
     },
     plugins: [
       ...(baseConfig.plugins || []),
