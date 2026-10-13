@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 import {
   ActionSheetIOS,
@@ -39,6 +39,7 @@ import {
 } from "expo-audio";
 
 import { useDispatch } from "react-redux";
+import { apiReportExperience, type ExperienceReportReason } from "@/services/experiences";
 
 import {
   toggleLikeRequest,
@@ -212,6 +213,7 @@ export function ExperienceCard({
   const router = useRouter();
 
   const dispatch = useDispatch();
+  const [isReporting, setIsReporting] = useState(false);
 
   const handleLike = () => {
     if (onLike) {
@@ -258,6 +260,83 @@ export function ExperienceCard({
     Boolean(currentUserId) &&
     currentUserId ===
       (item.authorId || item.author?.id);
+
+  const reportExperience = async (reason: ExperienceReportReason) => {
+    if (isReporting) return;
+    setIsReporting(true);
+    try {
+      const result = await apiReportExperience(item.id, reason);
+      Alert.alert(
+        "Report received",
+        result.alreadyReported
+          ? "You have already reported this post. Our team will review it."
+          : "Thank you. Our team will review this post."
+      );
+    } catch {
+      Alert.alert("Could not send report", "Please try again later.");
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
+  const showReportReasons = () => {
+    const reasons: { label: string; value: ExperienceReportReason }[] = [
+      { label: "Spam", value: "spam" },
+      { label: "Harassment", value: "harassment" },
+      { label: "Unsafe content", value: "unsafe_content" },
+      { label: "Other", value: "other" },
+    ];
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          cancelButtonIndex: reasons.length,
+          options: [...reasons.map((reason) => reason.label), "Cancel"],
+          title: "Why are you reporting this post?",
+        },
+        (index) => {
+          const reason = reasons[index];
+          if (reason) void reportExperience(reason.value);
+        }
+      );
+      return;
+    }
+
+    Alert.alert("Report experience", "Why are you reporting this post?", [
+      { text: "Spam", onPress: () => void reportExperience("spam") },
+      { text: "Abuse or unsafe", onPress: () => void reportExperience("unsafe_content") },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
+  const showCommunityActions = (event: GestureResponderEvent) => {
+    event.stopPropagation();
+    const authorId = item.authorId || item.author?.id;
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          cancelButtonIndex: 2,
+          options: ["View devotee", "Report experience", "Cancel"],
+          title: item.authorName || "Experience",
+        },
+        (index) => {
+          if (index === 0 && authorId) {
+            router.push({ pathname: "/sangha-profile", params: { id: authorId } });
+          } else if (index === 1) {
+            showReportReasons();
+          }
+        }
+      );
+      return;
+    }
+
+    Alert.alert(item.authorName || "Experience", undefined, [
+      { text: "View devotee", onPress: () => authorId && router.push({ pathname: "/sangha-profile", params: { id: authorId } }) },
+      { text: "Report experience", onPress: showReportReasons },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
 
   const confirmDelete = () => {
     Alert.alert(
@@ -402,11 +481,12 @@ export function ExperienceCard({
                 )}
               </View>
 
-              {isOwner ? (
+              {isOwner || currentUserId ? (
                 <Pressable
-                  accessibilityLabel="Manage your experience"
+                  accessibilityLabel={isOwner ? "Manage your experience" : "Experience options"}
                   hitSlop={8}
-                  onPress={showOwnerActions}
+                  onPress={isOwner ? showOwnerActions : showCommunityActions}
+                  disabled={isReporting}
                   style={({ pressed }) => [
                     styles.moreButton,
                     pressed && styles.actionPressed,

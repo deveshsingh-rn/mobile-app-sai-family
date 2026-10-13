@@ -2,6 +2,8 @@
 
 App: Sai ki Family (`com.vpilimited.saifamily`)
 
+Current iPhone QA candidate: iOS build 6, [EAS build details](https://expo.dev/accounts/devesh-rn/projects/sai-family/builds/42e7e569-bec9-4b9b-b60a-bb403666615e). Build finished; it has not been submitted for App Review. The backend changes described below are not deployed by an EAS mobile build.
+
 This is a draft for the App Store Connect Resolution Center reply and the App Review Information > Notes field. Do not send it until the release checklist below is complete and the bracketed fields are replaced. Do not put a personal Apple ID password in App Review Notes.
 
 ## Status reply you can send now
@@ -22,7 +24,7 @@ Thank you for reviewing Sai ki Family. Our operator is VPI Limited. We tested bu
 
 2. To use the app, open it and register or sign in. An Indian mobile number normally uses SMS OTP. For supported numbers outside India, the app provides the PIN flow shown on the sign-in screen. Verified email and a configured password provide another login option. After sign-in, use the bottom navigation to open Experiences, Events, Sai Family, and Naam Jaap. In Experiences, use Ask Sai for text or voice questions. Users can join groups and exchange messages after the required connection or group acceptance. No sample files or special hardware are required. We have provided a dedicated Indian demo mobile number and a review verification code in App Store Connect's Sign-In Information. This demo login is intended to work without receiving an SMS. [VERIFY THE REVIEW CODE ON THE PRODUCTION BACKEND BEFORE SENDING; DO NOT COMMIT THE CODE TO THIS FILE.]
 
-3. The recording demonstrates account registration, sign-in, account deletion, creation and viewing of user content, reporting content, blocking a user, and the main app features. The tested account deletion route is [EXACT IN-APP PATH]. A received Sangha chat message can be reported with a long press, and another devotee can be blocked from the devotee profile. The tested Experience post reporting route is [EXACT IN-APP PATH]. [THE DELETION AND EXPERIENCE REPORT ROUTES DO NOT EXIST IN THE INSPECTED BUILD. DO NOT SEND THIS ITEM UNTIL A NEW BUILD WITH THOSE ROUTES IS TESTED AND SUBMITTED.]
+3. The recording demonstrates account registration, sign-in, account deletion, creation and viewing of user content, reporting content, blocking a user, and the main app features. The tested account deletion route is Profile > Account access > Delete Account. A received Sangha chat message can be reported with a long press, and another devotee can be blocked from the devotee profile. The Experience post reporting route is post options > Report experience. [DO NOT SEND THIS ITEM UNTIL BACKEND DEPLOYMENT, EXTERNAL-MEDIA CLEANUP, AND PHYSICAL-DEVICE TESTING ARE COMPLETE.]
 
 4. Core external services include the Sai ki Family backend for accounts and community data; MSG91 for Indian SMS OTP when enabled; Azure infrastructure for data and media storage and Azure AI/Speech for Ask Sai text and speech recognition; ElevenLabs for generated voice replies; Mixpanel for product analytics; Expo/Apple push services for notifications; and YouTube/Google for video hosting where the video feature is used. These services are not direct in-app purchase processors. [CONFIRM ACTUAL PRODUCTION SERVICE CONFIGURATION BEFORE SENDING.]
 
@@ -57,8 +59,8 @@ Do not include personal chats, live OTPs, private account details, or unlicensed
 
 ## Release blockers to resolve before replying
 
-- Full account deletion cannot currently be initiated in the inspected mobile profile, and no matching backend endpoint was found in the inspected routes. Build and test this in the app and backend, then update the page text and recording.
-- The Experience feed/detail did not expose a report action in the inspected code. Apple requires a reporting mechanism for user-generated content, a way to block abusive users, moderation/filtering, and published contact information. Sangha chat report/profile block and directory reporting do exist, but do not cover every public feed path.
+- The candidate build now exposes Profile > Account access > Delete Account and Experience post options > Report experience. The matching backend routes (`DELETE /api/users/me` and `POST /api/experiences/:id/report`) are local changes only; deploy and test them against production before recording or submitting. The post menu also links to the devotee profile, where blocking is available.
+- Account deletion currently removes relational account data, tokens, OTP records, and owned content from PostgreSQL. Verify and implement cleanup of Azure-hosted uploads and any other external copies before describing it to Apple as complete deletion. Audit history is retained; confirm the privacy policy and retention basis. Do not use the deletion demo until this is settled.
 - Verify how objectionable content is filtered before publication and who handles reports. Do not claim automated filtering or a response deadline without production evidence.
 - Obtain rights evidence for the Satcharitra PDF/corpus and any other protected media used in the app or submitted screenshots. An online PDF link alone does not prove redistribution or AI-processing rights.
 - Confirm that the test account and verification code will work throughout review. A transient SMS OTP must not be described as a permanent reviewer password.

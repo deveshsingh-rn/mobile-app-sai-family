@@ -364,3 +364,22 @@ export async function apiDeleteExperience(
 
   return response.data;
 }
+
+export type ExperienceReportReason =
+  | "spam"
+  | "harassment"
+  | "unsafe_content"
+  | "other";
+
+export async function apiReportExperience(
+  id: string,
+  reason: ExperienceReportReason
+) {
+  const { data } = await apiClient.post<{
+    success: boolean;
+    reportId: string;
+    alreadyReported?: boolean;
+  }>(`/api/experiences/${id}/report`, { reason });
+
+  return data;
+}

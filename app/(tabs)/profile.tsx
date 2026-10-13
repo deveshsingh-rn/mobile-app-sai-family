@@ -12,6 +12,7 @@ import {
 import {
   Bell,
   ChevronRight,
+  Trash2,
   Languages,
   LogOut,
   Moon,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react-native";
 
 import { removeDevoteeAccountStorage } from "@/services/devotee-account";
+import { deleteMyAccount } from "@/services/auth";
 import {
   logoutRequest,
 } from "@/store/devotee-account/actions";
@@ -52,6 +54,7 @@ type SettingRowProps = {
 
 export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>("settings");
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const dispatch = useAppDispatch();
   const account = useAppSelector(selectDevoteeAccount);
   const accountAny = account as any;
@@ -113,6 +116,49 @@ export default function ProfileScreen() {
           },
           style: "destructive",
           text: "Log Out",
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    if (isDeletingAccount) return;
+
+    Alert.alert(
+      "Delete account?",
+      "Your profile and account content will be permanently removed. This cannot be undone.",
+      [
+        { text: "Keep account", style: "cancel" },
+        {
+          text: "Continue",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "Confirm permanent deletion",
+              "Delete your Sai Family account and sign out of this device?",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Delete account",
+                  style: "destructive",
+                  onPress: async () => {
+                    setIsDeletingAccount(true);
+                    try {
+                      await deleteMyAccount();
+                      await removeDevoteeAccountStorage();
+                      dispatch(logoutRequest());
+                    } catch (error) {
+                      Alert.alert(
+                        "Account not deleted",
+                        error instanceof Error ? error.message : "Please try again."
+                      );
+                    } finally {
+                      setIsDeletingAccount(false);
+                    }
+                  },
+                },
+              ]
+            ),
         },
       ]
     );
@@ -424,6 +470,14 @@ export default function ProfileScreen() {
             isDestructive
             onPress={handleLogout}
             title="Log Out"
+          />
+          <SettingRow
+            description={isDeletingAccount ? "Deleting your account..." : "Permanently delete your account and content."}
+            hideComingSoon
+            icon={<Trash2 size={21} color="#DC2626" />}
+            isDestructive
+            onPress={handleDeleteAccount}
+            title="Delete Account"
           />
          
         </View>

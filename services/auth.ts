@@ -143,6 +143,18 @@ export async function clearAuthSession() {
   await SecureStore.deleteItemAsync(AUTH_SESSION_STORAGE_KEY);
 }
 
+export async function deleteMyAccount(): Promise<void> {
+  try {
+    await apiClient.delete("/api/users/me", {
+      data: { confirmation: "DELETE" },
+    });
+  } catch (error) {
+    throw new Error(
+      getAuthErrorMessage(error, "Unable to delete your account. Please try again.")
+    );
+  }
+}
+
 export async function sendUserMobileOtp(mobileNumber: string) {
   try {
     const { data } = await apiClient.post(
