@@ -12,10 +12,10 @@ Use your phone's Settings to change Sai ki Family's microphone, photos, location
 
 ## Analytics
 
-We use Mixpanel to understand app usage. Analytics events can be associated with your account ID. Contact [SUPPORT EMAIL] if you have questions about analytics data associated with your account.
+We use Mixpanel to understand app usage. Analytics events can be associated with your account ID. Contact vikasahuja1971@gmail.com if you have questions about analytics data associated with your account.
 
 ## Access, correction, and deletion
 
-To ask about a copy of your information, corrections, or deletion, email [SUPPORT EMAIL] from the address linked to your account, or include your account ID and a safe way to verify ownership. Do not send your password or OTP. We will explain any information we must retain under applicable law.
+To ask about a copy of your information, corrections, or deletion, email vikasahuja1971@gmail.com from the address linked to your account, or include your account ID and a safe way to verify ownership. Do not send your password or OTP. We will explain any information we must retain under applicable law.
 
-Read our [Privacy Policy]([PRIVACY POLICY URL]) for details about data collection and service providers.
+Read our [Privacy Policy](https://vpilimited.com/PrivacyPolicy) for details about data collection and service providers.

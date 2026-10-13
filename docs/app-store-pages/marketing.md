@@ -16,6 +16,6 @@ Ask Sai offers AI-generated guidance in English and Hindi through text and voice
 
 Join Sai ki Family to share, connect, and serve with faith and compassion.
 
-Support: [SUPPORT URL]
+Support: https://vpilimited.com/support
 
-Privacy Policy: [PRIVACY POLICY URL]
+Privacy Policy: https://vpilimited.com/PrivacyPolicy

@@ -2,7 +2,7 @@
 
 Effective date: 13 October 2026
 
-Sai ki Family ("we", "us") is operated by [LEGAL OPERATOR NAME]. This policy explains how the Sai ki Family mobile app handles information. Contact us at [SUPPORT EMAIL] for privacy questions.
+Sai ki Family ("we", "us") is operated by VPI Limited. This policy explains how the Sai ki Family mobile app handles information. Contact us at vikasahuja1971@gmail.com for privacy questions.
 
 ## Information we collect
 
@@ -34,7 +34,7 @@ We use access controls and other reasonable security measures. No internet servi
 
 ## Your choices
 
-You can review certain profile details and remove eligible content in the app. You can change device permissions or notification settings. Contact [SUPPORT EMAIL] to ask about access, correction, or deletion of your information. We may verify your identity before acting on a request. See [USER PRIVACY CHOICES URL] for available controls.
+You can review certain profile details and remove eligible content in the app. You can change device permissions or notification settings. Contact vikasahuja1971@gmail.com to ask about access, correction, or deletion of your information. We may verify your identity before acting on a request. See [Your Privacy Choices](https://vpilimited.com/UserPrivacy) for available controls.
 
 ## Updates
 
@@ -42,7 +42,7 @@ We may update this policy as the app changes. We will post the updated date on t
 
 ## Contact
 
-[LEGAL OPERATOR NAME]
+VPI Limited
 
-[SUPPORT EMAIL]
+vikasahuja1971@gmail.com
 

@@ -1,6 +1,6 @@
 # Sai ki Family Support
 
-Need help with your account, Ask Sai, events, posts, groups, business listings, or notifications? Contact [SUPPORT EMAIL]. Include your app version, phone model, and a short description of the problem. Do not send your password, OTP, or sensitive Ask Sai conversation.
+Need help with your account, Ask Sai, events, posts, groups, business listings, or notifications? Contact vikasahuja1971@gmail.com. Include your app version, phone model, and a short description of the problem. Do not send your password, OTP, or sensitive Ask Sai conversation.
 
 ## Sign in
 
@@ -20,9 +20,9 @@ Enable the relevant permission in device settings if you want nearby results or 
 
 ## Privacy and account requests
 
-Read the [Privacy Policy]([PRIVACY POLICY URL]) and [Your Privacy Choices]([USER PRIVACY CHOICES URL]). Contact [SUPPORT EMAIL] for data questions.
+Read the [Privacy Policy](https://vpilimited.com/PrivacyPolicy) and [Your Privacy Choices](https://vpilimited.com/UserPrivacy). Contact vikasahuja1971@gmail.com for data questions.
 
 ## Contact
 
-Email: [SUPPORT EMAIL]
+Email: vikasahuja1971@gmail.com
 

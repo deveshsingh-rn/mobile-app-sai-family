@@ -7,9 +7,11 @@ Publish the four page files as separate, public HTTPS pages:
 3. `marketing.md` -> Marketing URL (optional).
 4. `support.md` -> Support URL (required for the version page).
 
-Replace all bracketed placeholders with real values and URLs before publishing.
-The legal operator name and support email must be verified by the account owner.
-Do not use a personal Apple login as the public support email by assumption.
+The supplied operator and support contact have been inserted into the page
+drafts. The account owner should confirm that VPI Limited is the correct legal
+operator and that vikasahuja1971@gmail.com is the intended public support
+address. The supplied URLs could not be verified by the browser fetch used in
+this audit; open all four over HTTPS on a device outside the developer network.
 
 Before App Review, verify the policy against the deployed backend, vendor
 agreements, retention and backup practices, and actual in-app controls.
