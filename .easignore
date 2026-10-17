@@ -1,0 +1,44 @@
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+.env
+.env*.local
+*.tsbuildinfo
+/ios/
+/android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+credentials.json
+devesh.html
+eventcalenderscreen.html
+eventcardoverview.html
+eventcreate.html
+eventoverviewmapbuttonui.html
+eventoverviewscreendesign.html
+myeventscreen.html
+
+# App Store screenshots and raw captures are uploaded separately, not bundled.
+/assets/upload-image/
+
+# Legacy images and icons with no runtime or Expo config references.
+/assets/icons/naam-jap-mala.svg
+/assets/images/hariom.jpg
+/assets/images/icon.png
+/assets/images/icons copy.png
+/assets/images/partial-react-logo.png
+/assets/images/react-logo.png
+/assets/images/react-logo@2x.png
+/assets/images/react-logo@3x.png
+/assets/images/sai-baba-background.jpeg
+/assets/images/saibaba.png
+/assets/images/splash-icon.png

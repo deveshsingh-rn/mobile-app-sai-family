@@ -563,6 +563,7 @@ export default function AskSaiScreen() {
     remove: () => void;
   } | null>(null);
   const voiceFinalTranscriptRef = useRef("");
+  const ignoreFallbackTranscriptRef = useRef(false);
   const voiceHadAudioChunksRef = useRef(false);
   const voiceLivePlaybackFailedRef = useRef(false);
   const waitingToneTimerRef = useRef<ReturnType<typeof setInterval> | null>(
@@ -1718,7 +1719,7 @@ export default function AskSaiScreen() {
           voiceFinalTranscriptRef.current = event.text;
           setVoiceFinalTranscript(event.text);
           setVoicePartialTranscript("");
-          setQuestion(event.text);
+          setQuestion("");
           setIsVoiceModalVisible(false);
           voiceModalOpenRef.current = false;
           startWaitingTone();
@@ -2016,7 +2017,7 @@ export default function AskSaiScreen() {
   const submitQuestion = useCallback(
     async (
       nextQuestion?: string,
-      options?: { speak?: boolean }
+      options?: { speak?: boolean; clearInput?: boolean }
     ) => {
       const questionToAsk = (nextQuestion || question).trim();
 
@@ -2028,7 +2029,7 @@ export default function AskSaiScreen() {
         return;
       }
 
-      setQuestion(questionToAsk);
+      setQuestion(options?.clearInput ? "" : questionToAsk);
 
       try {
         if (voiceSocketRef.current || activeVoiceTurnIdRef.current) closeVoiceSession();
@@ -2095,6 +2096,9 @@ export default function AskSaiScreen() {
           pillar: "experiences",
         });
       } catch (error) {
+        if (options?.clearInput) {
+          setQuestion((currentQuestion) => currentQuestion || questionToAsk);
+        }
         const message =
           error instanceof Error
             ? error.message
@@ -2150,7 +2154,7 @@ export default function AskSaiScreen() {
           }) => {
             const transcript = selectBestSpeechTranscript(event.results);
 
-            if (!transcript) {
+            if (!transcript || ignoreFallbackTranscriptRef.current) {
               return;
             }
 
@@ -2236,6 +2240,7 @@ export default function AskSaiScreen() {
         setVoicePartialTranscript("");
         setVoiceFinalTranscript("");
         voiceFinalTranscriptRef.current = "";
+        ignoreFallbackTranscriptRef.current = false;
         isMicCaptureReadyRef.current = false;
         setVoiceInputLevel(0);
         setIsListening(false);
@@ -2832,6 +2837,7 @@ export default function AskSaiScreen() {
     ).trim();
 
     if (fallbackQuestion.length >= 3) {
+      ignoreFallbackTranscriptRef.current = true;
       voiceModalOpenRef.current = false;
       setIsVoiceModalVisible(false);
       setIsListening(false);
@@ -2845,7 +2851,7 @@ export default function AskSaiScreen() {
       startWaitingTone();
       revealQuestionInput();
       try {
-        await submitQuestion(fallbackQuestion, { speak: false });
+        await submitQuestion(fallbackQuestion, { speak: false, clearInput: true });
       } finally {
         await stopWaitingTone();
       }
