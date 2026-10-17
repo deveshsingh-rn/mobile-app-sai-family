@@ -42,6 +42,8 @@ export type DevoteeAiSource = {
 };
 
 export type AskDevoteeQuestionResponse = {
+  promptVersion?: string;
+  answerCharacters?: number;
   answer: string;
   cached?: boolean;
   conversationId?: string;
@@ -227,6 +229,9 @@ export type DevoteeAiVoiceServerEvent =
       sources?: DevoteeAiSource[];
       turnId: string;
       type: "turn_complete";
+      promptVersion?: string;
+      model?: string | null;
+      answerCharacters?: number;
     }
   | {
       code?: string;

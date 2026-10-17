@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -10,16 +11,19 @@ import {
   Image,
   ImageBackground,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   Share,
   StyleSheet,
   Text,
   TextInput,
+  TurboModuleRegistry,
   View,
 } from "react-native";
 
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import {
   router,
   useLocalSearchParams,
@@ -100,7 +104,7 @@ import type {
   SaiEvent,
 } from "@/store/events/types";
 import { createEventShareMessage } from "@/utils/event-links";
-import { createEventGoogleMapsUrl } from "@/utils/event-location";
+import { createEventMapUrl, createEventLocationQuery, getEventMapCoordinate } from "@/utils/event-location";
 import {
   useAppDispatch,
   useAppSelector,
@@ -131,7 +135,7 @@ const getCityLine = (event: SaiEvent) =>
   [event.city, event.state, event.country].filter(Boolean).join(", ");
 
 const openEventMaps = (event: SaiEvent) => {
-  const mapsUrl = createEventGoogleMapsUrl(event);
+  const mapsUrl = createEventMapUrl(event);
 
   if (mapsUrl) {
     Linking.openURL(mapsUrl);
@@ -697,6 +701,7 @@ export default function EventDetailRoute() {
           <GuidelinesSection guidelines={detail.guidelines} />
         )}
         <LocationSection
+          key={detail.id}
           event={detail}
           location={location}
           address={detail.address}
@@ -1066,26 +1071,136 @@ function LocationSection({
   event: SaiEvent;
   location: string;
 }) {
+  const [mapComponents, setMapComponents] = useState<{
+    Map: typeof import("@maplibre/maplibre-react-native").Map;
+    Camera: typeof import("@maplibre/maplibre-react-native").Camera;
+    Marker: typeof import("@maplibre/maplibre-react-native").Marker;
+  } | null>(null);
+  const [mapLoadFailed, setMapLoadFailed] = useState(false);
+  const [geocodedCoordinate, setGeocodedCoordinate] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const { latitude, longitude } = event;
+  const storedCoordinate = useMemo(
+    () => getEventMapCoordinate({ latitude, longitude }),
+    [latitude, longitude]
+  );
+  const addressQuery = event.address?.trim()
+    ? createEventLocationQuery({ ...event, venueName: null })
+    : "";
+  const mapUrl = createEventMapUrl(event);
+  const hasNativeMap = Boolean(TurboModuleRegistry.get("MLRNMapViewModule"));
+
+  useEffect(() => {
+    if (!hasNativeMap) return;
+
+    let mounted = true;
+    void import("@maplibre/maplibre-react-native")
+      .then((module) => {
+        if (mounted) setMapComponents({ Map: module.Map, Camera: module.Camera, Marker: module.Marker });
+      })
+      .catch(() => {
+        if (mounted) setMapLoadFailed(true);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [hasNativeMap]);
+
+  useEffect(() => {
+    setGeocodedCoordinate(null);
+    if (storedCoordinate || !mapComponents || Platform.OS !== "ios" || !addressQuery) {
+      setIsGeocoding(false);
+      return;
+    }
+
+    let mounted = true;
+    setIsGeocoding(true);
+    void Location.geocodeAsync(addressQuery)
+      .then((results) => {
+        if (mounted) setGeocodedCoordinate(getEventMapCoordinate(results[0] ?? {}));
+      })
+      .catch(() => {
+        if (mounted) setGeocodedCoordinate(null);
+      })
+      .finally(() => {
+        if (mounted) setIsGeocoding(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [addressQuery, mapComponents, storedCoordinate]);
+
+  const coordinate = storedCoordinate || geocodedCoordinate;
+  const MapView = mapComponents?.Map;
+  const Camera = mapComponents?.Camera;
+  const Marker = mapComponents?.Marker;
+  const mapLoading = hasNativeMap && !mapLoadFailed && (!mapComponents || isGeocoding);
+
   return (
     <Section>
       <SectionTitle title="Location" />
-      <ImageBackground
-        imageStyle={styles.mapPreviewImage}
-        source={event.bannerUrl ? {uri: event.bannerUrl} : undefined}
+      <Pressable
+        accessibilityLabel={mapUrl ? `Open ${location} in Maps` : "Event location is not available"}
+        accessibilityRole="button"
+        disabled={!mapUrl}
+        onPress={() => openEventMaps(event)}
         style={styles.mapPreview}
       >
-        {event.bannerUrl ? <View style={styles.mapPreviewShade} /> : null}
-        {!event.bannerUrl ? <Map color="#9CA3AF" size={54} /> : null}
-        <View style={styles.mapPinBadge}>
-          <MapPin color="#FFFFFF" size={24} strokeWidth={2.5} />
-        </View>
-      </ImageBackground>
+        {MapView && Camera && Marker && coordinate && !mapLoadFailed ? (
+          <MapView
+            attribution={false}
+            compass={false}
+            doubleTapHoldZoom={false}
+            doubleTapZoom={false}
+            dragPan={false}
+            logo={false}
+            mapStyle="https://tiles.openfreemap.org/styles/liberty"
+            onDidFailLoadingMap={() => setMapLoadFailed(true)}
+            pointerEvents="none"
+            style={StyleSheet.absoluteFillObject}
+            touchPitch={false}
+            touchRotate={false}
+            touchZoom={false}
+          >
+            <Camera initialViewState={{ center: [coordinate.longitude, coordinate.latitude], zoom: 14 }} />
+            <Marker lngLat={[coordinate.longitude, coordinate.latitude]}>
+              <View style={styles.mapMarker}>
+                <MapPin color="#FFFFFF" size={18} strokeWidth={2.5} />
+              </View>
+            </Marker>
+          </MapView>
+        ) : (
+          <View style={styles.mapFallback}>
+            {mapLoading ? <ActivityIndicator color="#9A3412" /> : <Map color="#9A3412" size={34} />}
+            <Text style={styles.mapFallbackText}>
+              {mapLoading ? "Finding event location" : mapUrl ? "Open event location in Maps" : "Location pending"}
+            </Text>
+          </View>
+        )}
+        {coordinate && MapView && !mapLoadFailed ? (
+          <View style={styles.mapOpenBadge}>
+            <Navigation color="#7C2D12" size={15} />
+            <Text style={styles.mapOpenText}>View map</Text>
+          </View>
+        ) : null}
+        {coordinate && MapView && !mapLoadFailed ? (
+          <View pointerEvents="none" style={styles.mapAttribution}>
+            <Text style={styles.mapAttributionText}>OpenFreeMap © OpenMapTiles Data from OpenStreetMap</Text>
+          </View>
+        ) : null}
+      </Pressable>
       <Text style={styles.locationTitle}>{location}</Text>
       <Text style={styles.locationAddress}>{address || cityLine || "Address pending"}</Text>
       <View style={styles.twoButtons}>
         <Pressable
+          disabled={!mapUrl}
           onPress={() => openEventMaps(event)}
-          style={styles.primarySmallButton}
+          style={[styles.primarySmallButton, !mapUrl && styles.disabledMapButton]}
         >
           <Navigation color="#FFFFFF" size={16} />
           <Text style={styles.primarySmallText}>Open in Maps</Text>
@@ -2017,19 +2132,69 @@ const styles = StyleSheet.create({
   },
   mapPreview: {
     alignItems: "center",
-    backgroundColor: "#F6EFD9",
+    backgroundColor: "#F5F1E9",
     borderRadius: 16,
     height: 180,
     justifyContent: "center",
     overflow: "hidden",
   },
-  mapPreviewImage: {
-    borderRadius: 16,
-    resizeMode: "cover",
+  mapFallback: {
+    alignItems: "center",
+    gap: 8,
+    justifyContent: "center",
+    paddingHorizontal: 20,
   },
-  mapPreviewShade: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(28,25,23,0.2)",
+  mapFallbackText: {
+    color: "#7C2D12",
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  mapMarker: {
+    alignItems: "center",
+    backgroundColor: "#9A3412",
+    borderColor: "#FFFFFF",
+    borderRadius: 16,
+    borderWidth: 2,
+    height: 32,
+    justifyContent: "center",
+    width: 32,
+  },
+  mapAttribution: {
+    backgroundColor: "rgba(255,248,236,0.92)",
+    borderRadius: 3,
+    bottom: 8,
+    left: 8,
+    maxWidth: "65%",
+    paddingHorizontal: 5,
+    paddingVertical: 3,
+    position: "absolute",
+  },
+  mapAttributionText: {
+    color: "#4B4037",
+    fontSize: 10,
+  },
+  mapOpenBadge: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,248,236,0.96)",
+    borderColor: "#F1D9B5",
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    position: "absolute",
+    right: 10,
+    top: 10,
+  },
+  mapOpenText: {
+    color: "#7C2D12",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  disabledMapButton: {
+    opacity: 0.5,
   },
   organizerAvatar: {
     backgroundColor: "#FFF4E8",

@@ -47,6 +47,7 @@ module.exports = ({ config }) => {
     plugins: [
       ...(baseConfig.plugins || []),
       "expo-asset",
+      "@maplibre/maplibre-react-native",
     ],
     extra: {
       ...baseConfig.extra,

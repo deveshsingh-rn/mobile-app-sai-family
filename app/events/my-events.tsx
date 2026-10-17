@@ -65,7 +65,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
-import { createEventGoogleMapsUrl } from "@/utils/event-location";
+import { createEventMapUrl } from "@/utils/event-location";
 import { EventScreenHeader } from "@/components/events/EventScreenHeader";
 import { EventListSkeleton } from "@/components/events/EventSkeletons";
 
@@ -589,8 +589,8 @@ function UrgentAlert({
 }: {
   event: SaiEvent;
 }) {
-  const openDirections = () => {
-    const mapsUrl = createEventGoogleMapsUrl(event);
+  const openMap = () => {
+    const mapsUrl = createEventMapUrl(event);
 
     if (mapsUrl) {
       Linking.openURL(mapsUrl);
@@ -615,11 +615,11 @@ function UrgentAlert({
           </Text>
           <View style={styles.alertActions}>
             <Pressable
-              onPress={openDirections}
+              onPress={openMap}
               style={styles.alertPrimary}
             >
               <Navigation color="#2B1308" size={14} />
-              <Text style={styles.alertPrimaryText}>Get Directions</Text>
+              <Text style={styles.alertPrimaryText}>View map</Text>
             </Pressable>
             <Pressable
               onPress={() => router.push(`/events/${event.id}` as any)}
@@ -767,7 +767,7 @@ function MyEventCard({
                 return;
               }
 
-              const mapsUrl = createEventGoogleMapsUrl(event.source);
+              const mapsUrl = createEventMapUrl(event.source);
 
               if (mapsUrl) {
                 Linking.openURL(mapsUrl);

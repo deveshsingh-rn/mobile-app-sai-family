@@ -1825,6 +1825,14 @@ export default function AskSaiScreen() {
           break;
 
         case "turn_complete": {
+          console.log("[AskSaiReplyCheck]", {
+            flow: "voice",
+            promptVersion: event.promptVersion ?? "not-reported",
+            model: event.model ?? "not-reported",
+            backendCharacters: event.answerCharacters,
+            receivedCharacters: Array.from(voiceAnswerBufferRef.current).length,
+            sourceCount: event.sources?.length ?? 0,
+          });
           voiceTimingRef.current.turnCompletedAt = Date.now();
           logVoiceLatency("reply_received", event.turnId);
           completedVoiceTurnIdRef.current = event.turnId;
@@ -2052,6 +2060,15 @@ export default function AskSaiScreen() {
           voice: false,
         });
 
+        console.log("[AskSaiReplyCheck]", {
+          flow: "text",
+          promptVersion: response.promptVersion ?? "not-reported",
+          model: response.model ?? "not-reported",
+          backendCharacters: response.answerCharacters,
+          receivedCharacters: Array.from(response.answer).length,
+          cached: response.cached,
+          sourceCount: response.sources?.length ?? 0,
+        });
         const personalizedAnswer = personalizeSaiAnswer(
           response.answer,
           devoteeName
@@ -3333,6 +3350,9 @@ export default function AskSaiScreen() {
               >
                 <Text style={styles.answerText}>{answer}</Text>
               </ScrollView>
+              <Text style={styles.answerCharacterCount}>
+                {Array.from(answer).length} characters (including spaces)
+              </Text>
 
               {lastResponse?.sources?.length ? (
                 <View style={styles.sourceCard}>
@@ -4114,6 +4134,13 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
     lineHeight: 28,
+  },
+  answerCharacterCount: {
+    color: "#4B4037",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 8,
+    textAlign: "right",
   },
   answerScroll: {
     backgroundColor: "rgba(255,255,255,0.74)",

@@ -10,6 +10,27 @@ type EventLocationInput = {
 
 const cleanPart = (value?: string | null) => value?.trim() || "";
 
+export function getEventMapCoordinate(event: EventLocationInput) {
+  if (event.latitude == null || event.longitude == null) return null;
+
+  const latitude = Number(event.latitude);
+  const longitude = Number(event.longitude);
+
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    longitude < -180 ||
+    longitude > 180 ||
+    (latitude === 0 && longitude === 0)
+  ) {
+    return null;
+  }
+
+  return { latitude, longitude };
+}
+
 export function createEventLocationQuery(event: EventLocationInput) {
   const venueName = cleanPart(event.venueName);
   const address = cleanPart(event.address);
@@ -44,10 +65,16 @@ export function createEventLocationQuery(event: EventLocationInput) {
   return "";
 }
 
-export function createEventGoogleMapsUrl(event: EventLocationInput) {
+export function createEventMapUrl(event: EventLocationInput) {
+  const coordinate = getEventMapCoordinate(event);
+  if (coordinate) {
+    const { latitude, longitude } = coordinate;
+    return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`;
+  }
+
   const query = createEventLocationQuery(event);
 
   return query
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+    ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(query)}`
     : null;
 }
