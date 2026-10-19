@@ -4,6 +4,17 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "android-qa": {
+      "extends": "production",
+      "environment": "production",
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "android-store": {
+      "extends": "production",
+      "environment": "production",
+      "android": { "buildType": "app-bundle" }
+    },
     "development": {
       "developmentClient": true,
       "distribution": "internal",
@@ -36,6 +47,12 @@
     }
   },
   "submit": {
+    "android-internal": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    },
     "production": {
       "ios": {
         "ascAppId": "6821991729",

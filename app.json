@@ -33,7 +33,7 @@
         "android.permission.ACCESS_FINE_LOCATION"
       ],
       "predictiveBackGestureEnabled": false,
-      "package": "com.deveshrn.saifamily"
+      "package": "com.saikifamily.android"
     },
     "web": {
       "output": "static",
