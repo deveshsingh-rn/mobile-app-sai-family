@@ -19,6 +19,7 @@ yarn-error.*
 *.key
 *.mobileprovision
 credentials.json
+/saikifamily-*.json
 devesh.html
 eventcalenderscreen.html
 eventcardoverview.html
