@@ -482,15 +482,24 @@ export default function HomeScreen() {
                       <View style={styles.askSaiPromptList}>
                         <View style={styles.askSaiPromptRow}>
                           <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
-                          <Text style={styles.askSaiPrompt}>Ask Sai for Guidance</Text>
+                          <Text
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.7}
+                            numberOfLines={1}
+                            style={styles.askSaiPrompt}
+                          >
+                            Ask Sai for Guidance
+                          </Text>
                         </View>
                       </View>
                     </View>
-                    <View style={styles.askSaiMicButton}>
-                      <Mic2 color="#3A2108" size={26} strokeWidth={2.4} />
-                    </View>
-                    <View style={styles.askSaiMicButton}>
-                      <Type color="#3A2108" size={26} strokeWidth={2.4} />
+                    <View style={styles.askSaiActions}>
+                      <View style={styles.askSaiMicButton}>
+                        <Mic2 color="#3A2108" size={26} strokeWidth={2.4} />
+                      </View>
+                      <View style={styles.askSaiMicButton}>
+                        <Type color="#3A2108" size={26} strokeWidth={2.4} />
+                      </View>
                     </View>
                   </View>
                 </ImageBackground>
@@ -679,9 +688,10 @@ const styles = StyleSheet.create({
   },
 
   askSaiPromptRow: {
-    alignItems: "flex-start",
+    alignItems: "center",
     flexDirection: "row",
     gap: 6,
+    marginBottom: 15,
   },
 
   askSaiPromptBullet: {
@@ -700,6 +710,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     marginTop: 5,
+  },
+
+  askSaiActions: {
+    alignItems: "flex-end",
+    flexDirection: "row",
+    gap: 14,
   },
 
   askSaiMicButton: {
