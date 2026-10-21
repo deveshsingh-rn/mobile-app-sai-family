@@ -29,6 +29,16 @@ Configuration is prepared, not a certification of device functionality. No AAB h
 
 ## Personal Account Closed Test
 
+The existing closed track is `Closed testing - Alpha`. The uploaded app bundle is version `1.0.0`, versionCode `3`; it can be selected from the bundle library when creating the closed release. Successful EAS submission to the internal draft does not activate this closed track.
+
+Before sending the closed release for review, restore the public privacy-policy page. Google requires an active, publicly accessible policy URL; a down site may block review. Store listing currently references `https://saikifamily.com/privacy-policy/`. Do not claim that this URL is working until it has been checked from a public connection.
+
+Console sequence: Alpha > Countries / regions > choose tester countries > Save; Testers > create/select email list > add the testers' Google-account emails > Save; Releases > Create release > Add from library > versionCode 3 > enter release notes > Preview and resolve actual Console errors > send for review. Complete the dashboard's required app-content and store-listing tasks. After availability is confirmed, copy the Console's actual opt-in URL to testers. Never mark a draft or review-pending release as available.
+
+Suggested release notes: `Initial closed test of Sai ki Family. Please test account access, experiences, events, business listings, Sangha, Ask Sai and Naam Jap, and share feedback.`
+
+Tester instructions: open the opt-in URL using the same Google account included in the list, join the test, install from Google Play, exercise real features and remain opted in for at least 14 continuous days. A Play developer account is not required. If already enrolled in internal testing, leave that test before opting into closed testing. Adding an email alone does not count as a tester opt-in. Do not send invitations automatically without a request to contact the testers.
+
 For personal accounts created after 13 November 2023, Google requires at least 12 testers continuously opted into a closed test for the preceding 14 days before applying for production access. Internal testing and sideloaded APKs do not satisfy this requirement. The Play dashboard is the authority on eligibility; 14 days is not automatic production approval.
 
 Recruit 15-20 genuine testers as a practical buffer, not a Google requirement. Each uses their eligible Google account to opt in and installs through Play. Ask them to remain opted in and exercise real workflows. Do not fabricate feedback or use fake accounts. Record feedback and fixes; after eligibility is reached, apply for production access with honest answers about engagement, issues, fixes and readiness.

@@ -13,8 +13,9 @@ type CreateDevoteeAccountResponse = {
 };
 
 function getApiErrorMessage(error: unknown) {
-  if (axios.isAxiosError<CreateDevoteeAccountResponse>(error)) {
-    return error.response?.data?.message || error.message || "Unable to create devotee account.";
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { message?: string; error?: { message?: string } } | undefined;
+    return data?.error?.message || data?.message || error.message || "Unable to create devotee account.";
   }
 
   return error instanceof Error ? error.message : "Unable to create devotee account.";
