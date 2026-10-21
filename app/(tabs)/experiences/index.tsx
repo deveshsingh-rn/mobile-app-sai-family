@@ -482,14 +482,14 @@ export default function HomeScreen() {
                       <View style={styles.askSaiPromptList}>
                         <View style={styles.askSaiPromptRow}>
                           <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
-                          <Text style={styles.askSaiPrompt}>Speak or Write</Text>
+                          <Text style={styles.askSaiPrompt}>Ask Sai for Guidance</Text>
                         </View>
-                        <View style={styles.askSaiPromptRow}>
+                        {/* <View style={styles.askSaiPromptRow}>
                           <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
                           <Text style={styles.askSaiPrompt}>
                             Ask Guidance from Shri Sai Satcharitra
                           </Text>
-                        </View>
+                        </View> */}
                       </View>
                     </View>
                     <View style={styles.askSaiMicButton}>

@@ -3089,14 +3089,14 @@ export default function AskSaiScreen() {
                 >
                   <View style={styles.heroPromptRow}>
                     <Text aria-hidden style={styles.heroPromptBullet}>•</Text>
-                    <Text style={styles.heroImageSubtitle}>Speak or Write</Text>
+                    <Text style={styles.heroImageSubtitle}>Ask Sai for Guidance</Text>
                   </View>
-                  <View style={styles.heroPromptRow}>
+                  {/* <View style={styles.heroPromptRow}>
                     <Text aria-hidden style={styles.heroPromptBullet}>•</Text>
                     <Text style={styles.heroImageSubtitle}>
                       Ask Guidance from Shri Sai Satcharitra
                     </Text>
-                  </View>
+                  </View> */}
                 </View>
               </View>
             </ImageBackground>
@@ -3122,7 +3122,7 @@ export default function AskSaiScreen() {
           >
             <View style={styles.questionHeader}>
               <View style={styles.languageTitleCopy}>
-                <Text style={{ fontFamily: 'CustomFont-Bold', fontSize: 12, color: EXPERIENCE_THEME.heading,  marginTop: 6, fontWeight: '700'}} >
+                <Text style={{ fontFamily: 'CustomFont-Bold', fontSize: 14, color: EXPERIENCE_THEME.heading,  marginTop: 2, fontWeight: '700'}} >
                   * {" "}
                 </Text>
                 <Text style={styles.languageSubtitle}>
@@ -3500,7 +3500,7 @@ export default function AskSaiScreen() {
             ))}
           </View>
           <View style={styles.heroPanel}>
-            <Text style={{ fontFamily: 'CustomFont-Bold', fontSize: 12, color: EXPERIENCE_THEME.heading, marginBottom: 4, fontWeight: '700' }}>
+            <Text style={{ fontFamily: 'CustomFont-Bold', fontSize: 14, color: EXPERIENCE_THEME.heading, marginBottom: 4, fontWeight: '700' }}>
               *  {" "}
             </Text>
             <Text style={styles.heroText}>
@@ -3681,9 +3681,9 @@ const styles = StyleSheet.create({
   },
   heroText: {
     color: EXPERIENCE_THEME.heading,
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: "600",
-    lineHeight: 16,
+    lineHeight: 19,
   },
   authCard: {
     backgroundColor: "#FEF2F2",
@@ -3790,9 +3790,9 @@ const styles = StyleSheet.create({
   },
   languageSubtitle: {
     color: EXPERIENCE_THEME.heading,
-    fontSize: 10,
-    fontWeight: "500",
-    lineHeight: 17,
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 15,
     marginTop: 2,
     width: "80%",
   },
