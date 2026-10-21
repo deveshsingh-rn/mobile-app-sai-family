@@ -484,12 +484,6 @@ export default function HomeScreen() {
                           <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
                           <Text style={styles.askSaiPrompt}>Ask Sai for Guidance</Text>
                         </View>
-                        {/* <View style={styles.askSaiPromptRow}>
-                          <Text aria-hidden style={styles.askSaiPromptBullet}>•</Text>
-                          <Text style={styles.askSaiPrompt}>
-                            Ask Guidance from Shri Sai Satcharitra
-                          </Text>
-                        </View> */}
                       </View>
                     </View>
                     <View style={styles.askSaiMicButton}>
@@ -671,9 +665,10 @@ const styles = StyleSheet.create({
   askSaiPrompt: {
     color: "#FFF7E1",
     flexShrink: 1,
-    fontSize: 17,
-    fontWeight: "700",
-    lineHeight: 19,
+    fontSize: 23,
+    fontFamily: 'CustomFont-Bold',
+    fontWeight: "900",
+    lineHeight: 25,
     textShadowColor: "rgba(0, 0, 0, 0.32)",
     textShadowOffset: { height: 1, width: 0 },
     textShadowRadius: 5,
@@ -691,9 +686,10 @@ const styles = StyleSheet.create({
 
   askSaiPromptBullet: {
     color: "#FFE2A0",
-    fontSize: 17,
+    fontSize: 23,
+    fontFamily: 'CustomFont-Bold',
     fontWeight: "900",
-    lineHeight: 19,
+    lineHeight: 25,
     textShadowColor: "rgba(0, 0, 0, 0.32)",
     textShadowOffset: { height: 1, width: 0 },
     textShadowRadius: 5,

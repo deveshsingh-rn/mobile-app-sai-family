@@ -3577,7 +3577,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.96 }],
   },
   heroImageCopy: {
-    maxWidth: "66%",
+    maxWidth: "90%",
     position: "relative",
     zIndex: 1,
   },
@@ -3603,9 +3603,9 @@ const styles = StyleSheet.create({
   },
   heroImageSubtitle: {
     color: "#FFF7E1",
-    fontSize: 17,
-    fontWeight: "700",
-    lineHeight: 19,
+    fontSize: 23,
+    fontWeight: "900",
+    lineHeight: 25,
     flexShrink: 1,
     textShadowColor: "rgba(0,0,0,0.34)",
     textShadowOffset: { height: 1, width: 0 },
@@ -3619,12 +3619,15 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     flexDirection: "row",
     gap: 6,
+    
+    marginBottom: 10
   },
   heroPromptBullet: {
     color: "#FFE2A0",
-    fontSize: 17,
+    fontSize: 30,
+    fontFamily: 'CustomFont-Bold',
     fontWeight: "900",
-    lineHeight: 19,
+    lineHeight: 25,
     textShadowColor: "rgba(0,0,0,0.34)",
     textShadowOffset: { height: 1, width: 0 },
     textShadowRadius: 5,
