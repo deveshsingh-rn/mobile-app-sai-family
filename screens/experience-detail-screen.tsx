@@ -3,10 +3,12 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 
 import {
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   type LayoutChangeEvent,
   Platform,
@@ -56,6 +58,7 @@ export default function ExperienceDetailScreen() {
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList>(null);
   const commentsOffsetRef = useRef(0);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const { id } = useLocalSearchParams<{
     id?: string;
   }>();
@@ -113,6 +116,25 @@ export default function ExperienceDetailScreen() {
       );
     }
   }, [dispatch, experienceId]);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSubscription = Keyboard.addListener(showEvent, () =>
+      setKeyboardVisible(true)
+    );
+    const hideSubscription = Keyboard.addListener(hideEvent, () =>
+      setKeyboardVisible(false)
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const handleComment = useCallback(
     (text: string) => {
@@ -303,7 +325,11 @@ export default function ExperienceDetailScreen() {
       <View
         style={[
           styles.commentBar,
-          { paddingBottom: Math.max(insets.bottom, 8) },
+          {
+            paddingBottom: keyboardVisible
+              ? 8
+              : 76 + Math.max(insets.bottom, 8),
+          },
         ]}
       >
         <CommentInput
