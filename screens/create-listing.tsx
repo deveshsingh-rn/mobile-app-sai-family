@@ -195,6 +195,7 @@ const CreateListingScreen = () => {
   const [businessName, setBusinessName] = useState('');
   const [tagline, setTagline] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [customCategoryName, setCustomCategoryName] = useState('');
   const [description, setDescription] = useState('');
   const [experience, setExperience] = useState('');
   const [homeService, setHomeService] = useState(true);
@@ -291,6 +292,7 @@ const CreateListingScreen = () => {
     setBusinessName(detail.businessName || '');
     setTagline(detail.tagline || '');
     setSelectedCategoryId(detail.categoryId || '');
+    setCustomCategoryName(detail.requestedCategoryName || '');
     setDescription(detail.description || '');
     setExperience(
       detail.yearsOfExperience
@@ -330,6 +332,9 @@ const CreateListingScreen = () => {
       null,
     [categories, selectedCategoryId]
   );
+  const isOtherCategory = Boolean(
+    selectedCategory?.isOther || selectedCategory?.slug === 'other'
+  );
 
   const countryOptions = useMemo(() => Country.getAllCountries(), []);
   const selectedCountryOption = useMemo(
@@ -362,24 +367,23 @@ const CreateListingScreen = () => {
   );
 
   const filteredCategories = useMemo(() => {
+    const other = categories.find(
+      (item) => item.isOther || item.slug === 'other'
+    );
+    const rest = categories.filter((item) => item.id !== other?.id);
     const query = categorySearch.trim().toLowerCase();
+    const matched = query
+      ? rest.filter((item) => {
+          const searchableText = [item.name, item.slug, item.description]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
 
-    if (!query) {
-      return categories;
-    }
+          return searchableText.includes(query);
+        })
+      : rest;
 
-    return categories.filter((item) => {
-      const searchableText = [
-        item.name,
-        item.slug,
-        item.description,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-
-      return searchableText.includes(query);
-    });
+    return other ? [...matched, other] : matched;
   }, [categories, categorySearch]);
 
   const toPayload = useCallback(
@@ -399,6 +403,9 @@ const CreateListingScreen = () => {
         address: address.trim(),
         businessName: businessName.trim(),
         categoryId: selectedCategoryId,
+        ...(isOtherCategory && customCategoryName.trim()
+          ? { requestedCategoryName: customCategoryName.trim() }
+          : {}),
         city: city.trim(),
         communityRecommendationEnabled: true,
         country: trimOrUndefined(country) || 'India',
@@ -449,6 +456,8 @@ const CreateListingScreen = () => {
       businessName,
       city,
       country,
+      customCategoryName,
+      isOtherCategory,
       description,
       email,
       experience,
@@ -483,6 +492,13 @@ const CreateListingScreen = () => {
 
       if (!payload.categoryId) {
         nextErrors.categoryId = 'Please select a category.';
+      } else if (isOtherCategory) {
+        const requestedName = customCategoryName.trim();
+
+        if (requestedName.length < 2 || requestedName.length > 80) {
+          nextErrors.categoryId =
+            'Enter a category name, 2 to 80 characters.';
+        }
       }
 
       if (!payload.description || payload.description.length < 3) {
@@ -920,7 +936,8 @@ const CreateListingScreen = () => {
     value: string,
     setValue: (value: string) => void,
     field: string,
-    multiline = false
+    multiline = false,
+    autoFocus = false
   ) => (
     <View
       ref={(node) => {
@@ -973,6 +990,7 @@ const CreateListingScreen = () => {
               ? 'number-pad'
               : 'default'
           }
+          autoFocus={autoFocus}
           maxLength={
             field === 'businessName'
               ? 120
@@ -980,6 +998,8 @@ const CreateListingScreen = () => {
               ? 160
               : field === 'description'
               ? 3000
+              : field === 'categoryId'
+              ? 80
               : undefined
           }
           onBlur={() => {
@@ -1076,7 +1096,7 @@ const CreateListingScreen = () => {
   const renderCategoryPickerModal = () => (
     <Modal
       visible={categoryPickerOpen}
-      transparent
+      presentationStyle="formSheet"
       animationType="slide"
       onRequestClose={() => setCategoryPickerOpen(false)}>
       <KeyboardAvoidingView
@@ -1260,7 +1280,14 @@ const CreateListingScreen = () => {
                   key={item.id}
                   activeOpacity={0.86}
                   onPress={() => {
+                    const choosingOther = Boolean(
+                      item.isOther || item.slug === 'other'
+                    );
+
                     setSelectedCategoryId(item.id);
+                    if (!choosingOther) {
+                      setCustomCategoryName('');
+                    }
                     setCategoryPickerOpen(false);
                     setCategorySearch('');
                     setValidationErrors((current) => {
@@ -1599,10 +1626,12 @@ const CreateListingScreen = () => {
                 fontSize: 16,
                 fontWeight: '900',
               }}>
-              {selectedCategory?.name ||
-                (categoriesLoading
-                  ? 'Loading categories'
-                  : 'Select business category')}
+              {isOtherCategory
+                ? 'Other'
+                : selectedCategory?.name ||
+                  (categoriesLoading
+                    ? 'Loading categories'
+                    : 'Select business category')}
             </Text>
             <Text
               numberOfLines={1}
@@ -1612,8 +1641,11 @@ const CreateListingScreen = () => {
                 fontWeight: '600',
                 marginTop: 4,
               }}>
-              {selectedCategory?.description ||
-                'This controls where your listing appears'}
+              {isOtherCategory
+                ? customCategoryName.trim() ||
+                  'Type your category name'
+                : selectedCategory?.description ||
+                  'This controls where your listing appears'}
             </Text>
           </View>
 
@@ -1623,7 +1655,17 @@ const CreateListingScreen = () => {
             color="#9CA3AF"
           />
         </TouchableOpacity>
-        {renderError('categoryId')}
+        {isOtherCategory
+          ? renderInput(
+              'YOUR CATEGORY',
+              'e.g. Astrology',
+              customCategoryName,
+              setCustomCategoryName,
+              'categoryId',
+              false,
+              true
+            )
+          : renderError('categoryId')}
         {!categories.length ? (
           <Text
             style={{
@@ -1802,7 +1844,7 @@ const CreateListingScreen = () => {
     <>
       {renderSectionHeading(
         <Ionicons name="images-outline" size={22} color={theme.accent} />,
-        'Photo',
+        'Business Logo (Optional)',
       )}
 
       <View
@@ -1954,7 +1996,12 @@ const CreateListingScreen = () => {
             paddingHorizontal: 14,
           }}>
           {renderReviewRow('Business', payload.businessName)}
-          {renderReviewRow('Category', selectedCategory?.name)}
+          {renderReviewRow(
+            'Category',
+            isOtherCategory
+              ? customCategoryName.trim() || 'Other'
+              : selectedCategory?.name
+          )}
           {renderReviewRow('Description', payload.description)}
           {renderReviewRow('Mobile', payload.phoneNumber)}
           {renderReviewRow('Email', payload.email)}

@@ -39,7 +39,17 @@ export function validateDirectoryListingPayload(
       "Business name must be 2 to 120 characters.";
   }
 
-  if (!payload.categoryId?.trim()) {
+  const requestedCategoryName = payload.requestedCategoryName?.trim();
+
+  if (requestedCategoryName) {
+    if (
+      requestedCategoryName.length < 2 ||
+      requestedCategoryName.length > 80
+    ) {
+      errors.categoryId =
+        "Category name must be 2 to 80 characters.";
+    }
+  } else if (!payload.categoryId?.trim()) {
     errors.categoryId = "Please select a category.";
   }
 

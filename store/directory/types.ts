@@ -15,6 +15,7 @@ export type DirectoryCategory = {
   iconFamily?: string | null;
   id: string;
   isActive?: boolean;
+  isOther?: boolean;
   listingCount?: number;
   name: string;
   slug: string;
@@ -100,6 +101,7 @@ export type DirectoryListing = {
   publishedAt?: string | null;
   recommendationCount?: number;
   recommendedByMe?: boolean;
+  requestedCategoryName?: string | null;
   responseTimeLabel?: string | null;
   reviewCount?: number;
   serviceAreas?: string[];
@@ -231,6 +233,7 @@ export type DirectoryCreateListingPayload = {
   businessName: string;
   categoryId: string;
   city: string;
+  requestedCategoryName?: string | null;
   communityRecommendationEnabled?: boolean;
   country?: string;
   description: string;
