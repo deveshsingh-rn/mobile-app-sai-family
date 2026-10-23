@@ -53,9 +53,9 @@ export function validateDirectoryListingPayload(
 
   if (!payload.description?.trim()) {
     errors.description = "Description is required.";
-  } else if (payload.description.trim().length < 20) {
+  } else if (payload.description.trim().length < 3) {
     errors.description =
-      "Description must be at least 20 characters.";
+      "Description must be at least 3 characters.";
   } else if (payload.description.trim().length > 3000) {
     errors.description =
       "Description can be up to 3000 characters.";
@@ -100,9 +100,8 @@ export function validateDirectoryListingPayload(
       "Enter a valid website URL including https://.";
   }
 
-  if (!payload.address?.trim() || payload.address.trim().length < 5) {
-    errors.address =
-      "Address must be at least 5 characters.";
+  if (!payload.address?.trim()) {
+    errors.address = "Address is required.";
   } else if (payload.address.trim().length > 500) {
     errors.address =
       "Address can be up to 500 characters.";

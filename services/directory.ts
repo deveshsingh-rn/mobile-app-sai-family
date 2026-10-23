@@ -415,13 +415,16 @@ export async function apiUploadDirectoryMedia(
   payload: DirectoryUploadMediaPayload
 ): Promise<DirectoryUploadMediaResult> {
   const formData = new FormData();
-  const files = payload.files || [];
+  const files = [
+    ...(payload.file ? [payload.file] : []),
+    ...(payload.files || []),
+  ];
 
-  if (payload.file) {
-    formData.append("file", payload.file as any);
+  if (files[0]) {
+    formData.append("file", files[0] as any);
   }
 
-  files.forEach((file) => {
+  files.slice(1).forEach((file) => {
     formData.append("files", file as any);
   });
 
@@ -429,12 +432,7 @@ export async function apiUploadDirectoryMedia(
 
   const { data } = await apiClient.post(
     "/api/media/upload",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
+    formData
   );
 
   return data;

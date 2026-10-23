@@ -485,9 +485,9 @@ const CreateListingScreen = () => {
         nextErrors.categoryId = 'Please select a category.';
       }
 
-      if (!payload.description || payload.description.length < 20) {
+      if (!payload.description || payload.description.length < 3) {
         nextErrors.description =
-          'Description must be at least 20 characters.';
+          'Description must be at least 3 characters.';
       } else if (payload.description.length > 3000) {
         nextErrors.description =
           'Description can be up to 3000 characters.';
@@ -516,8 +516,8 @@ const CreateListingScreen = () => {
         nextErrors.pincode = 'Pincode must be 4 to 10 digits.';
       }
 
-      if (!address.trim() || address.trim().length < 5) {
-        nextErrors.address = 'Enter a street address of at least 5 characters.';
+      if (!address.trim()) {
+        nextErrors.address = 'Address is required.';
       } else if (address.trim().length > 500) {
         nextErrors.address = 'Address can be up to 500 characters.';
       }
@@ -662,11 +662,11 @@ const CreateListingScreen = () => {
 
     expectsUploadRef.current = false;
 
+    const [logoUrl, ...galleryUrls] = urls;
     const mediaPayload = {
       ...pendingSubmitPayload,
-      bannerUrl: urls[0],
-      galleryUrls: urls,
-      logoUrl: urls[0],
+      logoUrl,
+      ...(galleryUrls.length ? { galleryUrls } : {}),
     };
 
     if (isEditMode && listingId) {
@@ -1031,41 +1031,44 @@ const CreateListingScreen = () => {
         borderTopColor: theme.border,
         borderTopWidth: 1,
         flexDirection: 'row',
-        marginTop: 30,
-        paddingTop: 24,
+        marginTop: 22,
+        paddingTop: 18,
       }}>
       <View
         style={{
           alignItems: 'center',
           backgroundColor: '#FFF4E8',
           borderColor: theme.border,
-          borderRadius: 18,
+          borderRadius: 14,
           borderWidth: 1,
-          height: 44,
+          height: 40,
           justifyContent: 'center',
-          width: 44,
+          width: 40,
         }}>
         {icon}
       </View>
-      <View style={{ flex: 1, marginLeft: 12 }}>
+      <View style={{ flex: 1, justifyContent: 'center', marginLeft: 12 }}>
         <Text
           style={{
             color: theme.text,
-            fontSize: 18,
+            fontSize: 17,
             fontWeight: '900',
+            letterSpacing: -0.2,
           }}>
           {title}
         </Text>
-        <Text
-          style={{
-            color: theme.muted,
-            fontSize: 13,
-            fontWeight: '600',
-            lineHeight: 19,
-            marginTop: 3,
-          }}>
-          {subtitle}
-        </Text>
+        {subtitle ? (
+          <Text
+            style={{
+              color: theme.muted,
+              fontSize: 13,
+              fontWeight: '600',
+              lineHeight: 19,
+              marginTop: 3,
+            }}>
+            {subtitle}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -1807,7 +1810,7 @@ const CreateListingScreen = () => {
           flexDirection: 'row',
           flexWrap: 'wrap',
           justifyContent: 'space-between',
-          marginTop: 26,
+          marginTop: 16,
         }}>
         {Array.from({ length: Math.min(10, images.length + 1) }).map((_, index) => {
           const image = images[index];
