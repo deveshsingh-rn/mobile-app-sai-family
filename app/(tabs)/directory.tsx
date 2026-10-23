@@ -1094,7 +1094,7 @@ export default function DirectoryScreen() {
             <EmptySection message="No directory categories are available yet." />
           ) : null}
 
-          <View
+          {/* <View
             style={{
               alignItems: 'center',
               flexDirection: 'row',
@@ -1145,9 +1145,9 @@ export default function DirectoryScreen() {
                 See all
               </Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
 
-          {featuredListings.length ? (
+          {/* {featuredListings.length ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -1164,7 +1164,7 @@ export default function DirectoryScreen() {
             </ScrollView>
           ) : !loading ? (
             <EmptySection message="Featured businesses will appear here after listings are approved." />
-          ) : null}
+          ) : null} */}
 
 
           <View

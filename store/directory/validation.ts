@@ -104,21 +104,26 @@ export function validateDirectoryListingPayload(
       "Enter a valid website URL including https://.";
   }
 
-  if (!payload.address?.trim()) {
-    errors.address = "Address is required.";
-  } else if (payload.address.trim().length < 5) {
+  if (
+    payload.address?.trim() &&
+    payload.address.trim().length < 5
+  ) {
     errors.address =
       "Address must be at least 5 characters.";
-  } else if (payload.address.trim().length > 500) {
+  } else if (
+    payload.address &&
+    payload.address.trim().length > 500
+  ) {
     errors.address =
       "Address can be up to 500 characters.";
   }
 
-  if (!payload.city?.trim()) {
-    errors.city = "City is required.";
-  } else if (payload.city.trim().length < 2) {
+  if (
+    payload.city?.trim() &&
+    payload.city.trim().length < 2
+  ) {
     errors.city = "City must be at least 2 characters.";
-  } else if (payload.city.trim().length > 100) {
+  } else if (payload.city && payload.city.trim().length > 100) {
     errors.city = "City can be up to 100 characters.";
   }
 

@@ -23,17 +23,16 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
-import * as Location from 'expo-location';
 import {
   Ionicons,
   MaterialCommunityIcons,
-  Feather,
 } from '@expo/vector-icons';
 import {
   router,
   useLocalSearchParams,
 } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { City, Country, State } from 'country-state-city';
 
 import {
   createDirectoryListingRequest,
@@ -55,9 +54,8 @@ import type {
   DirectoryUploadMediaPayload,
 } from '@/store/directory/types';
 import { validateDirectoryListingPayload } from '@/store/directory/validation';
-import { requestLocationPermissionWithSettingsFallback } from '@/services/location-permissions';
 
-const steps = ['Business', 'Contact', 'Review'];
+const steps = ['Details', 'Preview'];
 
 const theme = {
   accent: '#7C2D12',
@@ -174,6 +172,9 @@ const optimizeDirectoryImage = async (
 const CreateListingScreen = () => {
   const dispatch = useAppDispatch();
   const formScrollRef = useRef<ScrollView>(null);
+  const fieldRefs = useRef<Record<string, View | null>>({});
+  const focusedFieldRef = useRef<string | null>(null);
+  const scrollOffsetRef = useRef(0);
   const { id } = useLocalSearchParams<{
     id?: string;
   }>();
@@ -213,7 +214,10 @@ const CreateListingScreen = () => {
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
-  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [locationPicker, setLocationPicker] = useState<
+    'country' | 'state' | 'city' | null
+  >(null);
+  const [locationSearch, setLocationSearch] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [pendingSubmitPayload, setPendingSubmitPayload] =
     useState<DirectoryCreateListingPayload | null>(null);
@@ -222,9 +226,51 @@ const CreateListingScreen = () => {
   const [hydratedListingId, setHydratedListingId] =
     useState<string | null>(null);
 
+  const revealFocusedField = useCallback((field: string) => {
+    const node = fieldRefs.current[field];
+    const scroll = formScrollRef.current;
+
+    if (!node || !scroll) {
+      return;
+    }
+
+    node.measureInWindow((_x, fieldY) => {
+      (
+        scroll as unknown as {
+          measureInWindow: (
+            callback: (x: number, y: number, width: number, height: number) => void
+          ) => void;
+        }
+      ).measureInWindow((_scrollX, scrollY) => {
+        const delta = fieldY - scrollY - 12;
+
+        if (Math.abs(delta) < 8) {
+          return;
+        }
+
+        scroll.scrollTo({
+          animated: true,
+          y: Math.max(0, scrollOffsetRef.current + delta),
+        });
+      });
+    });
+  }, []);
+
   useEffect(() => {
     dispatch(fetchDirectoryCategoriesRequest({ includeCounts: true }));
   }, [dispatch]);
+
+  useEffect(() => {
+    const subscription = Keyboard.addListener('keyboardDidShow', () => {
+      const field = focusedFieldRef.current;
+
+      if (field) {
+        revealFocusedField(field);
+      }
+    });
+
+    return () => subscription.remove();
+  }, [revealFocusedField]);
 
   useEffect(() => {
     if (listingId) {
@@ -298,6 +344,36 @@ const CreateListingScreen = () => {
       categories.find((item) => item.id === selectedCategoryId) ||
       null,
     [categories, selectedCategoryId]
+  );
+
+  const countryOptions = useMemo(() => Country.getAllCountries(), []);
+  const selectedCountryOption = useMemo(
+    () =>
+      countryOptions.find((item) => item.name === country) ||
+      countryOptions.find((item) => item.isoCode === 'IN') ||
+      null,
+    [country, countryOptions]
+  );
+  const stateOptions = useMemo(
+    () =>
+      selectedCountryOption
+        ? State.getStatesOfCountry(selectedCountryOption.isoCode)
+        : [],
+    [selectedCountryOption]
+  );
+  const selectedStateOption = useMemo(
+    () => stateOptions.find((item) => item.name === stateName) || null,
+    [stateName, stateOptions]
+  );
+  const cityOptions = useMemo(
+    () =>
+      selectedCountryOption && selectedStateOption
+        ? City.getCitiesOfState(
+            selectedCountryOption.isoCode,
+            selectedStateOption.isoCode
+          )
+        : [],
+    [selectedCountryOption, selectedStateOption]
   );
 
   const filteredCategories = useMemo(() => {
@@ -450,28 +526,45 @@ const CreateListingScreen = () => {
       }
     }
 
-    if (targetStep >= 2) {
-      if (!payload.phoneNumber && !payload.whatsappNumber) {
-        nextErrors.phoneNumber =
-          'Enter phone or WhatsApp number.';
-      }
-
+    if (targetStep >= 1) {
       if (
-        payload.phoneNumber &&
-        (payload.phoneNumber.length < 6 ||
-          payload.phoneNumber.length > 30)
+        !payload.phoneNumber ||
+        payload.phoneNumber.length < 6 ||
+        payload.phoneNumber.length > 30
       ) {
         nextErrors.phoneNumber =
-          'Phone number must be 6 to 30 characters.';
+          'Enter a mobile number, 6 to 30 characters.';
       }
 
       if (
-        payload.whatsappNumber &&
-        (payload.whatsappNumber.length < 6 ||
-          payload.whatsappNumber.length > 30)
+        !payload.whatsappNumber ||
+        payload.whatsappNumber.length < 6 ||
+        payload.whatsappNumber.length > 30
       ) {
         nextErrors.whatsappNumber =
-          'WhatsApp number must be 6 to 30 characters.';
+          'Enter a WhatsApp number, 6 to 30 characters.';
+      }
+
+      if (!images.length) {
+        nextErrors.images = 'Add a photo for your listing.';
+      }
+
+      if (!address.trim() || address.trim().length < 5) {
+        nextErrors.address = 'Enter a street address of at least 5 characters.';
+      } else if (address.trim().length > 500) {
+        nextErrors.address = 'Address can be up to 500 characters.';
+      }
+
+      if (!country.trim()) {
+        nextErrors.country = 'Choose a country.';
+      }
+
+      if (stateOptions.length && !stateName.trim()) {
+        nextErrors.state = 'Choose a state.';
+      }
+
+      if (cityOptions.length && !city.trim()) {
+        nextErrors.city = 'Choose a city.';
       }
 
       if (
@@ -488,78 +581,6 @@ const CreateListingScreen = () => {
         nextErrors.websiteUrl =
           'Enter a valid website URL including https://.';
       }
-    }
-
-    if (targetStep >= 2) {
-      if (!payload.address || payload.address.length < 5) {
-        nextErrors.address =
-          'Address must be at least 5 characters.';
-      } else if (payload.address.length > 500) {
-        nextErrors.address =
-          'Address can be up to 500 characters.';
-      }
-
-      if (!payload.city || payload.city.length < 2) {
-        nextErrors.city = 'City is required.';
-      } else if (payload.city.length > 100) {
-        nextErrors.city = 'City can be up to 100 characters.';
-      }
-
-      if (payload.state && payload.state.length > 100) {
-        nextErrors.state = 'State can be up to 100 characters.';
-      }
-
-      if (payload.country && payload.country.length > 100) {
-        nextErrors.country =
-          'Country can be up to 100 characters.';
-      }
-
-      if (
-        payload.pincode &&
-        !/^\d{4,10}$/.test(payload.pincode)
-      ) {
-        nextErrors.pincode =
-          'Pincode must be 4 to 10 digits.';
-      }
-
-      if (
-        (payload.latitude === undefined) !==
-        (payload.longitude === undefined)
-      ) {
-        nextErrors.latitude =
-          'Latitude and longitude must be added together.';
-      }
-
-      if (
-        latitude.trim() &&
-        !Number.isFinite(Number.parseFloat(latitude.trim()))
-      ) {
-        nextErrors.latitude =
-          'Latitude must be between -90 and 90.';
-      }
-
-      if (
-        longitude.trim() &&
-        !Number.isFinite(Number.parseFloat(longitude.trim()))
-      ) {
-        nextErrors.longitude =
-          'Longitude must be between -180 and 180.';
-      }
-    }
-
-    if (targetStep >= 1) {
-      const validation = validateDirectoryListingPayload(payload);
-      [
-        'yearsOfExperience',
-        'subcategories',
-        'specialties',
-        'tags',
-        'serviceAreas',
-      ].forEach((field) => {
-        if (validation.errors[field]) {
-          nextErrors[field] = validation.errors[field];
-        }
-      });
     }
 
     return nextErrors;
@@ -628,88 +649,20 @@ const CreateListingScreen = () => {
       ...current,
       optimizedImage,
     ]);
+    setValidationErrors((current) => {
+      if (!current.images) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next.images;
+      return next;
+    });
   };
 
   const removeImage = (index: number) => {
     setImages((current) => current.filter((_, i) => i !== index));
   };
-
-  const handleUseCurrentLocation = useCallback(async () => {
-    const hasPermission =
-      await requestLocationPermissionWithSettingsFallback({
-        message:
-          'Please allow location access to fill your business location.',
-        settingsMessage:
-          'Location access is turned off for Sai Family. Please enable it from Settings to fill your business location.',
-      });
-
-    if (!hasPermission) {
-      return;
-    }
-
-    setLoadingLocation(true);
-
-    try {
-      const current = await Location.getCurrentPositionAsync({});
-      const reverse = await Location.reverseGeocodeAsync({
-        latitude: current.coords.latitude,
-        longitude: current.coords.longitude,
-      });
-      const place = reverse[0];
-
-      setLatitude(current.coords.latitude.toFixed(6));
-      setLongitude(current.coords.longitude.toFixed(6));
-
-      if (place?.city) {
-        setCity(place.city);
-      } else if (place?.district) {
-        setCity(place.district);
-      }
-
-      if (place?.region) {
-        setStateName(place.region);
-      }
-
-      if (place?.country) {
-        setCountry(place.country);
-      }
-
-      if (place?.postalCode) {
-        setPincode(place.postalCode);
-      }
-
-      const nextAddress = [
-        place?.name,
-        place?.street,
-        place?.subregion,
-      ]
-        .filter(Boolean)
-        .join(', ');
-
-      if (nextAddress && !address.trim()) {
-        setAddress(nextAddress);
-      }
-
-      setValidationErrors((currentErrors) => {
-        const nextErrors = { ...currentErrors };
-        delete nextErrors.latitude;
-        delete nextErrors.longitude;
-        delete nextErrors.address;
-        delete nextErrors.city;
-        delete nextErrors.state;
-        delete nextErrors.country;
-        delete nextErrors.pincode;
-        return nextErrors;
-      });
-    } catch {
-      Alert.alert(
-        'Location',
-        'Could not read your current location. Please try again.'
-      );
-    } finally {
-      setLoadingLocation(false);
-    }
-  }, [address]);
 
   const extractUploadedUrls = useCallback(() => {
     if (!uploadedMedia) {
@@ -1096,6 +1049,9 @@ const CreateListingScreen = () => {
     multiline = false
   ) => (
     <View
+      ref={(node) => {
+        fieldRefs.current[field] = node;
+      }}
       style={{
         marginTop: 18,
       }}>
@@ -1152,6 +1108,11 @@ const CreateListingScreen = () => {
               ? 3000
               : undefined
           }
+          onBlur={() => {
+            if (focusedFieldRef.current === field) {
+              focusedFieldRef.current = null;
+            }
+          }}
           onChangeText={(nextValue) => {
             setValue(nextValue);
 
@@ -1162,6 +1123,10 @@ const CreateListingScreen = () => {
                 return next;
               });
             }
+          }}
+          onFocus={() => {
+            focusedFieldRef.current = field;
+            setTimeout(() => revealFocusedField(field), 80);
           }}
           placeholder={placeholder}
           placeholderTextColor="#C7CBD3"
@@ -1237,7 +1202,8 @@ const CreateListingScreen = () => {
       transparent
       animationType="slide"
       onRequestClose={() => setCategoryPickerOpen(false)}>
-      <View
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{
           backgroundColor: 'rgba(17,24,39,0.38)',
           flex: 1,
@@ -1348,7 +1314,11 @@ const CreateListingScreen = () => {
           </View>
 
           <ScrollView
+            keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            style={{
+              flexShrink: 1,
+            }}
             contentContainerStyle={{
               paddingTop: 14,
             }}>
@@ -1494,9 +1464,179 @@ const CreateListingScreen = () => {
             })}
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
+
+  const renderLocationPickerModal = () => {
+    const source =
+      locationPicker === 'country'
+        ? countryOptions.map((item) => item.name)
+        : locationPicker === 'state'
+        ? stateOptions.map((item) => item.name)
+        : locationPicker === 'city'
+        ? cityOptions.map((item) => item.name)
+        : [];
+    const query = locationSearch.trim().toLowerCase();
+    const matches = query
+      ? source.filter((item) => item.toLowerCase().includes(query))
+      : source;
+    const visibleOptions = matches.slice(0, query ? 80 : 40);
+    const title =
+      locationPicker === 'country'
+        ? 'Choose country'
+        : locationPicker === 'state'
+        ? 'Choose state'
+        : 'Choose city';
+
+    return (
+      <Modal
+        visible={locationPicker !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setLocationPicker(null)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{
+            backgroundColor: 'rgba(17,24,39,0.38)',
+            flex: 1,
+            justifyContent: 'flex-end',
+          }}>
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setLocationPicker(null)}
+            style={{ flex: 1 }}
+          />
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              maxHeight: '78%',
+              paddingBottom: 18,
+              paddingHorizontal: 18,
+              paddingTop: 12,
+            }}>
+            <View
+              style={{
+                alignSelf: 'center',
+                backgroundColor: '#E5E7EB',
+                borderRadius: 100,
+                height: 5,
+                marginBottom: 16,
+                width: 48,
+              }}
+            />
+            <Text
+              style={{
+                color: theme.text,
+                fontSize: 22,
+                fontWeight: '900',
+              }}>
+              {title}
+            </Text>
+            <View
+              style={{
+                alignItems: 'center',
+                backgroundColor: '#FFF7ED',
+                borderColor: '#FED7AA',
+                borderRadius: 18,
+                borderWidth: 1,
+                flexDirection: 'row',
+                height: 50,
+                marginTop: 16,
+                paddingHorizontal: 14,
+              }}>
+              <Ionicons name="search" size={19} color="#9A3412" />
+              <TextInput
+                value={locationSearch}
+                onChangeText={setLocationSearch}
+                placeholder="Search"
+                placeholderTextColor="#C7A186"
+                style={{
+                  color: theme.text,
+                  flex: 1,
+                  fontSize: 15,
+                  fontWeight: '700',
+                  marginLeft: 10,
+                }}
+              />
+            </View>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              style={{ flexShrink: 1, marginTop: 14 }}>
+              {!visibleOptions.length ? (
+                <Text
+                  style={{
+                    color: theme.muted,
+                    fontSize: 14,
+                    fontWeight: '700',
+                    paddingVertical: 20,
+                    textAlign: 'center',
+                  }}>
+                  Nothing matches that search.
+                </Text>
+              ) : null}
+              {visibleOptions.map((item, index) => {
+                const selected =
+                  (locationPicker === 'country' && item === country) ||
+                  (locationPicker === 'state' && item === stateName) ||
+                  (locationPicker === 'city' && item === city);
+
+                return (
+                  <TouchableOpacity
+                    key={`${item}-${index}`}
+                    activeOpacity={0.86}
+                    onPress={() => chooseLocation(item)}
+                    style={{
+                      alignItems: 'center',
+                      backgroundColor: selected ? '#FFF7ED' : '#FFFFFF',
+                      borderColor: selected ? '#FDBA74' : '#E5E7EB',
+                      borderRadius: 16,
+                      borderWidth: 1,
+                      flexDirection: 'row',
+                      marginBottom: 8,
+                      minHeight: 52,
+                      paddingHorizontal: 14,
+                    }}>
+                    <Text
+                      style={{
+                        color: theme.text,
+                        flex: 1,
+                        fontSize: 15,
+                        fontWeight: '800',
+                      }}>
+                      {item}
+                    </Text>
+                    {selected ? (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={22}
+                        color={theme.accent}
+                      />
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+              {matches.length > visibleOptions.length ? (
+                <Text
+                  style={{
+                    color: theme.muted,
+                    fontSize: 12,
+                    fontWeight: '700',
+                    paddingBottom: 12,
+                    textAlign: 'center',
+                  }}>
+                  Search to see more.
+                </Text>
+              ) : null}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    );
+  };
 
   const renderIdentity = () => (
     <>
@@ -1506,8 +1646,8 @@ const CreateListingScreen = () => {
           size={34}
           color={theme.accent}
         />,
-        'Basic Details',
-        'Add the name, category, and clear description devotees will see first.'
+        'Business',
+        'Add the name, category, and description devotees will see.'
       )}
 
       {renderInput(
@@ -1620,17 +1760,17 @@ const CreateListingScreen = () => {
         ) : null}
       </View>
 
-      {renderInput(
+      {/* {renderInput(
         'TAGLINE (OPTIONAL)',
         'Your short, catchy motto',
         tagline,
         setTagline,
         'tagline'
-      )}
+      )} */}
 
       {renderInput(
         'DESCRIPTION',
-        'Write about your services, quality, and trust...',
+        'Write about your services,...',
         description,
         setDescription,
         'description',
@@ -1639,216 +1779,150 @@ const CreateListingScreen = () => {
     </>
   );
 
-  const renderDetails = (compact = false) => (
-    <>
-      {compact
-        ? renderSectionHeading(
-            <Feather name="briefcase" size={22} color={theme.accent} />,
-            'Services & Reach',
-            'Tell devotees what you offer and where you serve.'
-          )
-        : renderStepIntro(
-            <Feather name="briefcase" size={31} color={theme.accent} />,
-            'Services',
-            'Help devotees understand what you provide and where you can serve.'
-          )}
+  const openLocationPicker = (kind: 'country' | 'state' | 'city') => {
+    if (kind === 'state' && !selectedCountryOption) {
+      setValidationErrors((current) => ({
+        ...current,
+        country: 'Choose a country first.',
+      }));
+      return;
+    }
 
-      {renderInput(
-        'YEARS OF EXPERIENCE',
-        'e.g. 12 Years',
-        experience,
-        setExperience,
-        'yearsOfExperience'
-      )}
+    if (kind === 'city' && !selectedStateOption) {
+      setValidationErrors((current) => ({
+        ...current,
+        state: stateOptions.length
+          ? 'Choose a state first.'
+          : 'This country has no states to choose from.',
+      }));
+      return;
+    }
 
-      {renderInput(
-        'SUBCATEGORIES',
-        'e.g. Tuition, Vedic Classes',
-        subcategories,
-        setSubcategories,
-        'subcategories'
-      )}
+    setLocationSearch('');
+    setLocationPicker(kind);
+  };
 
-      {renderInput(
-        'SPECIALTIES',
-        'e.g. Home delivery, Custom orders',
-        specialties,
-        setSpecialties,
-        'specialties'
-      )}
+  const chooseLocation = (value: string) => {
+    if (locationPicker === 'country') {
+      setCountry(value);
+      setStateName('');
+      setCity('');
+    } else if (locationPicker === 'state') {
+      setStateName(value);
+      setCity('');
+    } else if (locationPicker === 'city') {
+      setCity(value);
+    }
 
-      {renderInput(
-        'SERVICE AREAS',
-        'e.g. Pune, Pimpri, Wakad',
-        serviceAreas,
-        setServiceAreas,
-        'serviceAreas'
-      )}
+    setValidationErrors((current) => {
+      const next = { ...current };
+      delete next.country;
+      delete next.state;
+      delete next.city;
+      return next;
+    });
+    setLocationPicker(null);
+    setLocationSearch('');
+  };
 
-      {renderInput(
-        'TAGS',
-        'e.g. trusted, affordable, family-run',
-        tags,
-        setTags,
-        'tags'
-      )}
-
-      <View
+  const renderLocationSelect = (
+    label: string,
+    value: string,
+    placeholder: string,
+    field: 'country' | 'state' | 'city'
+  ) => (
+    <View style={{ marginTop: 18 }}>
+      <Text
+        style={{
+          color: theme.muted,
+          fontSize: 12,
+          fontWeight: '800',
+          letterSpacing: 0.6,
+          marginBottom: 9,
+        }}>
+        {label}
+      </Text>
+      <TouchableOpacity
+        activeOpacity={0.86}
+        onPress={() => openLocationPicker(field)}
         style={{
           alignItems: 'center',
           backgroundColor: '#FFFFFF',
-          borderColor: '#E5E7EB',
-          borderRadius: 16,
+          borderColor: validationErrors[field] ? '#FCA5A5' : theme.border,
+          borderRadius: 14,
           borderWidth: 1,
           flexDirection: 'row',
-          justifyContent: 'space-between',
-          marginTop: 24,
-          minHeight: 62,
-          paddingHorizontal: 16,
+          minHeight: 52,
+          paddingHorizontal: 14,
         }}>
-        <View>
-          <Text
-            style={{
-              color: '#111827',
-              fontSize: 16,
-              fontWeight: '800',
-            }}>
-            Home Service Available
-          </Text>
+        <Text
+          numberOfLines={1}
+          style={{
+            color: value ? '#2F2925' : '#C7CBD3',
+            flex: 1,
+            fontSize: 15,
+            fontWeight: '600',
+          }}>
+          {value || placeholder}
+        </Text>
+        <Ionicons name="chevron-down" size={20} color="#9CA3AF" />
+      </TouchableOpacity>
+      {renderError(field)}
+    </View>
+  );
 
-          <Text
-            style={{
-              color: '#6B7280',
-              fontSize: 12,
-              fontWeight: '600',
-              marginTop: 5,
-            }}>
-            Offer service at customer location
-          </Text>
-        </View>
+  const renderLocation = () => (
+    <>
+      {renderSectionHeading(
+        <Ionicons name="location-outline" size={22} color={theme.accent} />,
+        'Address',
+        'Pick the country, state, and city. Then add the street address.'
+      )}
 
-        <Switch
-          value={homeService}
-          onValueChange={setHomeService}
-          trackColor={{
-            false: '#D1D5DB',
-            true: '#FDBA74',
-          }}
-          thumbColor={homeService ? theme.accent : '#FFFFFF'}
-        />
-      </View>
+      {renderLocationSelect('COUNTRY', country, 'Choose country', 'country')}
+      {renderLocationSelect(
+        'STATE',
+        stateName,
+        selectedCountryOption ? 'Choose state' : 'Choose country first',
+        'state'
+      )}
+      {renderLocationSelect(
+        'CITY',
+        city,
+        selectedStateOption ? 'Choose city' : 'Choose state first',
+        'city'
+      )}
+      {renderInput(
+        'STREET ADDRESS',
+        'Area, street, landmark',
+        address,
+        setAddress,
+        'address'
+      )}
     </>
   );
 
   const renderContact = () => (
     <>
-      {renderStepIntro(
-        <Ionicons name="call-outline" size={32} color={theme.accent} />,
-        'Contact & Location',
-        'Add trusted contact details and an accurate business location.'
+      {renderSectionHeading(
+        <Ionicons name="call-outline" size={22} color={theme.accent} />,
+        'Contact',
+        'Add a mobile or WhatsApp number. Email and website are optional.'
       )}
 
-      {renderInput('PHONE NUMBER', '+91 9876543210', phone, setPhone, 'phoneNumber')}
+      {renderInput('MOBILE NUMBER', '+91 9876543210', phone, setPhone, 'phoneNumber')}
       {renderInput('WHATSAPP NUMBER', '+91 9876543210', whatsapp, setWhatsapp, 'whatsappNumber')}
       {renderInput('EMAIL (OPTIONAL)', 'business@example.com', email, setEmail, 'email')}
       {renderInput('WEBSITE (OPTIONAL)', 'https://yourbusiness.com', websiteUrl, setWebsiteUrl, 'websiteUrl')}
     </>
   );
 
-  const renderLocation = (compact = false) => (
-    <>
-      {compact
-        ? renderSectionHeading(
-            <Ionicons name="location-outline" size={23} color={theme.accent} />,
-            'Business Location',
-            'Help nearby devotees find your business easily.'
-          )
-        : renderStepIntro(
-            <Ionicons name="location-outline" size={32} color={theme.accent} />,
-            'Location',
-            'Add accurate location details so nearby devotees can find you.'
-          )}
-
-      <TouchableOpacity
-        activeOpacity={0.88}
-        disabled={loadingLocation}
-        onPress={handleUseCurrentLocation}
-        style={{
-          alignItems: 'center',
-          backgroundColor: loadingLocation ? '#FDE7D3' : '#FFF4E8',
-          borderColor: theme.border,
-          borderRadius: 16,
-          borderWidth: 1,
-          flexDirection: 'row',
-          justifyContent: 'center',
-          marginTop: 20,
-          minHeight: 56,
-          paddingHorizontal: 16,
-        }}>
-        {loadingLocation ? (
-          <ActivityIndicator color={theme.accent} size="small" />
-        ) : (
-          <Ionicons name="locate-outline" size={22} color={theme.accent} />
-        )}
-        <View style={{ marginLeft: 10 }}>
-          <Text
-            style={{
-              color: theme.accent,
-              fontSize: 15,
-              fontWeight: '900',
-              textAlign: 'center',
-            }}>
-            {loadingLocation ? 'Finding your location' : 'Use Current Location'}
-          </Text>
-          {!loadingLocation ? (
-            <Text
-              style={{
-                color: theme.muted,
-                fontSize: 11,
-                fontWeight: '600',
-                marginTop: 2,
-                textAlign: 'center',
-              }}>
-              We will fill the address for you
-            </Text>
-          ) : null}
-        </View>
-      </TouchableOpacity>
-
-      {renderInput('ADDRESS', 'Enter your business address', address, setAddress, 'address')}
-      {renderInput('CITY', 'e.g. Delhi', city, setCity, 'city')}
-      {renderInput('STATE (OPTIONAL)', 'e.g. Maharashtra', stateName, setStateName, 'state')}
-      {renderInput('COUNTRY', 'India', country, setCountry, 'country')}
-      {renderInput('PINCODE (OPTIONAL)', 'e.g. 411001', pincode, setPincode, 'pincode')}
-
-      {latitude && longitude ? (
-        <View
-          style={{
-            alignItems: 'center',
-            flexDirection: 'row',
-            marginTop: 12,
-          }}>
-          <Ionicons name="checkmark-circle" size={18} color="#15803D" />
-          <Text
-            style={{
-              color: '#166534',
-              fontSize: 12,
-              fontWeight: '700',
-              marginLeft: 7,
-            }}>
-            Map location saved securely
-          </Text>
-        </View>
-      ) : null}
-    </>
-  );
-
   const renderMedia = () => (
     <>
-      {renderStepIntro(
-        <Ionicons name="images-outline" size={32} color={theme.accent} />,
-        'Photos & Review',
-        'Add helpful photos, then review your listing before submission.'
+      {renderSectionHeading(
+        <Ionicons name="images-outline" size={22} color={theme.accent} />,
+        'Photo',
+        'Add a photo so devotees can recognize your business.'
       )}
 
       <View
@@ -1922,15 +1996,16 @@ const CreateListingScreen = () => {
                       fontSize: 13,
                       fontWeight: '800',
                       marginTop: 8,
-                    }}>
-                    Add Photo
-                  </Text>
+            }}>
+            Add Photo
+          </Text>
                 </>
               )}
             </TouchableOpacity>
           );
         })}
       </View>
+      {renderError('images')}
 
       <View
         style={{
@@ -2050,27 +2125,19 @@ const CreateListingScreen = () => {
           {renderReviewRow('Business', payload.businessName)}
           {renderReviewRow('Category', selectedCategory?.name)}
           {renderReviewRow('Description', payload.description)}
-          {renderReviewRow(
-            'Contact',
-            payload.phoneNumber || payload.whatsappNumber
-          )}
+          {renderReviewRow('Mobile', payload.phoneNumber)}
+          {renderReviewRow('WhatsApp', payload.whatsappNumber)}
           {renderReviewRow('Email', payload.email)}
+          {renderReviewRow('Country', payload.country)}
+          {renderReviewRow('State', payload.state)}
+          {renderReviewRow('City', payload.city)}
+          {renderReviewRow('Address', payload.address)}
           {renderReviewRow('Website', payload.websiteUrl)}
-          {renderReviewRow(
-            'Location',
-            [payload.address, payload.city, payload.state, payload.country]
-              .filter(Boolean)
-              .join(', ')
-          )}
-          {renderReviewRow(
-            'Services',
-            [
-              ...(payload.specialties || []),
-              ...(payload.serviceAreas || []),
-              ...(payload.tags || []),
-            ].join(', ')
-          )}
           {renderReviewRow('Photos', `${images.length} selected`)}
+          {renderReviewRow(
+            'Community recommendation',
+            recommended ? 'Enabled' : 'Off'
+          )}
         </View>
       </>
     );
@@ -2102,8 +2169,12 @@ const CreateListingScreen = () => {
           showsVerticalScrollIndicator={false}
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           keyboardShouldPersistTaps="handled"
+          onScroll={(event) => {
+            scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
           contentContainerStyle={{
-            paddingBottom: 24,
+            paddingBottom: 36,
             paddingHorizontal: 16,
             paddingTop: 18,
           }}>
@@ -2128,21 +2199,13 @@ const CreateListingScreen = () => {
             {step === 1 ? (
               <>
                 {renderIdentity()}
-                {renderDetails(true)}
-              </>
-            ) : null}
-            {step === 2 ? (
-              <>
+                {renderLocation()}
                 {renderContact()}
-                {renderLocation(true)}
-              </>
-            ) : null}
-            {step === 3 ? (
-              <>
                 {renderMedia()}
-                {renderReview(true)}
               </>
-            ) : null}
+            ) : (
+              renderReview()
+            )}
           </View>
 
           {error ? (
@@ -2220,7 +2283,7 @@ const CreateListingScreen = () => {
                   : isEditMode
                   ? 'Save Listing'
                   : 'Submit Listing'
-                : 'Continue'}
+                : 'Preview'}
             </Text>
 
             {!busy ? (
@@ -2238,6 +2301,7 @@ const CreateListingScreen = () => {
       </KeyboardAvoidingView>
 
       {renderCategoryPickerModal()}
+      {renderLocationPickerModal()}
     </SafeAreaView>
   );
 };
