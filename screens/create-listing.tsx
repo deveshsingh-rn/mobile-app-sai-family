@@ -15,7 +15,6 @@ import {
   Platform,
   ScrollView,
   StatusBar,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -56,6 +55,9 @@ import type {
 import { validateDirectoryListingPayload } from '@/store/directory/validation';
 
 const steps = ['Details', 'Preview'];
+const DEFAULT_LISTING_IMAGE = Image.resolveAssetSource(
+  require('../assets/images/babasai.png')
+);
 
 const theme = {
   accent: '#7C2D12',
@@ -172,6 +174,7 @@ const optimizeDirectoryImage = async (
 const CreateListingScreen = () => {
   const dispatch = useAppDispatch();
   const formScrollRef = useRef<ScrollView>(null);
+  const expectsUploadRef = useRef(false);
   const fieldRefs = useRef<Record<string, View | null>>({});
   const focusedFieldRef = useRef<string | null>(null);
   const scrollOffsetRef = useRef(0);
@@ -196,7 +199,6 @@ const CreateListingScreen = () => {
   const [experience, setExperience] = useState('');
   const [homeService, setHomeService] = useState(true);
   const [phone, setPhone] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
   const [email, setEmail] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [address, setAddress] = useState('');
@@ -204,13 +206,10 @@ const CreateListingScreen = () => {
   const [stateName, setStateName] = useState('');
   const [country, setCountry] = useState('India');
   const [pincode, setPincode] = useState('');
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
   const [subcategories, setSubcategories] = useState('');
   const [specialties, setSpecialties] = useState('');
   const [tags, setTags] = useState('');
   const [serviceAreas, setServiceAreas] = useState('');
-  const [recommended, setRecommended] = useState(true);
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
@@ -300,7 +299,6 @@ const CreateListingScreen = () => {
     );
     setHomeService(Boolean(detail.homeServiceAvailable));
     setPhone(detail.phoneNumber || '');
-    setWhatsapp(detail.whatsappNumber || '');
     setEmail(detail.email || '');
     setWebsiteUrl(detail.websiteUrl || '');
     setAddress(detail.address || '');
@@ -308,23 +306,10 @@ const CreateListingScreen = () => {
     setStateName(detail.state || '');
     setCountry(detail.country || 'India');
     setPincode(detail.pincode || '');
-    setLatitude(
-      detail.latitude !== undefined && detail.latitude !== null
-        ? String(detail.latitude)
-        : ''
-    );
-    setLongitude(
-      detail.longitude !== undefined && detail.longitude !== null
-        ? String(detail.longitude)
-        : ''
-    );
     setSubcategories((detail.subcategories || []).join(', '));
     setSpecialties((detail.specialties || []).join(', '));
     setTags((detail.tags || []).join(', '));
     setServiceAreas((detail.serviceAreas || []).join(', '));
-    setRecommended(
-      detail.communityRecommendationEnabled !== false
-    );
     setHydratedListingId(listingId);
   }, [
     detail,
@@ -403,8 +388,6 @@ const CreateListingScreen = () => {
         experience.replace(/[^\d]/g, ''),
         10
       );
-      const latitudeValue = Number.parseFloat(latitude.trim());
-      const longitudeValue = Number.parseFloat(longitude.trim());
       const normalizedEmail = email.trim().toLowerCase();
       const normalizedWebsite = normalizeUrl(websiteUrl);
       const subcategoryItems = parseList(subcategories);
@@ -417,17 +400,11 @@ const CreateListingScreen = () => {
         businessName: businessName.trim(),
         categoryId: selectedCategoryId,
         city: city.trim(),
-        communityRecommendationEnabled: recommended,
+        communityRecommendationEnabled: true,
         country: trimOrUndefined(country) || 'India',
         description: description.trim(),
         email: normalizedEmail || undefined,
         homeServiceAvailable: homeService,
-        latitude: Number.isFinite(latitudeValue)
-          ? latitudeValue
-          : undefined,
-        longitude: Number.isFinite(longitudeValue)
-          ? longitudeValue
-          : undefined,
         phoneNumber: trimOrUndefined(phone),
         pincode: trimOrUndefined(pincode),
         serviceAreas: serviceAreaItems.length
@@ -443,7 +420,7 @@ const CreateListingScreen = () => {
         tagline: trimOrUndefined(tagline),
         tags: tagItems.length ? tagItems : undefined,
         websiteUrl: normalizedWebsite,
-        whatsappNumber: trimOrUndefined(whatsapp),
+        whatsappNumber: trimOrUndefined(phone),
         yearsOfExperience: Number.isFinite(yearsOfExperience)
           ? yearsOfExperience
           : undefined,
@@ -476,11 +453,8 @@ const CreateListingScreen = () => {
       email,
       experience,
       homeService,
-      latitude,
-      longitude,
       phone,
       pincode,
-      recommended,
       selectedCategoryId,
       serviceAreas,
       specialties,
@@ -489,7 +463,6 @@ const CreateListingScreen = () => {
       tagline,
       tags,
       websiteUrl,
-      whatsapp,
     ]
   );
 
@@ -537,16 +510,10 @@ const CreateListingScreen = () => {
       }
 
       if (
-        !payload.whatsappNumber ||
-        payload.whatsappNumber.length < 6 ||
-        payload.whatsappNumber.length > 30
+        payload.pincode &&
+        !/^\d{4,10}$/.test(payload.pincode)
       ) {
-        nextErrors.whatsappNumber =
-          'Enter a WhatsApp number, 6 to 30 characters.';
-      }
-
-      if (!images.length) {
-        nextErrors.images = 'Add a photo for your listing.';
+        nextErrors.pincode = 'Pincode must be 4 to 10 digits.';
       }
 
       if (!address.trim() || address.trim().length < 5) {
@@ -689,9 +656,11 @@ const CreateListingScreen = () => {
 
     const urls = extractUploadedUrls();
 
-    if (images.length > 0 && urls.length === 0) {
+    if (expectsUploadRef.current && urls.length === 0) {
       return;
     }
+
+    expectsUploadRef.current = false;
 
     const mediaPayload = {
       ...pendingSubmitPayload,
@@ -715,7 +684,6 @@ const CreateListingScreen = () => {
   }, [
     dispatch,
     extractUploadedUrls,
-    images.length,
     isEditMode,
     listingId,
     pendingSubmitPayload,
@@ -789,15 +757,27 @@ const CreateListingScreen = () => {
     setValidationErrors({});
     setSubmitStartedAt(Date.now());
 
-    if (images.length > 0) {
-      const files: NonNullable<DirectoryUploadMediaPayload['files']> =
-        images.map((image) => ({
-          mimeType: image.mimeType,
-          name: image.name,
-          type: image.mimeType || 'image/jpeg',
-          uri: image.uri,
-        }));
+    const files: NonNullable<DirectoryUploadMediaPayload['files']> =
+      images.length > 0
+        ? images.map((image) => ({
+            mimeType: image.mimeType,
+            name: image.name,
+            type: image.mimeType || 'image/jpeg',
+            uri: image.uri,
+          }))
+        : isEditMode
+        ? []
+        : [
+            {
+              mimeType: 'image/png',
+              name: 'babasai.png',
+              type: 'image/png',
+              uri: DEFAULT_LISTING_IMAGE.uri,
+            },
+          ];
 
+    if (files.length > 0) {
+      expectsUploadRef.current = true;
       setPendingSubmitPayload(payload);
       dispatch(uploadDirectoryMediaRequest({ files }));
       return;
@@ -929,112 +909,6 @@ const CreateListingScreen = () => {
             }}>
             {isEditMode ? 'Edit Business' : 'Create Business Listing'}
           </Text>
-          <Text
-            style={{
-              color: theme.muted,
-              fontSize: 10,
-              fontWeight: '800',
-              marginTop: 4,
-              textAlign: 'center',
-            }}>
-            {isEditMode
-              ? 'Update your community listing'
-              : `Step ${step} of ${steps.length}`}
-          </Text>
-        </View>
-      </View>
-
-      <View
-        style={{
-          marginTop: 12,
-        }}>
-        <View
-          style={{
-            backgroundColor: theme.border,
-            borderRadius: 100,
-            height: 6,
-            justifyContent: 'center',
-            overflow: 'hidden',
-          }}>
-          <View
-            style={{
-              backgroundColor: theme.accent,
-              borderRadius: 100,
-              height: '90%',
-              width: `${(step / steps.length) * 100}%`,
-            }}
-          />
-        </View>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginTop: 9,
-          }}>
-          {steps.map((item, index) => {
-            const isActive = step === index + 1;
-            const isComplete = step > index + 1;
-
-            return (
-              <TouchableOpacity
-                key={item}
-                activeOpacity={0.8}
-                onPress={() => {
-                  if (index + 1 <= step) {
-                    setStep(index + 1);
-                    formScrollRef.current?.scrollTo({
-                      animated: true,
-                      y: 0,
-                    });
-                  }
-                }}
-                style={{ alignItems: 'center', flex: 1 }}>
-                <View
-                  style={{
-                    alignItems: 'center',
-                    backgroundColor: isActive
-                      ? theme.accent
-                      : isComplete
-                      ? '#FFF4E8'
-                      : '#FFFFFF',
-                    borderColor: isActive ? theme.accent : theme.border,
-                    borderRadius: 11,
-                    borderWidth: 1,
-                    height: 22,
-                    justifyContent: 'center',
-                    width: 22,
-                  }}>
-                  {isComplete ? (
-                    <Ionicons
-                      name="checkmark"
-                      color={theme.accent}
-                      size={13}
-                    />
-                  ) : (
-                    <Text
-                      style={{
-                        color: isActive ? '#FFFFFF' : theme.muted,
-                        fontSize: 10,
-                        fontWeight: '900',
-                      }}>
-                      {index + 1}
-                    </Text>
-                  )}
-                </View>
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: isActive ? theme.accent : theme.muted,
-                    fontSize: 11,
-                    fontWeight: isActive ? '900' : '700',
-                    marginTop: 4,
-                  }}>
-                  {item}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
         </View>
       </View>
     </View>
@@ -1149,7 +1023,7 @@ const CreateListingScreen = () => {
   const renderSectionHeading = (
     icon: React.ReactNode,
     title: string,
-    subtitle: string
+    subtitle?: string
   ) => (
     <View
       style={{
@@ -1876,7 +1750,6 @@ const CreateListingScreen = () => {
       {renderSectionHeading(
         <Ionicons name="location-outline" size={22} color={theme.accent} />,
         'Address',
-        'Pick the country, state, and city. Then add the street address.'
       )}
 
       {renderLocationSelect('COUNTRY', country, 'Choose country', 'country')}
@@ -1899,6 +1772,13 @@ const CreateListingScreen = () => {
         setAddress,
         'address'
       )}
+      {renderInput(
+        'PINCODE (OPTIONAL)',
+        'e.g. 411001',
+        pincode,
+        setPincode,
+        'pincode'
+      )}
     </>
   );
 
@@ -1906,12 +1786,10 @@ const CreateListingScreen = () => {
     <>
       {renderSectionHeading(
         <Ionicons name="call-outline" size={22} color={theme.accent} />,
-        'Contact',
-        'Add a mobile or WhatsApp number. Email and website are optional.'
+        'Contact'
       )}
 
       {renderInput('MOBILE NUMBER', '+91 9876543210', phone, setPhone, 'phoneNumber')}
-      {renderInput('WHATSAPP NUMBER', '+91 9876543210', whatsapp, setWhatsapp, 'whatsappNumber')}
       {renderInput('EMAIL (OPTIONAL)', 'business@example.com', email, setEmail, 'email')}
       {renderInput('WEBSITE (OPTIONAL)', 'https://yourbusiness.com', websiteUrl, setWebsiteUrl, 'websiteUrl')}
     </>
@@ -1922,7 +1800,6 @@ const CreateListingScreen = () => {
       {renderSectionHeading(
         <Ionicons name="images-outline" size={22} color={theme.accent} />,
         'Photo',
-        'Add a photo so devotees can recognize your business.'
       )}
 
       <View
@@ -2006,55 +1883,6 @@ const CreateListingScreen = () => {
         })}
       </View>
       {renderError('images')}
-
-      <View
-        style={{
-          alignItems: 'center',
-          backgroundColor: '#FFFFFF',
-          borderColor: '#E5E7EB',
-          borderRadius: 16,
-          borderWidth: 1,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          marginTop: 8,
-          minHeight: 68,
-          paddingHorizontal: 16,
-        }}>
-        <View
-          style={{
-            flex: 1,
-            paddingRight: 20,
-          }}>
-          <Text
-            style={{
-              color: '#111827',
-              fontSize: 16,
-              fontWeight: '800',
-            }}>
-            Enable Community Recommendation
-          </Text>
-
-          <Text
-            style={{
-              color: '#6B7280',
-              fontSize: 12,
-              fontWeight: '600',
-              marginTop: 6,
-            }}>
-            Allow devotees to recommend your business publicly
-          </Text>
-        </View>
-
-        <Switch
-          value={recommended}
-          onValueChange={setRecommended}
-          trackColor={{
-            false: '#D1D5DB',
-            true: '#86EFAC',
-          }}
-          thumbColor={recommended ? '#22C55E' : '#FFFFFF'}
-        />
-      </View>
     </>
   );
 
@@ -2126,17 +1954,16 @@ const CreateListingScreen = () => {
           {renderReviewRow('Category', selectedCategory?.name)}
           {renderReviewRow('Description', payload.description)}
           {renderReviewRow('Mobile', payload.phoneNumber)}
-          {renderReviewRow('WhatsApp', payload.whatsappNumber)}
           {renderReviewRow('Email', payload.email)}
+          {renderReviewRow('Pincode', payload.pincode)}
           {renderReviewRow('Country', payload.country)}
           {renderReviewRow('State', payload.state)}
           {renderReviewRow('City', payload.city)}
           {renderReviewRow('Address', payload.address)}
           {renderReviewRow('Website', payload.websiteUrl)}
-          {renderReviewRow('Photos', `${images.length} selected`)}
           {renderReviewRow(
-            'Community recommendation',
-            recommended ? 'Enabled' : 'Off'
+            'Photos',
+            images.length ? `${images.length} selected` : 'Sai Baba photo'
           )}
         </View>
       </>
