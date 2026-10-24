@@ -56,7 +56,7 @@ import { validateDirectoryListingPayload } from '@/store/directory/validation';
 
 const steps = ['Details', 'Preview'];
 const DEFAULT_LISTING_IMAGE = Image.resolveAssetSource(
-  require('../assets/images/babasai.png')
+  require('../assets/images/devesh.png')
 );
 
 const theme = {
@@ -786,7 +786,7 @@ const CreateListingScreen = () => {
         : [
             {
               mimeType: 'image/png',
-              name: 'babasai.png',
+              name: 'devesh.png',
               type: 'image/png',
               uri: DEFAULT_LISTING_IMAGE.uri,
             },
@@ -2013,7 +2013,7 @@ const CreateListingScreen = () => {
           {renderReviewRow('Website', payload.websiteUrl)}
           {renderReviewRow(
             'Photos',
-            images.length ? `${images.length} selected` : 'Sai Baba photo'
+            images.length ? `${images.length} selected` : 'Default photo'
           )}
         </View>
       </>

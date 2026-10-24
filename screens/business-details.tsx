@@ -904,7 +904,7 @@ const BusinessDetailsScreen = () => {
               {listing.businessName}
             </Text>
 
-            <Text
+            {/* <Text
               style={{
                 color: palette.muted,
                 fontSize: 16,
@@ -915,7 +915,7 @@ const BusinessDetailsScreen = () => {
               {listing.tagline ||
                 listing.categoryName ||
                 'Trusted community service'}
-            </Text>
+            </Text> */}
 
             <View
               style={{
@@ -973,7 +973,7 @@ const BusinessDetailsScreen = () => {
                 </View>
               ) : null}
 
-              {listing.homeServiceAvailable ? (
+              {/* {listing.homeServiceAvailable ? (
                 <View
                   style={{
                     alignItems: 'center',
@@ -995,7 +995,7 @@ const BusinessDetailsScreen = () => {
                     Home service
                   </Text>
                 </View>
-              ) : null}
+              ) : null} */}
             </View>
 
             <View
@@ -1055,14 +1055,14 @@ const BusinessDetailsScreen = () => {
             </View>
           </View>
 
-          <View
+          {/* <View
             style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
               marginTop: 22,
               paddingHorizontal: 16,
-            }}>
-            <View
+            }}> */}
+            {/* <View
               style={{
                 alignItems: 'center',
                 backgroundColor: palette.card,
@@ -1093,9 +1093,9 @@ const BusinessDetailsScreen = () => {
                 }}>
                 {isVerified ? 'Sai Verified' : 'Listed'}
               </Text>
-            </View>
+            </View> */}
 
-            <View
+            {/* <View
               style={{
                 alignItems: 'center',
                 backgroundColor: '#FFF4E8',
@@ -1106,14 +1106,14 @@ const BusinessDetailsScreen = () => {
                 justifyContent: 'center',
                 ...iosShadow,
                 width: '48.5%',
-              }}>
-              <MaterialCommunityIcons
+              }}> */}
+              {/* <MaterialCommunityIcons
                 name="hands-pray"
                 size={25}
                 color={palette.accent}
-              />
+              /> */}
 
-              <Text
+              {/* <Text
                 style={{
                   color: palette.accent,
                   fontSize: 14,
@@ -1121,10 +1121,10 @@ const BusinessDetailsScreen = () => {
                   marginTop: 7,
                 }}>
                 {listing.recommendationCount || 0} Endorsed
-              </Text>
-            </View>
+              </Text> */}
+            {/* </View> */}
 
-          </View>
+          {/* </View> */}
 
           <View
             style={{
@@ -1502,7 +1502,7 @@ const BusinessDetailsScreen = () => {
             </View>
           </View>
 
-	          {similarListings.length > 0 ? (
+	          {/* {similarListings.length > 0 ? (
 	            <View
 	              style={{
 	                marginTop: 22,
@@ -1617,9 +1617,9 @@ const BusinessDetailsScreen = () => {
                 })}
               </ScrollView>
             </View>
-          ) : null}
+          ) : null} */}
 
-          <View
+          {/* <View
             style={{
               alignItems: 'center',
               marginTop: 52,
@@ -1688,9 +1688,9 @@ const BusinessDetailsScreen = () => {
                   : 'I Recommend This Business'}
               </Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
 
-          <View
+          {/* <View
             style={{
               marginTop: 54,
               paddingHorizontal: 14,
@@ -1782,7 +1782,7 @@ const BusinessDetailsScreen = () => {
                 </Text>
               </View>
             )}
-          </View>
+          </View> */}
         </View>
       </ScrollView>
     </SafeAreaView>
