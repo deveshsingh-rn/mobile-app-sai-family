@@ -1,6 +1,7 @@
 const baseConfig = require("./app.json").expo;
 
 const APP_VARIANT = process.env.APP_VARIANT || "production";
+const isSaiKiFamilyVariant = APP_VARIANT === "saikifamily";
 const isDevelopmentVariant = APP_VARIANT === "development";
 const isMainDevelopmentVariant = APP_VARIANT === "main-development";
 const isDevelopmentBinary =
@@ -18,7 +19,9 @@ const developmentOwner = "saifamilys-team";
 module.exports = ({ config }) => {
   const iosBundleIdentifier = isDevelopmentVariant
     ? developmentIosBundleId
-    : productionIosBundleId;
+    : isSaiKiFamilyVariant
+      ? "com.saikifamily.ios"
+      : productionIosBundleId;
   const androidPackage = isDevelopmentVariant
     ? developmentAndroidPackage
     : productionAndroidPackage;
@@ -34,7 +37,7 @@ module.exports = ({ config }) => {
     ...baseConfig,
     name: isDevelopmentBinary
       ? "Sai Family Dev"
-      : process.env.EAS_BUILD_PLATFORM === "android"
+      : isSaiKiFamilyVariant || process.env.EAS_BUILD_PLATFORM === "android"
         ? "Sai ki Family"
         : "Sai Family",
     slug: isDevelopmentVariant ? "saifamily" : baseConfig.slug,

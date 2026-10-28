@@ -10,6 +10,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import AuthScreen from '@/screens/authscreen';
+import CommunityTermsScreen from '@/screens/community-terms-screen';
 import CreateDevoteeAccountScreen from '@/screens/create-devotee-account-screen';
 import DevoteeProfileScreen from '@/screens/devotee-profile-screen';
 import OnboardingScreen from '@/screens/onboarding';
@@ -52,6 +53,7 @@ function AppLayoutContent() {
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [showAuth, setShowAuth] = useState(true);
+  const [acceptedCommunityTerms, setAcceptedCommunityTerms] = useState(false);
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [showDevoteeProfile, setShowDevoteeProfile] = useState(false);
 
@@ -70,6 +72,7 @@ function AppLayoutContent() {
         setShowAuth(false);
         setShowCreateAccount(false);
       } else {
+        setAcceptedCommunityTerms(false);
         // User has logged out, so we need to force the Auth screen to show again
         setShowAuth(true);
       }
@@ -262,6 +265,10 @@ function AppLayoutContent() {
         }}
       />
     );
+  }
+
+  if (!devoteeAccount && !acceptedCommunityTerms) {
+    return <CommunityTermsScreen onAccept={() => setAcceptedCommunityTerms(true)} />;
   }
 
   if (!devoteeAccount && showCreateAccount) {

@@ -39,6 +39,8 @@ import {
 } from "expo-audio";
 
 import { useDispatch } from "react-redux";
+import { blockSanghaDevoteeSuccess } from "@/store/sangha/actions";
+import { apiBlockSanghaDevotee } from "@/services/sangha";
 import { apiReportExperience, type ExperienceReportReason } from "@/services/experiences";
 
 import {
@@ -214,6 +216,7 @@ export function ExperienceCard({
 
   const dispatch = useDispatch();
   const [isReporting, setIsReporting] = useState(false);
+  const [isBlocking, setIsBlocking] = useState(false);
 
   const handleLike = () => {
     if (onLike) {
@@ -312,12 +315,28 @@ export function ExperienceCard({
   const showCommunityActions = (event: GestureResponderEvent) => {
     event.stopPropagation();
     const authorId = item.authorId || item.author?.id;
+    const confirmBlock = () => {
+      if (!authorId || isBlocking) return;
+      Alert.alert("Block this devotee?", "Their posts will be removed from your feed. A report will also be sent to our moderation team.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Block", style: "destructive", onPress: async () => {
+          setIsBlocking(true);
+          try {
+            const response = await apiBlockSanghaDevotee(authorId, { reason: `Blocked from experience ${item.id}` });
+            dispatch(blockSanghaDevoteeSuccess({ id: authorId, response }));
+          } catch {
+            Alert.alert("Could not block devotee", "Please check your connection and try again.");
+          } finally { setIsBlocking(false); }
+        } },
+      ]);
+    };
 
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          cancelButtonIndex: 2,
-          options: ["View devotee", "Report experience", "Cancel"],
+          cancelButtonIndex: 3,
+          destructiveButtonIndex: 2,
+          options: ["View devotee", "Report experience", "Block devotee", "Cancel"],
           title: item.authorName || "Experience",
         },
         (index) => {
@@ -325,6 +344,8 @@ export function ExperienceCard({
             router.push({ pathname: "/sangha-profile", params: { id: authorId } });
           } else if (index === 1) {
             showReportReasons();
+          } else if (index === 2) {
+            confirmBlock();
           }
         }
       );
@@ -332,8 +353,8 @@ export function ExperienceCard({
     }
 
     Alert.alert(item.authorName || "Experience", undefined, [
-      { text: "View devotee", onPress: () => authorId && router.push({ pathname: "/sangha-profile", params: { id: authorId } }) },
       { text: "Report experience", onPress: showReportReasons },
+      { text: "Block devotee", style: "destructive", onPress: confirmBlock },
       { text: "Cancel", style: "cancel" },
     ]);
   };
@@ -486,7 +507,7 @@ export function ExperienceCard({
                   accessibilityLabel={isOwner ? "Manage your experience" : "Experience options"}
                   hitSlop={8}
                   onPress={isOwner ? showOwnerActions : showCommunityActions}
-                  disabled={isReporting}
+                  disabled={isReporting || isBlocking}
                   style={({ pressed }) => [
                     styles.moreButton,
                     pressed && styles.actionPressed,

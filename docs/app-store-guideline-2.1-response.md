@@ -1,5 +1,27 @@
 # App Review Guideline 2.1 Response
 
+## October 28, 2026: New Rejection Fixes
+
+Apple reviewed version 1.0.0 (7), submission `a4167f9b-491a-4b04-9ad2-72a3265315c1`, on an iPad Air 11-inch (M3). The new issues are purpose strings (5.1.1(ii)) and blocking/moderation (1.2). A different bundle ID does not fix these issues.
+
+Local implementation:
+
+- `app.json` and the image-picker plugin now explicitly describe selected photos/videos, their upload destinations and a Sai Mandir experience example. Expo introspection confirmed the generated iOS photo purpose string. This is a native change requiring a new binary; an OTA update cannot replace the installed permission string.
+- After onboarding, users without an authenticated session must read the community agreement and select its checkbox before login or registration. Terms include zero tolerance for objectionable content/abusive users, report/block instructions, and public Terms/Privacy links. The checkbox is not preselected. Verify the public pages work before review.
+- A non-owner experience options menu now contains Report experience and Block devotee. Blocking also remains available from the devotee profile. Successful blocking removes the author's posts/reposts from feed/search/bookmarks and clears their open detail; stale API responses cannot restore those posts during the session. Failure displays an error and does not pretend the block succeeded.
+- Backend blocking saves a pending moderation report in the same transaction, and persists staff alerts for active `super_admin` accounts. Reports are visible in `GET /api/admin/sangha/reports`, with target types `user` and `experience`. Staff must monitor and resolve this queue. This implements persistent in-app staff alerts, not email or guaranteed push delivery. Configure at least one active staff account and verify it receives the alert.
+- The missing `POST /api/experiences/:id/report` endpoint was added. Feed, search, bookmarks and detail reads exclude authors blocked in either direction. These backend changes require deployment separately from EAS.
+
+Verification performed: mobile TypeScript passed, two reducer tests passed (immediate removal and stale-response/logout isolation), three backend moderation tests passed, five total backend tests passed. No physical-device recording or production two-user smoke test has been completed in this change. The backend full build is blocked by existing nullable event-coordinate errors in event/user/place controllers; resolve these before backend deployment. Do not describe all fixes as deployed or verified in the submitted binary.
+
+Recording required by Apple: capture the actual replacement build on a physical device, beginning with launch. Show the unchecked terms agreement, open the full terms, accept, login/register, report another test user's post, block that user, show their posts disappear without refresh, then refresh/relaunch and show they stay hidden. Use a second account with known posts. Separately verify the staff alert and moderation record. Record the device model, OS and build number. Attach the recording to the App Review message and add its accessible link/details to App Review Information > Notes. No paid feature is involved.
+
+Reply draft, only after deployment and device verification:
+
+> Hello App Review Team. We have updated the photo-library purpose string to explain that selected photos and videos are used for profile pictures and community posts, events and business listings, including a specific Sai Mandir photo example. We have also added an explicit community Terms of Use agreement before login/registration. Users can report a post and block its author directly from the post options menu. Blocking removes that author's posts immediately, and the backend retains the block across sessions, creates a moderation report and alerts our staff accounts. The attached physical-device recording demonstrates terms presentation and acceptance, reporting, blocking and immediate feed removal. Device: [MODEL], OS: [VERSION], replacement build: [NUMBER], recording: [ATTACHMENT OR LINK]. The same recording reference is included in App Review Information > Notes.
+
+Do not send the draft with unresolved placeholders or before backend deployment, a fresh iOS build and real-device validation.
+
 App: Sai ki Family (`com.vpilimited.saifamily`)
 
 Current iPhone QA candidate: iOS build 6, [EAS build details](https://expo.dev/accounts/devesh-rn/projects/sai-family/builds/42e7e569-bec9-4b9b-b60a-bb403666615e). Build finished; it has not been submitted for App Review. The backend changes described below are not deployed by an EAS mobile build.

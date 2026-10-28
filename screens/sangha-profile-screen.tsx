@@ -356,7 +356,7 @@ const SanghaProfileScreen = () => {
 
     Alert.alert(
       'Block devotee?',
-      'This will stop connection requests and hide this devotee from your Sangha discovery.',
+      'Their posts will be removed from your feed and connection requests will stop. A report will also be sent to our moderation team.',
       [
         {
           style: 'cancel',

@@ -13,6 +13,7 @@
       "bundleIdentifier": "com.vpilimited.saifamily",
       "appleTeamId": "WD52FCQP6X",
       "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Sai ki Family uses the photos and videos you select to add your profile picture or attach media to a community post, event or business listing. For example, you can share a photo from a Sai Mandir visit in an experience post.",
         "NSSpeechRecognitionUsageDescription": "Allow Sai Family to recognize your speech for search.",
         "NSMicrophoneUsageDescription": "Allow Sai Family to use the microphone for voice search.",
         "ITSAppUsesNonExemptEncryption": false
@@ -55,6 +56,13 @@
       ],
       "expo-secure-store",
       "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Sai ki Family uses the photos and videos you select to add your profile picture or attach media to a community post, event or business listing. For example, you can share a photo from a Sai Mandir visit in an experience post.",
+          "cameraPermission": "Sai ki Family uses your camera when you choose to take a photo or video, for example to attach a Sai Mandir photo to an experience post or update your profile picture."
+        }
+      ],
       [
         "expo-notifications",
         {

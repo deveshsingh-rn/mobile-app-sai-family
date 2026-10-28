@@ -58,7 +58,7 @@ const initialState: ExperiencesState = {
   error: null,
 };
 
-export const experiencesReducer = (
+const reduceExperiences = (
   state = initialState,
   action: ExperiencesActionTypes
 ): ExperiencesState => {
@@ -483,4 +483,29 @@ export const experiencesReducer = (
     default:
       return state;
   }
+};
+
+type ModeratedExperiencesState = ExperiencesState & { blockedAuthorIds?: string[] };
+
+export const experiencesReducer = (
+  state: ModeratedExperiencesState = initialState,
+  action: ExperiencesActionTypes
+): ModeratedExperiencesState => {
+  if (action.type === "devotee-account/LOGOUT_SUCCESS") return initialState;
+  const blockedAuthorIds = action.type === "sangha/BLOCK_DEVOTEE_SUCCESS"
+    ? [...new Set([...(state.blockedAuthorIds ?? []), action.payload.id])]
+    : state.blockedAuthorIds ?? [];
+  const next = reduceExperiences(state, action);
+  if (!blockedAuthorIds.length) return next;
+  const blocked = new Set(blockedAuthorIds);
+  const visible = (item: ExperiencesState["feed"][number]) => !blocked.has(item.authorId) && !blocked.has(item.repostedBy?.id ?? "");
+  return {
+    ...next,
+    blockedAuthorIds,
+    feed: next.feed.filter(visible),
+    searchResults: next.searchResults.filter(visible),
+    bookmarkedFeed: next.bookmarkedFeed.filter(visible),
+    detail: next.detail && visible(next.detail) ? next.detail : null,
+    comments: next.detail && !visible(next.detail) ? [] : next.comments,
+  };
 };

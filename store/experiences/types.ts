@@ -476,6 +476,8 @@ export interface UpdateExperiencePayload {
 }
 
 export type ExperiencesActionTypes =
+  | { type: "sangha/BLOCK_DEVOTEE_SUCCESS"; payload: { id: string } }
+  | { type: "devotee-account/LOGOUT_SUCCESS" }
   | FetchExperiencesRequestAction
   | FetchExperiencesSuccessAction
   | FetchExperiencesFailureAction

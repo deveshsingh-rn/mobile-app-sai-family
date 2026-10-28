@@ -4,6 +4,13 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "ios-saikifamily": {
+      "extends": "production",
+      "environment": "production",
+      "env": {
+        "APP_VARIANT": "saikifamily"
+      }
+    },
     "android-qa": {
       "extends": "production",
       "environment": "production",
@@ -47,6 +54,12 @@
     }
   },
   "submit": {
+    "ios-saikifamily": {
+      "ios": {
+        "ascAppId": "6827524322",
+        "appleTeamId": "WD52FCQP6X"
+      }
+    },
     "android-internal": {
       "android": {
         "track": "internal",
