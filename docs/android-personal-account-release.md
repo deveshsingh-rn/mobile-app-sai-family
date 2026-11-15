@@ -4,9 +4,20 @@ App: Sai ki Family. Package: `com.saikifamily.android`.
 This is a new Android app identity, not an update to `com.deveshrn.saifamily`.
 iOS identifiers are unchanged. Expo ownership and Google Play ownership are separate.
 
+## November 14, 2026 Release Attempt
+
+- Production AAB: version `1.0.0`, versionCode `4`, package `com.saikifamily.android`.
+- EAS build `192d4a5b-0180-4041-9e0a-adba5a7ea5e4` finished successfully.
+- TypeScript, Android JavaScript export and all 22 utility regression tests passed. These checks do not replace physical-device QA.
+- The downloaded AAB passed ZIP integrity verification. All 64 inspected arm64/x86_64 native libraries had ELF load-segment alignment of at least 16 KB; this is not a full runtime/page-size certification.
+- Production submission `26b03986-c775-4109-8853-1a1303d133f2` failed with `EAS_GOOGLE_PLAY_PERMISSION_DENIED`. The existing submission service account requires its Play Console app/production-release permissions to be checked before future automated submissions. Do not rotate keys or broaden access blindly.
+- The signed versionCode 4 AAB was uploaded manually to the production track, release `1.0.0 (4)`, with English release notes. Google Play validation showed only a missing-deobfuscation-file warning, not a blocking error. Native debug symbols were attached; target SDK 36 and estimated install download 58 MB were shown.
+- Sent the production change for review. Publishing overview confirmed **Changes in review**, with automated quick checks still running. This is not approval or a live release. Managed publishing remains **ON**, so after approval the team must publish the approved production change from Publishing overview. Do not accidentally publish unrelated ready changes.
+- Production EAS submission profile: `android-production`. After permissions are corrected, submit a specific verified build ID, not `--latest`, to avoid uploading the wrong artifact. Do not retry the failed submission if the same versionCode has already been uploaded manually; finish the existing Console release instead.
+
 ## Release Gates
 
-Configuration is prepared, not a certification of device functionality. No AAB has been uploaded or release published by this change.
+Use the latest release-attempt status above for actual build and publishing results. Configuration and static checks are not a certification of physical-device functionality.
 
 - Confirm this package is the intended permanent Play identity before the first upload.
 - Complete personal developer identity/contact/device verification requested by Play Console.

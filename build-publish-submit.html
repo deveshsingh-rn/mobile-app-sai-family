@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="hi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f2f2f7" />
+    <title>Build update</title>
+    <style>
+      :root {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #1c1c1e;
+        background: #eef0f4;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        background: #eef0f4;
+      }
+
+      .phone {
+        width: 390px;
+        height: min(844px, calc(100vh - 40px));
+        min-height: 600px;
+        overflow: hidden;
+        border: 8px solid #171719;
+        border-radius: 48px;
+        background: #f2f2f7;
+        box-shadow: 0 28px 80px rgba(20, 24, 35, 0.2);
+      }
+
+      .screen {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: #f2f2f7;
+      }
+
+      .status-bar {
+        height: 44px;
+        flex: 0 0 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 22px 0 25px;
+        color: #171719;
+        font-size: 15px;
+        font-weight: 650;
+      }
+
+      .system-icons {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .system-icons svg {
+        display: block;
+      }
+
+      .navigation {
+        height: 48px;
+        flex: 0 0 48px;
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
+        align-items: center;
+        padding: 0 12px;
+        border-bottom: 1px solid rgba(60, 60, 67, 0.12);
+        background: rgba(249, 249, 251, 0.82);
+        text-align: center;
+      }
+
+      .nav-back {
+        justify-self: start;
+        color: #087ef5;
+        font-size: 27px;
+        font-weight: 300;
+        line-height: 1;
+      }
+
+      .navigation h1 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      .content {
+        width: 100%;
+        max-width: 430px;
+        flex: 1;
+        margin: 0 auto;
+        padding: 42px 22px 24px;
+      }
+
+      .success-mark {
+        width: 62px;
+        height: 62px;
+        display: grid;
+        place-items: center;
+        margin: 0 0 24px;
+        border-radius: 50%;
+        background: #34c759;
+        color: white;
+        box-shadow: 0 5px 12px rgba(52, 199, 89, 0.2);
+      }
+
+      .success-mark svg {
+        width: 30px;
+        height: 30px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: #6e6e73;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      h2 {
+        margin: 0 0 12px;
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.045em;
+        line-height: 1.12;
+      }
+
+      .message {
+        margin: 0;
+        color: #63636a;
+        font-size: 16px;
+        line-height: 1.5;
+      }
+
+      .details {
+        overflow: hidden;
+        margin-top: 32px;
+        border-radius: 16px;
+        background: #fff;
+      }
+
+      .detail-row {
+        min-height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 13px 16px;
+      }
+
+      .detail-row + .detail-row {
+        border-top: 1px solid rgba(60, 60, 67, 0.12);
+      }
+
+      .detail-label {
+        color: #63636a;
+        font-size: 15px;
+      }
+
+      .detail-value {
+        color: #1c1c1e;
+        font-size: 15px;
+        font-weight: 550;
+        text-align: right;
+      }
+
+      .published {
+        color: #248a3d;
+      }
+
+      .home-area {
+        height: 30px;
+        flex: 0 0 30px;
+        display: grid;
+        place-items: center;
+      }
+
+      .home-indicator {
+        width: 108px;
+        height: 4px;
+        border-radius: 999px;
+        background: #1c1c1e;
+      }
+
+      @media (max-width: 480px) {
+        body {
+          min-height: 100svh;
+          background: #f2f2f7;
+        }
+
+        .phone {
+          width: 100%;
+          height: 100svh;
+          min-height: 0;
+          border: 0;
+          border-radius: 0;
+          box-shadow: none;
+        }
+
+        .status-bar {
+          padding-top: env(safe-area-inset-top);
+        }
+
+        .home-area {
+          height: max(30px, env(safe-area-inset-bottom));
+          flex-basis: max(30px, env(safe-area-inset-bottom));
+        }
+      }
+
+      @media (max-height: 720px) and (min-width: 481px) {
+        .content {
+          padding-top: 28px;
+        }
+
+        .details {
+          margin-top: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="phone" aria-label="Build submission update">
+      <div class="screen">
+        <div class="status-bar" aria-hidden="true">
+          <span>9:41</span>
+          <span class="system-icons">
+            <svg width="17" height="12" viewBox="0 0 17 12" fill="none">
+              <path d="M1 4.5C5.1.8 11.9.8 16 4.5M3.5 7c2.8-2.5 7.2-2.5 10 0M6.2 9.5c1.3-1.1 3.3-1.1 4.6 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              <circle cx="8.5" cy="11" r="1" fill="currentColor" />
+            </svg>
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+              <rect x=".5" y="1" width="13" height="10" rx="2.5" stroke="currentColor" />
+              <rect x="2.2" y="2.7" width="8.8" height="6.6" rx="1.2" fill="currentColor" />
+              <path d="M14.5 4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+          </span>
+        </div>
+
+        <header class="navigation">
+          <span class="nav-back" aria-hidden="true">‹</span>
+          <h1>Build update</h1>
+          <span></span>
+        </header>
+
+        <section class="content" aria-labelledby="status-title">
+          <div class="success-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="m5 12.5 4.4 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <p class="eyebrow">Aaj ka update</p>
+          <h2 id="status-title">Build submitted</h2>
+          <p class="message">Aaj maine build publish karke submit kar diya hai.</p>
+
+          <div class="details" aria-label="Submission details">
+            <div class="detail-row">
+              <span class="detail-label">Build status</span>
+              <span class="detail-value published">Published</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Submitted</span>
+              <time class="detail-value" datetime="2026-11-13">13 Nov 2026</time>
+            </div>
+          </div>
+        </section>
+
+        <div class="home-area" aria-hidden="true">
+          <span class="home-indicator"></span>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

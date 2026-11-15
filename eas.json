@@ -66,6 +66,12 @@
         "releaseStatus": "draft"
       }
     },
+    "android-production": {
+      "android": {
+        "track": "production",
+        "releaseStatus": "completed"
+      }
+    },
     "production": {
       "ios": {
         "ascAppId": "6821991729",
