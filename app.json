@@ -14,8 +14,8 @@
       "appleTeamId": "WD52FCQP6X",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Sai ki Family uses the photos and videos you select to add your profile picture or attach media to a community post, event or business listing. For example, you can share a photo from a Sai Mandir visit in an experience post.",
-        "NSSpeechRecognitionUsageDescription": "Allow Sai Family to recognize your speech for search.",
-        "NSMicrophoneUsageDescription": "Allow Sai Family to use the microphone for voice search.",
+        "NSSpeechRecognitionUsageDescription": "Sai ki Family transcribes your speech when you choose a voice feature. For example, you can dictate an experience post or ask Ask Sai a question without typing.",
+        "NSMicrophoneUsageDescription": "Sai ki Family uses your microphone when you choose to record an audio post or speak to Ask Sai. For example, record your Sai experience to share with the community.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -60,6 +60,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Sai ki Family uses the photos and videos you select to add your profile picture or attach media to a community post, event or business listing. For example, you can share a photo from a Sai Mandir visit in an experience post.",
+          "microphonePermission": "Sai ki Family uses your microphone when you choose to record an audio post or speak to Ask Sai. For example, record your Sai experience to share with the community.",
           "cameraPermission": "Sai ki Family uses your camera when you choose to take a photo or video, for example to attach a Sai Mandir photo to an experience post or update your profile picture."
         }
       ],
@@ -73,18 +74,23 @@
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "Allow Sai Family to use the microphone for voice search.",
-          "speechRecognitionPermission": "Allow Sai Family to recognize your speech for search."
+          "microphonePermission": "Sai ki Family uses your microphone when you choose to record an audio post or speak to Ask Sai. For example, record your Sai experience to share with the community.",
+          "speechRecognitionPermission": "Sai ki Family transcribes your speech when you choose a voice feature. For example, you can dictate an experience post or ask Ask Sai a question without typing."
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow Sai Family to use your location to fill event and directory coordinates."
+          "locationWhenInUsePermission": "Sai ki Family uses your location while you use nearby features or fill in a post, event or business location. For example, find devotional events near your current location."
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-audio"
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Sai ki Family uses your microphone when you choose to record an audio post or speak to Ask Sai. For example, record your Sai experience to share with the community."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

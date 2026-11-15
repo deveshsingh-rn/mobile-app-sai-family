@@ -65,6 +65,7 @@ function flattenExperience(exp: any) {
 
     authorName:
       exp.author?.name || null,
+    authorId: exp.authorId || exp.author?.id,
 
     authorHandle:
       exp.author?.handle || null,
@@ -162,7 +163,9 @@ function* handleFetchExperiences(
     const offset = Number(action.payload.offset || 0);
     const limit = Number(action.payload.limit || 20);
     const nextOffset =
-      response.pagination?.nextOffset ??
+      response.pagination?.nextOffset !== undefined
+        ? response.pagination.nextOffset
+        :
       (flattened.length >= limit
         ? offset + flattened.length
         : null);

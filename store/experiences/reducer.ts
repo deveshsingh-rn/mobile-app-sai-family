@@ -506,6 +506,6 @@ export const experiencesReducer = (
     searchResults: next.searchResults.filter(visible),
     bookmarkedFeed: next.bookmarkedFeed.filter(visible),
     detail: next.detail && visible(next.detail) ? next.detail : null,
-    comments: next.detail && !visible(next.detail) ? [] : next.comments,
+    comments: next.detail && !visible(next.detail) ? [] : next.comments.filter((comment) => !blocked.has(comment.author?.id ?? "")),
   };
 };

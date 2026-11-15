@@ -33,3 +33,15 @@ test("a delayed feed response cannot restore blocked content, and logout resets 
   state = experiencesReducer(state, { type: "devotee-account/LOGOUT_SUCCESS" });
   assert.deepEqual(experiencesReducer(state, incoming).feed.map((item) => item.id), ["b", "s"]);
 });
+
+test("blocking a commenter also removes their comments from another author's visible post", () => {
+  const safe = post("safe-post", "safe");
+  const initial = experiencesReducer(undefined, { type: "init" });
+  const state = { ...initial, detail: safe, comments: [
+    { id: "blocked-comment", author: { id: "blocked" } },
+    { id: "safe-comment", author: { id: "safe" } }
+  ] };
+  const next = experiencesReducer(state, { type: "sangha/BLOCK_DEVOTEE_SUCCESS", payload: { id: "blocked" } });
+  assert.equal(next.detail.id, "safe-post");
+  assert.deepEqual(next.comments.map((comment) => comment.id), ["safe-comment"]);
+});
