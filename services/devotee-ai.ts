@@ -5,7 +5,29 @@ import { apiClient } from "./api";
 
 const DEFAULT_DEVOTEE_AI_ENDPOINT = "/api/ai/devotee-question";
 const AI_BASE_PATH = "/api/ai";
-const AI_QUESTION_TIMEOUT_MS = 180000;
+// Server waits at most ~30s in the Ask Sai line + ~45s generating; 100s covers both without a 3-minute spinner.
+const AI_QUESTION_TIMEOUT_MS = 100000;
+const MAX_BUSY_RETRY_AFTER_SECONDS = 15;
+
+/** Server said "many devotees are asking right now" (503 AI_BUSY). Message is already in the selected language. */
+export class DevoteeAiBusyError extends Error {
+  constructor(message: string, public readonly retryAfterSeconds: number) {
+    super(message);
+    this.name = "DevoteeAiBusyError";
+  }
+}
+
+function toDevoteeAiBusyError(error: unknown) {
+  if (!axios.isAxiosError<any>(error)) return undefined;
+  const data = error.response?.data?.error;
+  if (error.response?.status !== 503 || data?.code !== "AI_BUSY") return undefined;
+  const headerSeconds = Number(error.response.headers?.["retry-after"]);
+  const seconds = Number(data?.retryAfterSeconds) || headerSeconds || 10;
+  return new DevoteeAiBusyError(
+    data?.message || "Many devotees are asking Baba right now. Please ask again in a few moments 🙏",
+    Math.min(Math.max(seconds, 1), MAX_BUSY_RETRY_AFTER_SECONDS)
+  );
+}
 const AUTH_REQUIRED_MESSAGE =
   "Please login again to use Ask Sai. This feature needs a secure login session.";
 
@@ -236,6 +258,7 @@ export type DevoteeAiVoiceServerEvent =
   | {
       code?: string;
       message: string;
+      retryAfterSeconds?: number;
       turnId?: string;
       type: "error";
     };
@@ -392,7 +415,7 @@ export async function askDevoteeQuestion(
       sources: Array.isArray(data.sources) ? data.sources : [],
     };
   } catch (error) {
-    throw new Error(getAiErrorMessage(error));
+    throw toDevoteeAiBusyError(error) ?? new Error(getAiErrorMessage(error));
   }
 }
 

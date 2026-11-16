@@ -61,6 +61,7 @@ import {
   fetchDevoteeAiConversationDetail,
   fetchDevoteeAiConversations,
   askDevoteeQuestion,
+  DevoteeAiBusyError,
   submitDevoteeAiFeedback,
 } from "@/services/devotee-ai";
 import { trackProductEvent } from "@/services/product-analytics";
@@ -100,7 +101,7 @@ const ASK_SAI_LANGUAGE_OPTIONS: AiLanguageOption[] = [
 
 
   {
-    description: "Speak Hindi or English. Baba replies in English.",
+    description: "Ask in English. Your question and Baba's reply stay in English.",
     label: "English",
     locale: "en-IN",
     nativeLabel: "English",
@@ -108,7 +109,7 @@ const ASK_SAI_LANGUAGE_OPTIONS: AiLanguageOption[] = [
   },
 
   {
-    description: "Speak Hindi or English. Baba replies in Hindi.",
+    description: "हिंदी में पूछें। आपका सवाल और बाबा का जवाब हिंदी में रहेगा।",
     label: "Hindi",
     locale: "hi-IN",
     nativeLabel: "हिंदी",
@@ -460,6 +461,12 @@ const waitForVoicePlayer = (
 
 const getVoiceErrorMessage = (code?: string, fallback?: string) => {
   switch (code) {
+    case "AI_BUSY":
+      // Server already sends this in the selected language.
+      return (
+        fallback ||
+        "Many devotees are asking Baba right now. Please ask again in a few moments 🙏"
+      );
     case "UNAUTHENTICATED":
       return "Please login again to use voice guidance.";
     case "VOICE_AI_DISABLED":
@@ -593,6 +600,18 @@ export default function AskSaiScreen() {
     });
   }, []);
   const [question, setQuestion] = useState("");
+  // The question the current reply belongs to; shown above the reply ("You asked").
+  const [currentQuestion, setCurrentQuestion] = useState("");
+  // Polite "many devotees are asking" notice while we wait to auto-retry once.
+  const [busyNotice, setBusyNotice] = useState("");
+  const busyRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const submitQuestionRef = useRef<
+    | ((
+        nextQuestion?: string,
+        options?: { speak?: boolean; clearInput?: boolean; isBusyRetry?: boolean }
+      ) => Promise<void>)
+    | null
+  >(null);
   const [answer, setAnswer] = useState("");
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [conversations, setConversations] = useState<DevoteeAiConversation[]>(
@@ -1212,12 +1231,17 @@ export default function AskSaiScreen() {
     return () => {
       closeVoiceSession();
       void Speech.stop();
+      if (busyRetryTimerRef.current) clearTimeout(busyRetryTimerRef.current);
     };
   }, [closeVoiceSession]);
 
   const resetConversation = useCallback(() => {
     void stopSpeech();
     closeVoiceSession();
+    if (busyRetryTimerRef.current) clearTimeout(busyRetryTimerRef.current);
+    busyRetryTimerRef.current = null;
+    setBusyNotice("");
+    setCurrentQuestion("");
     setAnswer("");
     setConversationId(undefined);
     setFeedbackMessageId(null);
@@ -1718,6 +1742,7 @@ export default function AskSaiScreen() {
           });
           voiceFinalTranscriptRef.current = event.text;
           setVoiceFinalTranscript(event.text);
+          setCurrentQuestion(event.text);
           setVoicePartialTranscript("");
           setQuestion("");
           setIsVoiceModalVisible(false);
@@ -2025,7 +2050,7 @@ export default function AskSaiScreen() {
   const submitQuestion = useCallback(
     async (
       nextQuestion?: string,
-      options?: { speak?: boolean; clearInput?: boolean }
+      options?: { speak?: boolean; clearInput?: boolean; isBusyRetry?: boolean }
     ) => {
       const questionToAsk = (nextQuestion || question).trim();
 
@@ -2037,6 +2062,11 @@ export default function AskSaiScreen() {
         return;
       }
 
+      // A new ask (or the scheduled busy retry itself) cancels any pending busy retry.
+      if (busyRetryTimerRef.current) clearTimeout(busyRetryTimerRef.current);
+      busyRetryTimerRef.current = null;
+      setBusyNotice("");
+      setCurrentQuestion(questionToAsk);
       setQuestion(options?.clearInput ? "" : questionToAsk);
 
       try {
@@ -2116,6 +2146,30 @@ export default function AskSaiScreen() {
         if (options?.clearInput) {
           setQuestion((currentQuestion) => currentQuestion || questionToAsk);
         }
+
+        if (error instanceof DevoteeAiBusyError) {
+          setBusyNotice(error.message);
+          trackProductEvent("Ask Sai Busy", {
+            is_retry: Boolean(options?.isBusyRetry),
+            pillar: "experiences",
+            retry_after_seconds: error.retryAfterSeconds,
+          });
+
+          // Retry once, after the server's Retry-After plus 0-3s jitter so devotees don't all retry together.
+          if (!options?.isBusyRetry) {
+            const delayMs =
+              error.retryAfterSeconds * 1000 + Math.floor(Math.random() * 3000);
+            busyRetryTimerRef.current = setTimeout(() => {
+              busyRetryTimerRef.current = null;
+              void submitQuestionRef.current?.(questionToAsk, {
+                ...options,
+                isBusyRetry: true,
+              });
+            }, delayMs);
+          }
+          return;
+        }
+
         const message =
           error instanceof Error
             ? error.message
@@ -2150,6 +2204,10 @@ export default function AskSaiScreen() {
       stopSpeech,
     ]
   );
+
+  useEffect(() => {
+    submitQuestionRef.current = submitQuestion;
+  }, [submitQuestion]);
 
   useEffect(() => {
     let isMounted = true;
@@ -2934,6 +2992,7 @@ export default function AskSaiScreen() {
           : "";
 
         setMessages(personalizedMessages);
+        setCurrentQuestion(userMessage?.content || detail.conversation.title || "");
         setQuestion(userMessage?.content || detail.conversation.title || "");
         setAnswer(personalizedAssistantAnswer);
         setFeedbackMessageId(assistantMessage?.id || null);
@@ -3297,6 +3356,20 @@ export default function AskSaiScreen() {
               </Pressable>
             </View>
           </View>
+
+          {currentQuestion && (answer || isSubmitting || busyNotice) ? (
+            <View style={styles.askedCard}>
+              <Text style={styles.askedEyebrow}>
+                {selectedLanguage.locale === "hi-IN" ? "आपने पूछा" : "YOU ASKED"}
+              </Text>
+              <Text style={styles.askedText}>
+                {formatUserQuestion(currentQuestion)}
+              </Text>
+              {busyNotice ? (
+                <Text style={styles.busyNotice}>{busyNotice}</Text>
+              ) : null}
+            </View>
+          ) : null}
 
           {answer ? (
             <View style={styles.answerCard}>
@@ -4097,6 +4170,37 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 18,
     elevation: 3,
+  },
+  askedCard: {
+    alignSelf: "flex-end",
+    backgroundColor: "#FFFFFF",
+    borderColor: "#F4D58D",
+    borderRadius: 20,
+    borderWidth: 1,
+    marginTop: 10,
+    maxWidth: "92%",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  askedEyebrow: {
+    color: "#B45309",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0,
+  },
+  askedText: {
+    color: "#5A2D0C",
+    fontSize: 16,
+    fontWeight: "700",
+    lineHeight: 23,
+    marginTop: 4,
+  },
+  busyNotice: {
+    color: "#9A3412",
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 20,
+    marginTop: 8,
   },
   answerHeader: {
     alignItems: "center",

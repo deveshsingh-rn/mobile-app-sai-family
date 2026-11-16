@@ -17,6 +17,7 @@ export type ProductAnalyticsEventName =
   | "Devotee Conversation Deleted"
   | "Devotee Conversation Opened"
   | "Ask Sai Language Selected"
+  | "Ask Sai Busy"
   | "Devotee Voice Session Started"
   | "Experience Post Created"
   | "Event RSVP Completed"
