@@ -406,7 +406,12 @@ export default function HomeScreen() {
               />
             </View>
           </LinearGradient>
-          <Text numberOfLines={2} style={styles.topBarTitle}>
+          <Text
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            numberOfLines={2}
+            style={styles.topBarTitle}
+          >
             SAI KI FAMILY
           </Text>
           {SAI_LIVE_YOUTUBE_URL ? (
@@ -606,7 +611,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     lineHeight: 22,
-    marginHorizontal: 12,
+    marginHorizontal: 8,
     textAlign: "center",
   },
 
@@ -631,27 +636,28 @@ const styles = StyleSheet.create({
     lineHeight: 25,
   },
 
+  // 2026-11-16 (Devesh): Baba's image bigger, 60 → 76 pt ring (+27%).
   babaRing: {
     alignItems: "center",
-    borderRadius: 30,
-    height: 60,
+    borderRadius: 38,
+    height: 76,
     justifyContent: "center",
-    width: 60,
+    width: 76,
   },
 
   babaInset: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 29,
-    height: 58,
+    borderRadius: 36,
+    height: 72,
     justifyContent: "center",
     overflow: "hidden",
-    width: 58,
+    width: 72,
   },
 
   babaImage: {
-    height: 58,
-    width: 64,
+    height: 72,
+    width: 80,
   },
 
   liveButton: {

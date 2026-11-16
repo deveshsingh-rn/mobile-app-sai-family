@@ -24,7 +24,6 @@ import { router } from 'expo-router';
 import { Plus, Search } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import FamilySilhouetteIcon from '@/assets/icons/family-silhouette-svgrepo-com.svg';
 import { DirectoryHomeSkeleton } from '@/components/ui/Skeleton';
 import {
   fetchDirectoryHomeRequest,
@@ -856,11 +855,11 @@ export default function DirectoryScreen() {
                 justifyContent: 'center',
                 width: 44,
               }}>
-              <FamilySilhouetteIcon
+              {/* Sai Family community icon: people under one roof (Devesh, 2026-11-16). */}
+              <FontAwesome6
                 color="#7C2D12"
-                fill="#7C2D12"
-                height={35}
-                width={35}
+                name="people-roof"
+                size={26}
               />
             </View>
 

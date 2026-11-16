@@ -1648,7 +1648,7 @@ const styles = StyleSheet.create({
   headerCopy: { flex: 1, marginLeft: 8 },
   headerEyebrow: { color: "#C2410C", fontSize: 10, fontWeight: "800" },
   headerTitle: {
-    color: "#292524",
+    color: "#B45309",
     flex: 1,
     fontSize: 19,
     fontWeight: "900",

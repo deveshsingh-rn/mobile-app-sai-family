@@ -9,6 +9,7 @@ import {
 } from "react-native";
 
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
@@ -22,7 +23,6 @@ import {
   House,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import FamilySilhouetteIcon from "../assets/icons/family-silhouette-svgrepo-com.svg";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const COLORS = {
@@ -57,13 +57,14 @@ function MalaIcon({ color, size }: React.ComponentProps<TabIcon>) {
   );
 }
 
+/** Sai Family pillar: "people under one roof" = community / parivaar (Devesh, 2026-11-16). */
 function FamilyIcon({ color, size = 30 }: React.ComponentProps<TabIcon>) {
+  // FA6 glyph is wider than tall (640×512), so draw it ~85% of the slot to match the other tabs.
   return (
-    <FamilySilhouetteIcon
+    <FontAwesome6
       color={color}
-      fill={color}
-      height={size}
-      width={size}
+      name="people-roof"
+      size={Math.round(size * 0.85)}
     />
   );
 }
