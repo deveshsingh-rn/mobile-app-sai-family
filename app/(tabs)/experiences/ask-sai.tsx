@@ -677,9 +677,12 @@ export default function AskSaiScreen() {
     [selectedLanguageLocale]
   );
 
+  // As soon as the devotee types one character we are in "write mode":
+  // the main button becomes "Send" and Speak is disabled (Stop always stays usable).
+  const hasTypedQuestion = question.trim().length > 0;
   const canSubmit = useMemo(
-    () => question.trim().length >= 3 && !isSubmitting,
-    [isSubmitting, question]
+    () => hasTypedQuestion && !isSubmitting,
+    [hasTypedQuestion, isSubmitting]
   );
 
   const isVoiceControlActive =
@@ -689,6 +692,12 @@ export default function AskSaiScreen() {
     (activeVoiceTurnId !== null &&
       voiceConnectionState !== "idle" &&
       voiceConnectionState !== "error");
+  // Speak is blocked while a written question is in the box, but "Stop" (voice active or
+  // reply playing) must always work.
+  const isSpeakDisabled =
+    !isSpeaking &&
+    !isVoiceControlActive &&
+    (isSubmitting || hasTypedQuestion);
 
   useEffect(() => {
     voiceConnectionStateRef.current = voiceConnectionState;
@@ -3311,11 +3320,13 @@ export default function AskSaiScreen() {
                   isSpeaking ? "Stop voice reply" : isVoiceControlActive ? "Stop voice question" : "Ask Sai by voice"
                 }
                 accessibilityRole="button"
-                disabled={isSubmitting && !isSpeaking}
+                accessibilityState={{ disabled: isSpeakDisabled }}
+                disabled={isSpeakDisabled}
                 onPress={isSpeaking || isVoiceControlActive ? stopAnswer : openVoiceModal}
                 style={({ pressed }) => [
                   styles.micButton,
                   isVoiceControlActive && styles.micButtonActive,
+                  isSpeakDisabled && styles.disabledButton,
                   pressed && styles.pressed,
                 ]}
               >
@@ -3335,10 +3346,11 @@ export default function AskSaiScreen() {
               </Pressable>
 
               <Pressable
-                accessibilityLabel="Submit written question"
+                accessibilityLabel={hasTypedQuestion ? "Send written question" : "Write your question"}
                 accessibilityRole="button"
+                accessibilityState={{ disabled: !canSubmit }}
                 disabled={!canSubmit}
-                onPress={() => submitQuestion()}
+                onPress={() => submitQuestion(undefined, { clearInput: true })}
                 style={({ pressed }) => [
                   styles.askButton,
                   pressed && styles.pressed,
@@ -3350,7 +3362,9 @@ export default function AskSaiScreen() {
                 ) : (
                   <>
                     <Send color="#FFFFFF" size={18} strokeWidth={2.4} />
-                    <Text style={styles.askButtonText}>Write</Text>
+                    <Text style={styles.askButtonText}>
+                      {hasTypedQuestion ? "Send" : "Write"}
+                    </Text>
                   </>
                 )}
               </Pressable>
@@ -3559,7 +3573,7 @@ export default function AskSaiScreen() {
                   Keyboard.dismiss();
                   setQuestion(item);
                   revealQuestionInput();
-                  void submitQuestion(item, { speak: true });
+                  void submitQuestion(item, { speak: true, clearInput: true });
                 }}
                 style={({ pressed }) => [
                   styles.suggestion,
