@@ -4,16 +4,18 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
   Check,
+  ChevronRight,
   Clock3,
   Edit3,
   Minus,
-  MoreHorizontal,
   Pencil,
   Plus,
   RotateCcw,
   Sparkles,
+  Target,
   Trash2,
   Undo2,
+  Volume2,
 } from "lucide-react-native";
 import { MotiView } from "moti";
 import React, {
@@ -60,8 +62,20 @@ import {
   NAAM_PER_MALA,
   undoNaamJapData,
 } from "@/utils/naam-jap-calculations";
+import {
+  getNaamBreakdown,
+  recordNaamCount,
+  undoNaamCount,
+} from "@/utils/naam-jap-per-name";
+import {
+  createNaamVoicePlayer,
+  ensureNaamVoiceFile,
+  type NaamVoicePlayer,
+} from "@/services/naam-voice";
 
-type NaamJapSheet = "more" | "names" | "target" | null;
+type NaamJapSheet = "breakdown" | "names" | "target" | null;
+type BreakdownPeriod = "today" | "lifetime";
+type VoiceStatus = "off" | "preparing" | "ready";
 type FloatingNaamItem = { id: string; left: number; label: string };
 
 const SAI_IMAGE = require("@/assets/images/saijii.jpg");
@@ -78,6 +92,10 @@ export default function NaamJapScreen() {
   const [isAppActive, setIsAppActive] = useState(
     AppState.currentState === "active"
   );
+  const [breakdownPeriod, setBreakdownPeriod] = useState<BreakdownPeriod>("today");
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("off");
+  const voiceUriRef = useRef<string | null>(null);
+  const voicePlayerRef = useRef<NaamVoicePlayer | null>(null);
   const dataRef = useRef(data);
   const hydratedRef = useRef(false);
   const celebratedGoalRef = useRef<number | null>(null);
@@ -178,8 +196,17 @@ export default function NaamJapScreen() {
 
   const increment = useCallback(() => {
     setData((current) => {
-      const next = incrementNaamJapData(current);
-      if (next === current) return current;
+      const counted = incrementNaamJapData(current);
+      if (counted === current) return current;
+      const countedName =
+        current.jaapNames.find((item) => item.id === current.selectedNameId) ||
+        current.jaapNames[0];
+      const next = countedName
+        ? {
+            ...counted,
+            ...recordNaamCount(current.perName, current.undoStack, countedName),
+          }
+        : counted;
 
       if (current.hapticsEnabled) {
         const nextMetrics = getNaamJapMetrics(next);
@@ -212,6 +239,11 @@ export default function NaamJapScreen() {
       },
     ]);
     increment();
+
+    if (dataRef.current.voiceEnabled && voiceUriRef.current) {
+      // Skips silently if Baba is still speaking the previous count.
+      voicePlayerRef.current?.play(voiceUriRef.current);
+    }
   }, [increment]);
 
   useEffect(() => {
@@ -232,6 +264,59 @@ export default function NaamJapScreen() {
     data.autoCountSeconds,
     isAppActive,
   ]);
+
+  // Sai Baba's voice: prepare the selected Naam's clip (downloaded once, then offline).
+  const selectedVoiceLabel = selectedName?.label || "Sai Ram";
+  useEffect(() => {
+    if (!hydrated || !data.voiceEnabled || !isAppActive) {
+      voicePlayerRef.current?.release();
+      if (!data.voiceEnabled) {
+        voiceUriRef.current = null;
+        setVoiceStatus("off");
+      }
+      return;
+    }
+
+    let cancelled = false;
+    voiceUriRef.current = null;
+    setVoiceStatus("preparing");
+
+    void (async () => {
+      try {
+        const [uri, player] = await Promise.all([
+          ensureNaamVoiceFile(selectedVoiceLabel),
+          voicePlayerRef.current
+            ? Promise.resolve(voicePlayerRef.current)
+            : createNaamVoicePlayer(),
+        ]);
+        if (cancelled) return;
+        voicePlayerRef.current = player;
+        voiceUriRef.current = uri;
+        setVoiceStatus("ready");
+      } catch (error) {
+        if (cancelled) return;
+        setVoiceStatus("off");
+        setData((current) => ({ ...current, voiceEnabled: false }));
+        Alert.alert(
+          "Sai Baba's voice",
+          error instanceof Error
+            ? error.message
+            : "Baba's voice could not be prepared. Please try again."
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data.voiceEnabled, hydrated, isAppActive, selectedVoiceLabel]);
+
+  useEffect(() => () => voicePlayerRef.current?.release(), []);
+
+  const openBreakdown = (period: BreakdownPeriod) => {
+    setBreakdownPeriod(period);
+    setActiveSheet("breakdown");
+  };
 
   const closeSheet = () => {
     setActiveSheet(null);
@@ -341,8 +426,12 @@ export default function NaamJapScreen() {
 
   const undoLast = () => {
     setData((current) => {
-      const next = undoNaamJapData(current);
-      if (next === current) return current;
+      const undone = undoNaamJapData(current);
+      if (undone === current) return current;
+      const next = {
+        ...undone,
+        ...undoNaamCount(current.perName, current.undoStack),
+      };
 
       void Haptics.selectionAsync();
       dataRef.current = next;
@@ -398,14 +487,6 @@ export default function NaamJapScreen() {
         <Text style={styles.headerTitle}>Naam Jap</Text>
 
         <View style={styles.headerActions}>
-          <PressableScale
-            accessibilityLabel="Naam Jap options"
-            accessibilityRole="button"
-            onPress={() => setActiveSheet("more")}
-            style={[styles.headerButton, { marginRight: 8 }]}
-          >
-            <MoreHorizontal color="#292524" size={24} />
-          </PressableScale>
           <PressableScale
             accessibilityLabel="Edit mala goal"
             accessibilityRole="button"
@@ -480,6 +561,26 @@ export default function NaamJapScreen() {
             <MotiView
               animate={{ opacity: 1, translateY: 0 }}
               from={{ opacity: 0, translateY: 14 }}
+              transition={{ delay: 80, duration: 440, type: "timing" }}
+            >
+              <SetGoalSection
+                autoCountSeconds={data.autoCountSeconds}
+                onAutoCountChange={(seconds) =>
+                  setData((current) => ({ ...current, autoCountSeconds: seconds }))
+                }
+                onEditGoal={() => setActiveSheet("target")}
+                onVoiceChange={(enabled) =>
+                  setData((current) => ({ ...current, voiceEnabled: enabled }))
+                }
+                targetMalas={data.targetMalas}
+                voiceEnabled={data.voiceEnabled}
+                voiceStatus={voiceStatus}
+              />
+            </MotiView>
+
+            <MotiView
+              animate={{ opacity: 1, translateY: 0 }}
+              from={{ opacity: 0, translateY: 14 }}
               style={styles.malaCards}
               transition={{ delay: 110, duration: 440, type: "timing" }}
             >
@@ -487,11 +588,13 @@ export default function NaamJapScreen() {
                 count={data.todayCount}
                 label="Today’s Naam Jap"
                 malas={metrics.completedTodayMalas}
+                onPress={() => openBreakdown("today")}
               />
               <MalaStatCard
                 count={data.totalCount}
                 label="Lifetime Naam Jap"
                 malas={metrics.completedLifetimeMalas}
+                onPress={() => openBreakdown("lifetime")}
               />
              
             </MotiView>
@@ -599,6 +702,7 @@ export default function NaamJapScreen() {
 
       <NaamJapBottomSheet
         activeSheet={activeSheet}
+        breakdownPeriod={breakdownPeriod}
         cancelEditName={cancelEditName}
         closeSheet={closeSheet}
         data={data}
@@ -608,6 +712,7 @@ export default function NaamJapScreen() {
         nameDraft={nameDraft}
         completeNameSelection={completeNameSelection}
         selectedName={selectedName}
+        setBreakdownPeriod={setBreakdownPeriod}
         setData={setData}
         setNameDraft={setNameDraft}
       />
@@ -773,29 +878,270 @@ function MalaStatCard({
   count,
   label,
   malas,
+  onPress,
 }: {
   count: number;
   label: string;
   malas: number;
+  onPress: () => void;
 }) {
   return (
-    <BlurView intensity={70} tint="light" style={styles.malaStatCard}>
-      <Text style={styles.malaStatLabel}>{label}</Text>
-      <View style={styles.malaStatValueRow}>
-        <Text style={styles.malaStatValue}>{malas.toLocaleString("en-IN")}</Text>
-        <Text style={styles.malaStatUnit}>
-          {malas === 1 ? "Mala" : "Malas"}
+    <PressableScale
+      accessibilityHint="Shows how many times you chanted each Naam"
+      accessibilityLabel={`${label}: ${count} Naam. Tap to see each Naam`}
+      accessibilityRole="button"
+      containerStyle={styles.malaStatCardPressable}
+      onPress={onPress}
+      scaleTo={0.97}
+    >
+      <BlurView intensity={70} tint="light" style={styles.malaStatCard}>
+        <View style={styles.malaStatLabelRow}>
+          <Text style={styles.malaStatLabel}>{label}</Text>
+          <ChevronRight color="#B45309" size={16} strokeWidth={2.6} />
+        </View>
+        <View style={styles.malaStatValueRow}>
+          <Text style={styles.malaStatValue}>{malas.toLocaleString("en-IN")}</Text>
+          <Text style={styles.malaStatUnit}>
+            {malas === 1 ? "Mala" : "Malas"}
+          </Text>
+        </View>
+        <Text style={styles.malaStatCount}>
+          {count.toLocaleString("en-IN")} Naam
         </Text>
+        <Text style={styles.malaStatHint}>Tap to see each Naam</Text>
+      </BlurView>
+    </PressableScale>
+  );
+}
+
+const AUTO_COUNT_OPTIONS = [1, 2, 5];
+
+function SetGoalSection({
+  autoCountSeconds,
+  onAutoCountChange,
+  onEditGoal,
+  onVoiceChange,
+  targetMalas,
+  voiceEnabled,
+  voiceStatus,
+}: {
+  autoCountSeconds: number | null;
+  onAutoCountChange: (seconds: number | null) => void;
+  onEditGoal: () => void;
+  onVoiceChange: (enabled: boolean) => void;
+  targetMalas: number;
+  voiceEnabled: boolean;
+  voiceStatus: VoiceStatus;
+}) {
+  const voiceText =
+    voiceStatus === "preparing"
+      ? "Preparing Baba’s voice…"
+      : voiceEnabled && autoCountSeconds === 1
+        ? "At 1 sec, Baba speaks when the previous Naam finishes"
+        : "Hear your chosen Naam in Sai Baba’s voice";
+
+  return (
+    <BlurView intensity={70} tint="light" style={styles.goalSection}>
+      <Text style={styles.goalSectionTitle}>Set your goal</Text>
+
+      <PressableScale
+        accessibilityHint="Change your mala goal"
+        accessibilityLabel={`Mala goal: ${targetMalas} ${targetMalas === 1 ? "Mala" : "Malas"}`}
+        accessibilityRole="button"
+        onPress={onEditGoal}
+        scaleTo={0.98}
+        style={styles.goalSettingRow}
+      >
+        <View style={styles.sheetSettingIcon}>
+          <Target color="#9A3412" size={21} />
+        </View>
+        <View style={styles.sheetSettingCopy}>
+          <Text style={styles.sheetSettingTitle}>
+            {targetMalas.toLocaleString("en-IN")} {targetMalas === 1 ? "Mala" : "Malas"}
+          </Text>
+          <Text style={styles.sheetSettingText}>
+            {(targetMalas * NAAM_PER_MALA).toLocaleString("en-IN")} Naam this session
+          </Text>
+        </View>
+        <ChevronRight color="#9A3412" size={20} />
+      </PressableScale>
+
+      <View style={styles.goalSettingRow}>
+        <View style={styles.sheetSettingIcon}>
+          <Clock3 color="#9A3412" size={21} />
+        </View>
+        <View style={styles.sheetSettingCopy}>
+          <Text style={styles.sheetSettingTitle}>Automatic Counter</Text>
+          <Text style={styles.sheetSettingText}>
+            Count One Naam At Your Chosen Interval
+          </Text>
+        </View>
+        <Switch
+          accessibilityLabel="Automatic counter"
+          onValueChange={(enabled) =>
+            onAutoCountChange(enabled ? autoCountSeconds || 1 : null)
+          }
+          thumbColor={autoCountSeconds ? "#166534" : "#FFFFFF"}
+          trackColor={{ false: "#D6D3D1", true: "#86EFAC" }}
+          value={Boolean(autoCountSeconds)}
+        />
       </View>
-      <Text style={styles.malaStatCount}>
-        {count.toLocaleString("en-IN")} Naam
-      </Text>
+      {autoCountSeconds ? (
+        <View style={styles.goalIntervalOptions}>
+          {AUTO_COUNT_OPTIONS.map((seconds) => {
+            const active = autoCountSeconds === seconds;
+            return (
+              <PressableScale
+                accessibilityLabel={`Count every ${seconds} seconds`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                containerStyle={styles.intervalButtonContainer}
+                key={seconds}
+                onPress={() => onAutoCountChange(seconds)}
+                scaleTo={0.94}
+                style={[styles.intervalButton, active && styles.activeIntervalButton]}
+              >
+                <Text
+                  style={[
+                    styles.intervalButtonText,
+                    active && styles.activeIntervalButtonText,
+                  ]}
+                >
+                  {seconds} sec
+                </Text>
+              </PressableScale>
+            );
+          })}
+        </View>
+      ) : null}
+
+      <View style={[styles.goalSettingRow, styles.goalSettingRowLast]}>
+        <View style={styles.sheetSettingIcon}>
+          <Volume2 color="#9A3412" size={21} />
+        </View>
+        <View style={styles.sheetSettingCopy}>
+          <Text style={styles.sheetSettingTitle}>Sai Baba’s Voice</Text>
+          <Text style={styles.sheetSettingText}>{voiceText}</Text>
+        </View>
+        {voiceStatus === "preparing" ? (
+          <ActivityIndicator color="#9A3412" style={styles.goalVoiceSpinner} />
+        ) : null}
+        <Switch
+          accessibilityLabel="Sai Baba's voice"
+          onValueChange={onVoiceChange}
+          thumbColor={voiceEnabled ? "#166534" : "#FFFFFF"}
+          trackColor={{ false: "#D6D3D1", true: "#86EFAC" }}
+          value={voiceEnabled}
+        />
+      </View>
     </BlurView>
+  );
+}
+
+function NaamBreakdown({
+  data,
+  period,
+  setPeriod,
+}: {
+  data: NaamJapData;
+  period: BreakdownPeriod;
+  setPeriod: (period: BreakdownPeriod) => void;
+}) {
+  const rows = getNaamBreakdown(data, period, NAAM_PER_MALA);
+  const max = Math.max(1, ...rows.map((row) => row.count));
+  const total = period === "today" ? data.todayCount : data.totalCount;
+
+  return (
+    <>
+      <Text style={styles.sheetTitle}>Your Naam Jap</Text>
+      <Text style={styles.sheetDescription}>
+        How many times you chanted each Naam.
+      </Text>
+
+      <View style={styles.breakdownTabs}>
+        {(["today", "lifetime"] as const).map((tab) => {
+          const active = tab === period;
+          return (
+            <PressableScale
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              containerStyle={styles.intervalButtonContainer}
+              key={tab}
+              onPress={() => setPeriod(tab)}
+              scaleTo={0.96}
+              style={[styles.intervalButton, active && styles.activeIntervalButton]}
+            >
+              <Text
+                style={[
+                  styles.intervalButtonText,
+                  active && styles.activeIntervalButtonText,
+                ]}
+              >
+                {tab === "today" ? "Today" : "Lifetime"}
+              </Text>
+            </PressableScale>
+          );
+        })}
+      </View>
+
+      <Text style={styles.breakdownTotal}>
+        {total.toLocaleString("en-IN")} Naam ·{" "}
+        {Math.floor(total / NAAM_PER_MALA).toLocaleString("en-IN")} Malas
+      </Text>
+
+      {rows.length ? (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          style={styles.breakdownList}
+        >
+          {rows.map((row) => (
+            <View
+              accessibilityLabel={`${row.label}: ${row.count} times`}
+              key={row.id}
+              style={styles.breakdownRow}
+            >
+              <View style={styles.breakdownRowHeader}>
+                <Text numberOfLines={1} style={styles.breakdownLabel}>
+                  {row.label}
+                  {row.removed ? (
+                    <Text style={styles.breakdownTag}> (removed)</Text>
+                  ) : null}
+                </Text>
+                <Text style={styles.breakdownCount}>
+                  {row.count.toLocaleString("en-IN")}
+                </Text>
+              </View>
+              <View style={styles.breakdownTrack}>
+                <View
+                  style={[
+                    styles.breakdownBar,
+                    row.earlier && styles.breakdownBarEarlier,
+                    { width: `${Math.max(3, (row.count / max) * 100)}%` },
+                  ]}
+                />
+              </View>
+              <Text style={styles.breakdownMeta}>
+                {row.earlier
+                  ? "Counted before Naam-wise tracking"
+                  : `${row.malas.toLocaleString("en-IN")} ${row.malas === 1 ? "Mala" : "Malas"}`}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+      ) : (
+        <Text style={styles.breakdownEmpty}>
+          {period === "today"
+            ? "No Naam chanted yet today. Tap or swipe to begin 🙏"
+            : "Your Naam Jap will appear here as you chant 🙏"}
+        </Text>
+      )}
+    </>
   );
 }
 
 function NaamJapBottomSheet({
   activeSheet,
+  breakdownPeriod,
   cancelEditName,
   closeSheet,
   completeNameSelection,
@@ -805,10 +1151,12 @@ function NaamJapBottomSheet({
   editingNameId,
   nameDraft,
   selectedName,
+  setBreakdownPeriod,
   setData,
   setNameDraft,
 }: {
   activeSheet: NaamJapSheet;
+  breakdownPeriod: BreakdownPeriod;
   cancelEditName: () => void;
   closeSheet: () => void;
   completeNameSelection: () => void;
@@ -818,6 +1166,7 @@ function NaamJapBottomSheet({
   editingNameId: string | null;
   nameDraft: string;
   selectedName?: NaamJapName;
+  setBreakdownPeriod: (period: BreakdownPeriod) => void;
   setData: React.Dispatch<React.SetStateAction<NaamJapData>>;
   setNameDraft: React.Dispatch<React.SetStateAction<string>>;
 }) {
@@ -867,73 +1216,12 @@ function NaamJapBottomSheet({
         >
           <View style={styles.sheetHandle} />
 
-          {activeSheet === "more" ? (
-            <>
-              <Text style={styles.sheetTitle}>Counter Options</Text>
-              <Text style={styles.sheetDescription}>
-                Choose Whether Each Naam is Counted by Touch or On a Gentle Timer.
-              </Text>
-              <View style={styles.sheetSettingRow}>
-                <View style={styles.sheetSettingIcon}>
-                  <Clock3 color="#9A3412" size={21} />
-                </View>
-                <View style={styles.sheetSettingCopy}>
-                  <Text style={styles.sheetSettingTitle}>Automatic Counter</Text>
-                  <Text style={styles.sheetSettingText}>
-                    Count One Naam At Your Chosen Interval
-                  </Text>
-                </View>
-                <Switch
-                  onValueChange={(enabled) =>
-                    setData((current) => ({
-                      ...current,
-                      autoCountSeconds: enabled
-                        ? current.autoCountSeconds || 1
-                        : null,
-                    }))
-                  }
-                  trackColor={{ false: "#D6D3D1", true: "#86EFAC" }}
-                  thumbColor={data.autoCountSeconds ? "#166534" : "#FFFFFF"}
-                  value={Boolean(data.autoCountSeconds)}
-                />
-              </View>
-              {data.autoCountSeconds ? (
-                <View style={styles.intervalSection}>
-                  <Text style={styles.intervalLabel}>Count every</Text>
-                  <View style={styles.intervalOptions}>
-                    {[1, 2, 5].map((seconds) => {
-                      const active = data.autoCountSeconds === seconds;
-                      return (
-                        <PressableScale
-                          containerStyle={styles.intervalButtonContainer}
-                          key={seconds}
-                          onPress={() =>
-                            setData((current) => ({
-                              ...current,
-                              autoCountSeconds: seconds,
-                            }))
-                          }
-                          scaleTo={0.94}
-                          style={[
-                            styles.intervalButton,
-                            active && styles.activeIntervalButton,
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.intervalButtonText,
-                              active && styles.activeIntervalButtonText,
-                            ]}
-                          >
-                            {seconds} sec
-                          </Text>
-                        </PressableScale>
-                      );
-                    })}
-                  </View>
-                </View>
-              ) : null}
-            </>
+          {activeSheet === "breakdown" ? (
+            <NaamBreakdown
+              data={data}
+              period={breakdownPeriod}
+              setPeriod={setBreakdownPeriod}
+            />
           ) : null}
 
           {activeSheet === "target" ? (
@@ -1266,6 +1554,87 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 16,
     paddingTop: 14,
+  },
+  malaStatCardPressable: { flex: 1 },
+  malaStatLabelRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  malaStatHint: {
+    color: "#B45309",
+    fontSize: 11,
+    fontWeight: "800",
+    marginTop: 6,
+  },
+  goalSection: {
+    backgroundColor: "#FFF8F0",
+    borderColor: "#FED7AA",
+    borderCurve: "continuous",
+    borderRadius: 24,
+    borderWidth: 1,
+    marginHorizontal: 16,
+    marginTop: 14,
+    overflow: "hidden",
+    paddingHorizontal: 14,
+    paddingTop: 14,
+  },
+  goalSectionTitle: { color: "#1C1917", fontSize: 18, fontWeight: "900" },
+  goalSettingRow: {
+    alignItems: "center",
+    borderBottomColor: "#F1E4D3",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    paddingVertical: 12,
+  },
+  goalSettingRowLast: { borderBottomWidth: 0 },
+  goalIntervalOptions: { flexDirection: "row", gap: 8, paddingVertical: 10 },
+  goalVoiceSpinner: { marginRight: 8 },
+  breakdownTabs: { flexDirection: "row", gap: 8, marginTop: 16 },
+  breakdownTotal: {
+    color: "#57534E",
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 14,
+  },
+  breakdownList: { marginTop: 8, maxHeight: 360 },
+  breakdownRow: { paddingVertical: 10 },
+  breakdownRowHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  breakdownLabel: {
+    color: "#1C1917",
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "900",
+    marginRight: 12,
+  },
+  breakdownTag: { color: "#A8A29E", fontSize: 13, fontWeight: "700" },
+  breakdownCount: { color: "#9A3412", fontSize: 16, fontWeight: "900" },
+  breakdownTrack: {
+    backgroundColor: "#F5F5F4",
+    borderRadius: 6,
+    height: 12,
+    marginTop: 7,
+    overflow: "hidden",
+  },
+  breakdownBar: { backgroundColor: "#F59E0B", borderRadius: 6, height: 12 },
+  breakdownBarEarlier: { backgroundColor: "#D6D3D1" },
+  breakdownMeta: {
+    color: "#78716C",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 5,
+  },
+  breakdownEmpty: {
+    color: "#78716C",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 21,
+    marginVertical: 24,
+    textAlign: "center",
   },
   malaStatCard: {
     backgroundColor: "#FFF4E8",

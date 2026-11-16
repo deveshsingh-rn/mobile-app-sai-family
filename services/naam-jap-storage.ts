@@ -4,6 +4,12 @@ import {
   MAX_MALA_GOAL,
   NAAM_PER_MALA,
 } from "@/utils/naam-jap-calculations";
+import {
+  rollPerNameToNewDay,
+  sanitizePerName,
+  sanitizeUndoStack,
+  type NaamJapPerName,
+} from "@/utils/naam-jap-per-name";
 
 const NAAM_JAP_STORAGE_KEY = "@sai-family/naam-jap/v1";
 
@@ -28,6 +34,12 @@ export type NaamJapData = {
   targetMalas: number;
   todayCount: number;
   totalCount: number;
+  /** Speak the selected Naam in Sai Baba's voice on every count. */
+  voiceEnabled: boolean;
+  /** Counts per Naam id (added 2026-11-16; older counts appear as "Earlier Jaap"). */
+  perName: NaamJapPerName;
+  /** Naam ids of recent counts, so Undo removes the Naam actually counted. */
+  undoStack: string[];
 };
 
 const DEFAULT_NAME: NaamJapName = {
@@ -109,6 +121,9 @@ export const createDefaultNaamJapData = (): NaamJapData => ({
   targetMalas: 1,
   todayCount: 0,
   totalCount: 0,
+  voiceEnabled: false,
+  perName: {},
+  undoStack: [],
 });
 
 export const normalizeForToday = (data: NaamJapData): NaamJapData => {
@@ -129,6 +144,7 @@ export const normalizeForToday = (data: NaamJapData): NaamJapData => {
     ...data,
     date: today,
     history,
+    perName: rollPerNameToNewDay(data.perName, data.date),
     sessionCount: 0,
     todayCount: 0,
   };
@@ -184,6 +200,9 @@ export async function loadNaamJapData(): Promise<NaamJapData> {
       targetMalas: requestedTargetMalas,
       todayCount,
       totalCount,
+      voiceEnabled: parsed.voiceEnabled === true,
+      perName: sanitizePerName(parsed.perName),
+      undoStack: sanitizeUndoStack(parsed.undoStack),
     };
 
     return normalizeForToday(data);
