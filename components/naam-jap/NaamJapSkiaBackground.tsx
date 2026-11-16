@@ -88,7 +88,7 @@ export function NaamJapSkiaBackground() {
           <BlurMask blur={54} style="normal" />
         </Path>
         <Path
-          color="#3F7C6D"
+          color="#C2410C"
           opacity={0.028}
           path={paths.cool}
           strokeCap="round"
@@ -105,7 +105,7 @@ export function NaamJapSkiaBackground() {
           style="stroke"
         />
         <Path
-          color="rgba(63,124,109,0.05)"
+          color="rgba(194,65,12,0.05)"
           path={paths.cool}
           strokeCap="round"
           strokeWidth={1}
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "-12deg" }],
   },
   coolBand: {
-    backgroundColor: "#3F7C6D",
+    backgroundColor: "#C2410C",
     bottom: 80,
     left: "-5%",
     transform: [{ rotate: "10deg" }],

@@ -101,7 +101,7 @@ const ASK_SAI_LANGUAGE_OPTIONS: AiLanguageOption[] = [
 
 
   {
-    description: "Ask in English. Your question and Baba's reply stay in English.",
+    description: "Ask in Hindi or English. Baba always replies in English.",
     label: "English",
     locale: "en-IN",
     nativeLabel: "English",
@@ -109,7 +109,7 @@ const ASK_SAI_LANGUAGE_OPTIONS: AiLanguageOption[] = [
   },
 
   {
-    description: "हिंदी में पूछें। आपका सवाल और बाबा का जवाब हिंदी में रहेगा।",
+    description: "हिंदी या English में पूछें। बाबा हमेशा हिंदी में जवाब देंगे।",
     label: "Hindi",
     locale: "hi-IN",
     nativeLabel: "हिंदी",

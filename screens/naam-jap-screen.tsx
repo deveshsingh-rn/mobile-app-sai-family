@@ -43,6 +43,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PillarGlassDock } from "@/components/CustomTabBar";
+import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import { NaamJapSkiaBackground } from "@/components/naam-jap/NaamJapSkiaBackground";
 import { PressableScale } from "@/components/naam-jap/PressableScale";
 import { SwipeNaamCounter } from "@/components/naam-jap/SwipeNaamCounter";
@@ -79,6 +80,21 @@ type VoiceStatus = "off" | "preparing" | "ready";
 type FloatingNaamItem = { id: string; left: number; label: string };
 
 const SAI_IMAGE = require("@/assets/images/saijii.jpg");
+
+// Project palette (constants/experience-theme.ts + existing saffron accents). No green in Naam Jap.
+const SAI = {
+  background: EXPERIENCE_THEME.background, // #FFF8EC cream
+  border: EXPERIENCE_THEME.border, // #F1D9B5
+  heading: EXPERIENCE_THEME.heading, // #7C2D12 deep saffron-brown
+  paragraph: EXPERIENCE_THEME.paragraph, // #4B4037
+  saffron: "#C2410C",
+  saffronDeep: "#9A3412",
+  marigold: "#F59E0B",
+  peach: "#FED7AA",
+  cardTint: "#FFF4E8",
+  earlier: "#D9C2A3",
+  muted: "#8A7461",
+} as const;
 export default function NaamJapScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -533,7 +549,7 @@ export default function NaamJapScreen() {
                   tint="light"
                 />
                 <LinearGradient
-                  colors={["rgba(255,255,255,0.62)", "rgba(235,246,239,0.22)"]}
+                  colors={["rgba(255,255,255,0.62)", "rgba(255,240,219,0.22)"]}
                   end={{ x: 1, y: 1 }}
                   pointerEvents="none"
                   start={{ x: 0, y: 0 }}
@@ -618,7 +634,7 @@ export default function NaamJapScreen() {
                 ]}
               >
                 <LinearGradient
-                  colors={["#f5f4d1", "#c5e2de", "#d2cceb"]}
+                  colors={["#FFF8EC", "#FFEFD6", "#FDE2C4"]}
                   end={{ x: 1, y: 1 }}
                   pointerEvents="none"
                   start={{ x: 0, y: 0 }}
@@ -647,7 +663,7 @@ export default function NaamJapScreen() {
                 />
                 {data.autoCountSeconds ? (
                   <View style={styles.autoBadge}>
-                    <Clock3 color="#166534" size={14} />
+                    <Clock3 color={SAI.saffronDeep} size={14} />
                     <Text style={styles.autoBadgeText}>
                       Auto every {data.autoCountSeconds}s
                     </Text>
@@ -731,7 +747,7 @@ export default function NaamJapScreen() {
             transition={{ damping: 16, stiffness: 150, type: "spring" }}
           >
             <LinearGradient
-              colors={["#FFFDF7", "#F4F8F5", "#FFF7E8"]}
+              colors={["#FFFDF7", "#FFF4E8", "#FFF7E8"]}
               style={StyleSheet.absoluteFill}
             />
             <MotiView
@@ -981,8 +997,9 @@ function SetGoalSection({
           onValueChange={(enabled) =>
             onAutoCountChange(enabled ? autoCountSeconds || 1 : null)
           }
-          thumbColor={autoCountSeconds ? "#166534" : "#FFFFFF"}
-          trackColor={{ false: "#D6D3D1", true: "#86EFAC" }}
+          ios_backgroundColor={SAI.border}
+          thumbColor="#FFFFFF"
+          trackColor={{ false: SAI.border, true: SAI.saffron }}
           value={Boolean(autoCountSeconds)}
         />
       </View>
@@ -1029,8 +1046,9 @@ function SetGoalSection({
         <Switch
           accessibilityLabel="Sai Baba's voice"
           onValueChange={onVoiceChange}
-          thumbColor={voiceEnabled ? "#166534" : "#FFFFFF"}
-          trackColor={{ false: "#D6D3D1", true: "#86EFAC" }}
+          ios_backgroundColor={SAI.border}
+          thumbColor="#FFFFFF"
+          trackColor={{ false: SAI.border, true: SAI.saffron }}
           value={voiceEnabled}
         />
       </View>
@@ -1050,92 +1068,142 @@ function NaamBreakdown({
   const rows = getNaamBreakdown(data, period, NAAM_PER_MALA);
   const max = Math.max(1, ...rows.map((row) => row.count));
   const total = period === "today" ? data.todayCount : data.totalCount;
+  const totalMalas = Math.floor(total / NAAM_PER_MALA);
 
   return (
-    <>
-      <Text style={styles.sheetTitle}>Your Naam Jap</Text>
-      <Text style={styles.sheetDescription}>
-        How many times you chanted each Naam.
+    <View style={styles.breakdownPanel}>
+      <Text style={styles.breakdownTitle}>Your Naam Jap</Text>
+      <Text style={styles.breakdownSubtitle}>
+        How many times you chanted each Naam
       </Text>
 
       <View style={styles.breakdownTabs}>
         {(["today", "lifetime"] as const).map((tab) => {
           const active = tab === period;
           return (
-            <PressableScale
-              accessibilityRole="button"
+            <Pressable
+              accessibilityRole="tab"
               accessibilityState={{ selected: active }}
-              containerStyle={styles.intervalButtonContainer}
               key={tab}
               onPress={() => setPeriod(tab)}
-              scaleTo={0.96}
-              style={[styles.intervalButton, active && styles.activeIntervalButton]}
+              style={[styles.breakdownTab, active && styles.breakdownTabActive]}
             >
               <Text
                 style={[
-                  styles.intervalButtonText,
-                  active && styles.activeIntervalButtonText,
+                  styles.breakdownTabText,
+                  active && styles.breakdownTabTextActive,
                 ]}
               >
                 {tab === "today" ? "Today" : "Lifetime"}
               </Text>
-            </PressableScale>
+            </Pressable>
           );
         })}
       </View>
 
-      <Text style={styles.breakdownTotal}>
-        {total.toLocaleString("en-IN")} Naam ·{" "}
-        {Math.floor(total / NAAM_PER_MALA).toLocaleString("en-IN")} Malas
-      </Text>
+      <View style={styles.breakdownSummary}>
+        <View style={styles.breakdownSummaryItem}>
+          <Text style={styles.breakdownSummaryValue}>
+            {total.toLocaleString("en-IN")}
+          </Text>
+          <Text style={styles.breakdownSummaryLabel}>Naam</Text>
+        </View>
+        <View style={styles.breakdownSummaryDivider} />
+        <View style={styles.breakdownSummaryItem}>
+          <Text style={styles.breakdownSummaryValue}>
+            {totalMalas.toLocaleString("en-IN")}
+          </Text>
+          <Text style={styles.breakdownSummaryLabel}>
+            {totalMalas === 1 ? "Mala" : "Malas"}
+          </Text>
+        </View>
+      </View>
 
       {rows.length ? (
         <ScrollView
+          contentContainerStyle={styles.breakdownListContent}
           showsVerticalScrollIndicator={false}
           style={styles.breakdownList}
         >
-          {rows.map((row) => (
-            <View
-              accessibilityLabel={`${row.label}: ${row.count} times`}
-              key={row.id}
-              style={styles.breakdownRow}
-            >
-              <View style={styles.breakdownRowHeader}>
-                <Text numberOfLines={1} style={styles.breakdownLabel}>
-                  {row.label}
-                  {row.removed ? (
-                    <Text style={styles.breakdownTag}> (removed)</Text>
-                  ) : null}
-                </Text>
-                <Text style={styles.breakdownCount}>
-                  {row.count.toLocaleString("en-IN")}
-                </Text>
+          {rows.map((row, index) => {
+            const percent = total > 0 ? Math.round((row.count / total) * 100) : 0;
+            return (
+              <View
+                accessibilityLabel={`${row.label}: ${row.count} times, ${percent} percent`}
+                key={row.id}
+                style={styles.breakdownRow}
+              >
+                <View style={styles.breakdownRowHeader}>
+                  <View
+                    style={[
+                      styles.breakdownRank,
+                      row.earlier && styles.breakdownRankEarlier,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.breakdownRankText,
+                        row.earlier && styles.breakdownRankTextEarlier,
+                      ]}
+                    >
+                      {row.earlier ? "•" : index + 1}
+                    </Text>
+                  </View>
+                  <View style={styles.breakdownLabelBlock}>
+                    <Text numberOfLines={1} style={styles.breakdownLabel}>
+                      {row.label}
+                    </Text>
+                    <Text style={styles.breakdownMeta}>
+                      {row.earlier
+                        ? "Chanted before Naam-wise counting"
+                        : row.removed
+                          ? "Removed from your list"
+                          : `${row.malas.toLocaleString("en-IN")} ${row.malas === 1 ? "Mala" : "Malas"}`}
+                    </Text>
+                  </View>
+                  <View style={styles.breakdownCountBlock}>
+                    <Text style={styles.breakdownCount}>
+                      {row.count.toLocaleString("en-IN")}
+                    </Text>
+                    <Text style={styles.breakdownPercent}>{percent}%</Text>
+                  </View>
+                </View>
+                <View style={styles.breakdownTrack}>
+                  {row.earlier ? (
+                    <View
+                      style={[
+                        styles.breakdownBar,
+                        styles.breakdownBarEarlier,
+                        { width: `${Math.max(4, (row.count / max) * 100)}%` },
+                      ]}
+                    />
+                  ) : (
+                    <LinearGradient
+                      colors={[SAI.marigold, SAI.saffron]}
+                      end={{ x: 1, y: 0 }}
+                      start={{ x: 0, y: 0 }}
+                      style={[
+                        styles.breakdownBar,
+                        { width: `${Math.max(4, (row.count / max) * 100)}%` },
+                      ]}
+                    />
+                  )}
+                </View>
               </View>
-              <View style={styles.breakdownTrack}>
-                <View
-                  style={[
-                    styles.breakdownBar,
-                    row.earlier && styles.breakdownBarEarlier,
-                    { width: `${Math.max(3, (row.count / max) * 100)}%` },
-                  ]}
-                />
-              </View>
-              <Text style={styles.breakdownMeta}>
-                {row.earlier
-                  ? "Counted before Naam-wise tracking"
-                  : `${row.malas.toLocaleString("en-IN")} ${row.malas === 1 ? "Mala" : "Malas"}`}
-              </Text>
-            </View>
-          ))}
+            );
+          })}
         </ScrollView>
       ) : (
-        <Text style={styles.breakdownEmpty}>
-          {period === "today"
-            ? "No Naam chanted yet today. Tap or swipe to begin 🙏"
-            : "Your Naam Jap will appear here as you chant 🙏"}
-        </Text>
+        <View style={styles.breakdownEmptyCard}>
+          <Sparkles color={SAI.saffron} size={26} />
+          <Text style={styles.breakdownEmpty}>
+            {period === "today"
+              ? "No Naam chanted yet today.\nTap or swipe to begin 🙏"
+              : "Your Naam Jap will appear here as you chant 🙏"}
+          </Text>
+        </View>
       )}
-    </>
+    </View>
   );
 }
 
@@ -1211,6 +1279,7 @@ function NaamJapBottomSheet({
           tint="light"
           style={[
             styles.sheet,
+            activeSheet === "breakdown" && styles.sheetSolid,
             { paddingBottom: Math.max(insets.bottom + 12, 28) },
           ]}
         >
@@ -1409,17 +1478,17 @@ function SmallAction({
 }
 
 const styles = StyleSheet.create({
-  screen: { backgroundColor: "#F8FAF8", flex: 1 },
+  screen: { backgroundColor: "#FFF8EC", flex: 1 },
   loadingScreen: {
     alignItems: "center",
-    backgroundColor: "#F8FAF8",
+    backgroundColor: "#FFF8EC",
     flex: 1,
     justifyContent: "center",
   },
   header: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.82)",
-    borderBottomColor: "rgba(220,225,222,0.9)",
+    borderBottomColor: "rgba(241,217,181,0.9)",
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     minHeight: 66,
@@ -1434,7 +1503,7 @@ const styles = StyleSheet.create({
   headerButton: {
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.7)",
-    borderColor: "rgba(216,222,218,0.92)",
+    borderColor: "rgba(241,217,181,0.92)",
     borderCurve: "continuous",
     borderRadius: 15,
     borderWidth: 1,
@@ -1590,50 +1659,118 @@ const styles = StyleSheet.create({
   goalSettingRowLast: { borderBottomWidth: 0 },
   goalIntervalOptions: { flexDirection: "row", gap: 8, paddingVertical: 10 },
   goalVoiceSpinner: { marginRight: 8 },
-  breakdownTabs: { flexDirection: "row", gap: 8, marginTop: 16 },
-  breakdownTotal: {
-    color: "#57534E",
-    fontSize: 13,
-    fontWeight: "800",
-    marginTop: 14,
+  breakdownPanel: { marginTop: 4 },
+  breakdownTitle: { color: SAI.heading, fontSize: 24, fontWeight: "900" },
+  breakdownSubtitle: {
+    color: SAI.paragraph,
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 4,
   },
-  breakdownList: { marginTop: 8, maxHeight: 360 },
-  breakdownRow: { paddingVertical: 10 },
-  breakdownRowHeader: {
-    alignItems: "center",
+  breakdownTabs: {
+    backgroundColor: SAI.cardTint,
+    borderColor: SAI.border,
+    borderRadius: 14,
+    borderWidth: 1,
     flexDirection: "row",
-    justifyContent: "space-between",
+    marginTop: 16,
+    padding: 4,
   },
-  breakdownLabel: {
-    color: "#1C1917",
+  breakdownTab: {
+    alignItems: "center",
+    borderRadius: 10,
     flex: 1,
-    fontSize: 16,
-    fontWeight: "900",
-    marginRight: 12,
+    paddingVertical: 10,
   },
-  breakdownTag: { color: "#A8A29E", fontSize: 13, fontWeight: "700" },
-  breakdownCount: { color: "#9A3412", fontSize: 16, fontWeight: "900" },
-  breakdownTrack: {
-    backgroundColor: "#F5F5F4",
-    borderRadius: 6,
-    height: 12,
-    marginTop: 7,
-    overflow: "hidden",
+  breakdownTabActive: { backgroundColor: SAI.saffron },
+  breakdownTabText: { color: SAI.saffronDeep, fontSize: 15, fontWeight: "800" },
+  breakdownTabTextActive: { color: "#FFFFFF" },
+  breakdownSummary: {
+    alignItems: "center",
+    backgroundColor: SAI.background,
+    borderColor: SAI.border,
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    marginTop: 14,
+    paddingVertical: 14,
   },
-  breakdownBar: { backgroundColor: "#F59E0B", borderRadius: 6, height: 12 },
-  breakdownBarEarlier: { backgroundColor: "#D6D3D1" },
+  breakdownSummaryItem: { alignItems: "center", flex: 1 },
+  breakdownSummaryValue: { color: SAI.heading, fontSize: 26, fontWeight: "900" },
+  breakdownSummaryLabel: {
+    color: SAI.muted,
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 2,
+    textTransform: "uppercase",
+  },
+  breakdownSummaryDivider: { backgroundColor: SAI.border, height: 36, width: 1 },
+  breakdownList: { marginTop: 12, maxHeight: 380 },
+  breakdownListContent: { gap: 10, paddingBottom: 6 },
+  breakdownRow: {
+    backgroundColor: "#FFFFFF",
+    borderColor: SAI.border,
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 14,
+  },
+  breakdownRowHeader: { alignItems: "center", flexDirection: "row" },
+  breakdownRank: {
+    alignItems: "center",
+    backgroundColor: SAI.cardTint,
+    borderColor: SAI.peach,
+    borderRadius: 16,
+    borderWidth: 1,
+    height: 32,
+    justifyContent: "center",
+    width: 32,
+  },
+  breakdownRankEarlier: { backgroundColor: SAI.background, borderColor: SAI.border },
+  breakdownRankText: { color: SAI.saffronDeep, fontSize: 14, fontWeight: "900" },
+  breakdownRankTextEarlier: { color: SAI.muted },
+  breakdownLabelBlock: { flex: 1, marginHorizontal: 12 },
+  breakdownLabel: { color: SAI.heading, fontSize: 17, fontWeight: "900" },
   breakdownMeta: {
-    color: "#78716C",
+    color: SAI.muted,
     fontSize: 12,
     fontWeight: "700",
-    marginTop: 5,
+    marginTop: 2,
+  },
+  breakdownCountBlock: { alignItems: "flex-end" },
+  breakdownCount: { color: SAI.saffron, fontSize: 20, fontWeight: "900" },
+  breakdownPercent: {
+    color: SAI.muted,
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 1,
+  },
+  breakdownTrack: {
+    backgroundColor: SAI.background,
+    borderColor: SAI.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 14,
+    marginTop: 12,
+    overflow: "hidden",
+  },
+  breakdownBar: { borderRadius: 8, height: "100%" },
+  breakdownBarEarlier: { backgroundColor: SAI.earlier },
+  breakdownEmptyCard: {
+    alignItems: "center",
+    backgroundColor: SAI.background,
+    borderColor: SAI.border,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 10,
+    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 28,
   },
   breakdownEmpty: {
-    color: "#78716C",
-    fontSize: 14,
+    color: SAI.paragraph,
+    fontSize: 15,
     fontWeight: "700",
-    lineHeight: 21,
-    marginVertical: 24,
+    lineHeight: 22,
     textAlign: "center",
   },
   malaStatCard: {
@@ -1676,9 +1813,9 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   goalText: { color: "#78716C", fontSize: 10, fontWeight: "700" },
-  goalCompleteText: { color: "#47705E", fontWeight: "900" },
+  goalCompleteText: { color: "#9A3412", fontWeight: "900" },
   goalTrack: {
-    backgroundColor: "rgba(215,222,218,0.72)",
+    backgroundColor: "rgba(241,217,181,0.72)",
     borderRadius: 4,
     height: 5,
     marginHorizontal: 18,
@@ -1695,14 +1832,14 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     marginHorizontal: 16,
     marginTop: 14,
-    shadowColor: "#29463D",
+    shadowColor: "#7C2D12",
     shadowOffset: { height: 9, width: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 18,
   },
   tapField: {
     alignItems: "center",
-    backgroundColor: "#12342F",
+    backgroundColor: "#FFEFD6",
     borderColor: "rgba(255,255,255,0.72)",
     borderCurve: "continuous",
     borderRadius: 28,
@@ -1810,7 +1947,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 13,
     position: "absolute",
-    shadowColor: "#29463D",
+    shadowColor: "#7C2D12",
     shadowOffset: { height: 5, width: 0 },
     shadowOpacity: 0.18,
     shadowRadius: 9,
@@ -1819,7 +1956,9 @@ const styles = StyleSheet.create({
   floatingNaamText: { color: "#f6f3f1", fontSize: 17, fontWeight: "900" },
   autoBadge: {
     alignItems: "center",
-    backgroundColor: "#ECFDF3",
+    backgroundColor: SAI.cardTint,
+    borderColor: SAI.peach,
+    borderWidth: 1,
     borderRadius: 999,
     flexDirection: "row",
     gap: 5,
@@ -1829,7 +1968,7 @@ const styles = StyleSheet.create({
     right: 10,
     top: 10,
   },
-  autoBadgeText: { color: "#166534", fontSize: 10, fontWeight: "800" },
+  autoBadgeText: { color: SAI.saffronDeep, fontSize: 10, fontWeight: "800" },
   welcomeBand: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
@@ -1944,7 +2083,7 @@ const styles = StyleSheet.create({
   },
   celebrationButton: {
     alignItems: "center",
-    backgroundColor: "#557568",
+    backgroundColor: "#C2410C",
     borderCurve: "continuous",
     borderRadius: 15,
     justifyContent: "center",
@@ -1962,8 +2101,8 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   fixedSwipeDock: {
-    backgroundColor: "rgba(248,250,248,0.94)",
-    borderTopColor: "rgba(215,224,218,0.92)",
+    backgroundColor: "rgba(255,248,236,0.94)",
+    borderTopColor: "rgba(241,217,181,0.92)",
     borderTopWidth: StyleSheet.hairlineWidth,
     left: 0,
     paddingHorizontal: 14,
@@ -1981,6 +2120,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(28, 25, 23, 0.42)",
   },
+  sheetSolid: { backgroundColor: SAI.background },
   sheet: {
     backgroundColor: "rgba(255,252,248,0.86)",
     borderColor: "rgba(255,255,255,0.92)",
@@ -2044,7 +2184,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 44,
   },
-  activeIntervalButton: { backgroundColor: "#166534", borderColor: "#166534" },
+  activeIntervalButton: { backgroundColor: SAI.saffron, borderColor: SAI.saffron },
   intervalButtonText: { color: "#57534E", fontSize: 13, fontWeight: "800" },
   activeIntervalButtonText: { color: "#FFFFFF" },
   targetStepper: {
@@ -2111,12 +2251,12 @@ const styles = StyleSheet.create({
   },
   saveNameButton: {
     alignItems: "center",
-    backgroundColor: "#557568",
+    backgroundColor: "#C2410C",
     borderCurve: "continuous",
     borderRadius: 14,
     height: 48,
     justifyContent: "center",
-    shadowColor: "#29463D",
+    shadowColor: "#7C2D12",
     shadowOffset: { height: 4, width: 0 },
     shadowOpacity: 0.16,
     shadowRadius: 8,

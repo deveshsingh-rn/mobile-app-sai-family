@@ -34,7 +34,7 @@ export function NaamJapCumulativeChart({ items }: Props) {
           {[0.25, 0.5, 0.75].map((ratio) => (
             <Line
               key={ratio}
-              stroke="#E2E8E4"
+              stroke="#F1D9B5"
               strokeWidth={1}
               x1={PADDING}
               x2={width - PADDING}
@@ -45,13 +45,13 @@ export function NaamJapCumulativeChart({ items }: Props) {
           <Polyline
             fill="none"
             points={points.map((point) => `${point.x},${point.y}`).join(" ")}
-            stroke="#557568"
+            stroke="#C2410C"
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={3}
           />
           {points.map((point) => (
-            <Circle cx={point.x} cy={point.y} fill="#FFFFFF" key={point.date} r={4} stroke="#557568" strokeWidth={2} />
+            <Circle cx={point.x} cy={point.y} fill="#FFFFFF" key={point.date} r={4} stroke="#C2410C" strokeWidth={2} />
           ))}
         </Svg>
       ) : null}
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   wrap: { marginTop: 10, width: "100%" },
   labels: { flexDirection: "row", paddingHorizontal: 4 },
   labelCell: { alignItems: "center", flex: 1 },
-  value: { color: "#557568", fontSize: 9, fontWeight: "800" },
+  value: { color: "#C2410C", fontSize: 9, fontWeight: "800" },
   label: { color: "#7A827D", fontSize: 10, fontWeight: "700", marginTop: 2 },
 });
 

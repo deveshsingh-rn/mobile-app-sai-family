@@ -64,7 +64,7 @@ import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import { SAI_LIVE_YOUTUBE_URL } from "@/constants/external-links";
 
 const LIMIT = 10;
-const SAI_BABA_HEADER_IMAGE = require("@/assets/images/saibaba1.png");
+const SAI_BABA_HEADER_IMAGE = require("@/assets/images/babasai.png");
 const SAI_BABA_WELCOME_IMAGE =
   require("@/assets/images/hariom.png");
 
@@ -633,25 +633,25 @@ const styles = StyleSheet.create({
 
   babaRing: {
     alignItems: "center",
-    borderRadius: 24,
-    height: 48,
+    borderRadius: 30,
+    height: 60,
     justifyContent: "center",
-    width: 48,
+    width: 60,
   },
 
   babaInset: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 21,
-    height: 42,
+    borderRadius: 29,
+    height: 58,
     justifyContent: "center",
     overflow: "hidden",
-    width: 42,
+    width: 58,
   },
 
   babaImage: {
-    height: 40,
-    width: 40,
+    height: 58,
+    width: 64,
   },
 
   liveButton: {
