@@ -447,7 +447,7 @@ export default function ProfileScreen() {
           <SettingRow
             description="Safely Sign Out Of This Device."
             hideComingSoon
-            icon={<LogOut size={21} color="#DC2626" />}
+            icon={<LogOut size={21} color={EXPERIENCE_THEME.heading} />}
             isDestructive
             onPress={handleLogout}
             title="Log Out"
@@ -455,7 +455,7 @@ export default function ProfileScreen() {
           <SettingRow
             description={isDeletingAccount ? "Deleting your account..." : "Permanently delete your account and content."}
             hideComingSoon
-            icon={<Trash2 size={21} color="#DC2626" />}
+            icon={<Trash2 size={21} color={EXPERIENCE_THEME.heading} />}
             isDestructive
             onPress={handleDeleteAccount}
             title="Delete Account"
@@ -521,7 +521,7 @@ function SettingRow({
       )}
       {onPress ? (
         <ChevronRight
-          color={isDestructive ? "#DC2626" : "#8A7461"}
+          color={isDestructive ? EXPERIENCE_THEME.heading : "#8A7461"}
           size={18}
         />
       ) : null}
@@ -834,7 +834,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   settingTitleDestructive: {
-    color: "#DC2626",
+    color: EXPERIENCE_THEME.heading,
   },
   securityCard: {
     backgroundColor: "#FFFFFF",

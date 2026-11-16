@@ -278,7 +278,7 @@ export function MorningSaiAlarmCard({ devoteeName }: Props) {
         </View>
       ) : null}
 
-      <View style={styles.preview}>
+      {/* <View style={styles.preview}>
         <View style={styles.previewHeader}>
           <Text style={styles.previewLabel}>TODAY&apos;S MESSAGE</Text>
           {previewLoading ? (
@@ -315,7 +315,7 @@ export function MorningSaiAlarmCard({ devoteeName }: Props) {
             </Text>
           </Pressable>
         ) : null}
-      </View>
+      </View> */}
     </View>
   );
 }
