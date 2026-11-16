@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     color: EXPERIENCE_THEME.heading,
     flex: 1,
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "700",
     lineHeight: 22,
     marginHorizontal: 12,
     textAlign: "center",

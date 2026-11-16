@@ -35,8 +35,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MorningSaiAlarmCard } from "@/components/profile/MorningSaiAlarmCard";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
-type ProfileTab = "details" | "settings";
-
 type DetailRowProps = {
   label: string;
   value?: string | null;
@@ -53,7 +51,6 @@ type SettingRowProps = {
 };
 
 export default function ProfileScreen() {
-  const [activeTab, setActiveTab] = useState<ProfileTab>("settings");
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const dispatch = useAppDispatch();
   const account = useAppSelector(selectDevoteeAccount);
@@ -198,7 +195,7 @@ export default function ProfileScreen() {
                 {account?.name || "Devotee Profile"}
               </Text>
               <View style={styles.verifiedBadge}>
-                <Sparkles color="#F97316" size={13} />
+                <Sparkles color="#C2410C" size={13} />
               </View>
             </View>
             <Text style={styles.memberId}>
@@ -223,22 +220,8 @@ export default function ProfileScreen() {
         </View> */}
       </View>
 
-      <View style={styles.segment}>
-       
-        <SegmentButton
-          isActive={activeTab === "settings"}
-          label="Settings"
-          onPress={() => setActiveTab("settings")}
-        />
-         <SegmentButton
-          isActive={activeTab === "details"}
-          label="My Details"
-          onPress={() => setActiveTab("details")}
-        />
-      </View>
-
-      {activeTab === "details" ? (
-        <View style={styles.section}>
+      {/* 2026-11-16 (Devesh): "Settings" and "My Details" tabs merged into one page. */}
+      <View style={styles.section}>
           <Text style={styles.sectionLabel}>Personal information</Text>
           <View style={styles.detailCard}>
             <DetailRow label="Mobile" value={account?.mobileNumber} />
@@ -268,9 +251,7 @@ export default function ProfileScreen() {
               <Text style={styles.comingSoonText}>Soon</Text>
             </View>
           </View> */}
-        </View>
-      ) : (
-        <View style={styles.section}>
+
           <Text style={styles.sectionLabel}>Daily practice</Text>
           <MorningSaiAlarmCard devoteeName={account?.name} />
           {/* <View style={styles.securityCard}> */}
@@ -479,40 +460,9 @@ export default function ProfileScreen() {
             onPress={handleDeleteAccount}
             title="Delete Account"
           />
-         
-        </View>
-      )}
+      </View>
     </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function SegmentButton({
-  isActive,
-  label,
-  onPress,
-}: {
-  isActive: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[
-        styles.segmentButton,
-        isActive && styles.segmentButtonActive,
-      ]}
-    >
-      <Text
-        style={[
-          styles.segmentText,
-          isActive && styles.segmentTextActive,
-        ]}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -571,7 +521,7 @@ function SettingRow({
       )}
       {onPress ? (
         <ChevronRight
-          color={isDestructive ? "#DC2626" : "#A8A29E"}
+          color={isDestructive ? "#DC2626" : "#8A7461"}
           size={18}
         />
       ) : null}
@@ -830,34 +780,6 @@ const styles = StyleSheet.create({
     marginLeft: 2,
     textTransform: "uppercase",
   },
-  segment: {
-    backgroundColor: "#FFFFFF",
-    borderColor: EXPERIENCE_THEME.border,
-    borderRadius: 15,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 6,
-    marginBottom: 16,
-    padding: 5,
-  },
-  segmentButton: {
-    alignItems: "center",
-    borderRadius: 10,
-    flex: 1,
-    height: 46,
-    justifyContent: "center",
-  },
-  segmentButtonActive: {
-    backgroundColor: EXPERIENCE_THEME.heading,
-  },
-  segmentText: {
-    color: EXPERIENCE_THEME.paragraph,
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  segmentTextActive: {
-    color: "#FFFFFF",
-  },
   settingCopy: {
     flex: 1,
   },
@@ -966,11 +888,11 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   securityStatusTextVerified: {
-    color: "#15803D",
+    color: "#9A3412",
   },
   securityStatusVerified: {
-    backgroundColor: "#F0FDF4",
-    borderColor: "#BBF7D0",
+    backgroundColor: "#FED7AA",
+    borderColor: "#F1D9B5",
   },
   securityTitle: {
     color: "#1F2937",
@@ -1023,8 +945,8 @@ const styles = StyleSheet.create({
   },
   verifiedPanel: {
     alignItems: "center",
-    backgroundColor: "#F0FDF4",
-    borderColor: "#BBF7D0",
+    backgroundColor: "#FED7AA",
+    borderColor: "#F1D9B5",
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
@@ -1032,7 +954,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   verifiedPanelText: {
-    color: "#166534",
+    color: "#9A3412",
     flex: 1,
     fontSize: 13,
     fontWeight: "800",
