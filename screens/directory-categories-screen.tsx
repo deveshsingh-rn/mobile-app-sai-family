@@ -280,7 +280,7 @@ export default function DirectoryCategoriesScreen() {
         }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 34,
+          paddingBottom: 120, // clears the pillar tab bar (76 pt + gap)
           paddingHorizontal: 18,
           paddingTop: 8,
         }}>

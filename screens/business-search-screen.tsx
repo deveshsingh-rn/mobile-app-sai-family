@@ -639,7 +639,7 @@ const SearchScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 30,
+          paddingBottom: 120, // clears the pillar tab bar (76 pt + gap)
           paddingHorizontal: 22,
           paddingTop: 20,
         }}>

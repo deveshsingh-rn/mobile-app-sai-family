@@ -4385,11 +4385,22 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     padding: 13,
   },
+  // 2026-11-16 (Devesh): chat history = question on the left, Baba's answer on the right.
   assistantBubble: {
-    backgroundColor: "#FFF7ED",
+    alignSelf: "flex-end",
+    backgroundColor: "#FFF4E8",
+    borderBottomRightRadius: 6,
+    borderColor: "#FED7AA",
+    borderWidth: 1,
+    maxWidth: "88%",
   },
   userBubble: {
-    backgroundColor: "#F7FBFF",
+    alignSelf: "flex-start",
+    backgroundColor: EXPERIENCE_THEME.background,
+    borderBottomLeftRadius: 6,
+    borderColor: EXPERIENCE_THEME.border,
+    borderWidth: 1,
+    maxWidth: "82%",
   },
   messageRole: {
     color: "#B45309",

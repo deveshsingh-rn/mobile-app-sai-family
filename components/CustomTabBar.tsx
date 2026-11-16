@@ -11,6 +11,7 @@ import {
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { BlurView } from "expo-blur";
 import { router } from "expo-router";
+import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import {
   GlassContainer,
   GlassView,
@@ -296,9 +297,30 @@ export function PillarGlassDock({
   );
 }
 
-export default function CustomTabBar({ state }: any) {
+/**
+ * Nested screens where the dock is hidden: keyboard-heavy forms. Here the dock would take
+ * ~16% of the space left above the keyboard, and a stray tap would lose a half-filled form.
+ * Key = tab route name, value = screen names inside that tab's stack.
+ */
+const HIDE_DOCK_ON: Record<string, readonly string[]> = {
+  directory: ["create-listing", "business-review"],
+  events: ["create", "edit"],
+};
+
+export default function CustomTabBar({ navigation, state }: any) {
   const insets = useSafeAreaInsets();
   const activeRoute = state.routes[state.index];
+  const nestedRouteName = activeRoute
+    ? getFocusedRouteNameFromRoute(activeRoute)
+    : undefined;
+
+  if (
+    activeRoute &&
+    nestedRouteName &&
+    HIDE_DOCK_ON[activeRoute.name]?.includes(nestedRouteName)
+  ) {
+    return null;
+  }
 
   return (
     <View
@@ -317,12 +339,27 @@ export default function CustomTabBar({ state }: any) {
         <PillarGlassDock
           activeRouteName={activeRoute?.name ?? "experiences"}
           onNavigate={(routeName) => {
-            const destination = TABS.find(
-              (tab) => tab.name === routeName
+            const route = state.routes.find(
+              (item: { name: string }) => item.name === routeName
             );
 
-            if (destination) {
-              router.replace(destination.href as never);
+            if (!route) {
+              const destination = TABS.find((tab) => tab.name === routeName);
+              if (destination) router.navigate(destination.href as never);
+              return;
+            }
+
+            // Standard tab press: if this pillar is already open, its stack pops back
+            // to the pillar's home; otherwise we switch tabs and keep that pillar's history.
+            const event = navigation.emit({
+              canPreventDefault: true,
+              target: route.key,
+              type: "tabPress",
+            });
+            const isFocused = activeRoute?.key === route.key;
+
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name, route.params);
             }
           }}
         />

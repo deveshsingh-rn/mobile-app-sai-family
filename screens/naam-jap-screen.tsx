@@ -42,7 +42,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { PillarGlassDock } from "@/components/CustomTabBar";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import { NaamJapSkiaBackground } from "@/components/naam-jap/NaamJapSkiaBackground";
 import { PressableScale } from "@/components/naam-jap/PressableScale";
@@ -781,28 +780,6 @@ export default function NaamJapScreen() {
         />
       </BlurView>
 
-      <View
-        style={[
-          styles.bottomDock,
-          { paddingBottom: Math.max(insets.bottom, 8) },
-        ]}
-      >
-        <PillarGlassDock
-          activeRouteName="naam-jap"
-          onNavigate={(routeName) => {
-            const destinations: Record<string, string> = {
-              directory: "/(tabs)/directory",
-              events: "/(tabs)/events",
-              experiences: "/(tabs)/experiences",
-            };
-            const destination = destinations[routeName];
-
-            if (destination) {
-              router.replace(destination as never);
-            }
-          }}
-        />
-      </View>
 
       <NaamJapBottomSheet
         activeSheet={activeSheet}

@@ -22,6 +22,7 @@ export default function TabLayout() {
       <Tabs.Screen name="directory" />
       <Tabs.Screen name="sangha" />
       <Tabs.Screen name="profile" />
+      <Tabs.Screen name="naam-jap" />
       <Tabs.Screen
         name="experiences"
         options={{

@@ -28,7 +28,6 @@ import {
 } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PillarGlassDock } from '@/components/CustomTabBar';
 
 import {
   bookmarkDirectoryListingRequest,
@@ -707,7 +706,7 @@ const BusinessDetailsScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          // Room for the pillar dock (66) + its bottom gap (8) + breathing space.
+          // Room for the app's pillar tab bar (76 pt) + breathing space.
           paddingBottom: 110,
         }}>
         <View>
@@ -1743,32 +1742,6 @@ const BusinessDetailsScreen = () => {
         </View>
       </View>
 
-      <View
-        pointerEvents="box-none"
-        style={{
-          alignItems: 'center',
-          bottom: 8,
-          left: 0,
-          position: 'absolute',
-          right: 0,
-        }}>
-        <PillarGlassDock
-          activeRouteName="directory"
-          onNavigate={(routeName) => {
-            const destinations: Record<string, string> = {
-              directory: '/(tabs)/directory',
-              events: '/(tabs)/events',
-              experiences: '/(tabs)/experiences',
-              'naam-jap': '/naam-jap',
-            };
-            const destination = destinations[routeName];
-
-            if (destination) {
-              router.replace(destination as never);
-            }
-          }}
-        />
-      </View>
       </View>
     </SafeAreaView>
   );

@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: 34,
+    paddingBottom: 120, // clears the pillar tab bar (76 pt + gap)
   },
   disabled: {
     opacity: 0.55,

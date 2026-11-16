@@ -110,7 +110,6 @@ import {
   useAppSelector,
 } from "@/store/hooks";
 import { EventDetailSkeleton } from "@/components/events/EventSkeletons";
-import { PillarGlassDock } from "@/components/CustomTabBar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const formatLongDate = (value?: string) => {
@@ -795,30 +794,6 @@ export default function EventDetailRoute() {
         </Pressable> */}
       </View>
 
-      <View
-        pointerEvents="box-none"
-        style={[
-          styles.pillarDock,
-          { paddingBottom: Math.max(insets.bottom, 8) },
-        ]}
-      >
-        <PillarGlassDock
-          activeRouteName="events"
-          onNavigate={(routeName) => {
-            const destinations: Record<string, string> = {
-              directory: "/(tabs)/directory",
-              events: "/(tabs)/events",
-              experiences: "/(tabs)/experiences",
-              "naam-jap": "/naam-jap",
-            };
-            const destination = destinations[routeName];
-
-            if (destination) {
-              router.replace(destination as never);
-            }
-          }}
-        />
-      </View>
     </View>
   );
 }

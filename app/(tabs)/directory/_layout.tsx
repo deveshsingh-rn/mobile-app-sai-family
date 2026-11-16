@@ -1,5 +1,10 @@
 import { Stack } from 'expo-router';
 
+// Deep links (e.g. /directory/business-details) get the directory home underneath, so Back works.
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
 export default function DirectoryLayout() {
   return (
     <Stack
@@ -7,6 +12,7 @@ export default function DirectoryLayout() {
         headerShown: false,
       }}
     >
+      <Stack.Screen name="index" />
       <Stack.Screen name="business-details" />
       <Stack.Screen name="business-review" />
       <Stack.Screen name="business-search" />
