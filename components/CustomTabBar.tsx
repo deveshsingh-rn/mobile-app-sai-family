@@ -303,8 +303,8 @@ export function PillarGlassDock({
  * Key = tab route name, value = screen names inside that tab's stack.
  */
 const HIDE_DOCK_ON: Record<string, readonly string[]> = {
-  directory: ["create-listing", "business-review"],
-  events: ["create", "edit"],
+  directory: ["business-review"],
+  // Create Listing and Events create/edit keep the dock (Devesh, 2026-11-16).
 };
 
 export default function CustomTabBar({ navigation, state }: any) {

@@ -218,6 +218,7 @@ function ListingCard({
               flexDirection: 'row',
               marginTop: 10,
             }}>
+            {/* Hidden 2026-11-16 (Devesh): no rating in Devotees Near You / discovery lists.
             <Ionicons
               color="#FBBF24"
               name="star"
@@ -232,6 +233,7 @@ function ListingCard({
               }}>
               {(item.averageRating || 0).toFixed(1)}
             </Text>
+            */}
             <Text
               numberOfLines={1}
               style={{
@@ -239,7 +241,7 @@ function ListingCard({
                 flex: 1,
                 fontSize: 12,
                 fontWeight: '800',
-                marginLeft: 8,
+                marginLeft: 0,
               }}>
               {compactNumber(item.recommendationCount)} recommends
             </Text>

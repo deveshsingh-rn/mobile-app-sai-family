@@ -4267,13 +4267,13 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   askedCard: {
-    alignSelf: "flex-end",
+    // 2026-11-16 (Devesh): question shows from the left like the answer (was right-aligned).
+    alignSelf: "stretch",
     backgroundColor: "#FFFFFF",
     borderColor: "#F4D58D",
     borderRadius: 20,
     borderWidth: 1,
     marginTop: 10,
-    maxWidth: "92%",
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
@@ -4466,22 +4466,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     padding: 13,
   },
-  // 2026-11-16 (Devesh): chat history = question on the left, Baba's answer on the right.
+  // 2026-11-16 (Devesh): question and answer both start from the left, full width.
   assistantBubble: {
-    alignSelf: "flex-end",
+    alignSelf: "stretch",
     backgroundColor: "#FFF4E8",
-    borderBottomRightRadius: 6,
     borderColor: "#FED7AA",
     borderWidth: 1,
-    maxWidth: "88%",
   },
   userBubble: {
-    alignSelf: "flex-start",
+    alignSelf: "stretch",
     backgroundColor: EXPERIENCE_THEME.background,
-    borderBottomLeftRadius: 6,
     borderColor: EXPERIENCE_THEME.border,
     borderWidth: 1,
-    maxWidth: "82%",
   },
   messageRole: {
     color: "#B45309",

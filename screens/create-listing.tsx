@@ -30,7 +30,10 @@ import {
   router,
   useLocalSearchParams,
 } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { City, Country, State } from 'country-state-city';
 
 import {
@@ -172,6 +175,25 @@ const optimizeDirectoryImage = async (
 };
 
 const CreateListingScreen = () => {
+  const insets = useSafeAreaInsets();
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  // The pillar tab bar is 66 pt + max(safe-area, 8) tall; SafeAreaView already pads the safe area,
+  // so lift the footer by the rest. While typing, the keyboard covers the tab bar, so no lift.
+  const footerLift = isKeyboardVisible
+    ? 0
+    : 66 + Math.max(insets.bottom, 8) - insets.bottom + 6;
   const dispatch = useAppDispatch();
   const formScrollRef = useRef<ScrollView>(null);
   const expectsUploadRef = useRef(false);
@@ -2115,6 +2137,7 @@ const CreateListingScreen = () => {
             backgroundColor: theme.background,
             borderTopColor: theme.border,
             borderTopWidth: 1,
+            marginBottom: footerLift,
             paddingBottom: 10,
             paddingHorizontal: 16,
             paddingTop: 10,

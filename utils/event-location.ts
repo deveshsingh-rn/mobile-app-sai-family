@@ -65,16 +65,29 @@ export function createEventLocationQuery(event: EventLocationInput) {
   return "";
 }
 
-export function createEventMapUrl(event: EventLocationInput) {
+/** What Google Maps should search for: exact pin when we have coordinates, else the address text. */
+function googleMapsQuery(event: EventLocationInput) {
   const coordinate = getEventMapCoordinate(event);
-  if (coordinate) {
-    const { latitude, longitude } = coordinate;
-    return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`;
-  }
+  if (coordinate) return `${coordinate.latitude},${coordinate.longitude}`;
+  return createEventLocationQuery(event);
+}
 
-  const query = createEventLocationQuery(event);
-
+/**
+ * Google Maps universal link (official "Maps URLs" API). On Android it opens the Google Maps app
+ * directly; elsewhere it opens Google Maps in the browser. Used as the fallback on iOS.
+ */
+export function createEventMapUrl(event: EventLocationInput) {
+  const query = googleMapsQuery(event);
   return query
-    ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(query)}`
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
     : null;
+}
+
+/** iOS deep link into the Google Maps app (works only when the app is installed). */
+export function createGoogleMapsAppUrl(event: EventLocationInput) {
+  const query = googleMapsQuery(event);
+  if (!query) return null;
+  const coordinate = getEventMapCoordinate(event);
+  const center = coordinate ? `&center=${coordinate.latitude},${coordinate.longitude}&zoom=16` : "";
+  return `comgooglemaps://?q=${encodeURIComponent(query)}${center}`;
 }

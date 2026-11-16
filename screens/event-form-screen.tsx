@@ -2096,7 +2096,8 @@ const styles = StyleSheet.create({
     transform: [{scale: 0.99}],
   },
   content: {
-    paddingBottom: 40,
+    // Clears the pillar tab bar (76 pt + safe area) so the last field and Submit stay reachable.
+    paddingBottom: 140,
   },
   counter: {
     color: "#9CA3AF",

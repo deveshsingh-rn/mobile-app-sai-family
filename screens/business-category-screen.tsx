@@ -263,6 +263,7 @@ function FeaturedBusinessCard({
           flexDirection: 'row',
           marginTop: 18,
         }}>
+        {/* Hidden 2026-11-16 (Devesh): rating is not shown in the business category list.
         {[1, 2, 3, 4, 5].map((star) => (
           <Ionicons
             key={star}
@@ -288,6 +289,7 @@ function FeaturedBusinessCard({
           }}>
           {(item.averageRating || 0).toFixed(1)}
         </Text>
+        */}
 
         <Text
           numberOfLines={1}
@@ -296,7 +298,7 @@ function FeaturedBusinessCard({
             flex: 1,
             fontSize: 13,
             fontWeight: '700',
-            marginLeft: 10,
+            marginLeft: 0,
           }}>
           {formatDistance(item.distanceKm)}
         </Text>

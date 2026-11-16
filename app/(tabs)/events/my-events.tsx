@@ -6,7 +6,6 @@ import React, {
 } from "react";
 
 import {
-  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -65,7 +64,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@/store/hooks";
-import { createEventMapUrl } from "@/utils/event-location";
+import { openEventInGoogleMaps } from "@/services/open-google-maps";
 import { EventScreenHeader } from "@/components/events/EventScreenHeader";
 import { EventListSkeleton } from "@/components/events/EventSkeletons";
 
@@ -590,11 +589,7 @@ function UrgentAlert({
   event: SaiEvent;
 }) {
   const openMap = () => {
-    const mapsUrl = createEventMapUrl(event);
-
-    if (mapsUrl) {
-      Linking.openURL(mapsUrl);
-    }
+    void openEventInGoogleMaps(event);
   };
 
   return (
@@ -767,11 +762,7 @@ function MyEventCard({
                 return;
               }
 
-              const mapsUrl = createEventMapUrl(event.source);
-
-              if (mapsUrl) {
-                Linking.openURL(mapsUrl);
-              }
+              void openEventInGoogleMaps(event.source);
             }}
             style={styles.iconAction}
           >

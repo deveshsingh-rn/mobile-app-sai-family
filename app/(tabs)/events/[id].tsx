@@ -10,7 +10,6 @@ import {
   Alert,
   Image,
   ImageBackground,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -105,6 +104,7 @@ import type {
 } from "@/store/events/types";
 import { createEventShareMessage } from "@/utils/event-links";
 import { createEventMapUrl, createEventLocationQuery, getEventMapCoordinate } from "@/utils/event-location";
+import { openEventInGoogleMaps } from "@/services/open-google-maps";
 import {
   useAppDispatch,
   useAppSelector,
@@ -134,11 +134,7 @@ const getCityLine = (event: SaiEvent) =>
   [event.city, event.state, event.country].filter(Boolean).join(", ");
 
 const openEventMaps = (event: SaiEvent) => {
-  const mapsUrl = createEventMapUrl(event);
-
-  if (mapsUrl) {
-    Linking.openURL(mapsUrl);
-  }
+  void openEventInGoogleMaps(event);
 };
 
 type EventDetailWithExtras = SaiEvent & {
@@ -1120,7 +1116,7 @@ function LocationSection({
     <Section>
       <SectionTitle title="Location" />
       <Pressable
-        accessibilityLabel={mapUrl ? `Open ${location} in Maps` : "Event location is not available"}
+        accessibilityLabel={mapUrl ? `Open ${location} in Google Maps` : "Event location is not available"}
         accessibilityRole="button"
         disabled={!mapUrl}
         onPress={() => openEventMaps(event)}
@@ -1153,7 +1149,7 @@ function LocationSection({
           <View style={styles.mapFallback}>
             {mapLoading ? <ActivityIndicator color="#9A3412" /> : <Map color="#9A3412" size={34} />}
             <Text style={styles.mapFallbackText}>
-              {mapLoading ? "Finding event location" : mapUrl ? "Open event location in Maps" : "Location pending"}
+              {mapLoading ? "Finding event location" : mapUrl ? "Open event location in Google Maps" : "Location pending"}
             </Text>
           </View>
         )}
@@ -1178,7 +1174,7 @@ function LocationSection({
           style={[styles.primarySmallButton, !mapUrl && styles.disabledMapButton]}
         >
           <Navigation color="#FFFFFF" size={16} />
-          <Text style={styles.primarySmallText}>Open in Maps</Text>
+          <Text style={styles.primarySmallText}>Open in Google Maps</Text>
         </Pressable>
       </View>
     </Section>
