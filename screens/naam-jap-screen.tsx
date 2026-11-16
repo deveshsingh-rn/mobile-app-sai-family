@@ -655,7 +655,7 @@ export default function NaamJapScreen() {
               scaleTo={0.97}
               style={styles.celebrationButton}
             >
-              <Text style={styles.celebrationButtonText}>Receive blessings</Text>
+              <Text style={styles.celebrationButtonText}>Received Blessings</Text>
             </PressableScale>
           </MotiView>
         </View>

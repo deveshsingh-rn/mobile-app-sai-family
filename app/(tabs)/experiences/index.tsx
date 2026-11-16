@@ -6,9 +6,12 @@ import React, {
 } from "react";
 
 import {
+  Alert,
   Animated,
   Easing,
+  Image,
   ImageBackground,
+  Linking,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -58,8 +61,10 @@ import {
 
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
+import { SAI_LIVE_YOUTUBE_URL } from "@/constants/external-links";
 
 const LIMIT = 10;
+const SAI_BABA_HEADER_IMAGE = require("@/assets/images/saibaba1.png");
 const SAI_BABA_WELCOME_IMAGE =
   require("@/assets/images/hariom.png");
 
@@ -252,6 +257,13 @@ export default function HomeScreen() {
     router.push("/(tabs)/experiences/ask-sai" as any);
   }, []);
 
+  const openLive = useCallback(() => {
+    // youtube.com links open in the YouTube app when installed, otherwise in the browser.
+    void Linking.openURL(SAI_LIVE_YOUTUBE_URL).catch(() => {
+      Alert.alert("Live", "Unable to open YouTube right now. Please try again.");
+    });
+  }, []);
+
   const openCreatePost = useCallback(() => {
     router.push("/(tabs)/experiences/post" as any);
   }, []);
@@ -378,16 +390,41 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.pillarHeaderRow}>
-          <ExperienceCreatePostButton
-            active={false}
-            imageSource={require("@/assets/images/saibaba1.png")}
-            name={account?.name}
-            onPress={openCreatePost}
-            size="default"
-          />
+          <LinearGradient
+            colors={["#F59E0B", "#C2410C"]}
+            end={{ x: 1, y: 1 }}
+            start={{ x: 0, y: 0 }}
+            style={styles.babaRing}
+          >
+            <View style={styles.babaInset}>
+              <Image
+                accessibilityIgnoresInvertColors
+                accessibilityLabel="Sai Baba"
+                resizeMode="contain"
+                source={SAI_BABA_HEADER_IMAGE}
+                style={styles.babaImage}
+              />
+            </View>
+          </LinearGradient>
           <Text numberOfLines={2} style={styles.topBarTitle}>
             Share your Sai Journey
           </Text>
+          {SAI_LIVE_YOUTUBE_URL ? (
+            <Pressable
+              accessibilityHint="Opens the Sai live stream on YouTube"
+              accessibilityLabel="Watch live on YouTube"
+              accessibilityRole="link"
+              hitSlop={6}
+              onPress={openLive}
+              style={({ pressed }) => [
+                styles.liveButton,
+                pressed && styles.liveButtonPressed,
+              ]}
+            >
+              <View style={styles.liveDot} />
+              <Text style={styles.liveButtonText}>Live</Text>
+            </Pressable>
+          ) : null}
           <ExperienceProfileMenu />
         </View>
       </View>
@@ -507,6 +544,13 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.experienceIntro}>
+              <ExperienceCreatePostButton
+                active={false}
+                imageSource={SAI_BABA_HEADER_IMAGE}
+                name={account?.name}
+                onPress={openCreatePost}
+                size="default"
+              />
               <Text style={styles.experienceIntroText}>
                 Share Sai Mandirs Worldwide, Miracles, Moments when Baba Blessed You. Receive Sai Blessings
               </Text>
@@ -572,16 +616,70 @@ const styles = StyleSheet.create({
   },
 
   experienceIntro: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
     paddingBottom: 14,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
   },
 
   experienceIntroText: {
     color: EXPERIENCE_THEME.heading,
+    flex: 1,
     fontSize: 16,
     fontWeight: "800",
     lineHeight: 25,
-    marginTop: 5,
+  },
+
+  babaRing: {
+    alignItems: "center",
+    borderRadius: 24,
+    height: 48,
+    justifyContent: "center",
+    width: 48,
+  },
+
+  babaInset: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 21,
+    height: 42,
+    justifyContent: "center",
+    overflow: "hidden",
+    width: 42,
+  },
+
+  babaImage: {
+    height: 40,
+    width: 40,
+  },
+
+  liveButton: {
+    alignItems: "center",
+    backgroundColor: "#DC2626",
+    borderRadius: 16,
+    flexDirection: "row",
+    gap: 6,
+    height: 32,
+    marginRight: 8,
+    paddingHorizontal: 12,
+  },
+
+  liveButtonPressed: {
+    opacity: 0.85,
+  },
+
+  liveDot: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 4,
+    height: 8,
+    width: 8,
+  },
+
+  liveButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "900",
   },
 
   askSaiGlowFrame: {
