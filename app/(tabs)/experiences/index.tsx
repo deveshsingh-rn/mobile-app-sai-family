@@ -12,6 +12,7 @@ import {
   Image,
   ImageBackground,
   Linking,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -386,7 +387,14 @@ export default function HomeScreen() {
       <View
         style={[
           styles.fixedTop,
-          { paddingTop: Math.max(insets.top + 4, 12) },
+          // 2026-11-16 (Devesh): header moved up. iOS: 4 pt into the empty lower part of the
+          // status-bar inset (time/battery sit higher), Android: right under the status bar.
+          {
+            paddingTop:
+              Platform.OS === "ios"
+                ? Math.max(insets.top - 4, 8)
+                : Math.max(insets.top, 8),
+          },
         ]}
       >
         <View style={styles.pillarHeaderRow}>
@@ -400,7 +408,7 @@ export default function HomeScreen() {
               <Image
                 accessibilityIgnoresInvertColors
                 accessibilityLabel="Sai Baba"
-                resizeMode="contain"
+                resizeMode="cover"
                 source={SAI_BABA_HEADER_IMAGE}
                 style={styles.babaImage}
               />
@@ -427,7 +435,7 @@ export default function HomeScreen() {
               ]}
             >
               <View style={styles.liveDot} />
-              <Text style={styles.liveButtonText}>Live Darshan</Text>
+              <Text style={styles.liveButtonText}>Shirdi Live Darshan</Text>
             </Pressable>
           ) : null}
           <ExperienceProfileMenu />
@@ -601,8 +609,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingBottom: 3,
-    paddingHorizontal: 12,
+    paddingBottom: 1,
+    paddingHorizontal: 4,
   },
 
   topBarTitle: {
@@ -610,9 +618,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     fontWeight: "700",
-    lineHeight: 22,
-    marginHorizontal: 8,
+    lineHeight: 20,
+    marginHorizontal: 12,
     textAlign: "center",
+   
   },
 
   feedHeader: {
@@ -636,28 +645,31 @@ const styles = StyleSheet.create({
     lineHeight: 25,
   },
 
-  // 2026-11-16 (Devesh): Baba's image bigger, 60 → 76 pt ring (+27%).
+  // 2026-11-16 (Devesh): Baba looks bigger without a taller header. The ring stays 60 pt
+  // (original height); inside, the full-body 1024×1536 image is zoomed to its face + raised hands.
   babaRing: {
     alignItems: "center",
-    borderRadius: 38,
-    height: 76,
+    borderRadius: 30,
+    height: 60,
     justifyContent: "center",
-    width: 76,
+    width: 60,
   },
 
   babaInset: {
-    alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 36,
-    height: 72,
-    justifyContent: "center",
+    borderRadius: 29,
+    height: 58,
     overflow: "hidden",
-    width: 72,
+    width: 58,
   },
 
+  // 96 × 144 keeps the 2:3 image ratio; left/top centre the face and keep both hands inside.
   babaImage: {
-    height: 72,
-    width: 80,
+    height: 144,
+    left: -19,
+    position: "absolute",
+    top: 4,
+    width: 96,
   },
 
   liveButton: {
@@ -678,14 +690,14 @@ const styles = StyleSheet.create({
   liveDot: {
     backgroundColor: "#FFFFFF",
     borderRadius: 4,
-    height: 8,
-    width: 8,
+    height: 6,
+    width: 6,
   },
 
   liveButtonText: {
     color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "900",
+    fontSize: 12,
+    fontWeight: "700",
   },
 
   askSaiGlowFrame: {
