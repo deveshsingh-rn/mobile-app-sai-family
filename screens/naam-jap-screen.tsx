@@ -1279,7 +1279,7 @@ function NaamJapBottomSheet({
           tint="light"
           style={[
             styles.sheet,
-            activeSheet === "breakdown" && styles.sheetSolid,
+            styles.sheetSolid,
             { paddingBottom: Math.max(insets.bottom + 12, 28) },
           ]}
         >
@@ -1310,7 +1310,7 @@ function NaamJapBottomSheet({
                     data.targetMalas <= 1 && styles.disabled,
                   ]}
                 >
-                  <Minus color="#292524" size={25} />
+                  <Minus color={SAI.saffronDeep} size={25} />
                 </PressableScale>
                 <View style={styles.targetValueCopy}>
                   <MotiView
@@ -1333,7 +1333,7 @@ function NaamJapBottomSheet({
                     data.targetMalas >= MAX_MALA_GOAL && styles.disabled,
                   ]}
                 >
-                  <Plus color="#292524" size={25} />
+                  <Plus color={SAI.saffronDeep} size={25} />
                 </PressableScale>
               </View>
               <Text style={styles.targetSummary}>
@@ -1376,7 +1376,7 @@ function NaamJapBottomSheet({
                   onChangeText={setNameDraft}
                   onSubmitEditing={completeNameSelection}
                   placeholder="Add a Naam"
-                  placeholderTextColor="#A8A29E"
+                  placeholderTextColor={SAI.muted}
                   returnKeyType="done"
                   style={styles.nameInput}
                   value={nameDraft}
@@ -1393,7 +1393,11 @@ function NaamJapBottomSheet({
                   return (
                     <View
                       key={name.id}
-                      style={[styles.nameRow, editing && styles.editingNameRow]}
+                      style={[
+                        styles.nameRow,
+                        selected && styles.selectedNameRow,
+                        editing && styles.editingNameRow,
+                      ]}
                     >
                       <PressableScale
                         containerStyle={styles.nameSelectContainer}
@@ -1421,7 +1425,7 @@ function NaamJapBottomSheet({
                         scaleTo={0.85}
                         style={styles.nameAction}
                       >
-                        <Pencil color="#57534E" size={18} />
+                        <Pencil color={SAI.saffronDeep} size={18} />
                       </PressableScale>
                       <PressableScale
                         accessibilityLabel={`Delete ${name.label}`}
@@ -2136,15 +2140,15 @@ const styles = StyleSheet.create({
   },
   sheetHandle: {
     alignSelf: "center",
-    backgroundColor: "#D6D3D1",
+    backgroundColor: SAI.border,
     borderRadius: 2,
     height: 4,
     marginBottom: 18,
     width: 42,
   },
-  sheetTitle: { color: "#1C1917", fontSize: 23, fontWeight: "900" },
+  sheetTitle: { color: SAI.heading, fontSize: 23, fontWeight: "900" },
   sheetDescription: {
-    color: "#78716C",
+    color: SAI.paragraph,
     fontSize: 13,
     lineHeight: 19,
     fontWeight: "800",
@@ -2175,8 +2179,8 @@ const styles = StyleSheet.create({
   intervalButtonContainer: { flex: 1 },
   intervalButton: {
     alignItems: "center",
-    backgroundColor: "#F5F5F4",
-    borderColor: "#E7E5E4",
+    backgroundColor: SAI.cardTint,
+    borderColor: SAI.peach,
     borderCurve: "continuous",
     borderRadius: 10,
     borderWidth: 1,
@@ -2185,7 +2189,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   activeIntervalButton: { backgroundColor: SAI.saffron, borderColor: SAI.saffron },
-  intervalButtonText: { color: "#57534E", fontSize: 13, fontWeight: "800" },
+  intervalButtonText: { color: SAI.saffronDeep, fontSize: 13, fontWeight: "800" },
   activeIntervalButtonText: { color: "#FFFFFF" },
   targetStepper: {
     alignItems: "center",
@@ -2195,8 +2199,8 @@ const styles = StyleSheet.create({
   },
   stepperButton: {
     alignItems: "center",
-    backgroundColor: "#F5F5F4",
-    borderColor: "#E7E5E4",
+    backgroundColor: SAI.cardTint,
+    borderColor: SAI.peach,
     borderCurve: "continuous",
     borderRadius: 16,
     borderWidth: 1,
@@ -2205,8 +2209,8 @@ const styles = StyleSheet.create({
     width: 54,
   },
   targetValueCopy: { alignItems: "center", minWidth: 128 },
-  targetValue: { color: "#1C1917", fontSize: 46, fontWeight: "900" },
-  targetValueLabel: { color: "#78716C", fontSize: 12, fontWeight: "700" },
+  targetValue: { color: SAI.heading, fontSize: 46, fontWeight: "900" },
+  targetValueLabel: { color: SAI.muted, fontSize: 12, fontWeight: "700" },
   targetSummary: {
     color: "#9A3412",
     fontSize: 13,
@@ -2216,7 +2220,7 @@ const styles = StyleSheet.create({
   },
   sheetPrimaryButton: {
     alignItems: "center",
-    backgroundColor: "#292524",
+    backgroundColor: SAI.saffron,
     borderCurve: "continuous",
     borderRadius: 14,
     justifyContent: "center",
@@ -2226,7 +2230,9 @@ const styles = StyleSheet.create({
   sheetPrimaryButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
   editingBanner: {
     alignItems: "center",
-    backgroundColor: "#FFF1DF",
+    backgroundColor: SAI.cardTint,
+    borderColor: SAI.peach,
+    borderWidth: 1,
     borderRadius: 10,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -2238,12 +2244,12 @@ const styles = StyleSheet.create({
   editingBannerCancel: { color: "#9A3412", fontSize: 12, fontWeight: "900" },
   nameInputRow: { flexDirection: "row", gap: 8, marginTop: 16 },
   nameInput: {
-    backgroundColor: "rgba(255,255,255,0.9)",
-    borderColor: "#D5DDD8",
+    backgroundColor: "#FFFFFF",
+    borderColor: SAI.border,
     borderCurve: "continuous",
     borderRadius: 14,
     borderWidth: 1,
-    color: "#292524",
+    color: SAI.heading,
     flex: 1,
     fontSize: 15,
     minHeight: 48,
@@ -2267,7 +2273,7 @@ const styles = StyleSheet.create({
   nameRow: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderColor: "#E7E5E4",
+    borderColor: SAI.border,
     borderCurve: "continuous",
     borderRadius: 14,
     borderWidth: 1,
@@ -2275,21 +2281,22 @@ const styles = StyleSheet.create({
     minHeight: 52,
     paddingHorizontal: 10,
   },
-  editingNameRow: { borderColor: "#D97706", borderWidth: 1.5 },
+  editingNameRow: { borderColor: SAI.marigold, borderWidth: 1.5 },
+  selectedNameRow: { backgroundColor: SAI.cardTint, borderColor: SAI.saffron, borderWidth: 1.5 },
   nameSelectArea: { alignItems: "center", flex: 1, flexDirection: "row" },
   nameSelectContainer: { flex: 1 },
   nameCheck: {
     alignItems: "center",
-    borderColor: "#D6D3D1",
+    borderColor: SAI.peach,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 1.5,
     height: 21,
     justifyContent: "center",
     width: 21,
   },
   activeNameCheck: { backgroundColor: "#C2410C", borderColor: "#C2410C" },
   nameRowText: {
-    color: "#292524",
+    color: SAI.heading,
     flex: 1,
     fontSize: 14,
     fontWeight: "800",
