@@ -21,13 +21,14 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   router,
   useLocalSearchParams,
 } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { PillarGlassDock } from '@/components/CustomTabBar';
 
 import {
   bookmarkDirectoryListingRequest,
@@ -69,6 +70,53 @@ const palette = {
   ink: '#7C2D12',
   muted: '#4B4037',
 };
+
+/** Solid cream circle so the action stays readable on any banner photo. */
+function HeaderIconButton({
+  accessibilityLabel,
+  active = false,
+  disabled = false,
+  icon,
+  onPress,
+}: {
+  accessibilityLabel: string;
+  active?: boolean;
+  disabled?: boolean;
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      activeOpacity={0.8}
+      disabled={disabled}
+      hitSlop={6}
+      onPress={onPress}
+      style={{
+        alignItems: 'center',
+        backgroundColor: active ? '#FED7AA' : 'rgba(255,248,236,0.96)',
+        borderColor: active ? '#C2410C' : '#F1D9B5',
+        borderRadius: 22,
+        borderWidth: 1,
+        elevation: 5,
+        height: 44,
+        justifyContent: 'center',
+        opacity: disabled ? 0.6 : 1,
+        shadowColor: '#7C2D12',
+        shadowOffset: { height: 3, width: 0 },
+        shadowOpacity: 0.18,
+        shadowRadius: 8,
+        width: 44,
+      }}>
+      <Ionicons
+        name={icon}
+        size={21}
+        color={active ? '#C2410C' : '#7C2D12'}
+      />
+    </TouchableOpacity>
+  );
+}
 
 const iosShadow = {
   elevation: 4,
@@ -655,10 +703,12 @@ const BusinessDetailsScreen = () => {
         barStyle="light-content"
       />
 
+      <View style={{ flex: 1 }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 54,
+          // Room for the pillar dock (66) + its bottom gap (8) + breathing space.
+          paddingBottom: 110,
         }}>
         <View>
           {banner ? (
@@ -701,145 +751,6 @@ const BusinessDetailsScreen = () => {
             }}
           />
 
-          <View
-            style={{
-              alignItems: 'center',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              left: 18,
-              position: 'absolute',
-              right: 18,
-              top: 18,
-            }}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => router.back()}
-              style={{
-                alignItems: 'center',
-                borderRadius: 22,
-                height: 44,
-                overflow: 'hidden',
-                justifyContent: 'center',
-                width: 44,
-              }}>
-              <BlurView
-                intensity={35}
-                tint="light"
-                style={{
-                  alignItems: 'center',
-                  height: '100%',
-                  justifyContent: 'center',
-                  width: '100%',
-                }}>
-              <Ionicons
-                name="arrow-back"
-                size={22}
-                color="#111827"
-              />
-              </BlurView>
-            </TouchableOpacity>
-
-            <View
-              style={{
-                flexDirection: 'row',
-              }}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                disabled={actionPending}
-                onPress={handleBookmark}
-                style={{
-                  alignItems: 'center',
-                  borderRadius: 21,
-                  height: 42,
-                  justifyContent: 'center',
-                  marginRight: 10,
-                  overflow: 'hidden',
-                  width: 42,
-                }}>
-                <BlurView
-                  intensity={34}
-                  tint="light"
-                  style={{
-                    alignItems: 'center',
-                    height: '100%',
-                    justifyContent: 'center',
-                    width: '100%',
-                  }}>
-                <Ionicons
-                  name={
-                    listing.bookmarkedByMe
-                      ? 'bookmark'
-                      : 'bookmark-outline'
-                  }
-                  size={21}
-                  color={
-                    listing.bookmarkedByMe
-                      ? '#F97316'
-                      : '#374151'
-                  }
-                />
-                </BlurView>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={handleShare}
-                style={{
-                  alignItems: 'center',
-                  borderRadius: 21,
-                  height: 42,
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                  width: 42,
-                }}>
-                <BlurView
-                  intensity={34}
-                  tint="light"
-                  style={{
-                    alignItems: 'center',
-                    height: '100%',
-                    justifyContent: 'center',
-                    width: '100%',
-                  }}>
-                <Ionicons
-                  name="share-social-outline"
-                  size={21}
-                  color="#374151"
-                />
-                </BlurView>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.8}
-                disabled={actionPending}
-                onPress={handleReport}
-                style={{
-                  alignItems: 'center',
-                  borderRadius: 21,
-                  height: 42,
-                  justifyContent: 'center',
-                  marginLeft: 10,
-                  overflow: 'hidden',
-                  width: 42,
-                }}>
-                <BlurView
-                  intensity={34}
-                  tint="light"
-                  style={{
-                    alignItems: 'center',
-                    height: '100%',
-                    justifyContent: 'center',
-                    width: '100%',
-                  }}>
-                <Ionicons
-                  name="flag-outline"
-                  size={20}
-                  color="#374151"
-                />
-                </BlurView>
-              </TouchableOpacity>
-            </View>
-          </View>
 
           <View
             style={{
@@ -1785,6 +1696,80 @@ const BusinessDetailsScreen = () => {
           </View> */}
         </View>
       </ScrollView>
+
+      <View
+        pointerEvents="box-none"
+        style={{
+          alignItems: 'center',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          left: 14,
+          position: 'absolute',
+          right: 14,
+          top: 6,
+          zIndex: 10,
+        }}>
+        <HeaderIconButton
+          accessibilityLabel="Go back"
+          icon="arrow-back"
+          onPress={() => router.back()}
+        />
+
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: 10,
+          }}>
+          <HeaderIconButton
+            accessibilityLabel={
+              listing.bookmarkedByMe ? 'Remove bookmark' : 'Bookmark listing'
+            }
+            active={Boolean(listing.bookmarkedByMe)}
+            disabled={actionPending}
+            icon={listing.bookmarkedByMe ? 'bookmark' : 'bookmark-outline'}
+            onPress={handleBookmark}
+          />
+          <HeaderIconButton
+            accessibilityLabel="Share listing"
+            icon="share-social-outline"
+            onPress={handleShare}
+          />
+          <HeaderIconButton
+            accessibilityLabel="Report listing"
+            disabled={actionPending}
+            icon="flag-outline"
+            onPress={handleReport}
+          />
+        </View>
+      </View>
+
+      <View
+        pointerEvents="box-none"
+        style={{
+          alignItems: 'center',
+          bottom: 8,
+          left: 0,
+          position: 'absolute',
+          right: 0,
+        }}>
+        <PillarGlassDock
+          activeRouteName="directory"
+          onNavigate={(routeName) => {
+            const destinations: Record<string, string> = {
+              directory: '/(tabs)/directory',
+              events: '/(tabs)/events',
+              experiences: '/(tabs)/experiences',
+              'naam-jap': '/naam-jap',
+            };
+            const destination = destinations[routeName];
+
+            if (destination) {
+              router.replace(destination as never);
+            }
+          }}
+        />
+      </View>
+      </View>
     </SafeAreaView>
   );
 };

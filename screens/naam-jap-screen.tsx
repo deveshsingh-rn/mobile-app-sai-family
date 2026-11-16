@@ -70,13 +70,17 @@ import {
 } from "@/utils/naam-jap-per-name";
 import {
   createNaamVoicePlayer,
+  deleteNaamVoiceFile,
   ensureNaamVoiceFile,
+  hasNaamVoiceFile,
   type NaamVoicePlayer,
 } from "@/services/naam-voice";
 
 type NaamJapSheet = "breakdown" | "names" | "target" | null;
 type BreakdownPeriod = "today" | "lifetime";
 type VoiceStatus = "off" | "preparing" | "ready";
+type NaamVoiceFileStatus = "preparing" | "ready" | "failed";
+const VOICE_LABEL_SEPARATOR = "\u0001";
 type FloatingNaamItem = { id: string; left: number; label: string };
 
 const SAI_IMAGE = require("@/assets/images/saijii.jpg");
@@ -111,6 +115,10 @@ export default function NaamJapScreen() {
   const [breakdownPeriod, setBreakdownPeriod] = useState<BreakdownPeriod>("today");
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("off");
   const voiceUriRef = useRef<string | null>(null);
+  // Baba-voice clip per saved Naam: generated as soon as a Naam is added, saved on the phone.
+  const [naamVoiceStatus, setNaamVoiceStatus] = useState<Record<string, NaamVoiceFileStatus>>({});
+  const [naamVoiceRetryTick, setNaamVoiceRetryTick] = useState(0);
+  const failedVoiceLabelsRef = useRef(new Set<string>());
   const voicePlayerRef = useRef<NaamVoicePlayer | null>(null);
   const dataRef = useRef(data);
   const hydratedRef = useRef(false);
@@ -281,6 +289,67 @@ export default function NaamJapScreen() {
     isAppActive,
   ]);
 
+  // Every saved Naam gets its Baba-voice clip prepared in the background (once, then offline),
+  // so it is ready the moment the devotee turns voice on or starts the automatic counter.
+  const namesVoiceKey = data.jaapNames
+    .map((item) => item.label)
+    .join(VOICE_LABEL_SEPARATOR);
+  useEffect(() => {
+    if (!hydrated || !namesVoiceKey) return;
+    let cancelled = false;
+    const labels = namesVoiceKey.split(VOICE_LABEL_SEPARATOR);
+
+    void (async () => {
+      // One at a time: gentle on the network and on the per-user daily voice limit.
+      for (const label of labels) {
+        if (cancelled) return;
+        if (failedVoiceLabelsRef.current.has(label)) continue;
+        if (await hasNaamVoiceFile(label)) {
+          if (!cancelled) {
+            setNaamVoiceStatus((current) =>
+              current[label] === "ready" ? current : { ...current, [label]: "ready" }
+            );
+          }
+          continue;
+        }
+        if (cancelled) return;
+        setNaamVoiceStatus((current) => ({ ...current, [label]: "preparing" }));
+        try {
+          await ensureNaamVoiceFile(label);
+          if (!cancelled) {
+            setNaamVoiceStatus((current) => ({ ...current, [label]: "ready" }));
+          }
+        } catch {
+          failedVoiceLabelsRef.current.add(label);
+          if (!cancelled) {
+            setNaamVoiceStatus((current) => ({ ...current, [label]: "failed" }));
+          }
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, namesVoiceKey, naamVoiceRetryTick]);
+
+  const retryNaamVoice = useCallback((label: string) => {
+    failedVoiceLabelsRef.current.delete(label);
+    setNaamVoiceStatus((current) => ({ ...current, [label]: "preparing" }));
+    setNaamVoiceRetryTick((tick) => tick + 1);
+  }, []);
+
+  const forgetNaamVoice = (label: string, remainingLabels: string[]) => {
+    if (remainingLabels.includes(label)) return;
+    failedVoiceLabelsRef.current.delete(label);
+    setNaamVoiceStatus((current) => {
+      const next = { ...current };
+      delete next[label];
+      return next;
+    });
+    void deleteNaamVoiceFile(label);
+  };
+
   // Sai Baba's voice: prepare the selected Naam's clip (downloaded once, then offline).
   const selectedVoiceLabel = selectedName?.label || "Sai Ram";
   useEffect(() => {
@@ -367,6 +436,18 @@ export default function NaamJapScreen() {
       return false;
     }
 
+    const previousLabel = editingNameId
+      ? data.jaapNames.find((item) => item.id === editingNameId)?.label
+      : undefined;
+    if (previousLabel && previousLabel !== label) {
+      forgetNaamVoice(
+        previousLabel,
+        data.jaapNames
+          .filter((item) => item.id !== editingNameId)
+          .map((item) => item.label)
+      );
+    }
+
     setData((current) => {
       if (editingNameId) {
         return {
@@ -419,7 +500,13 @@ export default function NaamJapScreen() {
     Alert.alert("Delete this Naam?", name.label, [
       { style: "cancel", text: "Cancel" },
       {
-        onPress: () =>
+        onPress: () => {
+          forgetNaamVoice(
+            name.label,
+            data.jaapNames
+              .filter((item) => item.id !== name.id)
+              .map((item) => item.label)
+          );
           setData((current) => {
             const remaining = current.jaapNames.filter(
               (item) => item.id !== name.id
@@ -433,7 +520,8 @@ export default function NaamJapScreen() {
                   ? remaining[0].id
                   : current.selectedNameId,
             };
-          }),
+          });
+        },
         style: "destructive",
         text: "Delete",
       },
@@ -726,6 +814,8 @@ export default function NaamJapScreen() {
         editName={editName}
         editingNameId={editingNameId}
         nameDraft={nameDraft}
+        naamVoiceStatus={naamVoiceStatus}
+        retryNaamVoice={retryNaamVoice}
         completeNameSelection={completeNameSelection}
         selectedName={selectedName}
         setBreakdownPeriod={setBreakdownPeriod}
@@ -1218,6 +1308,8 @@ function NaamJapBottomSheet({
   editName,
   editingNameId,
   nameDraft,
+  naamVoiceStatus,
+  retryNaamVoice,
   selectedName,
   setBreakdownPeriod,
   setData,
@@ -1233,6 +1325,8 @@ function NaamJapBottomSheet({
   editName: (name: NaamJapName) => void;
   editingNameId: string | null;
   nameDraft: string;
+  naamVoiceStatus: Record<string, NaamVoiceFileStatus>;
+  retryNaamVoice: (label: string) => void;
   selectedName?: NaamJapName;
   setBreakdownPeriod: (period: BreakdownPeriod) => void;
   setData: React.Dispatch<React.SetStateAction<NaamJapData>>;
@@ -1418,6 +1512,11 @@ function NaamJapBottomSheet({
                           {name.label}
                         </Text>
                       </PressableScale>
+                      <NaamVoiceBadge
+                        label={name.label}
+                        onRetry={retryNaamVoice}
+                        status={naamVoiceStatus[name.label]}
+                      />
                       <PressableScale
                         accessibilityLabel={`Edit ${name.label}`}
                         hitSlop={6}
@@ -1455,6 +1554,56 @@ function NaamJapBottomSheet({
       </KeyboardAvoidingView>
     </Modal>
   );
+}
+
+function NaamVoiceBadge({
+  label,
+  onRetry,
+  status,
+}: {
+  label: string;
+  onRetry: (label: string) => void;
+  status?: NaamVoiceFileStatus;
+}) {
+  if (status === "preparing") {
+    return (
+      <View
+        accessibilityLabel={`Preparing Sai Baba's voice for ${label}`}
+        style={styles.nameVoiceBadge}
+      >
+        <ActivityIndicator color={SAI.saffron} size="small" />
+      </View>
+    );
+  }
+
+  if (status === "failed") {
+    return (
+      <PressableScale
+        accessibilityHint="Tries again to prepare Sai Baba's voice for this Naam"
+        accessibilityLabel={`Voice not ready for ${label}. Retry`}
+        accessibilityRole="button"
+        hitSlop={6}
+        onPress={() => onRetry(label)}
+        scaleTo={0.85}
+        style={styles.nameVoiceBadge}
+      >
+        <RotateCcw color={SAI.saffronDeep} size={17} />
+      </PressableScale>
+    );
+  }
+
+  if (status === "ready") {
+    return (
+      <View
+        accessibilityLabel={`Sai Baba's voice ready for ${label}`}
+        style={styles.nameVoiceBadge}
+      >
+        <Volume2 color={SAI.saffron} size={18} />
+      </View>
+    );
+  }
+
+  return <View style={styles.nameVoiceBadge} />;
 }
 
 function SmallAction({
@@ -2303,4 +2452,5 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   nameAction: { alignItems: "center", height: 40, justifyContent: "center", width: 38 },
+  nameVoiceBadge: { alignItems: "center", height: 40, justifyContent: "center", width: 32 },
 });

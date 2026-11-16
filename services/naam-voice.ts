@@ -30,13 +30,37 @@ function messageFromError(error: unknown) {
   return data?.error?.message || "Baba's voice could not be prepared. Please check your internet and try again.";
 }
 
-/** Returns a local file:// URI for this Naam in Baba's voice, downloading it once if needed. */
-export async function ensureNaamVoiceFile(label: string): Promise<string> {
+async function localNaamVoicePath(label: string) {
   const FileSystem = await import("expo-file-system/legacy");
   if (!FileSystem.documentDirectory) throw new Error("Audio storage is unavailable on this device.");
-
   const directory = `${FileSystem.documentDirectory}naam-voice/`;
-  const uri = `${directory}${cacheKey(label)}.mp3`;
+  return { FileSystem, directory, uri: `${directory}${cacheKey(label)}.mp3` };
+}
+
+/** True when this Naam's Baba-voice clip is already saved on the phone. */
+export async function hasNaamVoiceFile(label: string) {
+  try {
+    const { FileSystem, uri } = await localNaamVoicePath(label);
+    const info = await FileSystem.getInfoAsync(uri);
+    return info.exists && (info.size ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Remove a Naam's saved clip (called when the Naam is deleted or renamed). */
+export async function deleteNaamVoiceFile(label: string) {
+  try {
+    const { FileSystem, uri } = await localNaamVoicePath(label);
+    await FileSystem.deleteAsync(uri, { idempotent: true });
+  } catch {
+    // Best effort: a leftover ~24 KB file is harmless.
+  }
+}
+
+/** Returns a local file:// URI for this Naam in Baba's voice, downloading it once if needed. */
+export async function ensureNaamVoiceFile(label: string): Promise<string> {
+  const { FileSystem, directory, uri } = await localNaamVoicePath(label);
   const existing = await FileSystem.getInfoAsync(uri);
   if (existing.exists && (existing.size ?? 0) > 0) return uri;
 

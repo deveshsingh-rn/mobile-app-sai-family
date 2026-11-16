@@ -724,10 +724,10 @@ const CreateListingScreen = () => {
 
     if (!error) {
       Alert.alert(
-        isEditMode ? 'Listing updated' : 'Listing submitted',
+        isEditMode ? 'Listing updated' : 'Thank you for submitting 🙏',
         isEditMode
           ? 'Your listing changes have been saved.'
-          : 'Your listing has been submitted for review.',
+          : 'Our admin will shortly review and confirm your business. Once approved, it will be visible to the Sai Family.',
         [
           {
             text: 'OK',

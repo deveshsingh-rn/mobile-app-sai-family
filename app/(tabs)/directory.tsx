@@ -591,6 +591,7 @@ function FeaturedBusinessCard({
         {listingMeta(listing) || 'Sai Directory listing'}
       </Text>
 
+      {/* Hidden 2026-11-16 (Devesh): rating is not shown on "Devotees Near You" cards.
       <View
         style={{
           alignItems: 'center',
@@ -640,6 +641,7 @@ function FeaturedBusinessCard({
           ({listing.recommendationCount || 0} Endorsements)
         </Text>
       </View>
+      */}
 
       <View
         style={{
@@ -647,6 +649,7 @@ function FeaturedBusinessCard({
           flexWrap: 'wrap',
           marginTop: 4,
         }}>
+        {/* Hidden 2026-11-16 (Devesh): views and enquiries are not shown on "Devotees Near You" cards.
         <TrustPill
           color="#F97316"
           icon="eye-outline"
@@ -657,6 +660,7 @@ function FeaturedBusinessCard({
           icon="chatbubble-ellipses-outline"
           label={`${compactNumber(listing.enquiryCount)} Enquiries`}
         />
+        */}
         {listing.homeServiceAvailable ? (
           <TrustPill
             color="#16A34A"
