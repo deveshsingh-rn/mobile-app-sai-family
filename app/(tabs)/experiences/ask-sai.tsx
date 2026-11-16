@@ -29,10 +29,12 @@ import { MotiView } from "moti";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AskSaiVoiceCaptureModal } from "@/components/experiences/AskSaiVoiceCaptureModal";
+import { AskSaiHistoryDrawer } from "@/components/experiences/AskSaiHistoryDrawer";
 
 import {
   ArrowLeft,
   BookOpen,
+  PanelLeft,
   Mic,
   Pause,
   Send,
@@ -72,6 +74,9 @@ import { voiceLatencySnapshot, type VoiceTiming } from "@/utils/voice-latency";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { useAppSelector } from "@/store/hooks";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
+
+/** Conversations per page in the left "Recent questions" drawer (small payload for 4G). */
+const CONVERSATION_PAGE_SIZE = 20;
 import type {
   SaiAudioStreamChunkEvent,
   SaiAudioStreamErrorEvent,
@@ -626,6 +631,9 @@ export default function AskSaiScreen() {
   );
   const [authMessage, setAuthMessage] = useState("");
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const [hasMoreConversations, setHasMoreConversations] = useState(false);
+  const [isLoadingMoreConversations, setIsLoadingMoreConversations] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isVoiceCaptureStarting, setIsVoiceCaptureStarting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -707,11 +715,14 @@ export default function AskSaiScreen() {
     try {
       setIsLoadingHistory(true);
       const response = await fetchDevoteeAiConversations({
-        limit: 8,
+        limit: CONVERSATION_PAGE_SIZE,
         offset: 0,
       });
       setAuthMessage("");
       setConversations(response.items);
+      setHasMoreConversations(
+        response.pagination?.hasMore ?? response.items.length === CONVERSATION_PAGE_SIZE
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to load guidance.";
@@ -725,6 +736,28 @@ export default function AskSaiScreen() {
       setIsLoadingHistory(false);
     }
   }, []);
+
+  const loadMoreConversations = useCallback(async () => {
+    if (isLoadingMoreConversations) return;
+    try {
+      setIsLoadingMoreConversations(true);
+      const response = await fetchDevoteeAiConversations({
+        limit: CONVERSATION_PAGE_SIZE,
+        offset: conversations.length,
+      });
+      setConversations((current) => {
+        const seen = new Set(current.map((item) => item.id));
+        return [...current, ...response.items.filter((item) => !seen.has(item.id))];
+      });
+      setHasMoreConversations(
+        response.pagination?.hasMore ?? response.items.length === CONVERSATION_PAGE_SIZE
+      );
+    } catch (error) {
+      console.warn("[AskSai] Unable to load older conversations", error);
+    } finally {
+      setIsLoadingMoreConversations(false);
+    }
+  }, [conversations.length, isLoadingMoreConversations]);
 
   useEffect(() => {
     void loadConversations();
@@ -3148,6 +3181,24 @@ export default function AskSaiScreen() {
                 <ArrowLeft color="#3A2108" size={21} strokeWidth={2.5} />
               </Pressable>
 
+              <Pressable
+                accessibilityHint="Opens your recent questions to Sai"
+                accessibilityLabel="Recent questions"
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={() => {
+                  setIsHistoryDrawerOpen(true);
+                  void loadConversations();
+                }}
+                style={({ pressed }) => [
+                  styles.heroBackButton,
+                  styles.heroHistoryButton,
+                  pressed && styles.heroBackButtonPressed,
+                ]}
+              >
+                <PanelLeft color="#3A2108" size={20} strokeWidth={2.5} />
+              </Pressable>
+
               <View style={styles.heroImageCopy}>
                 {/* <Text style={styles.heroEyebrow}>OM SAI RAM</Text>
                 <Text style={styles.heroImageTitle}>Ask Sai</Text> */}
@@ -3598,6 +3649,31 @@ export default function AskSaiScreen() {
         </ScrollView>
       </LinearGradient>
 
+      <AskSaiHistoryDrawer
+        activeConversationId={conversationId}
+        conversations={conversations}
+        hasMore={hasMoreConversations}
+        isLoading={isLoadingHistory}
+        isLoadingMore={isLoadingMoreConversations}
+        onClose={() => setIsHistoryDrawerOpen(false)}
+        onLoadMore={() => void loadMoreConversations()}
+        onNewQuestion={() => {
+          setIsHistoryDrawerOpen(false);
+          resetConversation();
+          mainScrollRef.current?.scrollTo({ animated: true, y: 0 });
+        }}
+        onSelect={(id) => {
+          setIsHistoryDrawerOpen(false);
+          void openConversation(id).then(() => {
+            mainScrollRef.current?.scrollTo({
+              animated: true,
+              y: Math.max(0, questionCardYRef.current - 12),
+            });
+          });
+        }}
+        visible={isHistoryDrawerOpen}
+      />
+
       <AskSaiVoiceCaptureModal
         canStart={canStartVoiceCapture}
         error={voiceError}
@@ -3658,6 +3734,11 @@ const styles = StyleSheet.create({
     width: 40,
     zIndex: 2,
     elevation: 5,
+  },
+  heroHistoryButton: {
+    position: "absolute",
+    right: 14,
+    top: 14,
   },
   heroBackButtonPressed: {
     opacity: 0.82,
