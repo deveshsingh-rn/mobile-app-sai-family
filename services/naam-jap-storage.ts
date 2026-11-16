@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   MAX_MALA_GOAL,
   NAAM_PER_MALA,
+  snapAutoCountSeconds,
 } from "@/utils/naam-jap-calculations";
 import {
   rollPerNameToNewDay,
@@ -186,7 +187,7 @@ export async function loadNaamJapData(): Promise<NaamJapData> {
       autoCountSeconds:
         typeof parsed.autoCountSeconds === "number" &&
         parsed.autoCountSeconds >= 1
-          ? Math.min(60, Math.round(parsed.autoCountSeconds))
+          ? snapAutoCountSeconds(parsed.autoCountSeconds)
           : null,
       date: isDateKey(parsed.date) ? parsed.date : defaults.date,
       hapticsEnabled:

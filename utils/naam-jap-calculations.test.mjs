@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  AUTO_COUNT_OPTIONS,
+  snapAutoCountSeconds,
   getMinimumMalaGoal,
   getNaamJapMetrics,
   incrementNaamJapData,
@@ -63,4 +65,14 @@ test("reports the Mala containing the current session count", () => {
   assert.equal(getMinimumMalaGoal(108), 1);
   assert.equal(getMinimumMalaGoal(109), 2);
   assert.equal(getMinimumMalaGoal(216), 2);
+});
+
+test("auto counter offers 2 / 4 / 6 sec and moves old saved intervals to the nearest one", () => {
+  assert.deepEqual([...AUTO_COUNT_OPTIONS], [2, 4, 6]);
+  assert.equal(snapAutoCountSeconds(1), 2);
+  assert.equal(snapAutoCountSeconds(2), 2);
+  assert.equal(snapAutoCountSeconds(3), 4);
+  assert.equal(snapAutoCountSeconds(5), 6);
+  assert.equal(snapAutoCountSeconds(6), 6);
+  assert.equal(snapAutoCountSeconds(60), 6);
 });

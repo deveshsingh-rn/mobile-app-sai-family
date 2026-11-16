@@ -1,6 +1,22 @@
 export const NAAM_PER_MALA = 108;
 export const MAX_MALA_GOAL = 10_000;
 
+/** Automatic counter intervals in seconds (Devesh, 2026-11-16: 2 / 4 / 6). */
+export const AUTO_COUNT_OPTIONS = [2, 4, 6] as const;
+
+/**
+ * Maps any saved interval (older app versions used 1 / 2 / 5) to the nearest current option.
+ * On a tie the slower option wins, so the jaap stays calm: 1→2, 3→4, 5→6, 9→6.
+ */
+export const snapAutoCountSeconds = (seconds: number): number =>
+  AUTO_COUNT_OPTIONS.reduce<number>((best, option) => {
+    const distance = Math.abs(option - seconds);
+    const bestDistance = Math.abs(best - seconds);
+    return distance < bestDistance || (distance === bestDistance && option > best)
+      ? option
+      : best;
+  }, AUTO_COUNT_OPTIONS[0]);
+
 export type NaamJapCountState = {
   sessionCount: number;
   targetMalas: number;

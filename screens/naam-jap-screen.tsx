@@ -61,6 +61,7 @@ import {
   MAX_MALA_GOAL,
   NAAM_PER_MALA,
   undoNaamJapData,
+  AUTO_COUNT_OPTIONS,
 } from "@/utils/naam-jap-calculations";
 import {
   getNaamBreakdown,
@@ -246,7 +247,9 @@ export default function NaamJapScreen() {
     });
   }, []);
 
-  const countNaam = useCallback(() => {
+  // `speak` is only set by the automatic counter. Tap/swipe call countNaam directly (React passes
+  // an event object as the first argument, so the flag is never read from the call site).
+  const recordCount = useCallback((speak: boolean) => {
     const currentName =
       dataRef.current.jaapNames.find(
         (item) => item.id === dataRef.current.selectedNameId
@@ -263,11 +266,21 @@ export default function NaamJapScreen() {
     ]);
     increment();
 
-    if (dataRef.current.voiceEnabled && voiceUriRef.current) {
+    if (speak && voiceUriRef.current) {
       // Skips silently if Baba is still speaking the previous count.
       voicePlayerRef.current?.play(voiceUriRef.current);
     }
   }, [increment]);
+
+  /** Tap / swipe: speaks only when the "Sai Baba's Voice" switch is on. */
+  const countNaam = useCallback(() => {
+    recordCount(dataRef.current.voiceEnabled);
+  }, [recordCount]);
+
+  /** Automatic counter: always speaks the Naam (Devesh, 2026-11-16). */
+  const autoCountNaam = useCallback(() => {
+    recordCount(true);
+  }, [recordCount]);
 
   useEffect(() => {
     if (
@@ -278,12 +291,12 @@ export default function NaamJapScreen() {
       return;
     }
 
-    const interval = setInterval(countNaam, data.autoCountSeconds * 1000);
+    const interval = setInterval(autoCountNaam, data.autoCountSeconds * 1000);
 
     return () => clearInterval(interval);
   }, [
     activeSheet,
-    countNaam,
+    autoCountNaam,
     data.autoCountSeconds,
     isAppActive,
   ]);
@@ -351,10 +364,12 @@ export default function NaamJapScreen() {
 
   // Sai Baba's voice: prepare the selected Naam's clip (downloaded once, then offline).
   const selectedVoiceLabel = selectedName?.label || "Sai Ram";
+  // The clip is needed when the voice switch is on (tap/swipe) or the automatic counter runs.
+  const needsVoice = data.voiceEnabled || Boolean(data.autoCountSeconds);
   useEffect(() => {
-    if (!hydrated || !data.voiceEnabled || !isAppActive) {
+    if (!hydrated || !needsVoice || !isAppActive) {
       voicePlayerRef.current?.release();
-      if (!data.voiceEnabled) {
+      if (!needsVoice) {
         voiceUriRef.current = null;
         setVoiceStatus("off");
       }
@@ -380,6 +395,7 @@ export default function NaamJapScreen() {
       } catch (error) {
         if (cancelled) return;
         setVoiceStatus("off");
+        // The automatic counter keeps counting silently; only the tap/swipe voice switch turns off.
         setData((current) => ({ ...current, voiceEnabled: false }));
         Alert.alert(
           "Sai Baba's voice",
@@ -393,7 +409,7 @@ export default function NaamJapScreen() {
     return () => {
       cancelled = true;
     };
-  }, [data.voiceEnabled, hydrated, isAppActive, selectedVoiceLabel]);
+  }, [hydrated, isAppActive, needsVoice, selectedVoiceLabel]);
 
   useEffect(() => () => voicePlayerRef.current?.release(), []);
 
@@ -997,8 +1013,6 @@ function MalaStatCard({
   );
 }
 
-const AUTO_COUNT_OPTIONS = [1, 2, 5];
-
 function SetGoalSection({
   autoCountSeconds,
   onAutoCountChange,
@@ -1019,9 +1033,7 @@ function SetGoalSection({
   const voiceText =
     voiceStatus === "preparing"
       ? "Preparing Baba’s voice…"
-      : voiceEnabled && autoCountSeconds === 1
-        ? "At 1 sec, Baba speaks when the previous Naam finishes"
-        : "Hear your chosen Naam in Sai Baba’s voice";
+      : "Hear the Naam in Sai Baba’s voice on every tap";
 
   return (
     <BlurView intensity={70} tint="light" style={styles.goalSection}>
@@ -1056,13 +1068,15 @@ function SetGoalSection({
         <View style={styles.sheetSettingCopy}>
           <Text style={styles.sheetSettingTitle}>Automatic Counter</Text>
           <Text style={styles.sheetSettingText}>
-            Count One Naam At Your Chosen Interval
+            {autoCountSeconds
+              ? `Baba speaks the Naam every ${autoCountSeconds} sec`
+              : "Counts and speaks the Naam at your chosen interval"}
           </Text>
         </View>
         <Switch
           accessibilityLabel="Automatic counter"
           onValueChange={(enabled) =>
-            onAutoCountChange(enabled ? autoCountSeconds || 1 : null)
+            onAutoCountChange(enabled ? autoCountSeconds || AUTO_COUNT_OPTIONS[0] : null)
           }
           ios_backgroundColor={SAI.border}
           thumbColor="#FFFFFF"
