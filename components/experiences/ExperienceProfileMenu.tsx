@@ -54,11 +54,14 @@ export function ExperienceProfileMenu() {
   return (
     <>
       <Pressable
-        accessibilityHint="Opens profile and experience shortcuts"
-        accessibilityLabel="Open quick menu"
+        accessibilityHint="Opens your profile. Long press for search and saved experiences."
+        accessibilityLabel="My Profile"
         accessibilityRole="button"
         hitSlop={6}
-        onPress={() => setVisible(true)}
+        // 2026-11-16 (Devesh): tap opens the profile directly. The quick menu stays on long press
+        // because it is the only entry to Search and Saved Experiences from the main feed.
+        onLongPress={() => setVisible(true)}
+        onPress={() => router.push("/(tabs)/profile" as never)}
         style={({ pressed }) => [
           styles.trigger,
           pressed && styles.pressed,

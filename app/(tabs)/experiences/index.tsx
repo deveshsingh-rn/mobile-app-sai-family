@@ -407,7 +407,7 @@ export default function HomeScreen() {
             </View>
           </LinearGradient>
           <Text numberOfLines={2} style={styles.topBarTitle}>
-            Share your Sai Journey
+            SAI KI FAMILY
           </Text>
           {SAI_LIVE_YOUTUBE_URL ? (
             <Pressable
@@ -422,7 +422,7 @@ export default function HomeScreen() {
               ]}
             >
               <View style={styles.liveDot} />
-              <Text style={styles.liveButtonText}>Live</Text>
+              <Text style={styles.liveButtonText}>Live Darshan</Text>
             </Pressable>
           ) : null}
           <ExperienceProfileMenu />
