@@ -2289,7 +2289,7 @@ const styles = StyleSheet.create({
   },
   primarySmallButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#9A3412",
     borderRadius: 12,
     flex: 1,
     flexDirection: "row",
