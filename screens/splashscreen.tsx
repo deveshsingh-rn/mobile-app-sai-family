@@ -63,7 +63,7 @@ function SaiBabaSplashScreenContent({ contentOpacity, imageScale }: SaiBabaSplas
         <Text style={styles.splashWelcomeTitle}>Sai Ki Family</Text>
       </Animated.View>
       <Animated.View style={[styles.splashWelcomeFooter, { opacity: contentOpacity }]}>
-        <Text style={styles.splashWelcomeSubtitle}>Welcome Home.</Text>
+        <Text style={styles.splashWelcomeSubtitle}>Welcome Home</Text>
         <Text style={styles.splashWelcomeTagline}>
           The Global Family of Sai Devotees
         </Text>

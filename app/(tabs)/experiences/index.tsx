@@ -420,7 +420,7 @@ export default function HomeScreen() {
             numberOfLines={2}
             style={styles.topBarTitle}
           >
-            SAI KI FAMILY
+            Sai Ki Family
           </Text>
           {SAI_LIVE_YOUTUBE_URL ? (
             <Pressable
@@ -614,13 +614,14 @@ const styles = StyleSheet.create({
   },
 
   topBarTitle: {
-    color: EXPERIENCE_THEME.heading,
+    color: "#9A3412",
     flex: 1,
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "900",
     lineHeight: 20,
     marginHorizontal: 12,
     textAlign: "center",
+    fontFamily: "Georgia",
    
   },
 
