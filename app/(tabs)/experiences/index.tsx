@@ -414,30 +414,33 @@ export default function HomeScreen() {
               />
             </View>
           </LinearGradient>
-          <Text
-            adjustsFontSizeToFit
-            minimumFontScale={0.75}
-            numberOfLines={2}
-            style={styles.topBarTitle}
-          >
-            Sai Ki Family
-          </Text>
-          {SAI_LIVE_YOUTUBE_URL ? (
-            <Pressable
-              accessibilityHint="Opens the Sai live stream on YouTube"
-              accessibilityLabel="Watch live on YouTube"
-              accessibilityRole="link"
-              hitSlop={6}
-              onPress={openLive}
-              style={({ pressed }) => [
-                styles.liveButton,
-                pressed && styles.liveButtonPressed,
-              ]}
+          {/* 2026-11-18 (Devesh): title on top, Live Darshan button right below it. */}
+          <View style={styles.titleColumn}>
+            <Text
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              numberOfLines={1}
+              style={styles.topBarTitle}
             >
-              <View style={styles.liveDot} />
-              <Text style={styles.liveButtonText}>Shirdi Live Darshan</Text>
-            </Pressable>
-          ) : null}
+              Sai Ki Family
+            </Text>
+            {SAI_LIVE_YOUTUBE_URL ? (
+              <Pressable
+                accessibilityHint="Opens the Sai live stream on YouTube"
+                accessibilityLabel="Watch live on YouTube"
+                accessibilityRole="link"
+                hitSlop={6}
+                onPress={openLive}
+                style={({ pressed }) => [
+                  styles.liveButton,
+                  pressed && styles.liveButtonPressed,
+                ]}
+              >
+                <View style={styles.liveDot} />
+                <Text style={styles.liveButtonText}>Shirdi Live Darshan</Text>
+              </Pressable>
+            ) : null}
+          </View>
           <ExperienceProfileMenu />
         </View>
       </View>
@@ -613,13 +616,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
 
+  titleColumn: {
+    alignItems: "center",
+    flex: 1,
+    gap: 5,
+    marginHorizontal: 8,
+  },
+
   topBarTitle: {
     color: "#9A3412",
-    flex: 1,
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "900",
     lineHeight: 20,
-    marginHorizontal: 12,
     textAlign: "center",
     fontFamily: "Georgia",
    
@@ -675,12 +683,11 @@ const styles = StyleSheet.create({
 
   liveButton: {
     alignItems: "center",
-    backgroundColor: "#DC2626",
+    backgroundColor: "#9A3412",
     borderRadius: 16,
     flexDirection: "row",
     gap: 6,
-    height: 32,
-    marginRight: 8,
+    height: 28,
     paddingHorizontal: 12,
   },
 
