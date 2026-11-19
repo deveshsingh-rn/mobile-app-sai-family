@@ -1363,8 +1363,8 @@ function PhotosSection({
 //               style={styles.starButton}
 //             >
 //               <Star
-//                 color="#F97316"
-//                 fill={rating <= reviewRating ? "#F97316" : "transparent"}
+//                 color="#9A3412"
+//                 fill={rating <= reviewRating ? "#9A3412" : "transparent"}
 //                 size={21}
 //               />
 //             </Pressable>
@@ -1682,7 +1682,7 @@ const styles = StyleSheet.create({
   },
   checkInButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#9A3412",
     borderRadius: 10,
     flexDirection: "row",
     gap: 6,
@@ -1942,7 +1942,7 @@ const styles = StyleSheet.create({
   },
   followButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#9A3412",
     borderRadius: 18,
     height: 36,
     justifyContent: "center",
@@ -2265,7 +2265,7 @@ const styles = StyleSheet.create({
   },
   photoUploadButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#9A3412",
     borderRadius: 12,
     flexDirection: "row",
     gap: 8,
@@ -2279,7 +2279,7 @@ const styles = StyleSheet.create({
   },
   plusAvatar: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#9A3412",
     justifyContent: "center",
   },
   plusText: {
@@ -2351,7 +2351,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   ratingFill: {
-    backgroundColor: "#F97316",
+    backgroundColor: "#9A3412",
     borderRadius: 3,
     height: "100%",
   },
@@ -2433,7 +2433,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   reviewRating: {
-    color: "#F97316",
+    color: "#9A3412",
     fontSize: 12,
     fontWeight: "900",
   },
@@ -2450,7 +2450,7 @@ const styles = StyleSheet.create({
   },
   reviewSubmit: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#9A3412",
     borderRadius: 12,
     flexDirection: "row",
     gap: 8,
@@ -2515,7 +2515,7 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#9A3412",
     borderRadius: 12,
     height: 46,
     justifyContent: "center",
@@ -2696,10 +2696,10 @@ const styles = StyleSheet.create({
   },
   attendButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#9A3412",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#F97316",
+    borderColor: "#9A3412",
     flexDirection: "row",
     gap: 8,
     height: 48,

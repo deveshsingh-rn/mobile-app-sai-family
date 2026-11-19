@@ -987,7 +987,7 @@ function MalaStatCard({
   return (
     <PressableScale
       accessibilityHint="Shows how many times you chanted each Naam"
-      accessibilityLabel={`${label}: ${count} Naam. Tap to see each Naam`}
+      accessibilityLabel={`${label}: ${count} Naam. Tap to See Each Naam`}
       accessibilityRole="button"
       containerStyle={styles.malaStatCardPressable}
       onPress={onPress}
@@ -1007,7 +1007,7 @@ function MalaStatCard({
         <Text style={styles.malaStatCount}>
           {count.toLocaleString("en-IN")} Naam
         </Text>
-        <Text style={styles.malaStatHint}>Tap to see each Naam</Text>
+        <Text style={styles.malaStatHint}>Tap to See Each Naam</Text>
       </BlurView>
     </PressableScale>
   );
@@ -1069,12 +1069,12 @@ function SetGoalSection({
           <Text style={styles.sheetSettingTitle}>Automatic Counter</Text>
           <Text style={styles.sheetSettingText}>
             {autoCountSeconds
-              ? `Baba speaks the Naam every ${autoCountSeconds} sec`
-              : "Counts and speaks the Naam at your chosen interval"}
+              ? `Baba Speaks The Naam Every ${autoCountSeconds} sec`
+              : "Counts and Speaks The Naam at Your Chosen Interval"}
           </Text>
         </View>
         <Switch
-          accessibilityLabel="Automatic counter"
+          accessibilityLabel="Automatic Counter"
           onValueChange={(enabled) =>
             onAutoCountChange(enabled ? autoCountSeconds || AUTO_COUNT_OPTIONS[0] : null)
           }
