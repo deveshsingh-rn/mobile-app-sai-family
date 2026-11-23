@@ -18,6 +18,8 @@ export type CreateExperiencePayload = {
     name?: string;
     mimeType?: string;
   } | null;
+  /** Storage key of a file that is already uploaded (chunked video); skips the upload step. */
+  mediaKey?: string;
   /** 0–1 while the file uploads directly to storage. */
   onUploadProgress?: (fraction: number) => void;
 };
@@ -234,10 +236,12 @@ export async function apiCreateExperience(
   // Preferred path: upload the file straight to storage, then send only its key.
   if (payload.media) {
     const metadata = normalizeExperienceMediaMetadata(payload.media);
-    const mediaKey = await uploadFileDirect(
-      { uri: payload.media.uri, mimeType: metadata.mimeType },
-      payload.onUploadProgress
-    );
+    const mediaKey =
+      payload.mediaKey ??
+      (await uploadFileDirect(
+        { uri: payload.media.uri, mimeType: metadata.mimeType },
+        payload.onUploadProgress
+      ));
 
     if (mediaKey) {
       const { data } = await apiClient.post("/api/experiences", {

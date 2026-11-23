@@ -41,6 +41,7 @@ import {
 import { useDispatch } from "react-redux";
 import { blockSanghaDevoteeSuccess } from "@/store/sangha/actions";
 import { apiBlockSanghaDevotee } from "@/services/sangha";
+import { CardMedia } from "@/components/experiences/CardMedia";
 import { isInAppPlayableVideoUrl, setReelSeed } from "@/utils/reels";
 import { apiReportExperience, type ExperienceReportReason } from "@/services/experiences";
 
@@ -638,22 +639,10 @@ export function ExperienceCard({
                   }
                 }}
               >
-                {mediaUri ? (
-                  <Image
-                    resizeMode="cover"
-                    source={{
-                      uri: mediaUri,
-                    }}
-                    style={styles.media}
-                  />
-                ) : (
-                  <View
-                    style={[
-                      styles.media,
-                      styles.mediaPlaceholder,
-                    ]}
-                  />
-                )}
+                <CardMedia
+                  imageUrl={mediaUri}
+                  videoUrl={isVideoPlayable ? media.url : null}
+                />
 
                 {isVideoPlayable && (
                   <View
@@ -1136,9 +1125,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
+  // Height comes from CardMedia (media shape, 4:5 … 1.91:1); nothing is cropped.
   mediaContainer: {
-    aspectRatio: 1.9,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#1F1A17",
     borderColor: EXPERIENCE_THEME.border,
     borderRadius: 14,
     borderWidth: 1,
@@ -1148,7 +1137,6 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   mediaContainerExpanded: {
-    aspectRatio: 1.55,
     borderRadius: 16,
     marginTop: 14,
   },

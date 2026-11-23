@@ -91,6 +91,8 @@ export type CreateExperiencePayload = {
     type: "image" | "video" | "audio";
     name?: string;
   } | null;
+  /** Storage key of a file that is already uploaded (chunked video); skips the upload step. */
+  mediaKey?: string;
   /** 0–1 while the file uploads directly to storage. */
   onUploadProgress?: (fraction: number) => void;
 };

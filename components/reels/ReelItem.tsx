@@ -10,6 +10,7 @@ import {
   type GestureResponderEvent,
 } from "react-native";
 import { useEvent } from "expo";
+import { Image as ExpoImage } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
 import {
   Bookmark,
@@ -27,6 +28,7 @@ import {
 } from "lucide-react-native";
 
 import type { Experience } from "@/store/experiences/types";
+import { getCachedVideoPoster, loadVideoPoster, type VideoPoster } from "@/services/video-thumbnails";
 import { doubleTapZone, HOLD_TO_FAST_RATE, SEEK_STEP_SECONDS } from "@/utils/reels";
 import { ReelSeekBar } from "./ReelSeekBar";
 
@@ -77,11 +79,28 @@ export function ReelItem(props: Props) {
         <ReelPlayer {...props} url={video.url} />
       ) : (
         <View style={styles.placeholder}>
-          {video?.thumbnailUrl ? <Image source={{ uri: video.thumbnailUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+          <ReelPoster url={video?.url} />
         </View>
       )}
     </View>
   );
+}
+
+/** First-frame thumbnail (generated in the feed, cached) shown until the video's own frame appears. */
+function ReelPoster({ url }: { url?: string | null }) {
+  const [poster, setPoster] = useState<VideoPoster | null | undefined>(() => (url ? getCachedVideoPoster(url) : null));
+  useEffect(() => {
+    if (!url || poster !== undefined) return;
+    let active = true;
+    void loadVideoPoster(url).then((result) => {
+      if (active) setPoster(result);
+    });
+    return () => {
+      active = false;
+    };
+  }, [poster, url]);
+  if (!poster) return null;
+  return <ExpoImage contentFit="contain" source={poster.thumbnail} style={StyleSheet.absoluteFill} />;
 }
 
 function ReelPlayer({
@@ -124,6 +143,7 @@ function ReelPlayer({
   const [scrubbing, setScrubbing] = useState(false);
   const [seekFlash, setSeekFlash] = useState<"back" | "forward" | null>(null);
   const [captionOpen, setCaptionOpen] = useState(false);
+  const [firstFrameShown, setFirstFrameShown] = useState(false);
   const heart = useRef(new Animated.Value(0)).current;
   const lastTap = useRef(0);
   const singleTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -214,10 +234,17 @@ function ReelPlayer({
         allowsPictureInPicture
         contentFit="contain"
         nativeControls={false}
+        onFirstFrameRender={() => setFirstFrameShown(true)}
         player={player}
         ref={videoViewRef}
         style={StyleSheet.absoluteFill}
       />
+
+      {!firstFrameShown ? (
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <ReelPoster url={url} />
+        </View>
+      ) : null}
 
       <Pressable
         accessibilityHint="Tap to pause or play. Double tap the middle to like, the sides to skip 10 seconds. Hold for 2x speed."
