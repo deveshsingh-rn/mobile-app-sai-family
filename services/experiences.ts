@@ -1,3 +1,4 @@
+import { uploadFileDirect } from "./direct-upload";
 import { apiClient } from "./api";
 import {
   DEFAULT_EXPERIENCE_CATEGORIES,
@@ -17,6 +18,8 @@ export type CreateExperiencePayload = {
     name?: string;
     mimeType?: string;
   } | null;
+  /** 0–1 while the file uploads directly to storage. */
+  onUploadProgress?: (fraction: number) => void;
 };
 
 const MEDIA_METADATA_BY_EXTENSION: Record<
@@ -228,6 +231,26 @@ export async function apiFetchExperienceDetail(
 export async function apiCreateExperience(
   payload: CreateExperiencePayload
 ) {
+  // Preferred path: upload the file straight to storage, then send only its key.
+  if (payload.media) {
+    const metadata = normalizeExperienceMediaMetadata(payload.media);
+    const mediaKey = await uploadFileDirect(
+      { uri: payload.media.uri, mimeType: metadata.mimeType },
+      payload.onUploadProgress
+    );
+
+    if (mediaKey) {
+      const { data } = await apiClient.post("/api/experiences", {
+        category: payload.category,
+        content: payload.content.trim() || undefined,
+        location: payload.location || undefined,
+        mediaKey,
+      });
+      return data;
+    }
+    // null → storage cannot sign uploads: fall through to the multipart upload below.
+  }
+
   const formData = new FormData();
 
   formData.append(

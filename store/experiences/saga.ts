@@ -1,3 +1,4 @@
+import { Alert } from "react-native";
 import {
   call,
   put,
@@ -391,6 +392,19 @@ function* handleCreateExperience(
         ?.message ||
       error.message ||
       "Failed to create experience.";
+
+    // The post screen has already returned to the feed, so tell the devotee here.
+    const status = error.response?.status ?? (error?.name === "DirectUploadError" ? error.status : undefined);
+    Alert.alert(
+      "Post not published",
+      error?.name === "DirectUploadError" && status !== 413
+        ? error.message
+        : status === 413
+        ? "This file is too large. Please choose a shorter video and try again."
+        : !error.response
+          ? "The upload was interrupted. Large videos need a steady connection; please try a shorter video or Wi-Fi."
+          : message
+    );
 
     yield put(
       createExperienceFailure(

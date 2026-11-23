@@ -61,6 +61,27 @@ import { createExperienceRequest } from "@/store/experiences/actions";
 import { selectCreateExperienceLoading } from "@/store/experiences/selectors";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
+/** Upload limits for experience videos (direct-to-storage limit is 150 MB). */
+const MAX_VIDEO_SECONDS = 180;
+const MAX_VIDEO_BYTES = 150 * 1024 * 1024;
+
+/**
+ * WhatsApp-style quality choice. iOS re-encodes the picked video to this size (H.264):
+ * Standard 720p is roughly 3-5x smaller than HD 1080p and uploads that much faster.
+ * Android sends the original file for now (on-device compression needs a native library).
+ */
+type VideoQualityChoice = "standard" | "hd";
+const VIDEO_PICKER_QUALITY: Record<VideoQualityChoice, Partial<ImagePicker.ImagePickerOptions>> = {
+  standard: {
+    videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720,
+    videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+  },
+  hd: {
+    videoExportPreset: ImagePicker.VideoExportPreset.H264_1920x1080,
+    videoQuality: ImagePicker.UIImagePickerControllerQualityType.High,
+  },
+};
+
 const ACCENT = "#C2410C";
 const ACCENT_DEEP = "#9A3412";
 const ACCENT_SOFT = "#FFF2E3";
@@ -265,7 +286,19 @@ export default function PremiumPostScreen() {
 
   // ───────────────── VIDEO ─────────────────
 
-  const pickVideo = async () => {
+  const pickVideo = () => {
+    Alert.alert(
+      "Video quality",
+      "Standard uploads much faster on mobile data. HD keeps more detail.",
+      [
+        { text: "Standard (faster)", onPress: () => void pickVideoWithQuality("standard") },
+        { text: "HD", onPress: () => void pickVideoWithQuality("hd") },
+        { style: "cancel", text: "Cancel" },
+      ]
+    );
+  };
+
+  const pickVideoWithQuality = async (quality: VideoQualityChoice) => {
     const permission =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -279,11 +312,32 @@ export default function PremiumPostScreen() {
           mediaTypes:
             ImagePicker
               .MediaTypeOptions.Videos,
+          // Trim screen + length cap (iOS enforces the cap while trimming).
+          allowsEditing: true,
+          videoMaxDuration: MAX_VIDEO_SECONDS,
+          // iOS: export an H.264 copy at the chosen size instead of the original 4K/HEVC file.
+          ...VIDEO_PICKER_QUALITY[quality],
+          preferredAssetRepresentationMode:
+            ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
         }
       );
 
     if (!result.canceled) {
       const asset = result.assets[0];
+      const tooLong =
+        typeof asset.duration === "number" &&
+        asset.duration > (MAX_VIDEO_SECONDS + 1) * 1000;
+      const tooBig =
+        typeof asset.fileSize === "number" &&
+        asset.fileSize > MAX_VIDEO_BYTES;
+
+      if (tooLong || tooBig) {
+        Alert.alert(
+          "Video is too large",
+          `Please choose a video up to ${MAX_VIDEO_SECONDS / 60} minutes and ${MAX_VIDEO_BYTES / (1024 * 1024)} MB. You can trim it in the next step.`
+        );
+        return;
+      }
 
       setSelectedMedia({
         uri: asset.uri,

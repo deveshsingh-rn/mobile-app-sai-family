@@ -91,6 +91,8 @@ export type CreateExperiencePayload = {
     type: "image" | "video" | "audio";
     name?: string;
   } | null;
+  /** 0–1 while the file uploads directly to storage. */
+  onUploadProgress?: (fraction: number) => void;
 };
 
 export interface ExperiencesState {
