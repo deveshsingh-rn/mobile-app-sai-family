@@ -90,6 +90,13 @@
         {
           "microphonePermission": "Sai ki Family uses your microphone when you choose to record an audio post or speak to Ask Sai. For example, record your Sai experience to share with the community."
         }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": false,
+          "supportsPictureInPicture": true
+        }
       ]
     ],
     "experiments": {

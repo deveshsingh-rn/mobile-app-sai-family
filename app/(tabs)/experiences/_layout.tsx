@@ -6,6 +6,14 @@ export default function ExperiencesLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="[id]" />
       <Stack.Screen
+        name="reels"
+        options={{
+          animation: "fade",
+          contentStyle: { backgroundColor: "#000000" },
+          gestureEnabled: true,
+        }}
+      />
+      <Stack.Screen
         name="ask-sai"
         options={{
           animation: "slide_from_right",

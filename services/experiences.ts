@@ -118,6 +118,15 @@ export async function apiFetchExperiences(
   return data;
 }
 
+/** Full-screen reels: published posts with an in-app playable video, after `cursor` (newest → oldest). */
+export async function apiFetchVideoReels(params: { cursor?: string; limit?: number }) {
+  const { data } = await apiClient.get("/api/experiences/reels", { params });
+  return data as {
+    reels: unknown[];
+    pagination: { hasMore: boolean; limit: number; nextCursor: string | null };
+  };
+}
+
 export async function apiSearchExperiences(
   params: {
     limit?: number;

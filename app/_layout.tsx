@@ -9,6 +9,7 @@ import '@/utils/disable-font-scaling';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { AutomationGuard } from '@/components/security/AutomationGuard';
 import AuthScreen from '@/screens/authscreen';
 import CommunityTermsScreen from '@/screens/community-terms-screen';
 import CreateDevoteeAccountScreen from '@/screens/create-devotee-account-screen';
@@ -93,6 +94,7 @@ function AppLayoutContent() {
     void identifyProductUser(userId, {
       account_status: "active",
       city: devoteeAccount.city || null,
+      state: devoteeAccount.state || null,
       country: devoteeAccount.country || null,
       email_verified: Boolean(
         devoteeAccount.emailVerified ||
@@ -323,6 +325,8 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <AppLayoutContent />
+      {/* Invisible automation trap + "Access paused" screen, above every screen. */}
+      <AutomationGuard />
     </Provider>
   );
 }

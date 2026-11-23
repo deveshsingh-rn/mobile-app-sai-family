@@ -305,6 +305,8 @@ export function PillarGlassDock({
  */
 const HIDE_DOCK_ON: Record<string, readonly string[]> = {
   directory: ["business-review"],
+  // Full-screen video: the dock would cover the progress bar and captions.
+  experiences: ["reels"],
   // Create Listing and Events create/edit keep the dock (Devesh, 2026-11-16).
 };
 

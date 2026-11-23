@@ -59,7 +59,7 @@ import {
   UPDATE_EXPERIENCE_REQUEST,
 } from "./types";
 
-function flattenExperience(exp: any) {
+export function flattenExperience(exp: any) {
   return {
     ...exp,
 
@@ -98,7 +98,7 @@ function flattenExperience(exp: any) {
   };
 }
 
-function normalizeComment(comment: any) {
+export function normalizeComment(comment: any) {
   const author = comment.author || comment.user || comment.devotee;
 
   return {

@@ -62,12 +62,14 @@
     },
     "android-internal": {
       "android": {
+        "serviceAccountKeyPath": "./saikifamily-f3986dd0a801.json",
         "track": "internal",
         "releaseStatus": "draft"
       }
     },
     "android-production": {
       "android": {
+        "serviceAccountKeyPath": "./saikifamily-f3986dd0a801.json",
         "track": "production",
         "releaseStatus": "completed"
       }

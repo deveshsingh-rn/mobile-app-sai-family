@@ -41,6 +41,7 @@ import {
 import { useDispatch } from "react-redux";
 import { blockSanghaDevoteeSuccess } from "@/store/sangha/actions";
 import { apiBlockSanghaDevotee } from "@/services/sangha";
+import { isInAppPlayableVideoUrl, setReelSeed } from "@/utils/reels";
 import { apiReportExperience, type ExperienceReportReason } from "@/services/experiences";
 
 import {
@@ -621,7 +622,12 @@ export function ExperienceCard({
                 onPress={(event) => {
                   event.stopPropagation();
 
-                  if (isVideoPlayable) {
+                  if (isVideoPlayable && isInAppPlayableVideoUrl(media.url)) {
+                    // In-app full-screen player (Reels), starting with this post.
+                    setReelSeed(item);
+                    router.push({ pathname: "/(tabs)/experiences/reels", params: { id: item.id } } as never);
+                  } else if (isVideoPlayable) {
+                    // Old YouTube-hosted videos still open in YouTube.
                     void Linking.openURL(
                       media.url
                     );

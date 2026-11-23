@@ -1,7 +1,9 @@
 import axios from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 import Constants from 'expo-constants';
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
+
+import { pauseAccess } from './access-pause';
 import * as SecureStore from 'expo-secure-store';
 
 // This logic ensures the correct base URL is used across all environments.
@@ -191,25 +193,14 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling globally
 /**
  * The backend's bot guard answers 403 AUTOMATION_DETECTED when it sees scripted or AI-driven
- * traffic and pauses access for a while. Tell the person once (not on every failed call).
+ * traffic and pauses access for a while. The app then shows its "Access paused" screen.
  */
-let lastAccessPausedAlertAt = 0;
-
 function notifyIfAccessPaused(status?: number, data?: unknown) {
-  const backendError = (data as { error?: { code?: string; message?: string; retryAfterSeconds?: number } } | undefined)?.error;
+  const backendError = (data as { error?: { code?: string; retryAfterSeconds?: number } } | undefined)?.error;
   if (status !== 403 || backendError?.code !== 'AUTOMATION_DETECTED') return;
 
-  const now = Date.now();
-  if (now - lastAccessPausedAlertAt < 60_000) return;
-  lastAccessPausedAlertAt = now;
-
-  const minutes = Math.max(1, Math.ceil((backendError.retryAfterSeconds ?? 900) / 60));
-  const wait = minutes >= 120 ? `${Math.round(minutes / 60)} hours` : `${minutes} minutes`;
-  Alert.alert(
-    'Access paused',
-    `Automated or AI-driven activity was detected, so access is paused for about ${wait}.\n\n` +
-      'If you are a devotee and see this by mistake, please wait and try again, or contact support.'
-  );
+  // Shows the full-screen "Access paused" state (components/security/AutomationGuard).
+  pauseAccess(backendError.retryAfterSeconds);
 }
 
 apiClient.interceptors.response.use(

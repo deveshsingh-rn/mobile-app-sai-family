@@ -23,7 +23,10 @@ export type ProductAnalyticsEventName =
   | "Event RSVP Completed"
   | "Directory Listing Opened"
   | "Directory Contact Tapped"
-  | "Sangha Group Joined";
+  | "Sangha Group Joined"
+  | "Reel Viewed"
+  | "Reel Liked"
+  | "Reel Shared";
 
 export type ProductAnalyticsProperties = Record<
   string,
@@ -37,6 +40,8 @@ const MIXPANEL_SERVER_URL =
   "https://api.mixpanel.com";
 const ANALYTICS_ENABLED =
   process.env.EXPO_PUBLIC_ANALYTICS_ENABLED !== "false";
+const ANALYTICS_GEOLOCATION_ENABLED =
+  process.env.EXPO_PUBLIC_ANALYTICS_GEOLOCATION !== "false";
 const MIXPANEL_DEBUG_LOGS =
   process.env.EXPO_PUBLIC_MIXPANEL_DEBUG_LOGS === "true";
 
@@ -118,7 +123,12 @@ async function getMixpanel() {
         );
 
         mixpanel.setServerURL(MIXPANEL_SERVER_URL);
-        mixpanel.setUseIpAddressForGeolocation(false);
+        // 2026-11-19 (Devesh): send location with analytics. Mixpanel derives city / region /
+        // country from the request IP on its side. This is approximate (city level), needs no
+        // GPS or permission prompt, and the IP itself is not stored as a property. Precise
+        // coordinates are deliberately NOT sent (see engineering-panel changelog).
+        // Set EXPO_PUBLIC_ANALYTICS_GEOLOCATION=false to turn it off again.
+        mixpanel.setUseIpAddressForGeolocation(ANALYTICS_GEOLOCATION_ENABLED);
         mixpanel.setLoggingEnabled(MIXPANEL_DEBUG_LOGS);
 
         await mixpanel.init(false, getSuperProperties(), MIXPANEL_SERVER_URL);
