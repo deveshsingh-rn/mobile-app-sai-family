@@ -13,6 +13,7 @@ import {
   type ChunkedUploadSession,
 } from "./chunked-upload";
 import { uploadFileDirect } from "./direct-upload";
+import { abortResumableUpload, uploadVideoResumable, type ResumableUploadSession } from "./resumable-upload";
 import { apiCreateExperience } from "./experiences";
 
 /**
@@ -48,6 +49,16 @@ let pending: PendingVideoPost | null = null;
 let controller: AbortController | null = null;
 /** Parts already stored for the pending post, so a retry continues instead of starting over. */
 let session: ChunkedUploadSession | null = null;
+/** The resumable upload session of the pending post (preferred path), for the same purpose. */
+let resumableSession: ResumableUploadSession | null = null;
+
+/** Forgets both kinds of saved progress; with `release`, also frees what is stored on the server. */
+function dropSessions(release: boolean) {
+  if (release && session) void abortChunkedUpload(session.plan.uploadId);
+  if (release && resumableSession) void abortResumableUpload(resumableSession);
+  session = null;
+  resumableSession = null;
+}
 let autoRetries = 0;
 let dispatchRef: Dispatch | null = null;
 const listeners = new Set<() => void>();
@@ -82,16 +93,34 @@ async function run() {
   void activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => undefined);
 
   try {
-    let mediaKey = await uploadVideoInChunks(job.video, {
-      onProgress: ({ sentBytes, totalBytes }) => {
-        if (stillThisJob()) set({ ...pending!, sentBytes, totalBytes });
-      },
-      onSession: (next) => {
-        if (stillThisJob()) session = next;
-      },
-      resume: session,
-      signal,
-    });
+    const onProgress = ({ sentBytes, totalBytes }: { sentBytes: number; totalBytes: number }) => {
+      if (stillThisJob()) set({ ...pending!, sentBytes, totalBytes });
+    };
+
+    // Preferred: one resumable session (continues from the exact byte after any interruption).
+    // Skipped only when this post already has parts stored by the older parts-based upload.
+    let mediaKey = session
+      ? null
+      : await uploadVideoResumable(job.video, {
+          onProgress,
+          onSession: (next) => {
+            if (stillThisJob()) resumableSession = next;
+          },
+          resume: resumableSession,
+          signal,
+        });
+
+    // Server without resumable upload: 5 MB parts joined by the backend.
+    if (!mediaKey) {
+      mediaKey = await uploadVideoInChunks(job.video, {
+        onProgress,
+        onSession: (next) => {
+          if (stillThisJob()) session = next;
+        },
+        resume: session,
+        signal,
+      });
+    }
 
     // Server without chunked upload: one direct upload, same progress numbers.
     if (!mediaKey) {
@@ -114,13 +143,13 @@ async function run() {
     // Now it exists on the server: show the real post and refresh the feed for everyone's view.
     dispatchRef?.(createExperienceSuccess(flattenExperience(response.experience) as Experience));
     dispatchRef?.(fetchExperiencesRequest({ limit: 10, offset: 0 }));
-    session = null;
+    dropSessions(false);
     autoRetries = 0;
     set(null);
   } catch (error) {
     if (!stillThisJob()) return;
     if (error instanceof UploadCancelledError || signal.aborted) {
-      session = null;
+      dropSessions(false);
       set(null);
       return;
     }
@@ -154,8 +183,7 @@ export function startPendingVideoPost(
   dispatch: Dispatch
 ) {
   if (pending && pending.status !== "failed") return false;
-  if (session) void abortChunkedUpload(session.plan.uploadId); // discard the failed one it replaces
-  session = null;
+  dropSessions(true); // discard the failed upload it replaces
   autoRetries = 0;
   dispatchRef = dispatch;
   set({
@@ -181,8 +209,8 @@ export function retryPendingVideoPost() {
 export function cancelPendingVideoPost() {
   if (!pending) return;
   if (controller) controller.abort();
-  else if (session) void abortChunkedUpload(session.plan.uploadId); // failed upload: free its parts
-  session = null;
+  // Uploading: the uploader frees its own session when it sees the abort. Failed: free it here.
+  dropSessions(!controller);
   autoRetries = 0;
   set(null);
 }

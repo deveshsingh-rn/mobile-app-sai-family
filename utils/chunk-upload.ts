@@ -58,3 +58,15 @@ export function retryDelayMs(attempt: number, random: () => number = Math.random
   const base = 1000 * 2 ** Math.max(0, attempt - 1);
   return Math.round(base * (1 + random() * 0.3));
 }
+
+/** Pulls <Code> and <Message> out of a storage (GCS XML) error body. */
+export function parseStorageError(body: string) {
+  const code = /<Code>([^<]+)<\/Code>/.exec(body)?.[1];
+  const message = /<Message>([^<]+)<\/Message>/.exec(body)?.[1];
+  return { code, message };
+}
+
+/** Upload links that have expired or no longer verify: new links are needed, not a retry. */
+export function needsFreshLinks(status: number, code?: string) {
+  return code === "ExpiredToken" || code === "SignatureDoesNotMatch" || code === "AccessDenied" || status === 403;
+}

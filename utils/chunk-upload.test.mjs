@@ -6,6 +6,8 @@ import {
   formatBytes,
   formatEta,
   formatVideoDuration,
+  needsFreshLinks,
+  parseStorageError,
   partRanges,
   retryDelayMs,
   uploadStats,
@@ -51,4 +53,14 @@ test("retries back off 1 s, 2 s, 4 s with jitter", () => {
   assert.equal(retryDelayMs(1, () => 0), 1000);
   assert.equal(retryDelayMs(2, () => 0), 2000);
   assert.equal(retryDelayMs(3, () => 1), 5200);
+});
+
+test("reads the storage service's error code and knows when new links are needed", () => {
+  const body = "<?xml version='1.0' encoding='UTF-8'?><Error><Code>ExpiredToken</Code><Message>Invalid argument.</Message></Error>";
+  assert.deepEqual(parseStorageError(body), { code: "ExpiredToken", message: "Invalid argument." });
+  assert.deepEqual(parseStorageError("not xml"), { code: undefined, message: undefined });
+  assert.equal(needsFreshLinks(400, "ExpiredToken"), true);
+  assert.equal(needsFreshLinks(403, undefined), true);
+  assert.equal(needsFreshLinks(400, "EntityTooLarge"), false);
+  assert.equal(needsFreshLinks(400, "MalformedSecurityHeader"), false);
 });

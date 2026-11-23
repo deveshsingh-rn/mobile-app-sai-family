@@ -20,7 +20,8 @@ type UploadTicket = {
 };
 
 export class DirectUploadError extends Error {
-  constructor(message: string, readonly status?: number) {
+  /** `code` is the storage service's own error code when it gave one (e.g. "ExpiredToken"). */
+  constructor(message: string, readonly status?: number, readonly code?: string) {
     super(message);
     this.name = "DirectUploadError";
   }

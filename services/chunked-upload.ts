@@ -1,7 +1,15 @@
 import { fetch as expoFetch } from "expo/fetch";
-import { File } from "expo-file-system";
+import { File, Paths } from "expo-file-system";
 
-import { PART_RETRIES, partRanges, retryDelayMs, UPLOAD_CONCURRENCY, type PartRange } from "@/utils/chunk-upload";
+import {
+  needsFreshLinks,
+  parseStorageError,
+  PART_RETRIES,
+  partRanges,
+  retryDelayMs,
+  UPLOAD_CONCURRENCY,
+  type PartRange,
+} from "@/utils/chunk-upload";
 import { apiClient } from "./api";
 import { DirectUploadError } from "./direct-upload";
 
@@ -35,6 +43,41 @@ export class UploadCancelledError extends Error {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+type PartResult = { status: number; body: string };
+
+/** Transport 1: raw bytes with expo/fetch. */
+async function putWithFetch(url: string, headers: Record<string, string>, bytes: Uint8Array<ArrayBuffer>, signal?: AbortSignal): Promise<PartResult> {
+  const response = await expoFetch(url, { body: bytes, headers, method: "PUT", signal });
+  return { body: response.ok ? "" : await response.text().catch(() => ""), status: response.status };
+}
+
+/**
+ * Transport 2: the OS's own file uploader (the one the whole-file direct upload uses). The part is
+ * written to a temporary file and streamed from disk. Used when transport 1 is refused, because
+ * the two build their requests differently.
+ */
+async function putWithNativeUploader(url: string, headers: Record<string, string>, bytes: Uint8Array<ArrayBuffer>, name: string): Promise<PartResult> {
+  const FileSystem = await import("expo-file-system/legacy");
+  const temp = new File(Paths.cache, name);
+  try {
+    if (temp.exists) temp.delete();
+    temp.create();
+    temp.write(bytes);
+    const result = await FileSystem.uploadAsync(url, temp.uri, {
+      headers,
+      httpMethod: "PUT",
+      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+    });
+    return { body: result.status >= 200 && result.status < 300 ? "" : result.body ?? "", status: result.status };
+  } finally {
+    try {
+      if (temp.exists) temp.delete();
+    } catch {
+      // A leftover temp part in the cache folder is cleaned by the OS.
+    }
+  }
+}
+
 function readPart(uri: string, range: PartRange) {
   const handle = new File(uri).open();
   try {
@@ -60,6 +103,8 @@ export async function uploadVideoInChunks(
     onSession?: (session: ChunkedUploadSession) => void;
     /** Continue this earlier upload instead of starting a new one. */
     resume?: ChunkedUploadSession | null;
+    /** Internal: set after one automatic restart with new links, so it happens at most once. */
+    restarted?: boolean;
     signal?: AbortSignal;
   } = {}
 ): Promise<string | null> {
@@ -93,21 +138,36 @@ export async function uploadVideoInChunks(
 
   const sendPart = async (range: PartRange) => {
     const target = plan.parts[range.index];
+    let useNativeUploader = false;
     for (let attempt = 1; ; attempt += 1) {
       if (cancelled()) throw new UploadCancelledError();
       try {
-        const response = await expoFetch(target.uploadUrl, {
-          body: readPart(file.uri, range),
-          headers: target.headers,
-          method: "PUT",
-          signal,
-        });
-        if (response.status >= 200 && response.status < 300) return;
-        // 4xx (expired or bad signature, too large) will not improve by retrying this URL.
-        if (response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429) {
-          throw new DirectUploadError(`The upload was refused (part ${range.index + 1}, status ${response.status}).`, response.status);
+        const bytes = readPart(file.uri, range);
+        const result = useNativeUploader
+          ? await putWithNativeUploader(target.uploadUrl, target.headers, bytes, `upload-part-${plan.uploadId}-${range.index}.bin`)
+          : await putWithFetch(target.uploadUrl, target.headers, bytes, signal);
+        if (result.status >= 200 && result.status < 300) return;
+
+        const { code, message } = parseStorageError(result.body);
+        console.warn(
+          `[chunked-upload] part ${range.index + 1}/${plan.partCount} (${bytes.byteLength} bytes, ${useNativeUploader ? "native" : "fetch"}) → ${result.status} ${code ?? ""} ${message ?? ""}`
+        );
+        if (needsFreshLinks(result.status, code)) {
+          throw new DirectUploadError("The upload links expired.", result.status, code ?? "ExpiredToken");
         }
-        throw new Error(`part ${range.index} status ${response.status}`);
+        if (result.status >= 400 && result.status < 500 && result.status !== 408 && result.status !== 429) {
+          // Refused: try the other transport once before giving up on this part.
+          if (!useNativeUploader) {
+            useNativeUploader = true;
+            continue;
+          }
+          throw new DirectUploadError(
+            `The upload was refused (part ${range.index + 1}: ${code ?? `status ${result.status}`}).`,
+            result.status,
+            code
+          );
+        }
+        throw new Error(`part ${range.index} status ${result.status}`);
       } catch (error) {
         if (cancelled()) throw new UploadCancelledError();
         if (error instanceof DirectUploadError || attempt > PART_RETRIES) {
@@ -162,6 +222,15 @@ export async function uploadVideoInChunks(
     // Not cancelled: keep the stored parts on the server so "Try again" resumes from here.
     const response = (error as { response?: { status?: number; data?: { error?: { code?: string; message?: string } } } })?.response;
     console.warn("[chunked-upload] failed:", response?.status, response?.data?.error?.code, error instanceof Error ? error.message : error);
+    if (error instanceof DirectUploadError && needsFreshLinks(error.status ?? 0, error.code)) {
+      // Links expired (they last 60 minutes): drop this session and start a new one right away.
+      void abortChunkedUpload(plan.uploadId);
+      onSession?.({ done: [], plan: { ...plan, sizeBytes: -1 } });
+      if (!options.restarted) {
+        return uploadVideoInChunks(file, { ...options, restarted: true, resume: null });
+      }
+      throw new DirectUploadError("The upload links expired. Please try again.", error.status, error.code);
+    }
     if (error instanceof DirectUploadError) throw error;
     if (response?.status === 404) {
       // The server session expired (2 h): the next try must start a new upload.
