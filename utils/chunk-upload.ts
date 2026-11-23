@@ -3,7 +3,8 @@
  */
 
 export const UPLOAD_CONCURRENCY = 3;
-export const PART_RETRIES = 3;
+/** A part is retried this many times (1 s, 2 s, 4 s, 8 s, 16 s) before the upload is marked failed. */
+export const PART_RETRIES = 5;
 
 export type PartRange = { index: number; start: number; length: number };
 

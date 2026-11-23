@@ -60,6 +60,7 @@ import {
   selectExperiencesPagination,
 } from "@/store/experiences/selectors";
 
+import { PendingVideoPostCard } from "@/components/experiences/PendingVideoPostCard";
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import { SAI_LIVE_YOUTUBE_URL } from "@/constants/external-links";
@@ -571,6 +572,12 @@ export default function HomeScreen() {
                 Share Sai Mandirs Worldwide, Miracles, Moments when Baba Blessed You. Receive Sai Blessings
               </Text>
             </View>
+
+            {/* The devotee's own video while it uploads (only they see it until 100%). */}
+            <PendingVideoPostCard
+              authorName={account?.name}
+              avatarUrl={account?.profileImage?.uri || account?.profileImageUrl || account?.profile?.profileImageUrl}
+            />
           </View>
         }
         ListFooterComponent={

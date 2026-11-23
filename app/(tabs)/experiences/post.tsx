@@ -61,8 +61,7 @@ import { createExperienceRequest } from "@/store/experiences/actions";
 import { selectCreateExperienceLoading } from "@/store/experiences/selectors";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import { File as ExpoFile } from "expo-file-system";
-import { VideoUploadProgress } from "@/components/experiences/VideoUploadProgress";
-import { UploadCancelledError, uploadVideoInChunks } from "@/services/chunked-upload";
+import { startPendingVideoPost } from "@/services/pending-video-post";
 import { estimateUploadSeconds, formatBytes, formatEta, formatVideoDuration } from "@/utils/chunk-upload";
 
 /** Upload limits for experience videos (direct-to-storage limit is 150 MB). */
@@ -109,13 +108,6 @@ type SelectedMedia = {
   quality?: VideoQualityChoice;
 };
 
-type UploadState = {
-  elapsedMs: number;
-  partCount: number;
-  partsDone: number;
-  sentBytes: number;
-  totalBytes: number;
-};
 
 const formatRecordingDuration = (durationMillis: number) => {
   const totalSeconds = Math.max(0, Math.floor(durationMillis / 1000));
@@ -151,9 +143,6 @@ export default function PremiumPostScreen() {
 
   const [isComposerFocused, setIsComposerFocused] =
     useState(false);
-
-  const [upload, setUpload] = useState<UploadState | null>(null);
-  const uploadAbortRef = useRef<AbortController | null>(null);
 
   const [isLocating, setIsLocating] = useState(true);
   const [isDictating, setIsDictating] = useState(false);
@@ -358,15 +347,14 @@ export default function PremiumPostScreen() {
         return;
       }
 
-      // The picker does not always report the size; read it from the file itself.
-      let sizeBytes = typeof asset.fileSize === "number" ? asset.fileSize : 0;
-      if (!sizeBytes) {
-        try {
-          sizeBytes = new ExpoFile(asset.uri).size ?? 0;
-        } catch {
-          sizeBytes = 0;
-        }
+      // The part plan must match the bytes on disk exactly, so the file itself is the truth.
+      let sizeBytes = 0;
+      try {
+        sizeBytes = new ExpoFile(asset.uri).size ?? 0;
+      } catch {
+        sizeBytes = 0;
       }
+      if (!sizeBytes && typeof asset.fileSize === "number") sizeBytes = asset.fileSize;
       if (sizeBytes > MAX_VIDEO_BYTES) {
         Alert.alert(
           "Video is too large",
@@ -526,52 +514,37 @@ export default function PremiumPostScreen() {
       router.replace("/(tabs)/experiences" as never);
     };
 
-    // Videos upload here, in parts, with progress; the post is created once the file is stored.
+    // Video: close this screen now. The post shows at the top of the devotee's own feed with a
+    // live percentage while it uploads in parts; it is created on the server (and visible to
+    // others) only when the upload reaches 100%.
     if (selectedMedia?.type === "video" && selectedMedia.sizeBytes) {
-      void uploadVideoThenPublish(selectedMedia, publish);
+      const started = startPendingVideoPost(
+        {
+          category: DEFAULT_CATEGORY,
+          content: content.trim(),
+          location: location || undefined,
+          video: {
+            durationMs: selectedMedia.durationMs,
+            mimeType: selectedMedia.mimeType === "video/quicktime" ? "video/quicktime" : "video/mp4",
+            sizeBytes: selectedMedia.sizeBytes,
+            uri: selectedMedia.uri,
+          },
+        },
+        dispatch
+      );
+      if (!started) {
+        Alert.alert("One video at a time", "Another video is still uploading. Please wait for it to finish.");
+        return;
+      }
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setContent("");
+      setLocation("");
+      setSelectedMedia(null);
+      router.replace("/(tabs)/experiences" as never);
       return;
     }
 
     publish();
-  };
-
-  const uploadVideoThenPublish = async (
-    video: SelectedMedia,
-    publish: (mediaKey?: string) => void
-  ) => {
-    const startedAt = Date.now();
-    const controller = new AbortController();
-    uploadAbortRef.current = controller;
-    setUpload({ elapsedMs: 0, partCount: 0, partsDone: 0, sentBytes: 0, totalBytes: video.sizeBytes ?? 0 });
-
-    try {
-      const mediaKey = await uploadVideoInChunks(
-        {
-          mimeType: video.mimeType === "video/quicktime" ? "video/quicktime" : "video/mp4",
-          sizeBytes: video.sizeBytes ?? 0,
-          uri: video.uri,
-        },
-        {
-          onProgress: (progress) =>
-            setUpload({ ...progress, elapsedMs: Date.now() - startedAt }),
-          signal: controller.signal,
-        }
-      );
-      setUpload(null);
-      // null → this server has no chunked upload; the normal publish path uploads the file.
-      publish(mediaKey ?? undefined);
-    } catch (error) {
-      setUpload(null);
-      if (error instanceof UploadCancelledError) return;
-      Alert.alert(
-        "Video not uploaded",
-        error instanceof Error && error.name === "DirectUploadError"
-          ? error.message
-          : "The upload did not finish. Please check your connection and try again. Your text is still here."
-      );
-    } finally {
-      uploadAbortRef.current = null;
-    }
   };
 
   const dismissKeyboard = () => {
@@ -987,16 +960,6 @@ export default function PremiumPostScreen() {
           </View>
         )}
       </ScrollView>
-
-      <VideoUploadProgress
-        elapsedMs={upload?.elapsedMs ?? 0}
-        onCancel={() => uploadAbortRef.current?.abort()}
-        partCount={upload?.partCount ?? 0}
-        partsDone={upload?.partsDone ?? 0}
-        sentBytes={upload?.sentBytes ?? 0}
-        totalBytes={upload?.totalBytes ?? 0}
-        visible={upload !== null}
-      />
     </KeyboardAvoidingView>
   );
 }
