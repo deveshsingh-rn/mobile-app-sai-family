@@ -247,6 +247,13 @@ apiClient.interceptors.response.use(
         status: error.response?.status,
         backendErrorData: error.response?.data,
         isNetworkError: !error.response,
+        // The OS's own reason for a failed request (iOS NSURLError / Android exception text),
+        // e.g. "The Internet connection appears to be offline." Axios only says "Network Error".
+        nativeReason:
+          !error.response && typeof (error.request as { _response?: unknown } | undefined)?._response === "string"
+            ? (error.request as { _response: string })._response
+            : undefined,
+        timeoutMs: error.config?.timeout,
       };
 
       const isExpectedNotFound =
