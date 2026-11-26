@@ -1,3 +1,4 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import React, {
   useCallback,
   useEffect,
@@ -215,7 +216,7 @@ const getRelativeStart = (event: SaiEvent) => {
   return `In ${Math.round(hours / 24)} days`;
 };
 
-export default function MyEventsRoute() {
+function MyEventsRoute() {
   const dispatch = useAppDispatch();
   const loading = useAppSelector(selectEventsLoading);
   const error = useAppSelector(selectEventsError);
@@ -1596,3 +1597,5 @@ const styles = StyleSheet.create({
     color: "#1F2937",
   },
 });
+
+export default withMembersOnly(MyEventsRoute, "event");

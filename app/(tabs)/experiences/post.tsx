@@ -1,3 +1,4 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import React, {
   useCallback,
   useEffect,
@@ -117,7 +118,7 @@ const formatRecordingDuration = (durationMillis: number) => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
-export default function PremiumPostScreen() {
+function PremiumPostScreen() {
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
 
@@ -1546,3 +1547,5 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 });
+
+export default withMembersOnly(PremiumPostScreen, "post");

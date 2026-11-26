@@ -1,3 +1,4 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import React, {
   useEffect,
   useMemo,
@@ -51,7 +52,7 @@ import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 
 const CONTENT_LIMIT = 3000;
 
-export default function EditExperienceScreen() {
+function EditExperienceScreen() {
   const { id } = useLocalSearchParams<{
     id?: string;
   }>();
@@ -446,3 +447,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+
+export default withMembersOnly(EditExperienceScreen, "post");

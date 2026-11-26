@@ -1,6 +1,7 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import { StyleSheet, Text, View } from 'react-native';
 
-export default function CreateScreen() {
+function CreateScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.eyebrow}>SAI FAMILY</Text>
@@ -37,3 +38,5 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 });
+
+export default withMembersOnly(CreateScreen, "post");

@@ -51,6 +51,7 @@ import type {
   DirectoryContactPayload,
   DirectoryListing,
 } from '@/store/directory/types';
+import { requireAccount } from '@/services/login-prompt';
 
 type ContactAction = {
   available: boolean;
@@ -416,6 +417,7 @@ const BusinessDetailsScreen = () => {
   ];
 
   const handleBookmark = () => {
+    if (!requireAccount("bookmark")) return;
     if (!listingId || actionPending) {
       return;
     }
@@ -428,6 +430,7 @@ const BusinessDetailsScreen = () => {
   };
 
   const handleRecommend = () => {
+    if (!requireAccount("review")) return;
     if (!listingId || actionPending) {
       return;
     }
@@ -476,6 +479,7 @@ const BusinessDetailsScreen = () => {
   };
 
   const handleReport = () => {
+    if (!requireAccount("report")) return;
     if (!listingId || !listing || actionPending) {
       return;
     }
@@ -505,7 +509,7 @@ const BusinessDetailsScreen = () => {
   const handleContact = async (
     channel: DirectoryContactPayload['channel']
   ) => {
-    if (!listingId || !listing) {
+    if (!listingId || !listing || !requireAccount("enquiry")) {
       return;
     }
 

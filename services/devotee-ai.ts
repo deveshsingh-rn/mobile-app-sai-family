@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import { hasSavedAuthAccessToken } from "./auth";
+import { readGuestSession } from "./guest-tokens";
 import { apiClient } from "./api";
 
 const DEFAULT_DEVOTEE_AI_ENDPOINT = "/api/ai/devotee-question";
@@ -324,7 +325,8 @@ function getAiErrorMessage(error: unknown) {
 }
 
 async function assertAiAuthSession() {
-  const hasToken = await hasSavedAuthAccessToken();
+  // Guest mode: a guest account may ask Sai too (a few questions a day, enforced by the backend).
+  const hasToken = (await hasSavedAuthAccessToken()) || Boolean((await readGuestSession())?.tokens.accessToken);
 
   if (!hasToken) {
     throw new Error(AUTH_REQUIRED_MESSAGE);

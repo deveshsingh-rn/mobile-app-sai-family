@@ -39,6 +39,7 @@ import type { Experience } from "@/store/experiences/types";
 import { useAppDispatch } from "@/store/hooks";
 import { createExperiencePublicShareLink, createExperienceShareMessage } from "@/utils/experience-links";
 import { mergeReelPages, takeReelSeed } from "@/utils/reels";
+import { requireAccount } from "@/services/login-prompt";
 
 const PAGE_SIZE = 5;
 /** Muted / unmuted is remembered while the app is open (not across launches). */
@@ -126,6 +127,7 @@ export default function ReelsScreen() {
 
   const handleLike = async (item: Experience, forceLike = false) => {
     if (forceLike && item.likedByMe) return; // double tap only likes, never unlikes
+    if (!requireAccount("like")) return;
     const liked = !item.likedByMe;
     updateReel(item.id, (current) => ({ ...current, likedByMe: liked, likes: Math.max(0, current.likes + (liked ? 1 : -1)) }));
     try {
@@ -141,6 +143,7 @@ export default function ReelsScreen() {
   };
 
   const handleBookmark = async (item: Experience) => {
+    if (!requireAccount("bookmark")) return;
     const bookmarked = !item.bookmarkedByMe;
     updateReel(item.id, (current) => ({ ...current, bookmarkedByMe: bookmarked }));
     try {
@@ -155,6 +158,7 @@ export default function ReelsScreen() {
   };
 
   const handleRepost = async (item: Experience) => {
+    if (!requireAccount("repost")) return;
     const reposted = !item.repostedByMe;
     updateReel(item.id, (current) => ({ ...current, repostedByMe: reposted, reposts: Math.max(0, current.reposts + (reposted ? 1 : -1)) }));
     try {
@@ -182,6 +186,7 @@ export default function ReelsScreen() {
   };
 
   const report = async (item: Experience, reason: ExperienceReportReason) => {
+    if (!requireAccount("report")) return;
     try {
       const result = await apiReportExperience(item.id, reason);
       Alert.alert("Report received", result.alreadyReported ? "You have already reported this post." : "Thank you. Our team will review this post.");

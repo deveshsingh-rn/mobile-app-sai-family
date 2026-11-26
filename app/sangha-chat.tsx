@@ -1,5 +1,8 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import SanghaChatScreen from "@/screens/sangha-chat-screen";
 
-export default function SanghaChatRoute() {
+function SanghaChatRoute() {
   return <SanghaChatScreen />;
 }
+
+export default withMembersOnly(SanghaChatRoute, "message");

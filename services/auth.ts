@@ -3,6 +3,17 @@ import axios from "axios";
 
 import { DevoteeAccount } from "@/store/devotee-account/types";
 import { apiClient } from "./api";
+import { endGuestSession } from "./guest-session";
+import { readGuestSession } from "./guest-tokens";
+
+/**
+ * Guest mode: sent with every member login so the backend moves the guest's Ask Sai history to
+ * the account. Empty when this phone was never a guest.
+ */
+async function guestClaimBody(): Promise<{ guestRefreshToken?: string }> {
+  const guest = await readGuestSession();
+  return guest?.tokens.refreshToken ? { guestRefreshToken: guest.tokens.refreshToken } : {};
+}
 
 export const AUTH_SESSION_STORAGE_KEY = "sai-family.auth-session";
 
@@ -111,6 +122,9 @@ export async function saveAuthSession(session: AuthSession) {
     AUTH_SESSION_STORAGE_KEY,
     JSON.stringify(session)
   );
+
+  // A member is signed in now: the guest session (if any) has been claimed and is no longer used.
+  if (session.tokens?.accessToken) await endGuestSession();
 }
 
 export async function getSavedAuthSession() {
@@ -182,6 +196,7 @@ export async function verifyUserMobileOtp(
       {
         mobileNumber: mobileNumber.trim(),
         otp: otp.trim(),
+        ...(await guestClaimBody()),
       }
     );
 
@@ -205,6 +220,7 @@ export async function setupUserMobilePin(
       {
         mobileNumber: mobileNumber.trim(),
         pin: pin.trim(),
+        ...(await guestClaimBody()),
       }
     );
 
@@ -228,6 +244,7 @@ export async function loginUserWithMobilePin(
       {
         mobileNumber: mobileNumber.trim(),
         pin: pin.trim(),
+        ...(await guestClaimBody()),
       }
     );
 
@@ -251,6 +268,7 @@ export async function loginUserWithEmail(
       {
         email: email.trim().toLowerCase(),
         password,
+        ...(await guestClaimBody()),
       }
     );
 
@@ -292,6 +310,7 @@ export async function verifyUserEmail(email: string, otp: string) {
       {
         email: email.trim().toLowerCase(),
         otp: otp.trim(),
+        ...(await guestClaimBody()),
       }
     );
 

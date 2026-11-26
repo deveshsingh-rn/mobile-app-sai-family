@@ -111,6 +111,7 @@ import {
 } from "@/store/hooks";
 import { EventDetailSkeleton } from "@/components/events/EventSkeletons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { requireAccount } from "@/services/login-prompt";
 
 const formatLongDate = (value?: string) => {
   const date = value ? new Date(value) : null;
@@ -289,6 +290,7 @@ export default function EventDetailRoute() {
   }, [detail?.id, detail?.isOwner, detail?.permissions?.canManageAttendees, dispatch, eventId]);
 
   const handleRsvp = useCallback(() => {
+    if (!requireAccount("rsvp")) return;
     if (!eventId || !detail) {
       return;
     }
@@ -302,6 +304,7 @@ export default function EventDetailRoute() {
   }, [detail, dispatch, eventId]);
 
   const handleComment = useCallback(() => {
+    if (!requireAccount("comment")) return;
     if (!eventId) {
       return;
     }
@@ -318,6 +321,7 @@ export default function EventDetailRoute() {
   }, [comment, dispatch, eventId]);
 
   const handleReview = useCallback(() => {
+    if (!requireAccount("review")) return;
     if (!eventId || addingReview) {
       return;
     }
@@ -356,6 +360,7 @@ export default function EventDetailRoute() {
   );
 
   const handleUploadPhoto = useCallback(async () => {
+    if (!requireAccount("event")) return;
     if (!eventId || uploadingPhotos) {
       return;
     }
@@ -435,6 +440,7 @@ export default function EventDetailRoute() {
   }, [dispatch, eventId]);
 
   const handleBookmark = useCallback(() => {
+    if (!requireAccount("bookmark")) return;
     if (!eventId || !detail || bookmarkPending) {
       return;
     }
@@ -468,6 +474,7 @@ export default function EventDetailRoute() {
   }, [detail, dispatch, eventId]);
 
   const handleReport = useCallback(() => {
+    if (!requireAccount("report")) return;
     if (!eventId || reportPending) {
       return;
     }

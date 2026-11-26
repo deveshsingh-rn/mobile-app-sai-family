@@ -3,7 +3,10 @@ import type { InternalAxiosRequestConfig } from 'axios';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
+import { accountActionForErrorCode } from '@/utils/login-prompt';
 import { pauseAccess } from './access-pause';
+import { readGuestSession, writeGuestSession } from './guest-tokens';
+import { promptLogin } from './login-prompt';
 import * as SecureStore from 'expo-secure-store';
 
 // This logic ensures the correct base URL is used across all environments.
@@ -59,6 +62,43 @@ type RetriableAxiosRequestConfig = InternalAxiosRequestConfig & {
 };
 
 let refreshTokenPromise: Promise<string | null> | null = null;
+let guestRefreshPromise: Promise<string | null> | null = null;
+
+/**
+ * Guest mode: refresh the guest's access token; if the guest session is gone (expired or closed),
+ * start a new guest silently so browsing keeps working.
+ */
+async function refreshGuestAccessToken() {
+  if (guestRefreshPromise) return guestRefreshPromise;
+  guestRefreshPromise = (async () => {
+    const guest = await readGuestSession();
+    if (!guest) return null;
+    try {
+      const { data } = await axios.post<{ tokens: { accessToken: string; refreshToken: string } }>(
+        `${API_BASE_URL}/api/auth/refresh-token`,
+        { refreshToken: guest.tokens.refreshToken },
+        { timeout: 30000 }
+      );
+      await writeGuestSession({ ...guest, tokens: data.tokens });
+      return data.tokens.accessToken;
+    } catch {
+      try {
+        const { data } = await axios.post<{ user: { id: string }; tokens: { accessToken: string; refreshToken: string } }>(
+          `${API_BASE_URL}/api/auth/guest`,
+          {},
+          { timeout: 30000 }
+        );
+        await writeGuestSession({ guestId: data.user.id, tokens: data.tokens });
+        return data.tokens.accessToken;
+      } catch {
+        return null;
+      }
+    }
+  })().finally(() => {
+    guestRefreshPromise = null;
+  });
+  return guestRefreshPromise;
+}
 
 async function getStoredAuthSession() {
   const isAvailable = await SecureStore.isAvailableAsync();
@@ -163,6 +203,10 @@ apiClient.interceptors.request.use(
 
         if (accessToken) {
           setHeader(config, 'Authorization', `Bearer ${accessToken}`);
+        } else {
+          // Guest mode: no member login on this phone, use the guest account's token if any.
+          const guest = await readGuestSession();
+          if (guest?.tokens.accessToken) setHeader(config, 'Authorization', `Bearer ${guest.tokens.accessToken}`);
         }
 
         if (accountData) {
@@ -221,7 +265,9 @@ apiClient.interceptors.response.use(
       ) {
         originalRequest._retry = true;
 
-        return refreshAccessToken().then((accessToken) => {
+        return getStoredAuthSession()
+          .then((session) => (session?.tokens?.refreshToken ? refreshAccessToken() : refreshGuestAccessToken()))
+          .then((accessToken) => {
           if (!accessToken) {
             return Promise.reject(error);
           }
@@ -237,6 +283,15 @@ apiClient.interceptors.response.use(
       }
 
       notifyIfAccessPaused(error.response?.status, error.response?.data);
+
+      // Guest mode: the backend says this needs an account → show the "log in to continue" sheet.
+      const guestAction = accountActionForErrorCode(
+        error.response?.status,
+        (error.response?.data as { error?: { code?: string } } | undefined)?.error?.code
+      );
+      // Only for something the devotee did (not a background read), so a screen never opens with it.
+      const isUserAction = (error.config?.method ?? 'get').toLowerCase() !== 'get';
+      if (guestAction && (isUserAction || guestAction === 'ai_limit')) promptLogin(guestAction);
 
       const errorDetails = {
         message: error.message,

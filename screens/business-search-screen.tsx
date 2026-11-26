@@ -40,6 +40,7 @@ import {
   selectDirectorySearchSuggestions,
 } from '@/store/directory';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { selectDevoteeAccount } from '@/store/devotee-account/selectors';
 import type {
   DirectoryCategory,
   DirectoryListing,
@@ -409,6 +410,7 @@ const SearchScreen = () => {
   const dispatch = useAppDispatch();
   const [search, setSearch] = useState('');
 
+  const isMember = Boolean(useAppSelector(selectDevoteeAccount));
   const home = useAppSelector(selectDirectoryHome);
   const homeLoading = useAppSelector(
     selectDirectoryHomeLoading
@@ -449,10 +451,13 @@ const SearchScreen = () => {
 
   useEffect(() => {
     dispatch(fetchDirectoryHomeRequest({ limit: 10 }));
-    dispatch(
-      fetchDirectoryRecentSearchesRequest({ limit: 10 })
-    );
-  }, [dispatch]);
+    // Recent searches are saved per account; a guest has none.
+    if (isMember) {
+      dispatch(
+        fetchDirectoryRecentSearchesRequest({ limit: 10 })
+      );
+    }
+  }, [dispatch, isMember]);
 
   useEffect(() => {
     if (query.length < 2) {
@@ -487,11 +492,13 @@ const SearchScreen = () => {
       }
 
       setSearch(clean);
-      dispatch(
-        addDirectoryRecentSearchRequest({
-          query: clean,
-        })
-      );
+      if (isMember) {
+        dispatch(
+          addDirectoryRecentSearchRequest({
+            query: clean,
+          })
+        );
+      }
       dispatch(
         searchDirectoryRequest({
           limit: 20,
@@ -500,7 +507,7 @@ const SearchScreen = () => {
         })
       );
     },
-    [dispatch, query]
+    [dispatch, isMember, query]
   );
 
   const loadMoreResults = useCallback(() => {

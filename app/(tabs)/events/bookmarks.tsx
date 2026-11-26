@@ -1,3 +1,4 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import React, {
   useCallback,
   useEffect,
@@ -90,7 +91,7 @@ const getLocation = (event: SaiEvent) =>
 const isUpcoming = (event: SaiEvent) =>
   new Date(event.endAt || event.startAt).getTime() >= Date.now();
 
-export default function EventBookmarksRoute() {
+function EventBookmarksRoute() {
   const dispatch = useAppDispatch();
   const bookmarks = useAppSelector(selectEventBookmarks);
   const loading = useAppSelector(selectEventBookmarksLoading);
@@ -589,3 +590,5 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 });
+
+export default withMembersOnly(EventBookmarksRoute, "bookmark");

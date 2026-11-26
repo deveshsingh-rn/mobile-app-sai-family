@@ -1,3 +1,4 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import React, {
   useCallback,
   useEffect,
@@ -45,7 +46,7 @@ import {
 import { EventScreenHeader } from "@/components/events/EventScreenHeader";
 import { EventListSkeleton } from "@/components/events/EventSkeletons";
 
-export default function EventAttendeesRoute() {
+function EventAttendeesRoute() {
   const {id} = useLocalSearchParams<{id?: string}>();
   const eventId = Array.isArray(id) ? id[0] : id;
   const dispatch = useAppDispatch();
@@ -495,3 +496,5 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 });
+
+export default withMembersOnly(EventAttendeesRoute, "event");

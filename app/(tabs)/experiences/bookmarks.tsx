@@ -1,3 +1,4 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import React, {
   useCallback,
   useEffect,
@@ -47,7 +48,7 @@ import {
 
 const LIMIT = 20;
 
-export default function BookmarkedExperiencesScreen() {
+function BookmarkedExperiencesScreen() {
   const dispatch = useAppDispatch();
   const account = useAppSelector(
     selectDevoteeAccount
@@ -410,3 +411,5 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
 });
+
+export default withMembersOnly(BookmarkedExperiencesScreen, "bookmark");

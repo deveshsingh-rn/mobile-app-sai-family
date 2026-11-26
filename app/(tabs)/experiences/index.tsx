@@ -64,6 +64,7 @@ import { PendingVideoPostCard } from "@/components/experiences/PendingVideoPostC
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import { SAI_LIVE_YOUTUBE_URL } from "@/constants/external-links";
+import { requireAccount } from "@/services/login-prompt";
 
 const LIMIT = 10;
 const SAI_BABA_HEADER_IMAGE = require("@/assets/images/babasai.png");
@@ -194,7 +195,7 @@ export default function HomeScreen() {
   const handleLike = useCallback((
     experienceId: string
   ) => {
-    if (!account?.id) {
+    if (!requireAccount("like") || !account?.id) {
       return;
     }
 
@@ -209,7 +210,7 @@ export default function HomeScreen() {
   const handleBookmark = useCallback((
     experienceId: string
   ) => {
-    if (!account?.id) {
+    if (!requireAccount("bookmark") || !account?.id) {
       return;
     }
 
@@ -224,7 +225,7 @@ export default function HomeScreen() {
   const handleRepost = useCallback((
     experienceId: string
   ) => {
-    if (!account?.id) {
+    if (!requireAccount("repost") || !account?.id) {
       return;
     }
 
@@ -267,6 +268,7 @@ export default function HomeScreen() {
   }, []);
 
   const openCreatePost = useCallback(() => {
+    if (!requireAccount("post")) return;
     router.push("/(tabs)/experiences/post" as any);
   }, []);
 

@@ -1,3 +1,4 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import { useMemo, useState } from "react";
 import {
   Alert,
@@ -50,7 +51,7 @@ type SettingRowProps = {
   title: string;
 };
 
-export default function ProfileScreen() {
+function ProfileScreen() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const dispatch = useAppDispatch();
   const account = useAppSelector(selectDevoteeAccount);
@@ -982,3 +983,5 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 });
+
+export default withMembersOnly(ProfileScreen, "profile");

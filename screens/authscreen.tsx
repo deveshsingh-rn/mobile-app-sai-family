@@ -74,6 +74,12 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
 type AuthScreenProps = {
   onContinue: () => void;
   onCreateAccount: () => void;
+  /**
+   * Guest mode. On the first screen: start exploring without an account. Inside the login sheet
+   * opened by a guest: go back to what they were doing. Hidden when not given.
+   */
+  onContinueAsGuest?: () => void | Promise<void>;
+  guestLabel?: string;
 };
 
 type Country = {
@@ -536,6 +542,8 @@ function CountryPickerModal({
 export default function AuthScreen({
   onContinue,
   onCreateAccount,
+  onContinueAsGuest,
+  guestLabel = "Explore as guest",
 }: AuthScreenProps) {
   const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
@@ -555,6 +563,19 @@ export default function AuthScreen({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isStartingGuest, setIsStartingGuest] = useState(false);
+
+  const handleContinueAsGuest = async () => {
+    if (!onContinueAsGuest || isStartingGuest) return;
+    setIsStartingGuest(true);
+    try {
+      await onContinueAsGuest();
+    } catch (error) {
+      Alert.alert("Could not continue", error instanceof Error ? error.message : "Please try again.");
+    } finally {
+      setIsStartingGuest(false);
+    }
+  };
 
   /* Accordion: first pillar open by default */
   const [openPillar, setOpenPillar] = useState<PillarId | null>("experiences");
@@ -1076,6 +1097,25 @@ export default function AuthScreen({
           <Text style={styles.secondaryText}>Create Account</Text>
         </Pressable>
 
+        {onContinueAsGuest ? (
+          <Pressable
+            accessibilityHint="Read posts, ask Sai and do Naam Jap without an account"
+            accessibilityRole="button"
+            disabled={isStartingGuest}
+            onPress={() => void handleContinueAsGuest()}
+            style={({ pressed }) => [styles.guestButton, pressed && styles.buttonPressed]}
+          >
+            {isStartingGuest ? (
+              <ActivityIndicator color={C.saffron} />
+            ) : (
+              <>
+                <Text style={styles.guestText}>{guestLabel}</Text>
+                <Text style={styles.guestHint}>Read posts, ask Sai and do Naam Jap. Log in anytime.</Text>
+              </>
+            )}
+          </Pressable>
+        ) : null}
+
         <Text style={styles.footerText}>॥ Jai Sai Ram ॥</Text>
       </View>
 
@@ -1574,6 +1614,20 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     letterSpacing: 0.1,
   },
+  guestButton: {
+    alignItems: "center",
+    borderColor: C.saffronBorder,
+    borderRadius: 14,
+    borderWidth: 1,
+    backgroundColor: C.saffronBg,
+    justifyContent: "center",
+    marginTop: 10,
+    minHeight: 56,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  guestHint: { color: C.inkSecondary, fontSize: 12, fontWeight: "500", marginTop: 3, textAlign: "center" },
+  guestText: { color: C.saffronText, fontSize: 15, fontWeight: "700" },
   footerText: {
     color: C.inkTertiary,
     fontSize: 11,

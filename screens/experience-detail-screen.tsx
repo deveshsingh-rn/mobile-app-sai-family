@@ -53,6 +53,8 @@ import {
   useAppSelector,
 } from "@/store/hooks";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
+import { promptLogin, requireAccount } from "@/services/login-prompt";
+import { GuestCommentPrompt } from "@/components/auth/GuestCommentPrompt";
 
 export default function ExperienceDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -138,7 +140,7 @@ export default function ExperienceDetailScreen() {
 
   const handleComment = useCallback(
     (text: string) => {
-      if (!experienceId) {
+      if (!experienceId || !requireAccount("comment")) {
         return;
       }
 
@@ -154,7 +156,7 @@ export default function ExperienceDetailScreen() {
   );
 
   const handleLike = useCallback(() => {
-    if (experienceId) {
+    if (experienceId && requireAccount("like")) {
       dispatch(
         toggleLikeRequest(
           experienceId,
@@ -165,7 +167,7 @@ export default function ExperienceDetailScreen() {
   }, [dispatch, experienceId, userId]);
 
   const handleBookmark = useCallback(() => {
-    if (experienceId) {
+    if (experienceId && requireAccount("bookmark")) {
       dispatch(
         toggleBookmarkRequest(
           experienceId,
@@ -176,7 +178,7 @@ export default function ExperienceDetailScreen() {
   }, [dispatch, experienceId, userId]);
 
   const handleRepost = useCallback(() => {
-    if (experienceId) {
+    if (experienceId && requireAccount("repost")) {
       dispatch(
         toggleRepostRequest(
           experienceId,
@@ -332,12 +334,16 @@ export default function ExperienceDetailScreen() {
           },
         ]}
       >
-        <CommentInput
-          authorName={accountName}
-          loading={addingComment}
-          onSubmit={handleComment}
-          profileImageUrl={accountProfileImageUrl}
-        />
+        {account ? (
+          <CommentInput
+            authorName={accountName}
+            loading={addingComment}
+            onSubmit={handleComment}
+            profileImageUrl={accountProfileImageUrl}
+          />
+        ) : (
+          <GuestCommentPrompt onPress={() => promptLogin("comment")} />
+        )}
       </View>
     </KeyboardAvoidingView>
   );

@@ -18,6 +18,10 @@ import CommentItem from "@/components/experiences/CommentItem";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import { apiAddExperienceComment, apiFetchExperienceDetail } from "@/services/experiences";
 import { normalizeComment } from "@/store/experiences/saga";
+import { GuestCommentPrompt } from "@/components/auth/GuestCommentPrompt";
+import { promptLogin } from "@/services/login-prompt";
+import { useAppSelector } from "@/store/hooks";
+import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 
 type Props = {
   experienceId: string | null;
@@ -55,6 +59,8 @@ export function ReelCommentsSheet({ experienceId, onClose, onCommentAdded }: Pro
       cancelled = true;
     };
   }, [experienceId]);
+
+  const isMember = Boolean(useAppSelector(selectDevoteeAccount));
 
   const submit = async (text: string) => {
     if (!experienceId || sending) return;
@@ -96,7 +102,17 @@ export function ReelCommentsSheet({ experienceId, onClose, onCommentAdded }: Pro
           )}
 
           {error && comments.length > 0 ? <Text style={styles.error}>{error}</Text> : null}
-          <CommentInput loading={sending} onSubmit={(text) => void submit(text)} />
+          {isMember ? (
+            <CommentInput loading={sending} onSubmit={(text) => void submit(text)} />
+          ) : (
+            <GuestCommentPrompt
+              onPress={() => {
+                onClose();
+                // Let this sheet close first: iOS cannot open the login sheet over it.
+                setTimeout(() => promptLogin("comment"), 450);
+              }}
+            />
+          )}
         </View>
       </KeyboardAvoidingView>
     </Modal>

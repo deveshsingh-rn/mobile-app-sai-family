@@ -91,6 +91,7 @@ import { requestLocationPermissionWithSettingsFallback } from "@/services/locati
 import { selectDevoteeAccount } from "@/store/devotee-account/selectors";
 import { FontAwesome } from "@expo/vector-icons";
 import { createEventShareMessage } from "@/utils/event-links";
+import { requireAccount } from "@/services/login-prompt";
 
 const EVENT_FILTERS: {
   label: string;
@@ -222,6 +223,7 @@ const sectionCountFromHome = (
 function EventsScreen() {
   const dispatch = useAppDispatch();
   const account = useAppSelector(selectDevoteeAccount);
+  const isMember = Boolean(account);
   const events = useAppSelector(selectEventsFeed);
   const home = useAppSelector(selectEventsHome);
   const homeLoading = useAppSelector(selectEventsHomeLoading);
@@ -298,28 +300,33 @@ function EventsScreen() {
   useEffect(() => {
     dispatch(fetchEventsRequest(fetchParams));
     dispatch(fetchEventsHomeRequest({limit: 5}));
-    dispatch(fetchEventBookmarksRequest({limit: 20, offset: 0}));
-    dispatch(fetchMyEventsRequest({limit: 20, offset: 0}));
-    dispatch(fetchEventDraftsRequest({limit: 20, offset: 0, status: "active"}));
+    // Member-only lists: a guest has none (and would only get ACCOUNT_REQUIRED back).
+    if (isMember) {
+      dispatch(fetchEventBookmarksRequest({limit: 20, offset: 0}));
+      dispatch(fetchMyEventsRequest({limit: 20, offset: 0}));
+      dispatch(fetchEventDraftsRequest({limit: 20, offset: 0, status: "active"}));
+    }
     fetchNearbyFromLocation();
     dispatch(fetchCommunityCalendarsRequest());
-  }, [dispatch, fetchNearbyFromLocation, fetchParams]);
+  }, [dispatch, fetchNearbyFromLocation, fetchParams, isMember]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     dispatch(fetchEventsRequest(fetchParams));
     dispatch(fetchEventsHomeRequest({limit: 5}));
-    dispatch(fetchEventBookmarksRequest({limit: 20, offset: 0}));
-    dispatch(fetchMyEventsRequest({limit: 20, offset: 0}));
-    dispatch(fetchEventDraftsRequest({limit: 20, offset: 0, status: "active"}));
+    if (isMember) {
+      dispatch(fetchEventBookmarksRequest({limit: 20, offset: 0}));
+      dispatch(fetchMyEventsRequest({limit: 20, offset: 0}));
+      dispatch(fetchEventDraftsRequest({limit: 20, offset: 0, status: "active"}));
+    }
     fetchNearbyFromLocation();
     dispatch(fetchCommunityCalendarsRequest());
     setTimeout(() => setRefreshing(false), 700);
-  }, [dispatch, fetchNearbyFromLocation, fetchParams]);
+  }, [dispatch, fetchNearbyFromLocation, fetchParams, isMember]);
 
   const handleBookmark = useCallback(
     (event: UiEvent) => {
-      if (!event.sourceId) {
+      if (!event.sourceId || !requireAccount("bookmark")) {
         return;
       }
 
@@ -334,7 +341,7 @@ function EventsScreen() {
 
   const handleRsvp = useCallback(
     (event: UiEvent) => {
-      if (!event.sourceId) {
+      if (!event.sourceId || !requireAccount("rsvp")) {
         return;
       }
 

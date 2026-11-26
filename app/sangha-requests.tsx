@@ -1,3 +1,4 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import SanghaRequestsScreen from "@/screens/sangha-requests-screen";
 
-export default SanghaRequestsScreen;
+export default withMembersOnly(SanghaRequestsScreen, "connect");

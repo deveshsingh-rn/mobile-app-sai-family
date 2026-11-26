@@ -53,6 +53,7 @@ import {
   createExperiencePublicShareLink,
   createExperienceShareMessage,
 } from "@/utils/experience-links";
+import { requireAccount } from "@/services/login-prompt";
 
 const formatCount = (value?: number) => {
   const count = Number(value) || 0;
@@ -221,6 +222,7 @@ export function ExperienceCard({
   const [isBlocking, setIsBlocking] = useState(false);
 
   const handleLike = () => {
+    if (!requireAccount("like")) return;
     if (onLike) {
       onLike();
       return;

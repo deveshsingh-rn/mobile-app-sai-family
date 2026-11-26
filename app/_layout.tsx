@@ -10,6 +10,10 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AutomationGuard } from '@/components/security/AutomationGuard';
+import { AuthModal } from '@/components/auth/AuthModal';
+import { LoginRequiredSheet } from '@/components/auth/LoginRequiredSheet';
+import { hydrateGuestSession, startGuestSession, useGuestSession } from '@/services/guest-session';
+import { setMemberSignedIn } from '@/services/login-prompt';
 import AuthScreen from '@/screens/authscreen';
 import CommunityTermsScreen from '@/screens/community-terms-screen';
 import CreateDevoteeAccountScreen from '@/screens/create-devotee-account-screen';
@@ -57,10 +61,19 @@ function AppLayoutContent() {
   const [acceptedCommunityTerms, setAcceptedCommunityTerms] = useState(false);
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [showDevoteeProfile, setShowDevoteeProfile] = useState(false);
+  // Guest mode: exploring without an account (feed, Reels, Ask Sai with a small allowance, Naam Jap).
+  const guestSession = useGuestSession();
+  const isGuest = !devoteeAccount && Boolean(guestSession.guestId);
 
   useEffect(() => {
     dispatch(loadSavedDevoteeAccountRequest());
+    void hydrateGuestSession();
   }, [dispatch]);
+
+  // Member-only actions check this (services/login-prompt.ts → requireAccount).
+  useEffect(() => {
+    setMemberSignedIn(Boolean(devoteeAccount));
+  }, [devoteeAccount]);
 
   useEffect(() => {
     void initProductAnalytics();
@@ -203,11 +216,13 @@ function AppLayoutContent() {
     }
 
     trackProductScreen(screenName, {
+      is_guest: isGuest,
       is_logged_in: Boolean(devoteeAccount),
     });
   }, [
     devoteeAccount,
     hasHydratedDevoteeAccount,
+    isGuest,
     pathname,
     showAuth,
     showCreateAccount,
@@ -238,7 +253,7 @@ function AppLayoutContent() {
     return <SaiBabaSplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
-  if (!hasHydratedDevoteeAccount) {
+  if (!hasHydratedDevoteeAccount || !guestSession.hydrated) {
     return (
       <View
         style={{
@@ -257,7 +272,7 @@ function AppLayoutContent() {
     return <DevoteeProfileScreen account={devoteeAccount} onContinue={() => setShowDevoteeProfile(false)} />;
   }
 
-  if (!devoteeAccount && showOnboarding) {
+  if (!devoteeAccount && !isGuest && showOnboarding) {
     return (
       <OnboardingScreen
         onDone={() => {
@@ -269,11 +284,11 @@ function AppLayoutContent() {
     );
   }
 
-  if (!devoteeAccount && !acceptedCommunityTerms) {
+  if (!devoteeAccount && !isGuest && !acceptedCommunityTerms) {
     return <CommunityTermsScreen onAccept={() => setAcceptedCommunityTerms(true)} />;
   }
 
-  if (!devoteeAccount && showCreateAccount) {
+  if (!devoteeAccount && !isGuest && showCreateAccount) {
     return (
       <CreateDevoteeAccountScreen
         onBack={() => setShowCreateAccount(false)}
@@ -289,10 +304,14 @@ function AppLayoutContent() {
     );
   }
 
-  if (!devoteeAccount && showAuth) {
+  if (!devoteeAccount && !isGuest && showAuth) {
     return (
       <AuthScreen
         onContinue={() => setShowAuth(false)}
+        onContinueAsGuest={async () => {
+          await startGuestSession();
+          void trackProductEvent("Guest Started");
+        }}
         onCreateAccount={() => setShowCreateAccount(true)}
       />
     );
@@ -316,6 +335,9 @@ function AppLayoutContent() {
         <Stack.Screen name="group-details" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
+      {/* Guest mode: "log in to continue" sheet and the login screen over the current screen. */}
+      <LoginRequiredSheet />
+      <AuthModal />
       <StatusBar style="auto" />
     </ThemeProvider>
   );

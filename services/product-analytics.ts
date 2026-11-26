@@ -26,7 +26,10 @@ export type ProductAnalyticsEventName =
   | "Sangha Group Joined"
   | "Reel Viewed"
   | "Reel Liked"
-  | "Reel Shared";
+  | "Reel Shared"
+  | "Guest Started"
+  | "Login Prompt Shown"
+  | "Login Prompt Accepted";
 
 export type ProductAnalyticsProperties = Record<
   string,

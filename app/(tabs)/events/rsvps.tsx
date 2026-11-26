@@ -1,5 +1,8 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import EventListScreen from "@/screens/event-list-screen";
 
-export default function EventRsvpsRoute() {
+function EventRsvpsRoute() {
   return <EventListScreen mode="rsvps" />;
 }
+
+export default withMembersOnly(EventRsvpsRoute, "rsvp");

@@ -1,5 +1,8 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import DirectoryListingCollectionScreen from '@/screens/directory-listing-collection-screen';
 
-export default function MyListingsRoute() {
+function MyListingsRoute() {
   return <DirectoryListingCollectionScreen mode="mine" />;
 }
+
+export default withMembersOnly(MyListingsRoute, "listing");

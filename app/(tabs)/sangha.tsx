@@ -1,3 +1,4 @@
+import { withMembersOnly } from "@/components/auth/MembersOnly";
 import React, {
   useEffect,
   useMemo,
@@ -112,7 +113,7 @@ function getSuggestedBadge(item: SanghaDevoteeSummary) {
   );
 }
 
-export default function SanghaScreen() {
+function SanghaScreen() {
   const dispatch = useAppDispatch();
   const home = useAppSelector(selectSanghaHome);
   const nearYou = useAppSelector(selectSanghaNearYou);
@@ -1083,3 +1084,5 @@ export default function SanghaScreen() {
     </SafeAreaView>
   );
 }
+
+export default withMembersOnly(SanghaScreen, "connect");
