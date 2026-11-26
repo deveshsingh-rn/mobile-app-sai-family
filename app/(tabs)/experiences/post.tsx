@@ -49,7 +49,6 @@ import {
   MapPin,
   Mic,
   Music2,
-  Play,
   RotateCw,
   Send,
   Video,
@@ -62,7 +61,9 @@ import { selectCreateExperienceLoading } from "@/store/experiences/selectors";
 import { EXPERIENCE_THEME } from "@/constants/experience-theme";
 import { File as ExpoFile } from "expo-file-system";
 import { startPendingVideoPost } from "@/services/pending-video-post";
-import { estimateUploadSeconds, formatBytes, formatEta, formatVideoDuration } from "@/utils/chunk-upload";
+import { SelectedVideoPreview } from "@/components/experiences/SelectedVideoPreview";
+import { VideoQualitySheet, type VideoQualityChoice } from "@/components/experiences/VideoQualitySheet";
+import { formatBytes } from "@/utils/chunk-upload";
 
 /** Upload limits for experience videos (direct-to-storage limit is 150 MB). */
 const MAX_VIDEO_SECONDS = 180;
@@ -73,7 +74,6 @@ const MAX_VIDEO_BYTES = 150 * 1024 * 1024;
  * Standard 720p is roughly 3-5x smaller than HD 1080p and uploads that much faster.
  * Android sends the original file for now (on-device compression needs a native library).
  */
-type VideoQualityChoice = "standard" | "hd";
 const VIDEO_PICKER_QUALITY: Record<VideoQualityChoice, Partial<ImagePicker.ImagePickerOptions>> = {
   standard: {
     videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720,
@@ -145,6 +145,7 @@ export default function PremiumPostScreen() {
     useState(false);
 
   const [isLocating, setIsLocating] = useState(true);
+  const [qualitySheetOpen, setQualitySheetOpen] = useState(false);
   const [isDictating, setIsDictating] = useState(false);
   const contentBeforeDictationRef = useRef("");
   const composerScrollRef = useRef<ScrollView>(null);
@@ -294,16 +295,12 @@ export default function PremiumPostScreen() {
 
   // ───────────────── VIDEO ─────────────────
 
-  const pickVideo = () => {
-    Alert.alert(
-      "Video quality",
-      "Standard uploads much faster on mobile data. HD keeps more detail.",
-      [
-        { text: "Standard (faster)", onPress: () => void pickVideoWithQuality("standard") },
-        { text: "HD", onPress: () => void pickVideoWithQuality("hd") },
-        { style: "cancel", text: "Cancel" },
-      ]
-    );
+  const pickVideo = () => setQualitySheetOpen(true);
+
+  const chooseQuality = (quality: VideoQualityChoice) => {
+    setQualitySheetOpen(false);
+    // iOS cannot present the picker while the sheet is still sliding away.
+    setTimeout(() => void pickVideoWithQuality(quality), Platform.OS === "ios" ? 450 : 50);
   };
 
   const pickVideoWithQuality = async (quality: VideoQualityChoice) => {
@@ -803,15 +800,15 @@ export default function PremiumPostScreen() {
           <View style={styles.actions}>
             <ActionButton
               label="Photo"
-              icon={<ImageIcon size={18} color="#15803D" strokeWidth={2.3} />}
-              iconBackground="#DCFCE7"
+              icon={<ImageIcon size={18} color="#B45309" strokeWidth={2.3} />}
+              iconBackground="#FEF3C7"
               onPress={pickImage}
             />
 
             <ActionButton
               label="Video"
-              icon={<Video size={18} color="#1D4ED8" strokeWidth={2.3} />}
-              iconBackground="#DBEAFE"
+              icon={<Video size={18} color={ACCENT} strokeWidth={2.3} />}
+              iconBackground="#FFEDD5"
               onPress={pickVideo}
             />
 
@@ -865,15 +862,13 @@ export default function PremiumPostScreen() {
             )}
 
             {selectedMedia.type === "video" && (
-              <View style={styles.videoFrame}>
-                <Image
-                  source={{ uri: selectedMedia.uri }}
-                  style={styles.media}
-                />
-                <View style={styles.playButton}>
-                  <Play size={24} color="#fff" fill="#fff" />
-                </View>
-              </View>
+              <SelectedVideoPreview
+                durationMs={selectedMedia.durationMs}
+                onChangeQuality={pickVideo}
+                quality={selectedMedia.quality}
+                sizeBytes={selectedMedia.sizeBytes}
+                uri={selectedMedia.uri}
+              />
             )}
 
             {selectedMedia.type === "audio" && (
@@ -905,38 +900,10 @@ export default function PremiumPostScreen() {
               </View>
             )}
 
-            {selectedMedia.type === "video" && selectedMedia.sizeBytes ? (
-              <View style={styles.videoInfo}>
-                <View style={styles.videoInfoCopy}>
-                  <Text style={styles.videoInfoTitle}>
-                    {selectedMedia.quality === "hd" ? "HD" : "Standard"} · {formatVideoDuration(selectedMedia.durationMs)} · {formatBytes(selectedMedia.sizeBytes)}
-                  </Text>
-                  <Text style={styles.videoInfoText}>
-                    Upload {formatEta(estimateUploadSeconds(selectedMedia.sizeBytes, 5))} on 4G, {formatEta(estimateUploadSeconds(selectedMedia.sizeBytes, 20))} on Wi-Fi (estimate)
-                  </Text>
-                </View>
-                <Pressable
-                  accessibilityHint="Choose Standard or HD and pick the video again"
-                  accessibilityRole="button"
-                  hitSlop={6}
-                  onPress={pickVideo}
-                  style={({ pressed }) => [styles.videoInfoButton, pressed && styles.pressed]}
-                >
-                  <Text style={styles.videoInfoButtonText}>Change quality</Text>
-                </Pressable>
-              </View>
-            ) : null}
-
-            {selectedMedia.type !== "audio" ? (
+            {selectedMedia.type === "image" ? (
               <View style={styles.mediaBadge}>
-                {selectedMedia.type === "image" ? (
-                  <ImageIcon color="#FFFFFF" size={12} strokeWidth={2.4} />
-                ) : (
-                  <Video color="#FFFFFF" size={12} strokeWidth={2.4} />
-                )}
-                <Text style={styles.mediaBadgeText}>
-                  {selectedMedia.type === "image" ? "Photo" : "Video"}
-                </Text>
+                <ImageIcon color="#FFFFFF" size={12} strokeWidth={2.4} />
+                <Text style={styles.mediaBadgeText}>Photo</Text>
               </View>
             ) : null}
 
@@ -960,6 +927,13 @@ export default function PremiumPostScreen() {
           </View>
         )}
       </ScrollView>
+
+      <VideoQualitySheet
+        initial={selectedMedia?.quality ?? "standard"}
+        onChoose={chooseQuality}
+        onClose={() => setQualitySheetOpen(false)}
+        visible={qualitySheetOpen}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -1379,48 +1353,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
 
-  videoFrame: {
-    backgroundColor: "#1C1917",
-  },
 
-  playButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderColor: "rgba(255,255,255,0.7)",
-    borderRadius: 32,
-    borderWidth: 2,
-    height: 64,
-    justifyContent: "center",
-    left: "50%",
-    marginLeft: -32,
-    marginTop: -32,
-    paddingLeft: 3,
-    position: "absolute",
-    top: "50%",
-    width: 64,
-  },
 
-  videoInfo: {
-    alignItems: "center",
-    backgroundColor: "#FFF4E8",
-    borderColor: "#FED7AA",
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 10,
-    padding: 12,
-  },
-  videoInfoButton: {
-    backgroundColor: "#C2410C",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  videoInfoButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
-  videoInfoCopy: { flex: 1 },
-  videoInfoText: { color: EXPERIENCE_THEME.paragraph, fontSize: 12, fontWeight: "600", lineHeight: 17, marginTop: 3 },
-  videoInfoTitle: { color: EXPERIENCE_THEME.heading, fontSize: 15, fontWeight: "900" },
 
   mediaBadge: {
     alignItems: "center",

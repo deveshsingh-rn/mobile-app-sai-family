@@ -31,10 +31,15 @@ export type PendingVideoPost = {
   location?: string;
   category: string;
   video: { uri: string; mimeType: string; sizeBytes: number; durationMs?: number | null };
-  status: "uploading" | "publishing" | "failed";
+  /** uploading (sentBytes 0 = still preparing) → publishing → published (shown briefly) | failed */
+  status: "uploading" | "publishing" | "published" | "failed";
   sentBytes: number;
   totalBytes: number;
   startedAt: number;
+  /** Bytes already stored when this attempt started, so the speed counts only this attempt. */
+  startedBytes: number;
+  /** Failed only: true when the next try continues from the stored bytes instead of from 0. */
+  canResume?: boolean;
   error?: string;
 };
 
@@ -44,6 +49,8 @@ type Dispatch = (action: any) => unknown;
 const KEEP_AWAKE_TAG = "video-upload";
 /** Automatic retries after a failure (when the app comes back to the foreground). */
 const MAX_AUTO_RETRIES = 3;
+/** How long the "Your video is live" state stays on the card before the real post replaces it. */
+const LIVE_MOMENT_MS = 2500;
 
 let pending: PendingVideoPost | null = null;
 let controller: AbortController | null = null;
@@ -60,6 +67,8 @@ function dropSessions(release: boolean) {
   resumableSession = null;
 }
 let autoRetries = 0;
+/** Video already in storage but the post was not created yet: a retry only publishes. */
+let uploadedKey: string | null = null;
 let dispatchRef: Dispatch | null = null;
 const listeners = new Set<() => void>();
 
@@ -99,7 +108,9 @@ async function run() {
 
     // Preferred: one resumable session (continues from the exact byte after any interruption).
     // Skipped only when this post already has parts stored by the older parts-based upload.
-    let mediaKey = session
+    let mediaKey = uploadedKey
+      ? uploadedKey
+      : session
       ? null
       : await uploadVideoResumable(job.video, {
           onProgress,
@@ -129,6 +140,7 @@ async function run() {
       });
     }
     if (!stillThisJob() || signal.aborted) return;
+    uploadedKey = mediaKey;
 
     set({ ...pending!, sentBytes: job.totalBytes, status: "publishing" });
     const response = await apiCreateExperience({
@@ -140,22 +152,29 @@ async function run() {
     });
     if (!stillThisJob()) return;
 
-    // Now it exists on the server: show the real post and refresh the feed for everyone's view.
-    dispatchRef?.(createExperienceSuccess(flattenExperience(response.experience) as Experience));
-    dispatchRef?.(fetchExperiencesRequest({ limit: 10, offset: 0 }));
+    // Now it exists on the server. Show "live" on the card for a moment, then the real post.
     dropSessions(false);
+    uploadedKey = null;
     autoRetries = 0;
-    set(null);
+    set({ ...pending!, status: "published" });
+    const dispatch = dispatchRef;
+    setTimeout(() => {
+      dispatch?.(createExperienceSuccess(flattenExperience(response.experience) as Experience));
+      dispatch?.(fetchExperiencesRequest({ limit: 10, offset: 0 }));
+      if (stillThisJob()) set(null);
+    }, LIVE_MOMENT_MS);
   } catch (error) {
     if (!stillThisJob()) return;
     if (error instanceof UploadCancelledError || signal.aborted) {
       dropSessions(false);
+      uploadedKey = null;
       set(null);
       return;
     }
     const backendMessage = (error as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
     set({
       ...pending!,
+      canResume: Boolean(uploadedKey || resumableSession || session),
       error:
         backendMessage ||
         (error instanceof Error && error.name === "DirectUploadError"
@@ -182,8 +201,9 @@ export function startPendingVideoPost(
   input: Pick<PendingVideoPost, "category" | "content" | "location" | "video">,
   dispatch: Dispatch
 ) {
-  if (pending && pending.status !== "failed") return false;
+  if (pending && pending.status !== "failed" && pending.status !== "published") return false;
   dropSessions(true); // discard the failed upload it replaces
+  uploadedKey = null;
   autoRetries = 0;
   dispatchRef = dispatch;
   set({
@@ -191,6 +211,7 @@ export function startPendingVideoPost(
     id: `pending-${Date.now()}`,
     sentBytes: 0,
     startedAt: Date.now(),
+    startedBytes: 0,
     status: "uploading",
     totalBytes: input.video.sizeBytes,
   });
@@ -201,16 +222,17 @@ export function startPendingVideoPost(
 export function retryPendingVideoPost() {
   if (pending?.status !== "failed") return;
   // Resumes from the parts already stored (see `session`); progress continues from there.
-  set({ ...pending, error: undefined, startedAt: Date.now(), status: "uploading" });
+  set({ ...pending, canResume: undefined, error: undefined, startedAt: Date.now(), startedBytes: pending.sentBytes, status: "uploading" });
   void run();
 }
 
 /** Cancels an upload in progress, or discards a failed one. */
 export function cancelPendingVideoPost() {
-  if (!pending) return;
+  if (!pending || pending.status === "published") return;
   if (controller) controller.abort();
   // Uploading: the uploader frees its own session when it sees the abort. Failed: free it here.
   dropSessions(!controller);
+  uploadedKey = null;
   autoRetries = 0;
   set(null);
 }
