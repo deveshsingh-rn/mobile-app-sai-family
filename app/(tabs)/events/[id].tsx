@@ -2520,6 +2520,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 14,
   },
+
+  
   sendButton: {
     alignItems: "center",
     backgroundColor: "#9A3412",
