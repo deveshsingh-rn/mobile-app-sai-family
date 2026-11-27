@@ -64,5 +64,14 @@ module.exports = ({ config }) => {
         projectId,
       },
     },
+    // OTA updates (EAS Update). An update reaches only builds with the same app version
+    // (app.json "version"): any native change → bump the version and make a store build.
+    runtimeVersion: { policy: "appVersion" },
+    updates: {
+      url: `https://u.expo.dev/${projectId}`,
+      // Check on every launch, download in the background, apply on the next launch.
+      checkAutomatically: "ON_LOAD",
+      fallbackToCacheTimeout: 0,
+    },
   };
 };

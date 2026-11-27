@@ -2,9 +2,9 @@
   "expo": {
     "name": "sai-family",
     "slug": "sai-family",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icons.png",
+    "icon": "./assets/images/app-icon-sai.png",
     "scheme": "saifamily",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -21,10 +21,10 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/images/android-icon-sai-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-sai-background.png",
+        "monochromeImage": "./assets/images/android-icon-sai-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [

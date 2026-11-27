@@ -343,7 +343,7 @@ function AppLayoutContent() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <Provider store={store}>
       <AppLayoutContent />
@@ -352,3 +352,4 @@ export default function RootLayout() {
     </Provider>
   );
 }
+export default RootLayout;
